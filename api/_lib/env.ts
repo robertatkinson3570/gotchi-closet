@@ -1,4 +1,4 @@
-import { HttpError } from "./http";
+import { HttpError } from "./http.js";
 
 export function requireEnv(name: string): string {
   const value = process.env[name];

@@ -1,4 +1,4 @@
-import { HttpError } from "./http";
+import { HttpError } from "./http.js";
 
 const MAX_BYTES = 1_000_000;
 
