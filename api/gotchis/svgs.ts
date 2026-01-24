@@ -1,7 +1,7 @@
-import { getGotchiSvgs, getPlaceholderSvg } from "../_lib/aavegotchi";
-import { readJson } from "../_lib/readJson";
-import { badRequest, sendError, sendJson, sendOk, upstreamError } from "../_lib/http";
-import { requireEnv } from "../_lib/env";
+import { getGotchiSvgs, getPlaceholderSvg } from "../_lib/aavegotchi.js";
+import { readJson } from "../_lib/readJson.js";
+import { badRequest, sendError, sendJson, sendOk, upstreamError } from "../_lib/http.js";
+import { requireEnv } from "../_lib/env.js";
 
 export const config = { runtime: "nodejs" };
 

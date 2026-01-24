@@ -1,6 +1,6 @@
-import { getGotchiSvgs } from "../_lib/aavegotchi";
-import { requireEnv } from "../_lib/env";
-import { sendError, sendOk, upstreamError } from "../_lib/http";
+import { getGotchiSvgs } from "../_lib/aavegotchi.js";
+import { requireEnv } from "../_lib/env.js";
+import { sendError, sendOk, upstreamError } from "../_lib/http.js";
 
 export const config = { runtime: "nodejs" };
 
