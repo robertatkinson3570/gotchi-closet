@@ -1,4 +1,4 @@
-import { getWearableThumbs } from "../../server/aavegotchi/serverSvgService";
+import { getWearableThumbs } from "../_lib/aavegotchi";
 import { requireEnv } from "../_lib/env";
 import { sendError, sendOk, upstreamError } from "../_lib/http";
 

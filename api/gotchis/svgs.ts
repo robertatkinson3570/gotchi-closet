@@ -1,4 +1,4 @@
-import { getGotchiSvgs, getPlaceholderSvg } from "../../server/aavegotchi/serverSvgService";
+import { getGotchiSvgs, getPlaceholderSvg } from "../_lib/aavegotchi";
 import { readJson } from "../_lib/readJson";
 import { badRequest, sendError, sendJson, sendOk, upstreamError } from "../_lib/http";
 import { requireEnv } from "../_lib/env";
