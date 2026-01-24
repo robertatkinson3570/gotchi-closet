@@ -1,5 +1,7 @@
 import { getGotchiSvg, getPlaceholderSvg } from "../../../server/aavegotchi/serverSvgService";
 
+export const config = { runtime: "nodejs" };
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "GET") {
     res.status(405).json({ error: true, message: "Method not allowed" });

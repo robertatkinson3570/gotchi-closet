@@ -1,5 +1,7 @@
 import { getGotchiSvgs, getPlaceholderSvg } from "../../server/aavegotchi/serverSvgService";
 
+export const config = { runtime: "nodejs" };
+
 function parseBody(req: any) {
   if (!req.body) return {};
   if (typeof req.body === "string") {
