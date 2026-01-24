@@ -1,6 +1,6 @@
 import { getWearableThumbs, getPlaceholderSvg } from "../../server/aavegotchi/serverSvgService";
 import { readJson } from "../_lib/readJson";
-import { badRequest, sendError, sendJson } from "../_lib/http";
+import { badRequest, sendError, sendJson, sendOk, upstreamError } from "../_lib/http";
 import { requireEnv } from "../_lib/env";
 
 export const config = { runtime: "nodejs" };
@@ -11,17 +11,25 @@ type ThumbsBody = {
   numericTraits?: Array<number | string>;
   wearableIds?: Array<number | string>;
   ids?: Array<number | string>;
+  itemIds?: Array<number | string>;
 };
 
 export default async function handler(req: any, res: any) {
+  const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
   try {
     if (req.method !== "POST") {
       sendJson(res, 405, { error: true, code: "METHOD_NOT_ALLOWED", message: "Method not allowed" });
       return;
     }
+    const contentType = req.headers?.["content-type"] || "";
+    const contentLength = req.headers?.["content-length"] || "";
+    console.log("[thumbs]", requestId, { method: req.method, url: req.url, contentType, contentLength });
     requireEnv("VITE_GOTCHI_DIAMOND_ADDRESS");
+    requireEnv("VITE_BASE_RPC_URL");
+    requireEnv("VITE_GOTCHI_SUBGRAPH_URL");
     const body = await readJson<ThumbsBody>(req);
-    const rawIds = body.wearableIds ?? body.ids;
+    const rawIds = body.wearableIds ?? body.ids ?? body.itemIds;
+    console.log("[thumbs]", requestId, { keys: Object.keys(body || {}), idsLen: Array.isArray(rawIds) ? rawIds.length : 0 });
     if (rawIds && !Array.isArray(rawIds)) {
       throw badRequest("INVALID_WEARABLE_IDS", "wearableIds must be an array");
     }
@@ -44,31 +52,36 @@ export default async function handler(req: any, res: any) {
         acc[id] = getPlaceholderSvg(`thumb:${id}`);
         return acc;
       }, {});
-      sendJson(res, 200, { thumbs });
+      sendOk(res, { thumbs });
       return;
     }
 
-    const thumbs = await getWearableThumbs(
-      {
-        hauntId: Number(hauntId),
-        collateral: collateralStr,
-        numericTraits: Array.isArray(numericTraits)
-          ? numericTraits.map((v: number | string) => Number(v) || 0)
-          : [],
-      },
-      ids
-    );
+    let thumbs: Record<number, string>;
+    try {
+      thumbs = await getWearableThumbs(
+        {
+          hauntId: Number(hauntId),
+          collateral: collateralStr,
+          numericTraits: Array.isArray(numericTraits)
+            ? numericTraits.map((v: number | string) => Number(v) || 0)
+            : [],
+        },
+        ids
+      );
+    } catch (err) {
+      throw upstreamError((err as Error).message || "Upstream thumbs fetch failed");
+    }
 
-    sendJson(res, 200, { thumbs });
+    sendOk(res, { thumbs });
   } catch (error) {
     console.error("[thumbs] error", {
+      requestId,
       message: (error as Error).message,
       stack: (error as Error).stack,
       method: req.method,
       url: req.url,
-      idsCount: Array.isArray((error as any)?.ids) ? (error as any).ids.length : undefined,
     });
-    sendError(res, error);
+    sendError(res, error, requestId);
   }
 }
 

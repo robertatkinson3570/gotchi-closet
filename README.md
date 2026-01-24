@@ -124,6 +124,20 @@ pnpm preview
 
 ## Production notes
 
+### Vercel Environment Variables
+
+Set these in Vercel → Project → Settings → Environment Variables for **Production** and **Preview**:
+
+- `VITE_GOTCHI_SUBGRAPH_URL` (required) – Goldsky Aavegotchi Base subgraph endpoint.
+- `VITE_BASE_RPC_URL` (required) – Base RPC URL for wallet + SVG rendering.
+- `VITE_GOTCHI_DIAMOND_ADDRESS` (required) – Aavegotchi diamond contract address on Base.
+- `VITE_WALLETCONNECT_PROJECT_ID` (required if WalletConnect is used).
+
+Checklist:
+- Add vars for Production + Preview
+- Redeploy
+- Verify `GET /api/debug/ping` returns `hasEnv` all true
+
 ### Required environment variables
 
 - `VITE_WALLETCONNECT_PROJECT_ID` (required) – WalletConnect project ID.
