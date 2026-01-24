@@ -8,9 +8,16 @@ const SVG_FACET_ABI = [
 
 const svgFacet = new Interface(SVG_FACET_ABI);
 const RPC_TIMEOUT_MS = 8000;
+const MAX_RPC_ATTEMPTS = 3;
 
-function getRpcUrl() {
-  return requireEnv("VITE_BASE_RPC_URL");
+function getRpcUrls(): string[] {
+  const list = process.env.VITE_BASE_RPC_URLS || "";
+  const urls = list
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (urls.length > 0) return urls;
+  return [requireEnv("VITE_BASE_RPC_URL")];
 }
 
 function getDiamondAddress() {
@@ -35,11 +42,14 @@ function normalizeWearables(wearableIds: number[]): number[] {
   return normalized;
 }
 
-async function callRpc<T>(payload: { method: string; params: unknown[] }): Promise<T> {
+async function callRpcOnce<T>(
+  url: string,
+  payload: { method: string; params: unknown[] }
+): Promise<T> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
   try {
-    const response = await fetch(getRpcUrl(), {
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
@@ -62,6 +72,26 @@ async function callRpc<T>(payload: { method: string; params: unknown[] }): Promi
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+async function callRpc<T>(payload: { method: string; params: unknown[] }): Promise<T> {
+  const urls = getRpcUrls();
+  const attempts = Math.min(MAX_RPC_ATTEMPTS, urls.length);
+  let lastError: Error | null = null;
+  for (let i = 0; i < attempts; i++) {
+    const url = urls[i];
+    try {
+      return await callRpcOnce<T>(url, payload);
+    } catch (error) {
+      const message = (error as Error).message || "";
+      lastError = error as Error;
+      if (message.includes("429") || message.includes("over rate limit")) {
+        continue;
+      }
+      if (attempts === 1) break;
+    }
+  }
+  throw lastError || new Error("RPC request failed");
 }
 
 export function getPlaceholderSvg(seed: string): string {
