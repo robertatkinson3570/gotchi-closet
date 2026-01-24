@@ -4,17 +4,39 @@ import { logError, logInfo } from "../_log";
 
 export const config = { runtime: "nodejs" };
 
+type ThumbsBody = {
+  hauntId?: number | string;
+  collateral?: string;
+  numericTraits?: Array<number | string>;
+  wearableIds?: Array<number | string>;
+};
+
+function badRequest(res: any, message: string, code: string) {
+  res.status(400).json({ error: true, message, code });
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
-    res.status(405).json({ error: true, message: "Method not allowed" });
+    res.status(405).json({ error: true, message: "Method not allowed", code: "method_not_allowed" });
     return;
   }
   try {
-    const body = await readJsonBody(req, res);
-    if (!body) return;
+    const rawBody = await readJsonBody(req, res);
+    if (!rawBody) return;
+    const body = rawBody as ThumbsBody;
+    if (body.wearableIds && !Array.isArray(body.wearableIds)) {
+      badRequest(res, "wearableIds must be an array", "invalid_wearable_ids");
+      return;
+    }
+    if (body.numericTraits && !Array.isArray(body.numericTraits)) {
+      badRequest(res, "numericTraits must be an array", "invalid_numeric_traits");
+      return;
+    }
     const { hauntId, collateral, numericTraits, wearableIds } = body || {};
     const ids = Array.isArray(wearableIds)
-      ? wearableIds.map((value: unknown) => Number(value)).filter((id) => Number.isFinite(id))
+      ? wearableIds
+          .map((value: number | string) => Number(value))
+          .filter((id) => Number.isFinite(id))
       : [];
 
     const collateralStr = String(collateral || "");
@@ -38,7 +60,7 @@ export default async function handler(req: any, res: any) {
         hauntId: Number(hauntId),
         collateral: collateralStr,
         numericTraits: Array.isArray(numericTraits)
-          ? numericTraits.map((v: unknown) => Number(v) || 0)
+          ? numericTraits.map((v: number | string) => Number(v) || 0)
           : [],
       },
       ids
