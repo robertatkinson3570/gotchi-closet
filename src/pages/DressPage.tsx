@@ -13,7 +13,7 @@ import { MobileTabs } from "@/components/layout/MobileTabs";
 import { GotchiCarousel } from "@/components/gotchi/GotchiCarousel";
 import { EditorPanel } from "@/components/gotchi/EditorPanel";
 import { WearablesPanel } from "@/components/wearables/WearablesPanel";
-import { WearableCard, WearableCardView } from "@/components/wearables/WearableCard";
+import { WearableCardView } from "@/components/wearables/WearableCard";
 import { DebugPanel } from "@/components/debug/DebugPanel";
 import { useAppStore } from "@/state/useAppStore";
 import { fetchAllWearables, fetchAllWearableSets } from "@/graphql/fetchers";
@@ -47,8 +47,8 @@ export default function DressPage() {
     setLoadingSets,
     setError,
     equipWearable,
-    editorInstances,
   } = useAppStore();
+  const appError = useAppStore((state) => state.error);
 
   const wearablesById = useWearablesById();
 
@@ -179,9 +179,8 @@ export default function DressPage() {
     }
 
     // Load wearables (cache first, then fetch)
-    const cachedWearables = cacheGet<typeof useAppStore.getState().wearables>(
-      CACHE_KEYS.WEARABLES
-    );
+    type WearablesState = ReturnType<typeof useAppStore.getState>["wearables"];
+    const cachedWearables = cacheGet<WearablesState>(CACHE_KEYS.WEARABLES);
     if (cachedWearables) {
       setWearables(cachedWearables);
     }
@@ -205,9 +204,8 @@ export default function DressPage() {
     }
 
     // Load sets (cache first, then fetch)
-    const cachedSets = cacheGet<typeof useAppStore.getState().sets>(
-      CACHE_KEYS.SETS
-    );
+    type SetsState = ReturnType<typeof useAppStore.getState>["sets"];
+    const cachedSets = cacheGet<SetsState>(CACHE_KEYS.SETS);
     if (cachedSets) {
       setSets(cachedSets);
     }
@@ -349,6 +347,11 @@ export default function DressPage() {
             )}
           </div>
         </div>
+        {appError && (
+          <div className="w-full border-b bg-background px-4 py-2 text-sm text-red-500">
+            {appError}
+          </div>
+        )}
         <div data-testid="gotchi-list">
           <span className="sr-only" data-testid="gotchi-list-owner">
             {viewLabel}

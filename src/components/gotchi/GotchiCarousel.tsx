@@ -5,6 +5,7 @@ import { GotchiCard } from "./GotchiCard";
 import { Button } from "@/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { placeholderSvg } from "@/lib/placeholderSvg";
+import { fetchWithTimeout } from "@/lib/http";
 
 export function GotchiCarousel() {
   const gotchis = useSortedGotchis();
@@ -45,10 +46,11 @@ export function GotchiCarousel() {
     if (missing.length === 0) return;
 
     let mounted = true;
-    fetch("/api/gotchis/svgs", {
+    fetchWithTimeout("/api/gotchis/svgs", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ tokenIds: missing }),
+      timeoutMs: 8000,
     })
       .then(async (res) => {
         if (!res.ok) {

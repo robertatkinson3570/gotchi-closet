@@ -1,5 +1,6 @@
 import { Interface } from "ethers";
 import pLimit from "p-limit";
+import { getServerEnv } from "../../api/_env";
 
 const BASE_RPC_URLS = [
   "https://mainnet.base.org",
@@ -10,9 +11,7 @@ const BASE_RPC_URLS = [
   "https://base.meowrpc.com",
 ];
 
-const BASE_DIAMOND_ADDRESS =
-  process.env.VITE_GOTCHI_DIAMOND_ADDRESS ||
-  "0xA99c4B08201F2913Db8D28e71d020c4298F29dBF";
+const { diamondAddress: BASE_DIAMOND_ADDRESS } = getServerEnv();
 
 const SVG_FACET_ABI = [
   "function getAavegotchiSvg(uint256 _tokenId) external view returns (string)",

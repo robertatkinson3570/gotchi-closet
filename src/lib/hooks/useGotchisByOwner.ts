@@ -11,14 +11,14 @@ type GotchiFetchState = {
 const EMPTY_GOTCHIS: Gotchi[] = [];
 
 export function useGotchisByOwner(owner?: string): GotchiFetchState {
-  const query = useQuery({
+  const query = useQuery<Gotchi[]>({
     queryKey: ["gotchis", owner],
     queryFn: () => fetchGotchisByOwner(owner as string),
     enabled: !!owner,
     staleTime: 10_000,
     gcTime: 5 * 60_000,
     retry: 1,
-    keepPreviousData: false,
+    placeholderData: EMPTY_GOTCHIS,
   });
 
   return {

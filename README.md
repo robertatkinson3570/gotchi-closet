@@ -15,7 +15,7 @@ A sleek, frontend-only React app for testing Aavegotchi wearables and sets with 
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 18+ and pnpm (`corepack enable` if needed)
 
 ### Installation
 
@@ -23,24 +23,39 @@ A sleek, frontend-only React app for testing Aavegotchi wearables and sets with 
 2. Install dependencies:
 
 ```bash
-npm install
+pnpm install
 ```
 
-3. Create a `.env` file in the root directory:
+3. Create a `.env` file in the root directory (copy from `.env.example`):
 
 ```env
 VITE_GOTCHI_SUBGRAPH_URL=https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn
 VITE_GOTCHI_DIAMOND_ADDRESS=0x...
-VITE_BASE_RPC_URLS=https://mainnet.base.org,https://base.publicnode.com,https://base.blockpi.network/v1/rpc/public,https://base.llamarpc.com,https://1rpc.io/base
+VITE_BASE_RPC_URL=https://mainnet.base.org
+VITE_WALLETCONNECT_PROJECT_ID=your_project_id
 ```
 
-4. Start the development server:
+4. Start the development server (Vite + local API on port 8787):
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
-5. Open your browser to `http://localhost:5173`
+5. Open your browser to `http://localhost:5173` (or 5174 if 5173 is busy)
+
+### Using Vercel functions locally (optional)
+
+If you want to test the serverless `/api` endpoints locally:
+
+```bash
+vercel dev
+```
+
+Then run the Vite dev server with an API proxy override:
+
+```bash
+VITE_API_PROXY_URL=http://localhost:3000 pnpm dev
+```
 
 ## Usage
 
@@ -96,10 +111,46 @@ src/
 ## Build
 
 ```bash
-npm run build
+pnpm build
 ```
 
 The built files will be in the `dist` directory.
+
+### Preview production build
+
+```bash
+pnpm preview
+```
+
+## Production notes
+
+### Required environment variables
+
+- `VITE_WALLETCONNECT_PROJECT_ID` (required) – WalletConnect project ID.
+
+### Optional environment variables
+
+- `VITE_GOTCHI_SUBGRAPH_URL` – Subgraph endpoint (defaults to the public Goldsky endpoint).
+- `VITE_BASE_RPC_URL` – Base RPC URL used for wallet connections.
+- `VITE_SITE_URL` – Canonical site URL for metadata.
+- `VITE_DONATION_ADDRESS` – Donation address shown on the homepage.
+- `VITE_GRIMLABS_NAME`, `VITE_GRIMLABS_URL` – Attribution text/URL.
+- `VITE_GOTCHI_DIAMOND_ADDRESS` – Contract address used by the SVG API.
+- `VITE_API_PROXY_URL` – Override dev proxy target (use with `vercel dev`).
+- `VITE_DEV_ALLOWED_ORIGINS` – Comma-separated CORS allowlist for local API server.
+
+### Vercel deploy
+
+1. Set the environment variables above in the Vercel project settings.
+2. Build command: `pnpm build`
+3. Output directory: `dist`
+4. The `/api/*` endpoints are deployed as Vercel serverless functions.
+
+### Troubleshooting
+
+- **Missing WalletConnect ID**: The app will warn in dev and error in prod builds.
+- **SVGs not loading**: Verify `/api/gotchis/*` and `/api/wearables/*` endpoints and `VITE_GOTCHI_DIAMOND_ADDRESS`.
+- **Subgraph errors**: Check `VITE_GOTCHI_SUBGRAPH_URL` and network availability.
 
 ## License
 

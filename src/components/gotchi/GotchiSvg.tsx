@@ -7,6 +7,7 @@ type PreviewInput = {
   wearableIds: number[];
 };
 import { cn } from "@/lib/utils";
+import { fetchWithTimeout } from "@/lib/http";
 import { useToast } from "@/ui/use-toast";
 
 interface GotchiSvgProps {
@@ -96,11 +97,12 @@ export function GotchiSvg({
             wearableIds: equippedWearables,
           }
         : undefined;
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         method: usePreview ? "POST" : "GET",
         headers: usePreview ? { "content-type": "application/json" } : undefined,
         body: usePreview ? JSON.stringify(body) : undefined,
         signal: controller.signal,
+        timeoutMs: 8000,
       });
       if (!res.ok) {
         const errorBody = await res.json().catch(() => ({}));

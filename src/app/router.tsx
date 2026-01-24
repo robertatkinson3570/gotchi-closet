@@ -12,60 +12,53 @@ import GotchiPage from "@/pages/GotchiPage";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { RootLayout } from "@/components/layout/RootLayout";
 
-export const router = createBrowserRouter(
-  [
-    {
-      path: "/",
-      element: <RootLayout />,
-      errorElement: <ErrorBoundary />,
-      children: [
-        {
-          index: true,
-          element: <HomePage />,
-        },
-        {
-          path: "sets",
-          element: <SetsIndexPage />,
-        },
-        {
-          path: "sets/:slug",
-          element: <SetPage />,
-        },
-        {
-          path: "traits",
-          element: <TraitsIndexPage />,
-        },
-        {
-          path: "traits/:trait",
-          element: <TraitPage />,
-        },
-        {
-          path: "rarity-score",
-          element: <RarityScorePage />,
-        },
-        {
-          path: "wearables",
-          element: <WearablesIndexPage />,
-        },
-        {
-          path: "wearable/:slug",
-          element: <WearablePage />,
-        },
-        {
-          path: "gotchi/:tokenId",
-          element: <GotchiPage />,
-        },
-        {
-          path: "dress",
-          element: <DressPage />,
-        },
-      ],
-    },
-  ],
+export const router = createBrowserRouter([
   {
-    future: {
-      v7_startTransition: true,
-    },
-  }
-);
+    path: "/",
+    element: <RootLayout />,
+    errorElement: <ErrorBoundary />,
+    children: [
+      {
+        index: true,
+        element: <HomePage />,
+      },
+      {
+        path: "sets",
+        element: <SetsIndexPage />,
+      },
+      {
+        path: "sets/:slug",
+        element: <SetPage />,
+      },
+      {
+        path: "traits",
+        element: <TraitsIndexPage />,
+      },
+      {
+        path: "traits/:trait",
+        element: <TraitPage />,
+      },
+      {
+        path: "rarity-score",
+        element: <RarityScorePage />,
+      },
+      {
+        path: "wearables",
+        element: <WearablesIndexPage />,
+      },
+      {
+        path: "wearable/:slug",
+        element: <WearablePage />,
+      },
+      {
+        path: "gotchi/:tokenId",
+        element: <GotchiPage />,
+      },
+      {
+        path: "dress",
+        element: <DressPage />,
+      },
+    ],
+  },
+]);
 

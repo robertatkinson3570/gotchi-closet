@@ -6,6 +6,7 @@ import { EquipModal } from "./EquipModal";
 import { useAppStore } from "@/state/useAppStore";
 import type { Wearable } from "@/types";
 import { placeholderSvg } from "@/lib/placeholderSvg";
+import { fetchWithTimeout } from "@/lib/http";
 
 export function WearablesPanel() {
   const wearables = useAppStore((state) => state.wearables);
@@ -111,7 +112,7 @@ export function WearablesPanel() {
       }
     }
 
-    fetch("/api/wearables/thumbs", {
+    fetchWithTimeout("/api/wearables/thumbs", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -122,6 +123,7 @@ export function WearablesPanel() {
         wearableIds: missing,
         slotIndexById,
       }),
+      timeoutMs: 8000,
     })
       .then(async (res) => {
         if (!res.ok) {

@@ -1,30 +1,14 @@
-export const SITE_URL =
-  import.meta.env.VITE_SITE_URL ||
-  import.meta.env.NEXT_PUBLIC_SITE_URL ||
-  "https://gotchicloset.xyz";
+import { env } from "@/lib/env";
 
-export const BASE_RPC_URL =
-  import.meta.env.VITE_BASE_RPC_URL ||
-  import.meta.env.NEXT_PUBLIC_BASE_RPC_URL ||
-  "https://mainnet.base.org";
+export const SITE_URL = env.siteUrl;
 
-export const WALLETCONNECT_PROJECT_ID =
-  import.meta.env.VITE_WALLETCONNECT_PROJECT_ID ||
-  import.meta.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ||
-  "";
+export const BASE_RPC_URL = env.baseRpcUrl;
 
-export const DONATION_ADDRESS =
-  import.meta.env.VITE_DONATION_ADDRESS ||
-  import.meta.env.NEXT_PUBLIC_DONATION_ADDRESS ||
-  "";
+export const WALLETCONNECT_PROJECT_ID = env.walletConnectProjectId;
 
-export const GRIMLABS_NAME =
-  import.meta.env.VITE_GRIMLABS_NAME ||
-  import.meta.env.NEXT_PUBLIC_GRIMLABS_NAME ||
-  "GrimLabs";
+export const DONATION_ADDRESS = env.donationAddress;
 
-export const GRIMLABS_URL =
-  import.meta.env.VITE_GRIMLABS_URL ||
-  import.meta.env.NEXT_PUBLIC_GRIMLABS_URL ||
-  "https://grimlabs.xyz";
+export const GRIMLABS_NAME = env.grimlabsName;
+
+export const GRIMLABS_URL = env.grimlabsUrl;
 

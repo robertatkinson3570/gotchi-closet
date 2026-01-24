@@ -16,16 +16,18 @@ const metadata = {
   icons: ["https://gotchicloset.xyz/icon.png"],
 };
 
-const connectors = [injected({ shimDisconnect: true })];
-if (projectId) {
-  connectors.push(
-    walletConnect({
-      projectId,
-      showQrModal: true,
-      metadata,
-    })
-  );
-}
+const connectors = [
+  injected({ shimDisconnect: true }),
+  ...(projectId
+    ? [
+        walletConnect({
+          projectId,
+          showQrModal: true,
+          metadata,
+        }),
+      ]
+    : []),
+];
 
 export const wagmiConfig = createConfig({
   chains: [base],

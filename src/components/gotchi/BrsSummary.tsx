@@ -12,15 +12,7 @@ function formatNumber(value: number | undefined) {
   return Number.isFinite(value) ? String(value) : "0";
 }
 
-export function BrsSummary({
-  traitBase,
-  traitWithMods,
-  wearableFlat,
-  setFlatBrs,
-  ageBrs,
-  totalBrs,
-  className,
-}: BrsSummaryProps) {
+export function BrsSummary({ traitBase, totalBrs, className }: BrsSummaryProps) {
   return (
     <div className={`text-[11px] text-muted-foreground ${className ?? ""}`}>
       <div className="text-foreground font-medium" data-testid="rarity-score">

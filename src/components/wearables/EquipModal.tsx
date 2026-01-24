@@ -18,6 +18,9 @@ interface EquipModalProps {
 
 export function EquipModal({ wearable, open, onOpenChange }: EquipModalProps) {
   const equipWearable = useAppStore((state) => state.equipWearable);
+  const activeInstanceId = useAppStore(
+    (state) => state.editorInstances[0]?.instanceId
+  );
 
   if (!wearable) return null;
 
@@ -26,7 +29,8 @@ export function EquipModal({ wearable, open, onOpenChange }: EquipModalProps) {
     .filter((i) => i !== null) as number[];
 
   const handleEquip = (slotIndex: number) => {
-    equipWearable(wearable.id, slotIndex);
+    if (!activeInstanceId) return;
+    equipWearable(activeInstanceId, wearable.id, slotIndex);
     onOpenChange(false);
   };
 

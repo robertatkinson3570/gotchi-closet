@@ -7,9 +7,19 @@ import { getDebugStats } from "./aavegotchi/serverSvgService";
 export function createApp() {
   const app = express();
 
+  const defaultOrigins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
+  ];
+  const envOrigins = (process.env.VITE_DEV_ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const allowedOrigins = envOrigins.length > 0 ? envOrigins : defaultOrigins;
   app.use(
     cors({
-      origin: "http://localhost:5173",
+      origin: allowedOrigins,
     })
   );
   app.use(express.json({ limit: "2mb" }));
