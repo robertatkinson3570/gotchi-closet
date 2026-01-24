@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: 220 20% 98%;
+    --surface: 0 0% 100%;
+    --surface-2: 220 18% 96%;
+    --text: 222 22% 12%;
+    --muted: 222 10% 45%;
+    --border: 220 14% 90%;
+    --shadow: 222 30% 12% / 0.06;
+    --accent: 262 83% 58%;
+    --accent-2: 210 90% 56%;
+    --chip-bg: 220 18% 94%;
+    --chip-text: 222 18% 22%;
+
+    --background: var(--bg);
+    --foreground: var(--text);
+    --card: var(--surface);
+    --card-foreground: var(--text);
+    --popover: var(--surface);
+    --popover-foreground: var(--text);
+    --primary: var(--accent);
+    --primary-foreground: 210 40% 98%;
+    --secondary: var(--surface-2);
+    --secondary-foreground: var(--text);
+    --muted-foreground: var(--muted);
+    --accent-foreground: var(--text);
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --input: var(--border);
+    --ring: var(--accent);
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --bg: 222 22% 10%;
+    --surface: 222 20% 13%;
+    --surface-2: 222 18% 16%;
+    --text: 220 25% 92%;
+    --muted: 220 12% 65%;
+    --border: 222 14% 22%;
+    --shadow: 0 0% 0% / 0.35;
+    --accent: 262 83% 70%;
+    --accent-2: 210 90% 70%;
+    --chip-bg: 222 16% 18%;
+    --chip-text: 220 18% 90%;
+
+    --background: var(--bg);
+    --foreground: var(--text);
+    --card: var(--surface);
+    --card-foreground: var(--text);
+    --popover: var(--surface);
+    --popover-foreground: var(--text);
+    --primary: var(--accent);
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: var(--surface-2);
+    --secondary-foreground: var(--text);
+    --muted-foreground: var(--muted);
+    --accent-foreground: var(--text);
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --input: var(--border);
+    --ring: var(--accent);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+

@@ -1,0 +1,29 @@
+{
+  "baseTraits": [
+    50,
+    50,
+    50,
+    50,
+    50,
+    50
+  ],
+  "equippedWearables": [
+    30,
+    31,
+    32,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "removeWearableId": 30,
+  "expectedDelta": {
+    "traitBRSBase": 0,
+    "traitBRSModified": -8,
+    "wearableFlatBRS": -20,
+    "setFlatBRS": -5,
+    "setTraitDelta": -3,
+    "totalBRS": -33
+  }
+}

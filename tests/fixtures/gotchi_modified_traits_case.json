@@ -1,0 +1,25 @@
+{
+  "data": {
+    "user": {
+      "id": "0x0000000000000000000000000000000000000000",
+      "gotchisOwned": [
+        {
+          "id": "1",
+          "name": "FixtureGotchi",
+          "level": "1",
+          "numericTraits": [30, 45, 60, 55, 10, 20],
+          "modifiedNumericTraits": [28, 47, 65, 52, 10, 20],
+          "equippedWearables": [0, 0, 0, 0, 0, 0, 0, 0],
+          "baseRarityScore": null,
+          "hauntId": "1",
+          "collateral": "0x0000000000000000000000000000000000000000",
+          "createdAt": "1"
+        }
+      ]
+    },
+    "_meta": {
+      "block": { "number": 1 }
+    }
+  }
+}
+
