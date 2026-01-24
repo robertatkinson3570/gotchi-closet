@@ -1,18 +1,8 @@
 import { previewGotchiSvg, getPlaceholderSvg } from "../../server/aavegotchi/serverSvgService";
+import { readJsonBody } from "../_body";
+import { logError, logInfo } from "../_log";
 
 export const config = { runtime: "nodejs" };
-
-function parseBody(req: any) {
-  if (!req.body) return {};
-  if (typeof req.body === "string") {
-    try {
-      return JSON.parse(req.body);
-    } catch {
-      return {};
-    }
-  }
-  return req.body;
-}
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
@@ -20,9 +10,15 @@ export default async function handler(req: any, res: any) {
     return;
   }
   try {
-    const body = parseBody(req);
+    const body = await readJsonBody(req, res);
+    if (!body) return;
     const { hauntId, collateral, numericTraits, wearableIds } = body || {};
     const collateralStr = String(collateral || "");
+    logInfo("gotchis.preview.request", {
+      path: req.url,
+      hauntId: Number(hauntId) || null,
+      wearables: Array.isArray(wearableIds) ? wearableIds.length : 0,
+    });
     if (!Number.isFinite(Number(hauntId)) || !/^0x[a-fA-F0-9]{40}$/.test(collateralStr)) {
       res.status(200).json({ svg: getPlaceholderSvg("preview:invalid") });
       return;
@@ -39,10 +35,15 @@ export default async function handler(req: any, res: any) {
     });
     res.status(200).json({ svg });
   } catch (error) {
-    console.error("POST /api/gotchis/preview failed", error);
+    logError("gotchis.preview.error", {
+      path: req.url,
+      message: (error as Error).message,
+      stack: (error as Error).stack,
+    });
     res.status(500).json({
       error: true,
       message: (error as Error).message || "Failed to fetch preview svg",
+      code: "internal_error",
     });
   }
 }

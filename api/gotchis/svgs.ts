@@ -1,18 +1,8 @@
 import { getGotchiSvgs, getPlaceholderSvg } from "../../server/aavegotchi/serverSvgService";
+import { readJsonBody } from "../_body";
+import { logError, logInfo } from "../_log";
 
 export const config = { runtime: "nodejs" };
-
-function parseBody(req: any) {
-  if (!req.body) return {};
-  if (typeof req.body === "string") {
-    try {
-      return JSON.parse(req.body);
-    } catch {
-      return {};
-    }
-  }
-  return req.body;
-}
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
@@ -20,11 +10,17 @@ export default async function handler(req: any, res: any) {
     return;
   }
   try {
-    const body = parseBody(req);
+    const body = await readJsonBody(req, res);
+    if (!body) return;
     const ids = Array.isArray(body?.tokenIds)
       ? body.tokenIds.map((value: unknown) => String(value))
       : [];
     const validIds = ids.filter((id) => /^\d+$/.test(id));
+    logInfo("gotchis.svgs.request", {
+      path: req.url,
+      totalIds: ids.length,
+      validIds: validIds.length,
+    });
     const svgs = await getGotchiSvgs(validIds);
     for (const id of ids) {
       if (!svgs[id]) {
@@ -33,10 +29,15 @@ export default async function handler(req: any, res: any) {
     }
     res.status(200).json({ svgs });
   } catch (error) {
-    console.error("POST /api/gotchis/svgs failed", error);
+    logError("gotchis.svgs.error", {
+      path: req.url,
+      message: (error as Error).message,
+      stack: (error as Error).stack,
+    });
     res.status(500).json({
       error: true,
       message: (error as Error).message || "Failed to fetch gotchi svgs",
+      code: "internal_error",
     });
   }
 }

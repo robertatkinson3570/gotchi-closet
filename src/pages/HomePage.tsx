@@ -106,11 +106,11 @@ export default function HomePage() {
               <header className="hero">
                 <div className="hero-content space-y-3">
                   <Logo variant="hero" className="mx-auto" />
-                  <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                  <h1 className="text-xl font-semibold tracking-tight text-foreground">
                     Your Gotchi’s Been in the Closet Long Enough
                   </h1>
                   <p className="text-sm text-[hsl(var(--muted))]">
-                    Dress and optimize your Gotchi
+                    Put an outfit on it already!
                   </p>
                 </div>
               </header>
