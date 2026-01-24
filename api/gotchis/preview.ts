@@ -1,50 +1,60 @@
-import { previewGotchiSvg, getPlaceholderSvg } from "../../server/aavegotchi/serverSvgService";
-import { readJsonBody } from "../_body";
-import { logError, logInfo } from "../_log";
+import { previewGotchiSvg, getPlaceholderSvg } from "../_lib/aavegotchi.js";
+import { readJson } from "../_lib/readJson.js";
+import { badRequest, sendError, sendJson, sendOk, upstreamError } from "../_lib/http.js";
+import { requireEnv } from "../_lib/env.js";
 
 export const config = { runtime: "nodejs" };
 
 export default async function handler(req: any, res: any) {
-  if (req.method !== "POST") {
-    res.status(405).json({ error: true, message: "Method not allowed" });
-    return;
-  }
+  const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
   try {
-    const body = await readJsonBody(req, res);
-    if (!body) return;
+    if (req.method !== "POST") {
+      sendJson(res, 405, { error: true, code: "METHOD_NOT_ALLOWED", message: "Method not allowed" });
+      return;
+    }
+    const contentType = req.headers?.["content-type"] || "";
+    const contentLength = req.headers?.["content-length"] || "";
+    console.log("[preview]", requestId, { method: req.method, url: req.url, contentType, contentLength });
+    requireEnv("VITE_GOTCHI_DIAMOND_ADDRESS");
+    requireEnv("VITE_BASE_RPC_URL");
+    requireEnv("VITE_GOTCHI_SUBGRAPH_URL");
+    const body = await readJson<{
+      hauntId?: number | string;
+      collateral?: string;
+      numericTraits?: Array<number | string>;
+      wearableIds?: Array<number | string>;
+    }>(req);
+    console.log("[preview]", requestId, { keys: Object.keys(body || {}) });
     const { hauntId, collateral, numericTraits, wearableIds } = body || {};
     const collateralStr = String(collateral || "");
-    logInfo("gotchis.preview.request", {
-      path: req.url,
-      hauntId: Number(hauntId) || null,
-      wearables: Array.isArray(wearableIds) ? wearableIds.length : 0,
-    });
-    if (!Number.isFinite(Number(hauntId)) || !/^0x[a-fA-F0-9]{40}$/.test(collateralStr)) {
-      res.status(200).json({ svg: getPlaceholderSvg("preview:invalid") });
-      return;
+    if (!Number.isFinite(Number(hauntId))) {
+      throw badRequest("INVALID_HAUNT_ID", "hauntId must be a number");
+    }
+    if (!/^0x[a-fA-F0-9]{40}$/.test(collateralStr)) {
+      throw badRequest("INVALID_COLLATERAL", "collateral must be a 0x address");
     }
     const svg = await previewGotchiSvg({
       hauntId: Number(hauntId),
       collateral: collateralStr,
       numericTraits: Array.isArray(numericTraits)
-        ? numericTraits.map((v: unknown) => Number(v) || 0)
+        ? numericTraits.map((v: number | string) => Number(v) || 0)
         : [],
       wearableIds: Array.isArray(wearableIds)
-        ? wearableIds.map((v: unknown) => Number(v) || 0)
+        ? wearableIds.map((v: number | string) => Number(v) || 0)
         : [],
+    }).catch((err) => {
+      throw upstreamError((err as Error).message || "Upstream preview fetch failed");
     });
-    res.status(200).json({ svg });
+    sendOk(res, { svg });
   } catch (error) {
-    logError("gotchis.preview.error", {
-      path: req.url,
+    console.error("[preview] error", {
+      requestId,
       message: (error as Error).message,
       stack: (error as Error).stack,
+      method: req.method,
+      url: req.url,
     });
-    res.status(500).json({
-      error: true,
-      message: (error as Error).message || "Failed to fetch preview svg",
-      code: "internal_error",
-    });
+    sendError(res, error, requestId);
   }
 }
 
