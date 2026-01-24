@@ -10,6 +10,7 @@ import { fetchWithTimeout } from "@/lib/http";
 export function GotchiCarousel() {
   const gotchis = useSortedGotchis();
   const addEditorInstance = useAppStore((state) => state.addEditorInstance);
+  const setError = useAppStore((state) => state.setError);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -74,8 +75,10 @@ export function GotchiCarousel() {
         }
         setGotchiSvgs(merged);
       })
-      .catch(() => {
+      .catch((err) => {
         if (!mounted) return;
+        const message = err instanceof Error ? err.message : "Failed to load gotchi images";
+        setError(message);
         const merged: Record<string, string> = { ...gotchiSvgs };
         for (const id of missing) {
           failedIdsRef.current.add(id);

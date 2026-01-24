@@ -1,57 +1,50 @@
 import { getGotchiSvgs, getPlaceholderSvg } from "../../server/aavegotchi/serverSvgService";
-import { readJsonBody } from "../_body";
-import { logError, logInfo } from "../_log";
+import { readJson } from "../_lib/readJson";
+import { badRequest, sendError, sendJson } from "../_lib/http";
+import { requireEnv } from "../_lib/env";
 
 export const config = { runtime: "nodejs" };
 
 type SvgsBody = {
   tokenIds?: Array<string | number>;
+  ids?: Array<string | number>;
 };
 
-function badRequest(res: any, message: string, code: string) {
-  res.status(400).json({ error: true, message, code });
-}
-
 export default async function handler(req: any, res: any) {
-  if (req.method !== "POST") {
-    res.status(405).json({ error: true, message: "Method not allowed", code: "method_not_allowed" });
-    return;
-  }
   try {
-    const rawBody = await readJsonBody(req, res);
-    if (!rawBody) return;
-    const body = rawBody as SvgsBody;
-    if (body.tokenIds && !Array.isArray(body.tokenIds)) {
-      badRequest(res, "tokenIds must be an array", "invalid_token_ids");
+    if (req.method !== "POST") {
+      sendJson(res, 405, { error: true, code: "METHOD_NOT_ALLOWED", message: "Method not allowed" });
       return;
     }
-    const ids = Array.isArray(body.tokenIds)
-      ? body.tokenIds.map((value: string | number) => String(value))
+    requireEnv("VITE_GOTCHI_DIAMOND_ADDRESS");
+    const body = await readJson<SvgsBody>(req);
+    const rawIds = body.tokenIds ?? body.ids;
+    if (rawIds && !Array.isArray(rawIds)) {
+      throw badRequest("INVALID_IDS", "ids must be an array");
+    }
+    const ids = Array.isArray(rawIds)
+      ? rawIds.map((value: string | number) => String(value))
       : [];
     const validIds = ids.filter((id) => /^\d+$/.test(id));
-    logInfo("gotchis.svgs.request", {
-      path: req.url,
-      totalIds: ids.length,
-      validIds: validIds.length,
-    });
+    if (validIds.length === 0) {
+      throw badRequest("NO_VALID_IDS", "No valid ids provided");
+    }
     const svgs = await getGotchiSvgs(validIds);
     for (const id of ids) {
       if (!svgs[id]) {
         svgs[id] = getPlaceholderSvg(`gotchi:${id}`);
       }
     }
-    res.status(200).json({ svgs });
+    sendJson(res, 200, { svgs });
   } catch (error) {
-    logError("gotchis.svgs.error", {
-      path: req.url,
+    console.error("[svgs] error", {
       message: (error as Error).message,
       stack: (error as Error).stack,
+      method: req.method,
+      url: req.url,
+      idsCount: Array.isArray((error as any)?.ids) ? (error as any).ids.length : undefined,
     });
-    res.status(500).json({
-      error: true,
-      message: (error as Error).message || "Failed to fetch gotchi svgs",
-      code: "internal_error",
-    });
+    sendError(res, error);
   }
 }
 

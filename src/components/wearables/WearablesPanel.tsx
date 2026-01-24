@@ -16,6 +16,7 @@ export function WearablesPanel() {
   const setWearableThumbs = useAppStore((state) => state.setWearableThumbs);
   const editorInstances = useAppStore((state) => state.editorInstances);
   const gotchis = useAppStore((state) => state.gotchis);
+  const setError = useAppStore((state) => state.setError);
   const equippedIds = editorInstances
     .flatMap((instance) => instance.equippedBySlot)
     .filter((id) => id !== 0);
@@ -137,7 +138,9 @@ export function WearablesPanel() {
           setWearableThumbs(json.thumbs);
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Failed to load wearable images";
+        setError(message);
         const placeholders: Record<number, string> = {};
         for (const id of missing) {
           failedThumbsRef.current.add(id);

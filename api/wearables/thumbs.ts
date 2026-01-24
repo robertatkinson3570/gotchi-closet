@@ -1,6 +1,7 @@
 import { getWearableThumbs, getPlaceholderSvg } from "../../server/aavegotchi/serverSvgService";
-import { readJsonBody } from "../_body";
-import { logError, logInfo } from "../_log";
+import { readJson } from "../_lib/readJson";
+import { badRequest, sendError, sendJson } from "../_lib/http";
+import { requireEnv } from "../_lib/env";
 
 export const config = { runtime: "nodejs" };
 
@@ -9,49 +10,41 @@ type ThumbsBody = {
   collateral?: string;
   numericTraits?: Array<number | string>;
   wearableIds?: Array<number | string>;
+  ids?: Array<number | string>;
 };
 
-function badRequest(res: any, message: string, code: string) {
-  res.status(400).json({ error: true, message, code });
-}
-
 export default async function handler(req: any, res: any) {
-  if (req.method !== "POST") {
-    res.status(405).json({ error: true, message: "Method not allowed", code: "method_not_allowed" });
-    return;
-  }
   try {
-    const rawBody = await readJsonBody(req, res);
-    if (!rawBody) return;
-    const body = rawBody as ThumbsBody;
-    if (body.wearableIds && !Array.isArray(body.wearableIds)) {
-      badRequest(res, "wearableIds must be an array", "invalid_wearable_ids");
+    if (req.method !== "POST") {
+      sendJson(res, 405, { error: true, code: "METHOD_NOT_ALLOWED", message: "Method not allowed" });
       return;
+    }
+    requireEnv("VITE_GOTCHI_DIAMOND_ADDRESS");
+    const body = await readJson<ThumbsBody>(req);
+    const rawIds = body.wearableIds ?? body.ids;
+    if (rawIds && !Array.isArray(rawIds)) {
+      throw badRequest("INVALID_WEARABLE_IDS", "wearableIds must be an array");
     }
     if (body.numericTraits && !Array.isArray(body.numericTraits)) {
-      badRequest(res, "numericTraits must be an array", "invalid_numeric_traits");
-      return;
+      throw badRequest("INVALID_NUMERIC_TRAITS", "numericTraits must be an array");
     }
     const { hauntId, collateral, numericTraits, wearableIds } = body || {};
-    const ids = Array.isArray(wearableIds)
-      ? wearableIds
+    const ids = Array.isArray(rawIds)
+      ? rawIds
           .map((value: number | string) => Number(value))
           .filter((id) => Number.isFinite(id))
       : [];
+    if (ids.length === 0) {
+      throw badRequest("NO_VALID_IDS", "No valid wearableIds provided");
+    }
 
     const collateralStr = String(collateral || "");
-    logInfo("wearables.thumbs.request", {
-      path: req.url,
-      totalIds: ids.length,
-      hauntId: Number(hauntId) || null,
-      hasCollateral: Boolean(collateralStr),
-    });
     if (!Number.isFinite(Number(hauntId)) || !/^0x[a-fA-F0-9]{40}$/.test(collateralStr)) {
       const thumbs = ids.reduce<Record<number, string>>((acc, id) => {
         acc[id] = getPlaceholderSvg(`thumb:${id}`);
         return acc;
       }, {});
-      res.status(200).json({ thumbs });
+      sendJson(res, 200, { thumbs });
       return;
     }
 
@@ -66,18 +59,16 @@ export default async function handler(req: any, res: any) {
       ids
     );
 
-    res.status(200).json({ thumbs });
+    sendJson(res, 200, { thumbs });
   } catch (error) {
-    logError("wearables.thumbs.error", {
-      path: req.url,
+    console.error("[thumbs] error", {
       message: (error as Error).message,
       stack: (error as Error).stack,
+      method: req.method,
+      url: req.url,
+      idsCount: Array.isArray((error as any)?.ids) ? (error as any).ids.length : undefined,
     });
-    res.status(500).json({
-      error: true,
-      message: (error as Error).message || "Failed to fetch wearable thumbs",
-      code: "internal_error",
-    });
+    sendError(res, error);
   }
 }
 
