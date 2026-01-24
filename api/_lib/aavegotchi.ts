@@ -1,5 +1,5 @@
 import { Interface } from "ethers";
-import { requireEnv } from "./env";
+import { requireEnv } from "./env.js";
 
 const SVG_FACET_ABI = [
   "function getAavegotchiSvg(uint256 _tokenId) external view returns (string)",
