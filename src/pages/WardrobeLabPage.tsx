@@ -11,6 +11,7 @@ import { useAddressState } from "@/lib/addressState";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
 import { shortenAddress, normalizeAddress, isValidAddress } from "@/lib/address";
 import { computeBRSBreakdown, traitToBRS, detectActiveSets } from "@/lib/rarity";
+import { getRespecBaseTraits } from "@/lib/respec";
 import { useWearablesById } from "@/state/selectors";
 import { useAppStore } from "@/state/useAppStore";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
@@ -190,8 +191,8 @@ export default function WardrobeLabPage() {
     return "unknown";
   };
 
-  const simulateRespec = (baseTraits: number[], usedSkillPoints: number): { optimizedTraits: number[]; respecUsed: number; brsDelta: number; changes: { trait: number; from: number; to: number; brsGain: number }[] } => {
-    const traits = [...baseTraits];
+  const simulateRespec = (birthTraits: number[], usedSkillPoints: number): { optimizedTraits: number[]; respecUsed: number; brsDelta: number; changes: { trait: number; from: number; to: number; brsGain: number }[] } => {
+    const traits = [...birthTraits];
     const available = usedSkillPoints || 0;
     let remaining = available;
     let brsDelta = 0;
@@ -205,34 +206,24 @@ export default function WardrobeLabPage() {
       let targetTrait: number;
       let pointsNeeded: number;
       
-      if (strategy.goal === "BATTLER") {
-        if (t < 50) {
-          targetTrait = 0;
-          pointsNeeded = t;
-        } else {
-          targetTrait = 99;
-          pointsNeeded = 99 - t;
-        }
+      if (t < 50) {
+        targetTrait = 0;
+        pointsNeeded = t;
       } else {
-        if (t < 50) {
-          targetTrait = 0;
-          pointsNeeded = t;
-        } else {
-          targetTrait = 99;
-          pointsNeeded = 99 - t;
-        }
+        targetTrait = 99;
+        pointsNeeded = 99 - t;
       }
       
       const targetBrs = traitToBRS(targetTrait);
       const brsGain = targetBrs - currentBrs;
       const efficiency = pointsNeeded > 0 ? brsGain / pointsNeeded : 0;
       
-      return { index: i, current: t, target: targetTrait, pointsNeeded, brsGain, efficiency };
+      return { index: i, birth: t, current: t, target: targetTrait, pointsNeeded, brsGain, efficiency };
     });
 
     if (strategy.goal === "BATTLER") {
-      const highTrait = traitPotential.filter(t => t.current >= 50).sort((a, b) => b.current - a.current)[0];
-      const lowTrait = traitPotential.filter(t => t.current < 50).sort((a, b) => a.current - b.current)[0];
+      const highTrait = traitPotential.filter(t => t.birth >= 50).sort((a, b) => b.birth - a.birth)[0];
+      const lowTrait = traitPotential.filter(t => t.birth < 50).sort((a, b) => a.birth - b.birth)[0];
       const prioritized = [highTrait, lowTrait].filter(Boolean);
       
       for (const tp of prioritized) {
@@ -240,12 +231,12 @@ export default function WardrobeLabPage() {
         const pointsToUse = Math.min(remaining, tp.pointsNeeded);
         if (pointsToUse > 0) {
           const oldTrait = traits[tp.index];
-          const newTrait = tp.current < 50 ? tp.current - pointsToUse : tp.current + pointsToUse;
-          const gain = traitToBRS(newTrait) - traitToBRS(oldTrait);
+          const newTrait = Math.max(0, Math.min(99, tp.birth < 50 ? oldTrait - pointsToUse : oldTrait + pointsToUse));
+          const gain = traitToBRS(newTrait) - traitToBRS(tp.birth);
           traits[tp.index] = newTrait;
           remaining -= pointsToUse;
           brsDelta += gain;
-          changes.push({ trait: tp.index, from: oldTrait, to: newTrait, brsGain: gain });
+          changes.push({ trait: tp.index, from: tp.birth, to: newTrait, brsGain: gain });
         }
       }
     }
@@ -259,21 +250,26 @@ export default function WardrobeLabPage() {
       const currentVal = traits[tp.index];
       const pointsToUse = Math.min(remaining, Math.abs(tp.target - currentVal));
       if (pointsToUse > 0) {
-        const oldTrait = traits[tp.index];
-        const newTrait = currentVal < 50 ? currentVal - pointsToUse : currentVal + pointsToUse;
+        const oldTrait = tp.birth;
+        const newTrait = Math.max(0, Math.min(99, tp.birth < 50 ? currentVal - pointsToUse : currentVal + pointsToUse));
         const gain = traitToBRS(newTrait) - traitToBRS(oldTrait);
-        if (gain > 0) {
+        if (gain > 0 && !changes.find(c => c.trait === tp.index)) {
           traits[tp.index] = newTrait;
           remaining -= pointsToUse;
           brsDelta += gain;
-          if (!changes.find(c => c.trait === tp.index)) {
-            changes.push({ trait: tp.index, from: oldTrait, to: newTrait, brsGain: gain });
-          }
+          changes.push({ trait: tp.index, from: oldTrait, to: newTrait, brsGain: gain });
+        } else if (changes.find(c => c.trait === tp.index)) {
+          const existing = changes.find(c => c.trait === tp.index)!;
+          traits[tp.index] = newTrait;
+          remaining -= pointsToUse;
+          existing.to = newTrait;
+          existing.brsGain = traitToBRS(newTrait) - traitToBRS(tp.birth);
         }
       }
     }
 
-    return { optimizedTraits: traits, respecUsed: available - remaining, brsDelta, changes };
+    const totalBrsDelta = changes.reduce((sum, c) => sum + c.brsGain, 0);
+    return { optimizedTraits: traits, respecUsed: available - remaining, brsDelta: totalBrsDelta, changes };
   };
 
   const runOptimizer = async () => {
@@ -283,18 +279,26 @@ export default function WardrobeLabPage() {
     void wearableInventory;
 
     for (const gotchi of selectedGotchis) {
-      const baseTraits = gotchi.numericTraits || [0, 0, 0, 0, 0, 0];
+      const currentTraits = gotchi.numericTraits || [0, 0, 0, 0, 0, 0];
       const equippedWearables = gotchi.equippedWearables || [];
       const usedSkillPoints = gotchi.usedSkillPoints || 0;
       const owner = findGotchiOwner(gotchi.id);
       
+      let birthTraits: number[];
+      try {
+        birthTraits = await getRespecBaseTraits(gotchi.id);
+      } catch (err) {
+        console.error(`Failed to fetch birth traits for ${gotchi.id}:`, err);
+        birthTraits = [...currentTraits];
+      }
+      
       const currentBreakdown = computeBRSBreakdown({
-        baseTraits,
+        baseTraits: currentTraits,
         equippedWearables,
         wearablesById,
       });
 
-      const { optimizedTraits, respecUsed, brsDelta, changes } = simulateRespec(baseTraits, usedSkillPoints);
+      const { optimizedTraits, respecUsed, brsDelta, changes } = simulateRespec(birthTraits, usedSkillPoints);
       const activeSets = detectActiveSets(equippedWearables);
       
       const afterBreakdown = computeBRSBreakdown({
@@ -332,7 +336,7 @@ export default function WardrobeLabPage() {
         collateral: gotchi.collateral || "",
         before: {
           equippedWearables: [...equippedWearables],
-          traits: [...baseTraits],
+          traits: [...currentTraits],
           brs: currentBreakdown.totalBrs,
         },
         after: {
@@ -711,6 +715,54 @@ export default function WardrobeLabPage() {
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t">
+                <div className="text-xs font-medium text-muted-foreground mb-2">Trait Scores (After Respec)</div>
+                <div className="grid grid-cols-4 gap-2">
+                  {[0, 1, 2, 3].map((idx) => {
+                    const afterVal = result.after.traits[idx];
+                    const beforeVal = result.before.traits[idx];
+                    const afterTraits = result.after.traits.slice(0, 4);
+                    const maxTrait = Math.max(...afterTraits);
+                    const minTrait = Math.min(...afterTraits);
+                    const isHighest = afterVal === maxTrait && afterVal >= 50;
+                    const isLowest = afterVal === minTrait && afterVal < 50;
+                    const changed = afterVal !== beforeVal;
+                    return (
+                      <div 
+                        key={idx} 
+                        className={`text-center p-2 rounded ${
+                          isHighest ? "bg-red-100 border-2 border-red-400" :
+                          isLowest ? "bg-blue-100 border-2 border-blue-400" :
+                          "bg-muted/50"
+                        }`}
+                      >
+                        <div className={`text-xs font-medium ${
+                          isHighest ? "text-red-600" :
+                          isLowest ? "text-blue-600" :
+                          "text-muted-foreground"
+                        }`}>
+                          {TRAIT_NAMES[idx]}
+                          {isHighest && " (HIGH)"}
+                          {isLowest && " (LOW)"}
+                        </div>
+                        <div className={`text-lg font-bold ${
+                          isHighest ? "text-red-700" :
+                          isLowest ? "text-blue-700" :
+                          ""
+                        }`}>
+                          {afterVal}
+                        </div>
+                        {changed && (
+                          <div className="text-xs text-purple-600">
+                            was {beforeVal}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
