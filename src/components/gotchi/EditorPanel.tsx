@@ -91,11 +91,6 @@ export function EditorPanel() {
                           showRespec
                           respecResetKey={instance.instanceId}
                           baseTraits={instance.baseGotchi.numericTraits}
-                          modifiedTraits={instance.baseGotchi.modifiedNumericTraits}
-                          withSetsNumericTraits={instance.baseGotchi.withSetsNumericTraits}
-                          canonicalModifiedTraits={finalTraits}
-                          wearableDeltaOverride={wearableDeltaOverride}
-                          level={instance.baseGotchi.level}
                         />
                       );
                     })()}
