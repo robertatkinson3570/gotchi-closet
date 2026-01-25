@@ -40,6 +40,12 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-25: Added "Best Sets" feature to GotchiCard on Dress page
+  - Collapsible panel showing top 10 wearable sets ranked by projected BRS gain
+  - Full bonus label format: BRS +X · NRG +Y · AGG +Z · SPK +A · BRN +B
+  - Shows wearable names for each set and delta badge
+  - Links to wiki and aadventure for more set info
+  - Located in src/lib/bestSets.ts and src/components/gotchi/BestSetsPanel.tsx
 - 2026-01-25: Enhanced Wardrobe Lab optimizer with proper respec simulation
   - Fixed trait optimization to push traits toward extremes (0 or 99)
   - Battler mode prioritizes highest/lowest traits for class optimization
