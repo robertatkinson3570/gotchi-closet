@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { ChevronDown, ChevronUp, ExternalLink, Sparkles } from "lucide-react";
 import { computeBestSets, type RankedSet } from "@/lib/bestSets";
+import { useAppStore } from "@/state/useAppStore";
 
 interface BestSetsPanelProps {
   baseTraits: number[];
@@ -8,6 +9,8 @@ interface BestSetsPanelProps {
 
 export function BestSetsPanel({ baseTraits }: BestSetsPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const storeSets = useAppStore((state) => state.sets);
+  const setFilters = useAppStore((state) => state.setFilters);
 
   const rankedSets = useMemo(() => {
     if (!isExpanded) return [];
@@ -15,6 +18,16 @@ export function BestSetsPanel({ baseTraits }: BestSetsPanelProps) {
   }, [baseTraits, isExpanded]);
 
   const traitsReady = Array.isArray(baseTraits) && baseTraits.length >= 4;
+
+  const handleSetClick = (setName: string) => {
+    const normalized = setName.toLowerCase().replace(/\s*\(.*\)\s*$/, "").trim();
+    const match = storeSets.find(
+      (s) => s.name.toLowerCase().trim() === normalized
+    );
+    if (match) {
+      setFilters({ set: match.id });
+    }
+  };
 
   if (!traitsReady) {
     return (
@@ -53,11 +66,12 @@ export function BestSetsPanel({ baseTraits }: BestSetsPanelProps) {
               No sets available.
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {rankedSets.map((ranked, idx) => (
                 <SetRow
                   key={`${ranked.set.name}-${idx}`}
                   ranked={ranked}
+                  onClick={() => handleSetClick(ranked.set.name)}
                 />
               ))}
             </div>
@@ -91,8 +105,10 @@ export function BestSetsPanel({ baseTraits }: BestSetsPanelProps) {
 
 function SetRow({
   ranked,
+  onClick,
 }: {
   ranked: RankedSet;
+  onClick: () => void;
 }) {
   const mods = ranked.set.mods;
   const traitChanges: string[] = [];
@@ -102,7 +118,10 @@ function SetRow({
   if (mods.brn) traitChanges.push(mods.brn > 0 ? "+BRN" : "-BRN");
 
   return (
-    <div className="p-2 bg-background rounded border border-border">
+    <button
+      onClick={onClick}
+      className="w-full p-2 bg-background rounded border border-border hover:bg-muted/50 hover:border-primary/50 transition-colors text-left"
+    >
       <div className="flex items-center gap-2">
         <span
           className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
@@ -122,6 +141,6 @@ function SetRow({
           {traitChanges.length > 0 ? `(${traitChanges.join(", ")})` : ""}
         </span>
       </div>
-    </div>
+    </button>
   );
 }
