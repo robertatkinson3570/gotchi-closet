@@ -88,6 +88,15 @@ async function fetchAllWearablesFromSubgraph(): Promise<Wearable[]> {
   return all;
 }
 
+function getRarityFromModifier(modifier: number): string {
+  if (modifier >= 50) return "Godlike";
+  if (modifier >= 20) return "Mythical";
+  if (modifier >= 10) return "Legendary";
+  if (modifier >= 5) return "Rare";
+  if (modifier >= 2) return "Uncommon";
+  return "Common";
+}
+
 export async function fetchAllWearables(): Promise<Wearable[]> {
   try {
     const remote = await fetchAllWearablesFromSubgraph();
@@ -102,10 +111,14 @@ export async function fetchAllWearables(): Promise<Wearable[]> {
         traitModifiers: item.traitModifiers,
         slotPositions: item.slotPositions,
         rarityScoreModifier: item.rarityScoreModifier,
+        rarity: getRarityFromModifier(item.rarityScoreModifier),
       } as Wearable;
     });
   } catch {
-    return wearablesData as Wearable[];
+    return (wearablesData as Wearable[]).map((w) => ({
+      ...w,
+      rarity: getRarityFromModifier(w.rarityScoreModifier || 0),
+    }));
   }
 }
 
