@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getGotchiSvg, getGotchiSvgs, previewGotchiSvg, getPlaceholderSvg } from "../aavegotchi/serverSvgService";
+import { getGotchiSvg, getGotchiSvgs, previewGotchiSvg, getPlaceholderSvg, getGotchiBaseTraits } from "../aavegotchi/serverSvgService";
 
 const router = Router();
 
@@ -68,6 +68,42 @@ router.post("/preview", async (req, res) => {
     res.status(500).json({
       error: true,
       message: (error as Error).message || "Failed to fetch preview svg",
+    });
+  }
+});
+
+router.post("/base-traits", async (req, res) => {
+  try {
+    const { tokenId } = req.body || {};
+    const tokenIdStr = String(tokenId || "").trim();
+    if (!tokenIdStr || !/^\d+$/.test(tokenIdStr)) {
+      res.status(400).json({
+        error: true,
+        code: "INVALID_TOKEN_ID",
+        message: "Invalid or missing tokenId",
+      });
+      return;
+    }
+    const baseTraits = await getGotchiBaseTraits(tokenIdStr);
+    if (!Array.isArray(baseTraits) || baseTraits.length < 6) {
+      res.status(500).json({
+        error: true,
+        code: "INVALID_RESPONSE",
+        message: "Contract returned invalid base traits",
+      });
+      return;
+    }
+    const safeTraits = baseTraits.slice(0, 6).map((v) => {
+      const num = Number(v);
+      return Number.isFinite(num) ? num : 0;
+    });
+    res.json({ baseTraits: safeTraits });
+  } catch (error) {
+    console.error("POST /api/gotchis/base-traits failed", error);
+    res.status(500).json({
+      error: true,
+      code: "RPC_ERROR",
+      message: (error as Error).message || "Failed to fetch base traits from contract",
     });
   }
 });

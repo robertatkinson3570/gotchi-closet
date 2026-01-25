@@ -60,6 +60,8 @@ export function EditorPanel() {
                         ageBrs,
                         totalBrs,
                         activeSets,
+                        wearableDelta,
+                        setTraitModsDelta,
                       } = computeInstanceTraits({
                         baseTraits: instance.baseGotchi.numericTraits,
                         modifiedNumericTraits: isBaseEquipment
@@ -88,6 +90,8 @@ export function EditorPanel() {
                           showRespec
                           respecResetKey={instance.instanceId}
                           baseTraits={instance.baseGotchi.numericTraits}
+                          wearableDelta={wearableDelta}
+                          setDelta={setTraitModsDelta}
                         />
                       );
                     })()}

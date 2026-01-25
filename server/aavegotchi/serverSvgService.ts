@@ -18,6 +18,10 @@ const SVG_FACET_ABI = [
   "function previewAavegotchi(uint256 _hauntId, address _collateralType, int16[6] _numericTraits, uint16[16] _equippedWearables) external view returns (string)",
 ];
 
+const AAVEGOTCHI_FACET_ABI = [
+  "function getNumericTraits(uint256 _tokenId) external view returns (int16[6])",
+];
+
 const SVG_CACHE_TTL = 60 * 60 * 1000;
 const SVG_FETCH_TIMEOUT = 8000;
 const MAX_RPC_ATTEMPTS = 3;
@@ -45,6 +49,7 @@ const stats = {
 };
 
 const svgFacet = new Interface(SVG_FACET_ABI);
+const aavegotchiFacet = new Interface(AAVEGOTCHI_FACET_ABI);
 
 function cacheGet(cache: Map<string, CacheEntry>, key: string): string | null {
   const entry = cache.get(key);
@@ -403,6 +408,57 @@ export async function getWearableThumbs(input: {
 
   await Promise.all(tasks);
   return thumbs;
+}
+
+export async function getGotchiBaseTraits(tokenId: string): Promise<number[]> {
+  const callData = aavegotchiFacet.encodeFunctionData("getNumericTraits", [
+    BigInt(tokenId),
+  ]);
+  
+  const rpcUrls = getHealthyRpcUrls();
+  const timeout = 5000;
+  
+  for (let i = 0; i < Math.min(3, rpcUrls.length); i++) {
+    const url = rpcUrls[i];
+    const index = BASE_RPC_URLS.indexOf(url);
+    
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: Math.floor(Math.random() * 100000),
+          method: "eth_call",
+          params: [{ to: BASE_DIAMOND_ADDRESS, data: callData }, "latest"],
+        }),
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) continue;
+      
+      const json = await response.json();
+      if (json.error) continue;
+      
+      const decoded = aavegotchiFacet.decodeFunctionResult("getNumericTraits", json.result)[0];
+      if (!Array.isArray(decoded)) continue;
+      
+      markSuccess(index);
+      const traits = decoded.map((v: unknown) => Number(v) || 0);
+      while (traits.length < 6) traits.push(0);
+      return traits.slice(0, 6);
+    } catch {
+      markFailure(index);
+      continue;
+    }
+  }
+  
+  throw new Error("All RPC attempts failed for getNumericTraits");
 }
 
 export function getDebugStats() {

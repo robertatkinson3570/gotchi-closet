@@ -87,6 +87,18 @@ export function computeInstanceTraits(params: {
     wearablesById: params.wearablesById,
     blocksElapsed: params.blocksElapsed,
   });
+  const wearableDelta = [
+    breakdown.wearableTraitMods?.nrg ?? 0,
+    breakdown.wearableTraitMods?.agg ?? 0,
+    breakdown.wearableTraitMods?.spk ?? 0,
+    breakdown.wearableTraitMods?.brn ?? 0,
+  ];
+  const setTraitModsDelta = [
+    breakdown.setTraitMods?.nrg ?? 0,
+    breakdown.setTraitMods?.agg ?? 0,
+    breakdown.setTraitMods?.spk ?? 0,
+    breakdown.setTraitMods?.brn ?? 0,
+  ];
   return {
     baseScore: breakdown.traitBase,
     modifiedScore: breakdown.traitWithMods,
@@ -101,6 +113,8 @@ export function computeInstanceTraits(params: {
     activeSets: breakdown.activeSets,
     equippedIds,
     finalTraits: breakdown.finalTraits,
+    wearableDelta,
+    setTraitModsDelta,
   };
 }
 

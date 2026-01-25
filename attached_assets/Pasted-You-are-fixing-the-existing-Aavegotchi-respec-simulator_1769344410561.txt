@@ -1,0 +1,97 @@
+You are fixing the existing Aavegotchi respec simulator logic. DO NOT change the UI/UX layout, spacing, or components. Keep the current trait row, the unobtrusive +/- controls, and the existing Respec button exactly as they are. Only fix the data + math + rendering issues.
+
+Goal: respec simulator must correctly compute final numeric traits and BRS exactly like Aavegotchi after applying:
+1) baseNumericTraits (from subgraph OR derived fallback)
+2) spirit points allocation (current + simulated delta from +/-)
+3) wearable trait modifiers (individual wearables)
+4) wearable set bonuses (if a set is completed)
+
+Known issues to fix:
+- Traits are showing as "..." (ellipsis) in UI after recent change. That implies numbers are undefined/NaN or a string formatting fallback is triggering.
+- Wearable trait points are missing (traits not changing when wearables equipped, or modifiers not applied).
+- GraphQL error: `[GraphQL] Type Aavegotchi has no field baseNumericTraits`. We must not query that field on Goldsky Base if it doesn't exist.
+
+Hard constraints:
+- Do not touch UI structure or styling. Only logic/types/state.
+- Avoid adding new UI elements.
+- Ensure all trait values are always finite numbers (no undefined/NaN) so rendering never collapses to "...".
+- Keep trait order mapping correct for modifiers: [NRG, AGG, SPK, BRN] indices map to numericTraits positions (double-check mapping used across app and keep consistent).
+- Preserve existing state shape used by +/- if possible; only adjust if required for correctness.
+
+Implementation requirements:
+
+A) Fix subgraph query + canonical trait source
+- Update the gotchi query used by the respec modal/editor so it does NOT request `baseNumericTraits`.
+- Prefer using `modifiedNumericTraits` if present from the subgraph as the canonical “final traits with wearables/sets already applied”.
+- Also fetch enough wearable info to compute locally if modifiedNumericTraits is missing:
+  - equippedWearables (IDs)
+  - equippedSetID or set info if available (if not available, compute set completion locally)
+  - numericTraits (base traits) and any other fields you already use in the app for trait derivation
+
+B) Implement a robust trait computation pipeline (pure functions)
+Create (or update) pure functions that return fully numeric arrays of length 6:
+- `getBaseTraits(gotchi): number[6]`
+  - Use gotchi.numericTraits as base if that is the true base trait array in this subgraph.
+  - If gotchi.numericTraits is not base in your schema, then derive base as:
+    - if gotchi.modifiedNumericTraits exists: use gotchi.modifiedNumericTraits as final baseline for display, BUT you still need a base for respec simulation (see C).
+  - Always return a safe array length 6; fill missing with 50s and clamp to integers.
+
+- `applySpiritDelta(baseTraits, spiritDelta): number[6]`
+  - Add spiritDelta to trait indices that are spirit-point-adjustable (same indices you already use).
+  - Enforce invariants:
+    - totalSpent = sum(max(0, delta increases minus decreases depending on your model)) must not exceed availableSpiritPoints
+    - traits remain integers
+    - no NaN
+
+- `applyWearablesAndSets(traits, equippedWearableIds, wearableDb, setsDb): number[6]`
+  - Sum wearable trait modifiers
+  - Determine if any wearable set is completed and apply its set trait modifiers
+  - Return finalTraits length 6, numeric.
+
+C) Correct respec simulation baseline (this is critical)
+The simulator should behave like:
+finalTraitsSimulated =
+  baseNumericTraits
++ currentSpiritAllocation
++ simulatedSpiritDelta
++ wearableModifiers
++ setBonusModifiers
+
+If the subgraph provides current spirit allocation explicitly, use it. If not:
+- treat currentSpiritAllocation as already baked into gotchi.numericTraits (common in some schemas) and then spiritDelta is applied on top.
+- If you cannot reliably separate base vs spirit from subgraph fields, then do this fallback:
+  - Use the currently displayed “final traits before simulation” as baselineTraits (prefer gotchi.modifiedNumericTraits if present, else computed via wearables/sets).
+  - Then apply ONLY spiritDelta on top of that baseline for simulation preview.
+This is acceptable as a “simulation only” behavior as long as +/- matches expected deltas and never breaks.
+
+D) Fix the "..." rendering bug
+Find why the traits render as "...". Likely a formatter or component expects number and receives undefined or string.
+- Ensure every trait value passed to UI is `Number.isFinite(value)`; if not, coerce to 0 or 50 with a safe fallback.
+- Ensure arrays are always length 6.
+- Add a small internal guard (no UI change) so trait display always uses a number.
+
+E) Ensure BRS calculations use finalTraitsSimulated
+- computeRarityScore(traits) = sum(|trait - 50|) across the 6 numeric traits (you already have this)
+- “Trait BRS (base)” uses baseTraits (or the best available baseline per C)
+- “Trait BRS (with wearables/sets)” uses finalTraitsSimulated
+- Total BRS also includes wearable flat BRS and set bonus BRS if you show those (don’t change UI labels, just correct numbers)
+
+F) Data sources for wearables/sets
+- Use the existing wearable metadata source already in the app. If there’s a local JSON/db map, use it.
+- If set bonuses are not in subgraph, use the existing baked set data (you can reference wiki / aadventure rules you already have in code).
+- Do not introduce new network dependencies unless already used.
+
+G) Add 2-3 targeted unit tests (logic only, no UI tests)
+- A fixture gotchi with no wearables: +/- changes traits and BRS predictably, no NaN.
+- A fixture gotchi with wearables but no completed set: wearable modifiers apply.
+- A fixture gotchi with a completed set: set bonus applies and total BRS matches expected.
+Tests must ensure trait arrays are length 6 and all values finite numbers.
+
+Deliverable:
+- Patch the respec modal/editor query to remove baseNumericTraits and use correct fields.
+- Patch the trait compute pipeline so wearables + sets + spiritDelta apply properly.
+- Fix the “...” trait display by ensuring UI always receives finite numbers.
+- Keep UI unchanged.
+
+Before coding:
+- Locate the file where the respec modal queries the subgraph and the contract helper used elsewhere (SVG/gotchi pulls). Update only what’s needed; do not refactor unrelated files.

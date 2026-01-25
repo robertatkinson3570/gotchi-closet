@@ -57,19 +57,25 @@ export function computeSimTraits(params: {
   baseTraits: number[];
   respecBaseTraits?: number[];
   allocated: number[];
+  wearableDelta?: number[];
+  setDelta?: number[];
 }) {
   const base = Array.isArray(params.respecBaseTraits)
     ? params.respecBaseTraits
     : params.baseTraits;
   const usingFallback = !Array.isArray(params.respecBaseTraits);
+  const wearableDelta = Array.isArray(params.wearableDelta) ? params.wearableDelta : [0, 0, 0, 0];
+  const setDelta = Array.isArray(params.setDelta) ? params.setDelta : [0, 0, 0, 0];
   const simBase = [0, 0, 0, 0];
   const simModified = [0, 0, 0, 0];
 
   for (let i = 0; i < EDITABLE_COUNT; i++) {
     const baseValue = Number(base[i]) || 0;
     const delta = Number(params.allocated[i]) || 0;
+    const wearableMod = Number(wearableDelta[i]) || 0;
+    const setMod = Number(setDelta[i]) || 0;
     simBase[i] = baseValue + delta;
-    simModified[i] = simBase[i];
+    simModified[i] = simBase[i] + wearableMod + setMod;
   }
 
   return { simBase, simModified, usingFallback };
@@ -80,6 +86,8 @@ export function useRespecSimulator(params: {
   usedSkillPoints?: number;
   baseTraits: number[];
   respecBaseTraits?: number[];
+  wearableDelta?: number[];
+  setDelta?: number[];
 }) {
   const [isRespecMode, setIsRespecMode] = useState(false);
   const [allocated, setAllocated] = useState([0, 0, 0, 0]);
@@ -101,8 +109,10 @@ export function useRespecSimulator(params: {
         baseTraits: params.baseTraits,
         respecBaseTraits: params.respecBaseTraits,
         allocated,
+        wearableDelta: params.wearableDelta,
+        setDelta: params.setDelta,
       }),
-    [params.baseTraits, params.respecBaseTraits, allocated]
+    [params.baseTraits, params.respecBaseTraits, allocated, params.wearableDelta, params.setDelta]
   );
 
   const increment = (index: number) => {

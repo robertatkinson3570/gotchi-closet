@@ -27,6 +27,8 @@ interface GotchiCardProps {
   showRespec?: boolean;
   respecResetKey?: string;
   baseTraits?: number[];
+  wearableDelta?: number[];
+  setDelta?: number[];
 }
 
 export function GotchiCard({
@@ -46,6 +48,8 @@ export function GotchiCard({
   showRespec = false,
   respecResetKey = "",
   baseTraits,
+  wearableDelta,
+  setDelta,
 }: GotchiCardProps) {
   const tokenId = String(gotchi.gotchiId || gotchi.id);
   const numericTraitSource = baseTraits || gotchi.numericTraits;
@@ -57,6 +61,8 @@ export function GotchiCard({
     usedSkillPoints: gotchi.usedSkillPoints,
     baseTraits: numericTraitSource,
     respecBaseTraits: respecBaselineTraits,
+    wearableDelta,
+    setDelta,
   });
   useEffect(() => {
     setRespecBaseTraits(null);
@@ -79,14 +85,22 @@ export function GotchiCard({
       cancelled = true;
     };
   }, [showRespec, respec.isRespecMode, tokenId]);
-  const currentTraits = numericTraitSource?.slice(0, 4) || traits?.slice(0, 4) || [];
-  const baselineTraits = respecBaselineTraits?.slice(0, 4);
+  const safeNum = (v: unknown): number => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const safeTraits = (arr: unknown[] | undefined | null): number[] => {
+    if (!Array.isArray(arr)) return [0, 0, 0, 0];
+    return arr.slice(0, 4).map(safeNum);
+  };
+  const currentTraits = safeTraits(numericTraitSource) || safeTraits(traits);
+  const baselineTraits = respecBaselineTraits ? safeTraits(respecBaselineTraits) : undefined;
   const displayBaseTraits = showRespec && respec.isRespecMode
-    ? respec.simBase
-    : baseTraitSource?.slice(0, 4) || currentTraits;
+    ? safeTraits(respec.simBase)
+    : safeTraits(baseTraitSource) || currentTraits;
   const displayModifiedTraits = showRespec && respec.isRespecMode
     ? undefined
-    : traits?.slice(0, 4) || baseTraitSource?.slice(0, 4) || currentTraits;
+    : safeTraits(traits) || safeTraits(baseTraitSource) || currentTraits;
   const traitBaseValue = showRespec && respec.isRespecMode
     ? sumTraitBrs(respec.simBase)
     : traitBase;
@@ -195,23 +209,23 @@ export function GotchiCard({
                   <span>{label}</span>
                   <div className="flex items-center gap-2">
                     <span data-testid={`trait-value-${label}`}>
-                      {displayBaseTraits[index] ?? traits[index]}
-                      {Number.isFinite(
-                        (showRespec && respec.isRespecMode
+                      {safeNum(displayBaseTraits[index] ?? currentTraits[index])}
+                      {(() => {
+                        const modValue = showRespec && respec.isRespecMode
                           ? baselineTraits?.[index]
-                          : displayModifiedTraits?.[index]) as number
-                      ) && (
-                        <>
-                          {" "}
-                          (
-                        <span data-testid={`trait-${label}`}>
-                          {showRespec && respec.isRespecMode
-                            ? baselineTraits?.[index]
-                            : displayModifiedTraits?.[index]}
-                        </span>
-                          )
-                        </>
-                      )}
+                          : displayModifiedTraits?.[index];
+                        if (!Number.isFinite(modValue)) return null;
+                        return (
+                          <>
+                            {" "}
+                            (
+                          <span data-testid={`trait-${label}`}>
+                            {safeNum(modValue)}
+                          </span>
+                            )
+                          </>
+                        );
+                      })()}
                     </span>
                     {showRespec && respec.isRespecMode && (
                       <div className="flex items-center gap-1">
