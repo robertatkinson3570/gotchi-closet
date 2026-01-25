@@ -384,6 +384,19 @@ export default function WardrobeLabPage() {
 
   const renderScopeStep = () => (
     <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <Link to="/dress">
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Back to Dress
+          </Button>
+        </Link>
+        <Button onClick={goNext} disabled={selectedGotchiIds.size === 0} size="sm">
+          Next: Strategy
+          <ChevronRight className="w-4 h-4 ml-1" />
+        </Button>
+      </div>
+
       <h3 className="text-lg font-semibold">Select Gotchis</h3>
       <p className="text-sm text-muted-foreground">
         Choose which Gotchis to include in the optimization.
@@ -443,23 +456,22 @@ export default function WardrobeLabPage() {
         </div>
       )}
 
-      <div className="flex justify-between pt-4">
-        <Link to="/dress">
-          <Button variant="ghost">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dress
-          </Button>
-        </Link>
-        <Button onClick={goNext} disabled={selectedGotchiIds.size === 0}>
-          Next: Strategy
-          <ChevronRight className="w-4 h-4 ml-2" />
-        </Button>
-      </div>
     </div>
   );
 
   const renderStrategyStep = () => (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <Button variant="ghost" size="sm" onClick={goPrev}>
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back
+        </Button>
+        <Button onClick={goNext} size="sm">
+          Next: Constraints
+          <ChevronRight className="w-4 h-4 ml-1" />
+        </Button>
+      </div>
+
       <h3 className="text-lg font-semibold">Optimization Strategy</h3>
 
       <div className="space-y-4">
@@ -506,21 +518,22 @@ export default function WardrobeLabPage() {
         </div>
       </div>
 
-      <div className="flex justify-between pt-4">
-        <Button variant="ghost" onClick={goPrev}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-        <Button onClick={goNext}>
-          Next: Constraints
-          <ChevronRight className="w-4 h-4 ml-2" />
-        </Button>
-      </div>
     </div>
   );
 
   const renderConstraintsStep = () => (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <Button variant="ghost" size="sm" onClick={goPrev}>
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back
+        </Button>
+        <Button onClick={goNext} size="sm">
+          Next: Run
+          <ChevronRight className="w-4 h-4 ml-1" />
+        </Button>
+      </div>
+
       <h3 className="text-lg font-semibold">Constraints</h3>
       <p className="text-sm text-muted-foreground">
         Optional settings to guide the optimizer.
@@ -564,21 +577,28 @@ export default function WardrobeLabPage() {
         </div>
       </div>
 
-      <div className="flex justify-between pt-4">
-        <Button variant="ghost" onClick={goPrev}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-        <Button onClick={goNext}>
-          Next: Run
-          <ChevronRight className="w-4 h-4 ml-2" />
-        </Button>
-      </div>
     </div>
   );
 
   const renderRunStep = () => (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <Button variant="ghost" size="sm" onClick={goPrev}>
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back
+        </Button>
+        <Button onClick={runOptimizer} disabled={isRunning} size="sm">
+          {isRunning ? (
+            <>Running...</>
+          ) : (
+            <>
+              <FlaskConical className="w-4 h-4 mr-1" />
+              Run Wardrobe Lab
+            </>
+          )}
+        </Button>
+      </div>
+
       <h3 className="text-lg font-semibold">Ready to Run</h3>
 
       <Card className="p-4 space-y-2">
@@ -596,22 +616,6 @@ export default function WardrobeLabPage() {
         </div>
       </Card>
 
-      <div className="flex justify-between pt-4">
-        <Button variant="ghost" onClick={goPrev}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-        <Button onClick={runOptimizer} disabled={isRunning}>
-          {isRunning ? (
-            <>Running...</>
-          ) : (
-            <>
-              <FlaskConical className="w-4 h-4 mr-2" />
-              Run Wardrobe Lab
-            </>
-          )}
-        </Button>
-      </div>
     </div>
   );
 
