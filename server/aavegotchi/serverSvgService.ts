@@ -94,7 +94,7 @@ function getHealthyRpcUrls(): string[] {
 
 async function callRpc<T>(url: string, payload: RpcPayload): Promise<T> {
   const controller = new AbortController();
-  let timeoutId: NodeJS.Timeout | undefined;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => {
       controller.abort();
@@ -291,7 +291,7 @@ async function fetchAllSvgsParallel(
               const svg = await getGotchiSvg(tokenId);
               results[tokenId] = svg;
             } catch {
-              const fallback = ghostSvg(`gotchi:${tokenId}`);
+              const fallback = getPlaceholderSvg(`gotchi:${tokenId}`);
               cacheSet(svgCache, `gotchi:${tokenId}`, fallback);
               results[tokenId] = fallback;
             }
