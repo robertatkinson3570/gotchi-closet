@@ -91,10 +91,12 @@ export function useRespecSimulator(params: {
 }) {
   const [isRespecMode, setIsRespecMode] = useState(false);
   const [allocated, setAllocated] = useState([0, 0, 0, 0]);
+  const [committedAllocated, setCommittedAllocated] = useState<number[] | null>(null);
 
   useEffect(() => {
     setIsRespecMode(false);
     setAllocated([0, 0, 0, 0]);
+    setCommittedAllocated(null);
   }, [params.resetKey]);
 
   const totalSP = totalSpiritPoints(params.usedSkillPoints);
@@ -114,6 +116,27 @@ export function useRespecSimulator(params: {
       }),
     [params.baseTraits, params.respecBaseTraits, allocated, params.wearableDelta, params.setDelta]
   );
+
+  const committedSim = useMemo(() => {
+    if (!committedAllocated) return null;
+    return computeSimTraits({
+      baseTraits: params.baseTraits,
+      respecBaseTraits: params.respecBaseTraits,
+      allocated: committedAllocated,
+      wearableDelta: params.wearableDelta,
+      setDelta: params.setDelta,
+    });
+  }, [params.baseTraits, params.respecBaseTraits, committedAllocated, params.wearableDelta, params.setDelta]);
+
+  const toggleRespecMode = () => {
+    if (isRespecMode) {
+      setCommittedAllocated([...allocated]);
+      setIsRespecMode(false);
+    } else {
+      setAllocated([0, 0, 0, 0]);
+      setIsRespecMode(true);
+    }
+  };
 
   const increment = (index: number) => {
     if (spLeft <= 0) return;
@@ -138,10 +161,18 @@ export function useRespecSimulator(params: {
     });
   };
 
+  const committedSpUsed = committedAllocated
+    ? committedAllocated.reduce((acc, val) => acc + Math.abs(val), 0)
+    : 0;
+
   return {
     isRespecMode,
     setIsRespecMode,
+    toggleRespecMode,
     allocated,
+    committedAllocated,
+    committedSim,
+    committedSpUsed,
     totalSP,
     spLeft,
     hasBaseline,

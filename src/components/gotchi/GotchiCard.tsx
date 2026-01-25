@@ -95,25 +95,39 @@ export function GotchiCard({
   };
   const currentTraits = safeTraits(numericTraitSource) || safeTraits(traits);
   const baselineTraits = respecBaselineTraits ? safeTraits(respecBaselineTraits) : undefined;
+  const committedSim = respec.committedSim;
   const displayBaseTraits = showRespec && respec.isRespecMode
     ? safeTraits(respec.simBase)
-    : safeTraits(baseTraitSource) || currentTraits;
+    : committedSim
+      ? safeTraits(committedSim.simBase)
+      : safeTraits(baseTraitSource) || currentTraits;
   const displayModifiedTraits = showRespec && respec.isRespecMode
     ? undefined
-    : safeTraits(traits) || safeTraits(baseTraitSource) || currentTraits;
+    : committedSim
+      ? safeTraits(committedSim.simModified)
+      : safeTraits(traits) || safeTraits(baseTraitSource) || currentTraits;
   const traitBaseValue = showRespec && respec.isRespecMode
     ? sumTraitBrs(respec.simBase)
-    : traitBase;
+    : committedSim
+      ? sumTraitBrs(committedSim.simBase)
+      : traitBase;
   const traitWithModsValue = showRespec && respec.isRespecMode
     ? sumTraitBrs(respec.simModified)
-    : traitWithMods;
+    : committedSim
+      ? sumTraitBrs(committedSim.simModified)
+      : traitWithMods;
   const totalBrsValue =
     showRespec && respec.isRespecMode
       ? (traitWithModsValue ?? 0) +
         (wearableFlat ?? 0) +
         (setFlatBrs ?? 0) +
         (ageBrs ?? 0)
-      : totalBrs;
+      : committedSim
+        ? (traitWithModsValue ?? 0) +
+          (wearableFlat ?? 0) +
+          (setFlatBrs ?? 0) +
+          (ageBrs ?? 0)
+        : totalBrs;
   return (
     <motion.div
       whileHover={{ scale: 1.02 }}
@@ -192,10 +206,10 @@ export function GotchiCard({
                       variant="ghost"
                       size="sm"
                       className="h-6 px-2 text-[11px]"
-                      onClick={() => respec.setIsRespecMode(!respec.isRespecMode)}
+                      onClick={() => respec.toggleRespecMode()}
                       data-testid="respec-toggle"
                     >
-                      Respec
+                      {respec.isRespecMode ? "Confirm" : "Respec"}
                     </Button>
                   </div>
                 </div>
