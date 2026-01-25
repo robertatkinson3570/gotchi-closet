@@ -146,8 +146,8 @@ export function GotchiCard({
               </>
             )}
             <div className="min-w-0">
-              <h3 className="font-semibold text-sm truncate">{gotchi.name}</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-semibold text-sm truncate leading-tight">{gotchi.name}</h3>
+              <p className="text-xs text-muted-foreground leading-tight">
                 ID: {gotchi.gotchiId || gotchi.id}
               </p>
             </div>
@@ -162,12 +162,12 @@ export function GotchiCard({
           />
           {showBestSets && <BestSetsPanel baseTraits={numericTraitSource} enableSetFilter={enableSetFilter} />}
           {activeSetNames && activeSetNames.length > 0 && (
-            <div className="mt-1 text-[10px] text-muted-foreground">
+            <div className="text-[9px] text-muted-foreground">
               Active sets: {activeSetNames.join(", ")}
             </div>
           )}
           {traits && traits.length >= 4 && (
-            <div className="mt-2 text-[11px]">
+            <div className="mt-1 text-[11px]">
               {showRespec && (
                 <div className="flex items-center justify-between mb-1">
                   <div className="text-[11px] text-muted-foreground">Traits</div>

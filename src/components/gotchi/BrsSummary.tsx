@@ -14,7 +14,7 @@ function formatNumber(value: number | undefined) {
 
 export function BrsSummary({ traitBase, totalBrs, className }: BrsSummaryProps) {
   return (
-    <div className={`text-[11px] text-muted-foreground ${className ?? ""}`}>
+    <div className={`text-[10px] text-muted-foreground leading-tight ${className ?? ""}`}>
       <div className="text-foreground font-medium" data-testid="rarity-score">
         <span>Rarity Score </span>
         <span data-testid="rarity-with-wearables">
