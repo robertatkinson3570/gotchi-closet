@@ -59,10 +59,6 @@ export function BestSetsPanel({ baseTraits, enableSetFilter = false }: BestSetsP
 
       {isExpanded && (
         <div className="mt-2 p-2 bg-muted/50 rounded-md max-h-[400px] overflow-y-auto">
-          <p className="text-[10px] text-muted-foreground mb-2">
-            {rankedSets.length} sets ranked by projected BRS gain. Sets with negative modifiers benefit gotchis with traits under 50.
-          </p>
-
           {rankedSets.length === 0 ? (
             <p className="text-[10px] text-muted-foreground">
               No sets available.
