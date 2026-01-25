@@ -18,6 +18,9 @@ export default defineConfig(({ mode }) => {
         "/api": apiTarget,
       },
     },
+    build: {
+      chunkSizeWarningLimit: 1500,
+    },
   };
 });
 
