@@ -358,6 +358,7 @@ export default function DressPage() {
           </span>
           <GotchiCarousel />
         </div>
+        {/* Desktop layout */}
         <div className="hidden lg:block flex-1 max-w-screen-2xl mx-auto w-full px-4 py-3 overflow-hidden">
           <div className="grid grid-cols-[1fr_340px] gap-4 h-full">
             <div className="min-w-0 flex flex-col gap-2 overflow-hidden">
@@ -372,20 +373,23 @@ export default function DressPage() {
             </div>
           </div>
         </div>
-        <MobileTabs
-          edit={
-            <div>
-              <EditorPanel />
-              {debug && <DebugPanel />}
-            </div>
-          }
-          wearables={
-            <div>
-              <WearablesPanel />
-              {debug && <DebugPanel />}
-            </div>
-          }
-        />
+        {/* Mobile layout with tabs */}
+        <div className="lg:hidden flex-1 flex flex-col overflow-hidden">
+          <MobileTabs
+            edit={
+              <div className="min-h-[300px]">
+                <EditorPanel />
+                {debug && <DebugPanel />}
+              </div>
+            }
+            wearables={
+              <div className="min-h-[300px]">
+                <WearablesPanel />
+                {debug && <DebugPanel />}
+              </div>
+            }
+          />
+        </div>
       </div>
       <DragOverlay>
         {activeWearable && (
