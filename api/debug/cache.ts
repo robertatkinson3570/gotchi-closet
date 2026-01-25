@@ -1,4 +1,4 @@
-import { getDebugStats } from "../../../server/aavegotchi/serverSvgService";
+import { getDebugStats } from "../../server/aavegotchi/serverSvgService";
 
 export const config = { runtime: "nodejs" };
 
