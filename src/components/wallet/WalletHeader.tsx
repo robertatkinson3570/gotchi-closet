@@ -67,17 +67,17 @@ export function WalletHeader({
           </div>
         </div>
         
-        {/* Viewing wallets section */}
-        <div className="flex items-center gap-1.5 flex-1 justify-center min-w-0">
+        {/* Viewing wallets section - hidden on mobile, visible on sm+ */}
+        <div className="hidden sm:flex items-center gap-1.5 flex-1 justify-center min-w-0">
           <Eye className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
           {connectedOwner && (
             <span className="inline-flex items-center gap-1 rounded-full bg-muted/50 border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
-              <span className="hidden sm:inline">Connected</span> {shortenAddress(connectedOwner)}
+              <span className="hidden md:inline">Connected</span> {shortenAddress(connectedOwner)}
             </span>
           )}
           {manualAddress && (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/30 px-2 py-0.5 text-[10px] text-primary">
-              <span className="hidden sm:inline">Manual</span> {shortenAddress(manualAddress)}
+              <span className="hidden md:inline">Manual</span> {shortenAddress(manualAddress)}
               {onClearManual && (
                 <button onClick={onClearManual} className="hover:text-destructive ml-0.5" title="Clear manual">
                   <X className="h-3 w-3" />
@@ -86,9 +86,24 @@ export function WalletHeader({
             </span>
           )}
           {manualAddress && connectedOwner && onUseConnected && (
-            <Button size="sm" variant="ghost" onClick={onUseConnected} className="h-6 px-2 text-[10px]">
+            <Button size="sm" variant="ghost" onClick={onUseConnected} className="hidden md:inline-flex h-6 px-2 text-[10px]">
               Use Connected
             </Button>
+          )}
+        </div>
+        
+        {/* Mobile: compact wallet indicator */}
+        <div className="flex sm:hidden items-center gap-1 flex-1 justify-center min-w-0">
+          {(connectedOwner || manualAddress) && (
+            <span className="inline-flex items-center gap-1 text-[9px] text-muted-foreground truncate">
+              <Eye className="h-3 w-3 shrink-0" />
+              {manualAddress ? shortenAddress(manualAddress) : connectedOwner ? shortenAddress(connectedOwner) : ""}
+              {manualAddress && onClearManual && (
+                <button onClick={onClearManual} className="hover:text-destructive" title="Clear">
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </span>
           )}
         </div>
 
