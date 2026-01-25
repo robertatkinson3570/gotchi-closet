@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   DndContext,
   DragEndEvent,
@@ -18,14 +18,13 @@ import { DebugPanel } from "@/components/debug/DebugPanel";
 import { useAppStore } from "@/state/useAppStore";
 import { fetchAllWearables, fetchAllWearableSets } from "@/graphql/fetchers";
 import { cacheGet, cacheSet, cacheIsStale, CACHE_KEYS } from "@/lib/cache";
-import { normalizeAddress, isValidAddress, shortenAddress } from "@/lib/address";
+import { normalizeAddress, isValidAddress } from "@/lib/address";
 import { useToast } from "@/ui/use-toast";
 import { useWearablesById } from "@/state/selectors";
 import type { Wearable } from "@/types";
 import { useAddressState } from "@/lib/addressState";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
-import { Button } from "@/ui/button";
-import { FlaskConical } from "lucide-react";
+import { WalletHeader } from "@/components/wallet/WalletHeader";
 
 const STORAGE_MANUAL_VIEW = "gc_manualViewAddress";
 
@@ -321,39 +320,12 @@ export default function DressPage() {
       onDragStart={handleDragStart}
     >
       <div className="min-h-screen flex flex-col overflow-x-hidden">
-        <div className="w-full border-b bg-background px-4 py-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium">Viewing Wallets</span>
-            {connectedOwner && (
-              <span className="rounded-full border border-[hsl(var(--border))] px-2 py-0.5 text-xs text-muted-foreground">
-                Connected {shortenAddress(connectedOwner)}
-              </span>
-            )}
-            {manualOwner && (
-              <span className="rounded-full border border-[hsl(var(--border))] px-2 py-0.5 text-xs text-muted-foreground">
-                Manual {shortenAddress(manualOwner)}
-              </span>
-            )}
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {manualOwner && (
-              <Button size="sm" variant="secondary" onClick={clearManualView}>
-                Clear Manual
-              </Button>
-            )}
-            {manualOwner && connectedOwner && (
-              <Button size="sm" variant="ghost" onClick={useConnectedOnly}>
-                Use Connected
-              </Button>
-            )}
-            <Link to="/wardrobe-lab">
-              <Button size="sm" variant="outline">
-                <FlaskConical className="w-4 h-4 mr-1" />
-                Wardrobe Labs (Prototype)
-              </Button>
-            </Link>
-          </div>
-        </div>
+        <WalletHeader
+          manualAddress={manualOwner}
+          connectedOwner={connectedOwner}
+          onClearManual={manualOwner ? clearManualView : undefined}
+          onUseConnected={useConnectedOnly}
+        />
         {appError && (
           <div className="w-full border-b bg-background px-4 py-2 text-sm text-red-500">
             {appError}

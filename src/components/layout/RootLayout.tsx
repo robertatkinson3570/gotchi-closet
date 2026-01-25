@@ -1,6 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { WalletHeader } from "@/components/wallet/WalletHeader";
 import { FooterAttribution } from "@/components/FooterAttribution";
 
 export function RootLayout() {
@@ -10,9 +9,7 @@ export function RootLayout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {isDress ? (
-        <WalletHeader />
-      ) : (
+      {!isDress && (
         <header className="h-14 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex h-14 items-center justify-between px-4">
             <div className="flex items-center gap-3 min-w-0">
