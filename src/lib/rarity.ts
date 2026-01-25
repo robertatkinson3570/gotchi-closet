@@ -251,10 +251,14 @@ export function computeBRSBreakdown(params: {
     setFlatBRS: setFlatBrs,
   });
   const setTraitDelta = setDeltaTotal - setFlatBrs;
+  const ageEnabled =
+    typeof import.meta !== "undefined" &&
+    typeof import.meta.env !== "undefined" &&
+    import.meta.env.VITE_ENABLE_AGE_BRS === "true";
   const ageBrs =
     typeof params.ageBrsOverride === "number"
       ? params.ageBrsOverride
-      : params.blocksElapsed
+      : ageEnabled && params.blocksElapsed
       ? ageBrsFromBlocks(params.blocksElapsed)
       : 0;
   const totalBrs = computeTotalBRS({
