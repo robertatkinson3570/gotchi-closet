@@ -73,9 +73,6 @@ export function EditorPanel() {
                         blocksElapsed: instance.baseGotchi.blocksElapsed,
                       });
                       const activeSetNames = activeSets.map((set) => set.name);
-                      const wearableDeltaOverride = instance.baseGotchi.numericTraits
-                        .slice(0, 4)
-                        .map((base, idx) => (finalTraits[idx] ?? base) - base);
                       return (
                         <GotchiCard
                           gotchi={instance.baseGotchi}
