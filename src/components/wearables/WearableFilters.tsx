@@ -15,12 +15,13 @@ export function WearableFilters() {
   const setFilters = useAppStore((state) => state.setFilters);
 
   return (
-    <div className="flex flex-wrap items-center gap-2 p-2 border-b bg-muted/30">
-      <div className="flex-1 min-w-[180px]">
+    <div className="flex flex-wrap items-center gap-1.5 p-1.5 border-b bg-muted/30">
+      <div className="flex-1 min-w-[120px]">
         <Input
           placeholder="Search wearables..."
           value={filters.search}
           onChange={(e) => setFilters({ search: e.target.value })}
+          className="h-7 text-[11px]"
         />
       </div>
       <Select
@@ -29,13 +30,13 @@ export function WearableFilters() {
           setFilters({ slot: value === "all" ? null : Number(value) })
         }
       >
-        <SelectTrigger className="min-w-[140px]">
+        <SelectTrigger className="h-7 min-w-[90px] text-[11px]">
           <SelectValue placeholder="Slot" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Slots</SelectItem>
+          <SelectItem value="all" className="text-[11px]">All Slots</SelectItem>
           {SLOT_NAMES.map((name, i) => (
-            <SelectItem key={i} value={i.toString()}>
+            <SelectItem key={i} value={i.toString()} className="text-[11px]">
               {name}
             </SelectItem>
           ))}
@@ -47,13 +48,13 @@ export function WearableFilters() {
           setFilters({ set: value === "all" ? null : value })
         }
       >
-        <SelectTrigger className="min-w-[140px]">
+        <SelectTrigger className="h-7 min-w-[90px] text-[11px]">
           <SelectValue placeholder="Set" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Sets</SelectItem>
+          <SelectItem value="all" className="text-[11px]">All Sets</SelectItem>
           {sets.map((set) => (
-            <SelectItem key={set.id} value={set.id}>
+            <SelectItem key={set.id} value={set.id} className="text-[11px]">
               {set.name}
             </SelectItem>
           ))}

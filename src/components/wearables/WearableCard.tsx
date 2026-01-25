@@ -57,7 +57,7 @@ export function WearableCardView({
   return (
     <Card
       data-testid={`wearable-card-${wearable.id}`}
-      className={`group relative w-[100px] p-1 overflow-hidden ${onClick ? "cursor-pointer" : ""}`}
+      className={`group relative w-[72px] p-1 overflow-hidden ${onClick ? "cursor-pointer" : ""}`}
       onClick={onClick}
       draggable={nativeDrag}
       onDragStart={
@@ -69,10 +69,10 @@ export function WearableCardView({
       }
       title={tooltip}
     >
-      <div className="h-[80px] w-full flex items-center justify-center overflow-hidden">
+      <div className="h-[52px] w-full flex items-center justify-center overflow-hidden rounded-md bg-muted">
         <div
           data-testid={`wearable-thumb-${wearable.id}`}
-          className="h-[80px] w-full flex items-center justify-center"
+          className="h-[52px] w-full flex items-center justify-center"
         >
           {!imageUrls[urlIndex] || errored ? (
             <div
@@ -83,7 +83,7 @@ export function WearableCardView({
             <img
               src={imageUrls[urlIndex]}
               alt={wearable.name}
-              className={`max-h-[76px] max-w-[76px] object-contain transition-opacity duration-200 ${
+              className={`max-h-[48px] max-w-[48px] object-contain transition-opacity duration-200 ${
                 loaded ? "opacity-100" : "opacity-0"
               }`}
               loading="lazy"
@@ -102,17 +102,17 @@ export function WearableCardView({
           )}
         </div>
         {!loaded && !!imageUrls[urlIndex] && !errored && (
-          <div className="absolute inset-2 rounded-md bg-muted/60 animate-pulse" />
+          <div className="absolute inset-1 rounded-md bg-muted/60 animate-pulse" />
         )}
       </div>
-      <div className="mt-1 flex flex-wrap gap-1 justify-center">
+      <div className="mt-0.5 flex flex-wrap gap-0.5 justify-center">
         {wearable.traitModifiers.slice(0, 4).map((mod, i) => {
           if (mod === 0) return null;
           const labels = ["NRG", "AGG", "SPK", "BRN"];
           return (
             <span
               key={`${wearable.id}-${i}`}
-              className="text-[10px] leading-none px-1 py-[1px] rounded bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border"
+              className="text-[8px] leading-none px-0.5 py-[1px] rounded bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border"
             >
               {labels[i]} {formatTraitValue(mod)}
             </span>

@@ -33,14 +33,14 @@ export function SetBanner({ set }: SetBannerProps) {
   }
 
   return (
-    <Card className="p-3 mb-3 bg-primary/5 border-primary/20">
-      <div className="flex items-start justify-between mb-2">
+    <Card className="p-1.5 mb-1.5 bg-primary/5 border-primary/20">
+      <div className="flex items-start justify-between mb-1">
         <div>
-          <h4 className="font-semibold">{set.name}</h4>
+          <h4 className="font-semibold text-[11px]">{set.name}</h4>
           {complete ? (
-            <p className="text-sm text-green-600">Complete!</p>
+            <p className="text-[10px] text-green-600">Complete!</p>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-[10px] text-muted-foreground">
               Missing {missingCount} item{missingCount !== 1 ? "s" : ""}
             </p>
           )}
@@ -48,6 +48,7 @@ export function SetBanner({ set }: SetBannerProps) {
         <Button
           variant="ghost"
           size="sm"
+          className="h-6 px-2 text-[10px]"
           onClick={() =>
             setFilters({
               showMissingOnly: !filters.showMissingOnly,
@@ -58,13 +59,13 @@ export function SetBanner({ set }: SetBannerProps) {
           {filters.set === set.id ? "Hide" : "Filter"}
         </Button>
       </div>
-      <div className="flex flex-wrap gap-1 mb-2">
+      <div className="flex flex-wrap gap-0.5 mb-1">
         {set.traitBonuses.map((bonus, i) => {
           if (bonus === 0) return null;
           return (
             <span
               key={i}
-              className={`text-xs px-1.5 py-0.5 rounded ${
+              className={`text-[9px] px-1 py-0.5 rounded ${
                 bonus > 0
                   ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                   : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
@@ -76,7 +77,7 @@ export function SetBanner({ set }: SetBannerProps) {
         })}
       </div>
       {missingCount > 0 && filters.set === set.id && (
-        <div className="text-xs text-muted-foreground">
+        <div className="text-[9px] text-muted-foreground">
           Missing: {missingWearables.map((w) => w?.name).join(", ")}
         </div>
       )}
