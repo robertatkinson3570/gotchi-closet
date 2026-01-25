@@ -75,11 +75,14 @@ export function EditorPanel() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-5 px-1.5 text-[9px] gap-0.5"
+                        className="h-auto py-1 px-1.5 text-[9px] flex-col leading-tight"
                         onClick={() => applySetToInstance(instance.instanceId)}
                       >
-                        <Wand2 className="h-3 w-3" />
-                        Apply {activeSet.name}
+                        <span className="flex items-center gap-0.5">
+                          <Wand2 className="h-3 w-3" />
+                          Apply
+                        </span>
+                        <span className="text-[8px] text-muted-foreground">{activeSet.name}</span>
                       </Button>
                     )}
                   </div>
