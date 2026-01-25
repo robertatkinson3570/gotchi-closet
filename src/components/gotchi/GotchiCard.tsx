@@ -30,6 +30,7 @@ interface GotchiCardProps {
   wearableDelta?: number[];
   setDelta?: number[];
   enableSetFilter?: boolean;
+  showBestSets?: boolean;
 }
 
 export function GotchiCard({
@@ -52,6 +53,7 @@ export function GotchiCard({
   wearableDelta,
   setDelta,
   enableSetFilter = false,
+  showBestSets = false,
 }: GotchiCardProps) {
   const numericTraitSource = baseTraits || gotchi.numericTraits;
   const baseTraitSource = baseTraits || gotchi.numericTraits;
@@ -158,7 +160,7 @@ export function GotchiCard({
             ageBrs={ageBrs ?? 0}
             totalBrs={totalBrsValue ?? 0}
           />
-          <BestSetsPanel baseTraits={numericTraitSource} enableSetFilter={enableSetFilter} />
+          {showBestSets && <BestSetsPanel baseTraits={numericTraitSource} enableSetFilter={enableSetFilter} />}
           {activeSetNames && activeSetNames.length > 0 && (
             <div className="mt-1 text-[10px] text-muted-foreground">
               Active sets: {activeSetNames.join(", ")}

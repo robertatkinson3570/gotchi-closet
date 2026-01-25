@@ -93,6 +93,7 @@ export function EditorPanel() {
                           wearableDelta={wearableDelta}
                           setDelta={setTraitModsDelta}
                           enableSetFilter
+                          showBestSets
                         />
                       );
                     })()}
