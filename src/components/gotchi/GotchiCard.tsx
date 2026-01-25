@@ -82,22 +82,20 @@ export function GotchiCard({
     : committedSim
       ? safeTraits(committedSim.simModified)
       : safeTraits(traits) || safeTraits(baseTraitSource) || currentTraits;
+  const spAllocated = respec.totalSP - respec.spLeft;
   const traitBaseValue = showRespec && respec.isRespecMode
-    ? sumTraitBrs(respec.simBase)
+    ? (traitBase ?? 0) - respec.totalSP + spAllocated
     : committedSim
       ? sumTraitBrs(committedSim.simBase)
       : traitBase;
   const traitWithModsValue = showRespec && respec.isRespecMode
-    ? sumTraitBrs(respec.simModified)
+    ? (traitWithMods ?? 0) - respec.totalSP + spAllocated
     : committedSim
       ? sumTraitBrs(committedSim.simModified)
       : traitWithMods;
   const totalBrsValue =
     showRespec && respec.isRespecMode
-      ? (traitWithModsValue ?? 0) +
-        (wearableFlat ?? 0) +
-        (setFlatBrs ?? 0) +
-        (ageBrs ?? 0)
+      ? (totalBrs ?? 0) - respec.totalSP + spAllocated
       : committedSim
         ? (traitWithModsValue ?? 0) +
           (wearableFlat ?? 0) +
