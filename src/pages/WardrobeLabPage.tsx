@@ -284,6 +284,7 @@ export default function WardrobeLabPage() {
       });
     }
 
+    optimizationResults.sort((a, b) => b.after.brs - a.after.brs);
     setResults(optimizationResults);
     setCurrentStep("results");
     setIsRunning(false);
@@ -671,9 +672,17 @@ export default function WardrobeLabPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-3xl">
-      <div className="flex items-center gap-2 mb-6">
-        <FlaskConical className="w-5 h-5 text-primary" />
-        <h1 className="text-2xl font-bold">Wardrobe Lab</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <FlaskConical className="w-5 h-5 text-primary" />
+          <h1 className="text-2xl font-bold">Wardrobe Lab</h1>
+        </div>
+        <Link to="/dress">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Dress
+          </Button>
+        </Link>
       </div>
 
       {currentStep !== "results" && renderStepIndicator()}
