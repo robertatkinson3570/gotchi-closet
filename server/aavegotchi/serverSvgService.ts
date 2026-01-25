@@ -20,6 +20,7 @@ const SVG_FACET_ABI = [
 
 const AAVEGOTCHI_FACET_ABI = [
   "function getNumericTraits(uint256 _tokenId) external view returns (int16[6])",
+  "function getGotchiBaseNumericTraits(uint32 _tokenId) external view returns (int16[6])",
 ];
 
 const SVG_CACHE_TTL = 60 * 60 * 1000;
@@ -411,8 +412,8 @@ export async function getWearableThumbs(input: {
 }
 
 export async function getGotchiBaseTraits(tokenId: string): Promise<number[]> {
-  const callData = aavegotchiFacet.encodeFunctionData("getNumericTraits", [
-    BigInt(tokenId),
+  const callData = aavegotchiFacet.encodeFunctionData("getGotchiBaseNumericTraits", [
+    Number(tokenId),
   ]);
   
   const rpcUrls = getHealthyRpcUrls();
@@ -445,7 +446,7 @@ export async function getGotchiBaseTraits(tokenId: string): Promise<number[]> {
       const json = await response.json();
       if (json.error) continue;
       
-      const decoded = aavegotchiFacet.decodeFunctionResult("getNumericTraits", json.result)[0];
+      const decoded = aavegotchiFacet.decodeFunctionResult("getGotchiBaseNumericTraits", json.result)[0];
       if (!Array.isArray(decoded)) continue;
       
       markSuccess(index);
@@ -458,7 +459,7 @@ export async function getGotchiBaseTraits(tokenId: string): Promise<number[]> {
     }
   }
   
-  throw new Error("All RPC attempts failed for getNumericTraits");
+  throw new Error("All RPC attempts failed for getGotchiBaseNumericTraits");
 }
 
 export function getDebugStats() {

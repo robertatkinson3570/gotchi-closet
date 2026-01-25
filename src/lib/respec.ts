@@ -83,6 +83,7 @@ export function computeSimTraits(params: {
 
 export function useRespecSimulator(params: {
   resetKey: string;
+  tokenId?: string;
   usedSkillPoints?: number;
   baseTraits: number[];
   respecBaseTraits?: number[];
@@ -92,41 +93,62 @@ export function useRespecSimulator(params: {
   const [isRespecMode, setIsRespecMode] = useState(false);
   const [allocated, setAllocated] = useState([0, 0, 0, 0]);
   const [committedAllocated, setCommittedAllocated] = useState<number[] | null>(null);
+  const [fetchedBirthTraits, setFetchedBirthTraits] = useState<number[] | null>(null);
+  const [isFetchingBirth, setIsFetchingBirth] = useState(false);
 
   useEffect(() => {
     setIsRespecMode(false);
     setAllocated([0, 0, 0, 0]);
     setCommittedAllocated(null);
+    setFetchedBirthTraits(null);
   }, [params.resetKey]);
+
+  useEffect(() => {
+    if (isRespecMode && !fetchedBirthTraits && !isFetchingBirth && params.tokenId) {
+      setIsFetchingBirth(true);
+      getRespecBaseTraits(params.tokenId)
+        .then((traits) => {
+          setFetchedBirthTraits(traits.slice(0, 4));
+        })
+        .catch((err) => {
+          console.error("Failed to fetch birth traits:", err);
+        })
+        .finally(() => {
+          setIsFetchingBirth(false);
+        });
+    }
+  }, [isRespecMode, fetchedBirthTraits, isFetchingBirth, params.tokenId]);
+
+  const birthTraits = fetchedBirthTraits || params.respecBaseTraits;
 
   const totalSP = totalSpiritPoints(params.usedSkillPoints);
   const used = allocated.reduce((acc, val) => acc + Math.abs(val), 0);
   const spLeft = Math.max(0, totalSP - used);
   const hasBaseline =
-    Array.isArray(params.respecBaseTraits) && params.respecBaseTraits.length >= 6;
+    Array.isArray(birthTraits) && birthTraits.length >= 4;
 
   const { simBase, simModified, usingFallback } = useMemo(
     () =>
       computeSimTraits({
         baseTraits: params.baseTraits,
-        respecBaseTraits: params.respecBaseTraits,
+        respecBaseTraits: birthTraits,
         allocated,
         wearableDelta: params.wearableDelta,
         setDelta: params.setDelta,
       }),
-    [params.baseTraits, params.respecBaseTraits, allocated, params.wearableDelta, params.setDelta]
+    [params.baseTraits, birthTraits, allocated, params.wearableDelta, params.setDelta]
   );
 
   const committedSim = useMemo(() => {
     if (!committedAllocated) return null;
     return computeSimTraits({
       baseTraits: params.baseTraits,
-      respecBaseTraits: params.respecBaseTraits,
+      respecBaseTraits: birthTraits,
       allocated: committedAllocated,
       wearableDelta: params.wearableDelta,
       setDelta: params.setDelta,
     });
-  }, [params.baseTraits, params.respecBaseTraits, committedAllocated, params.wearableDelta, params.setDelta]);
+  }, [params.baseTraits, birthTraits, committedAllocated, params.wearableDelta, params.setDelta]);
 
   const toggleRespecMode = () => {
     if (isRespecMode) {
@@ -140,7 +162,7 @@ export function useRespecSimulator(params: {
 
   const canIncrement = (index: number) => {
     const current = allocated[index];
-    const baseValue = Number(params.respecBaseTraits?.[index] ?? params.baseTraits[index]) || 0;
+    const baseValue = Number(birthTraits?.[index] ?? params.baseTraits[index]) || 0;
     const resultingTrait = baseValue + current + 1;
     if (resultingTrait > 99) return false;
     if (current < 0) return true;
@@ -149,7 +171,7 @@ export function useRespecSimulator(params: {
 
   const canDecrement = (index: number) => {
     const current = allocated[index];
-    const baseValue = Number(params.respecBaseTraits?.[index] ?? params.baseTraits[index]) || 0;
+    const baseValue = Number(birthTraits?.[index] ?? params.baseTraits[index]) || 0;
     const resultingTrait = baseValue + current - 1;
     if (resultingTrait < 0) return false;
     if (current > 0) return true;
@@ -192,6 +214,7 @@ export function useRespecSimulator(params: {
     simBase,
     simModified,
     usingFallback,
+    isFetchingBirth,
     increment,
     decrement,
     canIncrement,

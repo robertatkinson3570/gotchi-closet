@@ -52,8 +52,10 @@ export function GotchiCard({
 }: GotchiCardProps) {
   const numericTraitSource = baseTraits || gotchi.numericTraits;
   const baseTraitSource = baseTraits || gotchi.numericTraits;
+  const tokenId = gotchi.gotchiId || gotchi.id.split("-").pop() || gotchi.id;
   const respec = useRespecSimulator({
     resetKey: respecResetKey || gotchi.id,
+    tokenId,
     usedSkillPoints: gotchi.usedSkillPoints,
     baseTraits: numericTraitSource,
     respecBaseTraits: gotchi.baseNumericTraits || gotchi.numericTraits,
