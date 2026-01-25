@@ -1,5 +1,4 @@
 import setsByTraitDirection from "../../data/setsByTraitDirection.json";
-import { traitsToBRS } from "@/lib/rarity";
 
 type SetData = {
   name: string;
@@ -18,10 +17,6 @@ export type RankedSet = {
   delta: number;
   bonusLabel: string;
 };
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max);
-}
 
 function formatBonus(value: number): string {
   return value >= 0 ? `+${value}` : String(value);
@@ -42,7 +37,6 @@ export function computeBestSets(
   }
 
   const safeBaseTraits = baseTraits.map((v) => Number(v) || 0);
-  const baseScore = traitsToBRS(safeBaseTraits);
 
   const ranked: RankedSet[] = [];
   const sets = setsByTraitDirection.sets as SetData[];
@@ -63,16 +57,6 @@ export function computeBestSets(
 
     if (!compatible) continue;
 
-    const t = [...safeBaseTraits];
-    t[0] = clamp(t[0] + nrgMod, 0, 100);
-    t[1] = clamp(t[1] + aggMod, 0, 100);
-    t[2] = clamp(t[2] + spkMod, 0, 100);
-    t[3] = clamp(t[3] + brnMod, 0, 100);
-
-    const traitScore = traitsToBRS(t);
-    const scoreAfter = traitScore + (set.setBonusBRS || 0);
-    const delta = scoreAfter - baseScore;
-
     const bonusLabel = [
       `BRS ${formatBonus(set.setBonusBRS || 0)}`,
       `NRG ${formatBonus(nrgMod)}`,
@@ -83,8 +67,8 @@ export function computeBestSets(
 
     ranked.push({
       set,
-      scoreAfter,
-      delta,
+      scoreAfter: set.setBonusBRS || 0,
+      delta: set.setBonusBRS || 0,
       bonusLabel,
     });
   }
