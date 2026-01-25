@@ -178,11 +178,11 @@ export function WearablesPanel() {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="flex flex-col overflow-hidden">
       <WearableFilters />
-      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+      <div className="flex flex-col min-h-0">
         {activeSet && <SetBanner set={activeSet} />}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-1.5 scrollbar-hide">
+        <div className="max-h-[320px] overflow-y-auto overflow-x-hidden p-1.5">
           {filteredWearables.length === 0 ? (
             <div className="text-center text-muted-foreground py-4 text-[11px]">
               No wearables found
