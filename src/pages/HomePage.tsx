@@ -81,7 +81,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col overflow-x-hidden">
+    <div className="relative overflow-x-hidden">
       <Seo
         title="GotchiCloset – Dress Your Aavegotchi, Preview Wearables & Optimize Sets"
         description="Preview wearables, try full sets, and optimize traits for your Aavegotchi. A fast, clean fitting room built for battlers and collectors."
@@ -98,8 +98,8 @@ export default function HomePage() {
       <div className="absolute -top-20 -left-24 h-72 w-72 rounded-full bg-[hsl(var(--accent))]/10 blur-3xl" />
       <div className="absolute -bottom-24 right-0 h-80 w-80 rounded-full bg-[hsl(var(--accent-2))]/8 blur-3xl" />
 
-      <div className="flex-1 flex items-center justify-center p-6 relative z-10">
-        <div className="relative w-full max-w-[520px] space-y-6">
+      <div className="relative z-10 w-full px-6 pt-10">
+        <div className="relative mx-auto w-full max-w-[520px] space-y-6">
           <Card className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--surface))] shadow-[0_20px_60px_hsl(var(--shadow))]">
             <CardHeader className="space-y-3 text-center py-8">
               <header className="hero">
@@ -240,8 +240,10 @@ export default function HomePage() {
         </div>
       </div>
 
-      <section className="w-full flex justify-center px-6 pb-12 mt-12 relative z-10">
-        <DonateCard className="w-full max-w-[520px]" />
+      <section className="w-full px-6 pb-12 mt-12 relative z-10">
+        <div className="mx-auto w-full max-w-[520px]">
+          <DonateCard className="w-full" />
+        </div>
       </section>
     </div>
   );
