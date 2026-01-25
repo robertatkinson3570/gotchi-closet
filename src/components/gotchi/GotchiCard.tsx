@@ -6,7 +6,6 @@ import type { Gotchi } from "@/types";
 import { useRespecSimulator } from "@/lib/respec";
 import { Button } from "@/ui/button";
 import { Minus, Plus } from "lucide-react";
-import { sumTraitBrs } from "@/lib/rarity";
 import { BrsSummary } from "./BrsSummary";
 
 interface GotchiCardProps {
@@ -86,21 +85,18 @@ export function GotchiCard({
   const traitBaseValue = showRespec && respec.isRespecMode
     ? (traitBase ?? 0) - respec.totalSP + spAllocated
     : committedSim
-      ? sumTraitBrs(committedSim.simBase)
+      ? (traitBase ?? 0) - respec.totalSP + (respec.committedSpUsed ?? 0)
       : traitBase;
   const traitWithModsValue = showRespec && respec.isRespecMode
     ? (traitWithMods ?? 0) - respec.totalSP + spAllocated
     : committedSim
-      ? sumTraitBrs(committedSim.simModified)
+      ? (traitWithMods ?? 0) - respec.totalSP + (respec.committedSpUsed ?? 0)
       : traitWithMods;
   const totalBrsValue =
     showRespec && respec.isRespecMode
       ? (totalBrs ?? 0) - respec.totalSP + spAllocated
       : committedSim
-        ? (traitWithModsValue ?? 0) +
-          (wearableFlat ?? 0) +
-          (setFlatBrs ?? 0) +
-          (ageBrs ?? 0)
+        ? (totalBrs ?? 0) - respec.totalSP + (respec.committedSpUsed ?? 0)
         : totalBrs;
   return (
     <motion.div
