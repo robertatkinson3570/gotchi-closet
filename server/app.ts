@@ -11,6 +11,9 @@ export function createApp() {
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:3000",
+    "http://localhost:5000",
+    /\.replit\.dev$/,
+    /\.repl\.co$/,
   ];
   const envOrigins = (process.env.VITE_DEV_ALLOWED_ORIGINS || "")
     .split(",")
