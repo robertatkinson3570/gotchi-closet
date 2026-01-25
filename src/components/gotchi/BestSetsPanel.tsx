@@ -58,13 +58,13 @@ export function BestSetsPanel({ baseTraits, enableSetFilter = false }: BestSetsP
       </button>
 
       {isExpanded && (
-        <div className="mt-2 p-2 bg-muted/50 rounded-md max-h-[400px] overflow-y-auto">
+        <div className="mt-1 p-1.5 bg-muted/50 rounded-md max-h-[200px] overflow-y-auto">
           {rankedSets.length === 0 ? (
             <p className="text-[10px] text-muted-foreground">
               No sets available.
             </p>
           ) : (
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {rankedSets.map((ranked, idx) => (
                 <SetRow
                   key={`${ranked.set.name}-${idx}`}
@@ -75,7 +75,7 @@ export function BestSetsPanel({ baseTraits, enableSetFilter = false }: BestSetsP
             </div>
           )}
 
-          <div className="mt-3 pt-2 border-t border-border text-[10px]">
+          <div className="mt-2 pt-1.5 border-t border-border text-[9px]">
             <a
               href="https://wiki.aavegotchi.com/en/sets"
               target="_blank"
@@ -109,13 +109,13 @@ function SetRow({
   return (
     <div
       onClick={onClick}
-      className={`w-full p-2 bg-background rounded border border-border text-left ${
+      className={`w-full px-1.5 py-1 bg-background rounded border border-border text-left ${
         onClick ? "cursor-pointer hover:bg-muted/50 hover:border-primary/50 transition-colors" : ""
       }`}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <span
-          className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+          className={`shrink-0 px-1 py-0.5 rounded text-[9px] font-medium ${
             ranked.delta > 0
               ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
               : ranked.delta < 0
@@ -125,10 +125,10 @@ function SetRow({
         >
           {ranked.delta > 0 ? `+${ranked.delta}` : ranked.delta}
         </span>
-        <span className="font-medium text-[11px]">
+        <span className="font-medium text-[10px]">
           {ranked.set.name}
         </span>
-        <span className="text-[10px] text-muted-foreground">
+        <span className="text-[9px] text-muted-foreground">
           {traitChanges.length > 0 ? `(${traitChanges.join(", ")})` : ""}
         </span>
       </div>
