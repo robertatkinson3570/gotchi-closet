@@ -13,7 +13,7 @@ export function BestSetsPanel({ baseTraits }: BestSetsPanelProps) {
 
   const rankedSets = useMemo(() => {
     if (!isExpanded) return [];
-    return computeBestSets(baseTraits, 10);
+    return computeBestSets(baseTraits);
   }, [baseTraits, isExpanded]);
 
   const traitsReady = Array.isArray(baseTraits) && baseTraits.length >= 4;
@@ -52,9 +52,9 @@ export function BestSetsPanel({ baseTraits }: BestSetsPanelProps) {
       </button>
 
       {isExpanded && (
-        <div className="mt-2 p-2 bg-muted/50 rounded-md max-h-[300px] overflow-y-auto">
+        <div className="mt-2 p-2 bg-muted/50 rounded-md max-h-[400px] overflow-y-auto">
           <p className="text-[10px] text-muted-foreground mb-2">
-            Ranked by projected rarity score gain from set bonus.
+            {rankedSets.length} sets ranked by projected BRS gain. Sets with negative modifiers benefit gotchis with traits under 50.
           </p>
 
           {rankedSets.length === 0 ? (
@@ -106,27 +106,38 @@ function SetRow({
   ranked: RankedSet;
   wearableNames: string[];
 }) {
+  const mods = ranked.set.traitModifiers;
+  const traitChanges: string[] = [];
+  if (mods.nrg) traitChanges.push(mods.nrg > 0 ? "+NRG" : "-NRG");
+  if (mods.agg) traitChanges.push(mods.agg > 0 ? "+AGG" : "-AGG");
+  if (mods.spk) traitChanges.push(mods.spk > 0 ? "+SPK" : "-SPK");
+  if (mods.brn) traitChanges.push(mods.brn > 0 ? "+BRN" : "-BRN");
+
   return (
     <div className="p-2 bg-background rounded border border-border">
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="font-medium text-[11px] truncate">
-            {ranked.set.name}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span
+              className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                ranked.delta > 0
+                  ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                  : ranked.delta < 0
+                  ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {ranked.delta > 0 ? `+${ranked.delta}` : ranked.delta}
+            </span>
+            <span className="font-medium text-[11px] truncate">
+              {ranked.set.name}
+            </span>
           </div>
-          <div className="text-[10px] text-muted-foreground">
-            {ranked.bonusLabel}
+          <div className="mt-0.5 text-[10px] text-muted-foreground">
+            {traitChanges.length > 0
+              ? `(${traitChanges.join(", ")})`
+              : "(no trait mods)"}
           </div>
-        </div>
-        <div
-          className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
-            ranked.delta > 0
-              ? "bg-green-100 text-green-700"
-              : ranked.delta < 0
-              ? "bg-red-100 text-red-700"
-              : "bg-muted text-muted-foreground"
-          }`}
-        >
-          {ranked.delta > 0 ? `+${ranked.delta}` : ranked.delta}
         </div>
       </div>
       <div className="mt-1 text-[9px] text-muted-foreground leading-relaxed">

@@ -19,7 +19,7 @@ function formatBonus(value: number): string {
 
 export function computeBestSets(
   baseTraits: number[],
-  limit = 10
+  limit = 0
 ): RankedSet[] {
   if (!Array.isArray(baseTraits) || baseTraits.length < 4) {
     return [];
@@ -74,5 +74,5 @@ export function computeBestSets(
     return bMoves - aMoves;
   });
 
-  return ranked.slice(0, limit);
+  return limit > 0 ? ranked.slice(0, limit) : ranked;
 }
