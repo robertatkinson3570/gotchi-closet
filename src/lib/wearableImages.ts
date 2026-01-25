@@ -16,7 +16,6 @@ export type WearableCandidateFields = {
 const CANONICAL_ICON_BASES = [
   "https://aavegotchi.com/images/items",
   "https://app.aavegotchi.com/images/items",
-  "https://static.aavegotchi.com/images/items",
 ];
 
 export function getWearableCandidateFields(

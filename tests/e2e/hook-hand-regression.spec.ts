@@ -5,6 +5,7 @@ import { join } from "path";
 const SUBGRAPH_URL = "**/subgraphs/aavegotchi-core-base/prod/gn";
 const THUMBS_URL = "**/api/wearables/thumbs";
 const GOTCHI_SVGS_URL = "**/api/gotchis/svgs";
+const PREVIEW_URL = "**/api/gotchis/preview";
 
 const OWNER = "0x0000000000000000000000000000000000000000";
 
@@ -84,6 +85,17 @@ test("left hand swap recalculates modifiers (hook hand regression)", async ({ pa
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({ svgs: {} }),
+    });
+  });
+
+  await page.route(PREVIEW_URL, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        svg:
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#eee"/></svg>',
+      }),
     });
   });
 

@@ -5,6 +5,7 @@ import { join } from "path";
 const SUBGRAPH_URL = "**/subgraphs/aavegotchi-core-base/prod/gn";
 const THUMBS_URL = "**/api/wearables/thumbs";
 const GOTCHI_SVGS_URL = "**/api/gotchis/svgs";
+const PREVIEW_URL = "**/api/gotchis/preview";
 
 const OWNER = "0x0000000000000000000000000000000000000000";
 
@@ -90,19 +91,30 @@ test("undress swap matches dapp total for 21403", async ({ page }) => {
     });
   });
 
+  await page.route(PREVIEW_URL, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        svg:
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#eee"/></svg>',
+      }),
+    });
+  });
+
   await page.goto(`/dress?view=${OWNER}`);
 
   await page.getByTestId("gotchi-card").first().click();
 
   await page.getByPlaceholder("Search wearables...").fill("Hook Hand");
-  const wearable = page.getByTestId("wearable-card-223");
+  const wearable = page.getByTestId("wearable-223");
 
   const instance = page.locator('[data-testid^="editor-instance-"]').first();
   const instanceIdAttr = await instance.getAttribute("data-testid");
   const instanceId = instanceIdAttr?.replace("editor-instance-", "") || "";
 
   await page.dragAndDrop(
-    `[data-testid="wearable-card-223"]`,
+    `[data-testid="wearable-223"]`,
     `[data-testid="slot-${instanceId}-4"]`
   );
 
