@@ -75,7 +75,7 @@ export function BestSetsPanel({ baseTraits, enableSetFilter = false }: BestSetsP
             </div>
           )}
 
-          <div className="mt-3 pt-2 border-t border-border flex flex-wrap gap-3 text-[10px]">
+          <div className="mt-3 pt-2 border-t border-border text-[10px]">
             <a
               href="https://wiki.aavegotchi.com/en/sets"
               target="_blank"
@@ -83,15 +83,6 @@ export function BestSetsPanel({ baseTraits, enableSetFilter = false }: BestSetsP
               className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
             >
               View all sets (Wiki)
-              <ExternalLink className="h-3 w-3" />
-            </a>
-            <a
-              href="https://www.aadventure.io/wearable-sets/gotchi"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
-            >
-              See sets on Aadventure
               <ExternalLink className="h-3 w-3" />
             </a>
           </div>
