@@ -1,0 +1,677 @@
+index-DAgQOXr3.js:226  POST https://www.gotchicloset.com/api/gotchis/base-traits 500 (Internal Server Error)
+kZ @ index-DAgQOXr3.js:226
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226Understand this error
+index-DAgQOXr3.js:226 Failed to fetch birth traits: Error: RPC HTTP 500: {"id":28487,"jsonrpc":"2.0","error":{"message":"Temporary internal error. Please retry, trace-id: 88b96b026d30916abd2a32d4b9f31267","code":19}}
+    at kZ (index-DAgQOXr3.js:226:140506)
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.catch
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226Understand this error
+index-DAgQOXr3.js:226  POST https://www.gotchicloset.com/api/gotchis/base-traits 500 (Internal Server Error)
+kZ @ index-DAgQOXr3.js:226
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+onError @ index-DAgQOXr3.js:235
+XB @ index-DAgQOXr3.js:37
+ZB @ index-DAgQOXr3.js:37
+eL @ index-DAgQOXr3.js:37
+NS @ index-DAgQOXr3.js:37
+ZM @ index-DAgQOXr3.js:37
+(anonymous) @ index-DAgQOXr3.js:37
+Fw @ index-DAgQOXr3.js:40
+EM @ index-DAgQOXr3.js:37
+dg @ index-DAgQOXr3.js:37
+pw @ index-DAgQOXr3.js:37Understand this error
+index-DAgQOXr3.js:226 Failed to fetch birth traits: Error: RPC error: execution reverted: Diamond: Function does not exist
+    at kZ (index-DAgQOXr3.js:226:140506)
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.catch
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+onError @ index-DAgQOXr3.js:235
+XB @ index-DAgQOXr3.js:37
+ZB @ index-DAgQOXr3.js:37
+eL @ index-DAgQOXr3.js:37
+NS @ index-DAgQOXr3.js:37
+ZM @ index-DAgQOXr3.js:37
+(anonymous) @ index-DAgQOXr3.js:37
+Fw @ index-DAgQOXr3.js:40
+EM @ index-DAgQOXr3.js:37
+dg @ index-DAgQOXr3.js:37
+pw @ index-DAgQOXr3.js:37Understand this error
+index-DAgQOXr3.js:226  POST https://www.gotchicloset.com/api/gotchis/base-traits 500 (Internal Server Error)
+kZ @ index-DAgQOXr3.js:226
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+onError @ index-DAgQOXr3.js:235
+XB @ index-DAgQOXr3.js:37
+ZB @ index-DAgQOXr3.js:37
+eL @ index-DAgQOXr3.js:37
+NS @ index-DAgQOXr3.js:37
+ZM @ index-DAgQOXr3.js:37
+(anonymous) @ index-DAgQOXr3.js:37
+Fw @ index-DAgQOXr3.js:40
+EM @ index-DAgQOXr3.js:37
+dg @ index-DAgQOXr3.js:37
+pw @ index-DAgQOXr3.js:37Understand this error
+index-DAgQOXr3.js:226 Failed to fetch birth traits: Error: RPC error: execution reverted: Diamond: Function does not exist
+    at kZ (index-DAgQOXr3.js:226:140506)
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.catch
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+onError @ index-DAgQOXr3.js:235
+XB @ index-DAgQOXr3.js:37
+ZB @ index-DAgQOXr3.js:37
+eL @ index-DAgQOXr3.js:37
+NS @ index-DAgQOXr3.js:37
+ZM @ index-DAgQOXr3.js:37
+(anonymous) @ index-DAgQOXr3.js:37
+Fw @ index-DAgQOXr3.js:40
+EM @ index-DAgQOXr3.js:37
+dg @ index-DAgQOXr3.js:37
+pw @ index-DAgQOXr3.js:37Understand this error
+index-DAgQOXr3.js:226  POST https://www.gotchicloset.com/api/gotchis/base-traits 500 (Internal Server Error)
+kZ @ index-DAgQOXr3.js:226
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+onError @ index-DAgQOXr3.js:235
+XB @ index-DAgQOXr3.js:37
+ZB @ index-DAgQOXr3.js:37
+eL @ index-DAgQOXr3.js:37
+NS @ index-DAgQOXr3.js:37
+ZM @ index-DAgQOXr3.js:37
+(anonymous) @ index-DAgQOXr3.js:37
+Fw @ index-DAgQOXr3.js:40
+EM @ index-DAgQOXr3.js:37
+dg @ index-DAgQOXr3.js:37
+pw @ index-DAgQOXr3.js:37Understand this error
+index-DAgQOXr3.js:226 Failed to fetch birth traits: Error: RPC error: execution reverted: Diamond: Function does not exist
+    at kZ (index-DAgQOXr3.js:226:140506)
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.catch
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+onError @ index-DAgQOXr3.js:235
+XB @ index-DAgQOXr3.js:37
+ZB @ index-DAgQOXr3.js:37
+eL @ index-DAgQOXr3.js:37
+NS @ index-DAgQOXr3.js:37
+ZM @ index-DAgQOXr3.js:37
+(anonymous) @ index-DAgQOXr3.js:37
+Fw @ index-DAgQOXr3.js:40
+EM @ index-DAgQOXr3.js:37
+dg @ index-DAgQOXr3.js:37
+pw @ index-DAgQOXr3.js:37Understand this error
+index-DAgQOXr3.js:226  POST https://www.gotchicloset.com/api/gotchis/base-traits 500 (Internal Server Error)
+kZ @ index-DAgQOXr3.js:226
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+(anonymous) @ index-DAgQOXr3.js:226
+Promise.finally
+(anonymous) @ index-DAgQOXr3.js:226
+Jp @ index-DAgQOXr3.js:40
+Wa @ index-DAgQOXr3.js:40
+(anonymous) @ index-DAgQOXr3.js:40
+E @ index-DAgQOXr3.js:25
+j @ index-DAgQOXr3.js:25
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+$ @ index-DAgQOXr3.js:25
+K @ index-DAgQOXr3.js:25
+e.unstable_scheduleCallback @ index-DAgQOXr3.js:25
+eA @ index-DAgQOXr3.js:40
+Cn @ index-DAgQOXr3.js:40
+wr @ index-DAgQOXr3.js:40
+m$ @ index-DAgQOXr3.js:38
+onError @ index-DAgQOXr3.js:235
+XB @ index-DAgQOXr3.js:37
+ZB @ index-DAgQOXr3.js:37
+eL @ index-DAgQOXr3.js:37
+NS @ index-DAgQOXr3.js:37
+ZM @ index-DAgQOXr3.js:37
+(anonymous) @ index-DAgQOXr3.js:37
+Fw @ index-DAgQOXr3.js:40
+EM @ index-DAgQOXr3.js:37
+dg @ index-DAgQOXr3.js:37
+pw @ index-DAgQOXr3.js:37Understand this error
+index-DAgQOXr3.js:226 Failed to fetch birth traits: Error: RPC error: execution reverted: Diamond: Function does not exist
+    at kZ (index-DAgQOXr3.js:226:140506)

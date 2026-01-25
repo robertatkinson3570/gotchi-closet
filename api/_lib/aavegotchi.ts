@@ -7,10 +7,7 @@ const SVG_FACET_ABI = [
 ];
 
 const TRAITS_FACET_ABI = [
-  // TODO: User will paste the subgraph query file used by respec modal and the existing
-  // contract helper file so we can confirm the exact ABI method name and wire it correctly
-  // without guessing.
-  "function getAavegotchiBaseTraits(uint256 _tokenId) external view returns (int16[6])",
+  "function getGotchiBaseNumericTraits(uint32 _tokenId) external view returns (int16[6])",
 ];
 
 const svgFacet = new Interface(SVG_FACET_ABI);
@@ -169,8 +166,8 @@ export async function previewGotchiSvg(input: {
 }
 
 export async function getGotchiBaseTraits(tokenId: string): Promise<number[]> {
-  const callData = traitsFacet.encodeFunctionData("getAavegotchiBaseTraits", [
-    BigInt(tokenId),
+  const callData = traitsFacet.encodeFunctionData("getGotchiBaseNumericTraits", [
+    Number(tokenId),
   ]);
   const result = await callRpc<string>({
     method: "eth_call",
@@ -182,7 +179,7 @@ export async function getGotchiBaseTraits(tokenId: string): Promise<number[]> {
       "latest",
     ],
   });
-  const decoded = traitsFacet.decodeFunctionResult("getAavegotchiBaseTraits", result)[0];
+  const decoded = traitsFacet.decodeFunctionResult("getGotchiBaseNumericTraits", result)[0];
   return Array.isArray(decoded)
     ? decoded.map((value) => Number(value) || 0)
     : [];
