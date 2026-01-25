@@ -40,6 +40,11 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-25: Added Wardrobe Lab page (/wardrobe-lab) with wizard-style optimization tool
+  - Multi-wallet support (connected + manual addresses from localStorage)
+  - 4-step wizard: Scope (gotchi selection), Strategy, Constraints, Run
+  - Respec simulation with BRS before/after comparison
+  - Navigation via flask icon button on Dress page
 - 2026-01-25: Fixed respec to fetch BIRTH traits via contract call getGotchiBaseNumericTraits - now correctly shows original traits without spirit points
 - 2026-01-25: Added trait bounds checking (0-99) to respec simulator
 - 2026-01-25: Enhanced respec simulator with wearable/set delta modifiers
