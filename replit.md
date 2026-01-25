@@ -40,6 +40,13 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-25: Enhanced Wardrobe Lab optimizer with proper respec simulation
+  - Fixed trait optimization to push traits toward extremes (0 or 99)
+  - Battler mode prioritizes highest/lowest traits for class optimization
+  - Added wearable images below each Gotchi in results
+  - Shows trait changes with before/after values (e.g., "NRG: 45 → 0 (+55 BRS)")
+  - Results sorted by highest BRS score
+  - Added "Dress" button in header for easy navigation
 - 2026-01-25: Added Wardrobe Lab page (/wardrobe-lab) with wizard-style optimization tool
   - Multi-wallet support (connected + manual addresses from localStorage)
   - 4-step wizard: Scope (gotchi selection), Strategy, Constraints, Run

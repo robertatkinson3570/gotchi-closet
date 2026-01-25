@@ -14,7 +14,11 @@ import { computeBRSBreakdown, traitToBRS, detectActiveSets } from "@/lib/rarity"
 import { useWearablesById } from "@/state/selectors";
 import { useAppStore } from "@/state/useAppStore";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
+import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
+import { placeholderSvg } from "@/lib/placeholderSvg";
 import type { Gotchi, Wearable } from "@/types";
+
+const TRAIT_NAMES = ["NRG", "AGG", "SPK", "BRN"];
 
 const STORAGE_MANUAL_VIEW = "gc_manualViewAddress";
 
@@ -30,6 +34,13 @@ type Constraints = {
   preserveExistingSets: boolean;
   skipLowRespec: boolean;
   bestEffort: boolean;
+};
+
+type TraitChange = {
+  trait: number;
+  from: number;
+  to: number;
+  brsGain: number;
 };
 
 type OptimizationResult = {
@@ -53,6 +64,7 @@ type OptimizationResult = {
   explanation: string[];
   isOptimized: boolean;
   brsDelta: number;
+  traitChanges: TraitChange[];
 };
 
 const STEP_ORDER: WizardStep[] = ["scope", "strategy", "constraints", "run"];
@@ -178,38 +190,90 @@ export default function WardrobeLabPage() {
     return "unknown";
   };
 
-  const simulateRespec = (baseTraits: number[], usedSkillPoints: number): { optimizedTraits: number[]; respecUsed: number; brsDelta: number } => {
+  const simulateRespec = (baseTraits: number[], usedSkillPoints: number): { optimizedTraits: number[]; respecUsed: number; brsDelta: number; changes: { trait: number; from: number; to: number; brsGain: number }[] } => {
     const traits = [...baseTraits];
     const available = usedSkillPoints || 0;
-    let respecUsed = 0;
+    let remaining = available;
     let brsDelta = 0;
+    const changes: { trait: number; from: number; to: number; brsGain: number }[] = [];
 
-    if (available <= 0) return { optimizedTraits: traits, respecUsed: 0, brsDelta: 0 };
+    if (available <= 0) return { optimizedTraits: traits, respecUsed: 0, brsDelta: 0, changes: [] };
 
-    for (let i = 0; i < 4 && respecUsed < available; i++) {
-      const currentTrait = traits[i];
-      const currentBrs = traitToBRS(currentTrait);
+    const traitPotential = [0, 1, 2, 3].map(i => {
+      const t = traits[i];
+      const currentBrs = traitToBRS(t);
+      let targetTrait: number;
+      let pointsNeeded: number;
       
-      if (strategy.goal === "MAX_BRS") {
-        if (currentTrait < 50 && currentTrait > 0) {
-          const pointsToUse = Math.min(available - respecUsed, currentTrait);
-          const newTrait = currentTrait - pointsToUse;
-          const newBrs = traitToBRS(newTrait);
-          brsDelta += newBrs - currentBrs;
-          traits[i] = newTrait;
-          respecUsed += pointsToUse;
-        } else if (currentTrait >= 50 && currentTrait < 99) {
-          const pointsToUse = Math.min(available - respecUsed, 99 - currentTrait);
-          const newTrait = currentTrait + pointsToUse;
-          const newBrs = traitToBRS(newTrait);
-          brsDelta += newBrs - currentBrs;
-          traits[i] = newTrait;
-          respecUsed += pointsToUse;
+      if (strategy.goal === "BATTLER") {
+        if (t < 50) {
+          targetTrait = 0;
+          pointsNeeded = t;
+        } else {
+          targetTrait = 99;
+          pointsNeeded = 99 - t;
+        }
+      } else {
+        if (t < 50) {
+          targetTrait = 0;
+          pointsNeeded = t;
+        } else {
+          targetTrait = 99;
+          pointsNeeded = 99 - t;
+        }
+      }
+      
+      const targetBrs = traitToBRS(targetTrait);
+      const brsGain = targetBrs - currentBrs;
+      const efficiency = pointsNeeded > 0 ? brsGain / pointsNeeded : 0;
+      
+      return { index: i, current: t, target: targetTrait, pointsNeeded, brsGain, efficiency };
+    });
+
+    if (strategy.goal === "BATTLER") {
+      const highTrait = traitPotential.filter(t => t.current >= 50).sort((a, b) => b.current - a.current)[0];
+      const lowTrait = traitPotential.filter(t => t.current < 50).sort((a, b) => a.current - b.current)[0];
+      const prioritized = [highTrait, lowTrait].filter(Boolean);
+      
+      for (const tp of prioritized) {
+        if (!tp || remaining <= 0) continue;
+        const pointsToUse = Math.min(remaining, tp.pointsNeeded);
+        if (pointsToUse > 0) {
+          const oldTrait = traits[tp.index];
+          const newTrait = tp.current < 50 ? tp.current - pointsToUse : tp.current + pointsToUse;
+          const gain = traitToBRS(newTrait) - traitToBRS(oldTrait);
+          traits[tp.index] = newTrait;
+          remaining -= pointsToUse;
+          brsDelta += gain;
+          changes.push({ trait: tp.index, from: oldTrait, to: newTrait, brsGain: gain });
         }
       }
     }
 
-    return { optimizedTraits: traits, respecUsed, brsDelta };
+    traitPotential.sort((a, b) => b.efficiency - a.efficiency);
+    
+    for (const tp of traitPotential) {
+      if (remaining <= 0) break;
+      if (traits[tp.index] === tp.target) continue;
+      
+      const currentVal = traits[tp.index];
+      const pointsToUse = Math.min(remaining, Math.abs(tp.target - currentVal));
+      if (pointsToUse > 0) {
+        const oldTrait = traits[tp.index];
+        const newTrait = currentVal < 50 ? currentVal - pointsToUse : currentVal + pointsToUse;
+        const gain = traitToBRS(newTrait) - traitToBRS(oldTrait);
+        if (gain > 0) {
+          traits[tp.index] = newTrait;
+          remaining -= pointsToUse;
+          brsDelta += gain;
+          if (!changes.find(c => c.trait === tp.index)) {
+            changes.push({ trait: tp.index, from: oldTrait, to: newTrait, brsGain: gain });
+          }
+        }
+      }
+    }
+
+    return { optimizedTraits: traits, respecUsed: available - remaining, brsDelta, changes };
   };
 
   const runOptimizer = async () => {
@@ -230,7 +294,7 @@ export default function WardrobeLabPage() {
         wearablesById,
       });
 
-      const { optimizedTraits, respecUsed, brsDelta } = simulateRespec(baseTraits, usedSkillPoints);
+      const { optimizedTraits, respecUsed, brsDelta, changes } = simulateRespec(baseTraits, usedSkillPoints);
       const activeSets = detectActiveSets(equippedWearables);
       
       const afterBreakdown = computeBRSBreakdown({
@@ -281,6 +345,7 @@ export default function WardrobeLabPage() {
         explanation,
         isOptimized: isAlreadyOptimized,
         brsDelta: totalBrsDelta,
+        traitChanges: changes,
       });
     }
 
@@ -644,6 +709,49 @@ export default function WardrobeLabPage() {
                   </div>
                 </div>
               </div>
+
+              {result.after.equippedWearables.filter(id => id > 0).length > 0 && (
+                <div className="mt-4 pt-3 border-t">
+                  <div className="text-xs font-medium text-muted-foreground mb-2">Equipped Wearables</div>
+                  <div className="flex flex-wrap gap-2">
+                    {result.after.equippedWearables.filter(id => id > 0).map((wearableId, idx) => {
+                      const wearable = wearablesById.get(wearableId);
+                      const urls = getWearableIconUrlCandidates(wearableId);
+                      return (
+                        <div key={idx} className="w-10 h-10 rounded bg-muted overflow-hidden" title={wearable?.name || `#${wearableId}`}>
+                          <img
+                            src={urls[0]}
+                            alt={wearable?.name || `Wearable ${wearableId}`}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              if (urls[1] && target.src !== urls[1]) {
+                                target.src = urls[1];
+                              } else {
+                                target.src = `data:image/svg+xml,${encodeURIComponent(placeholderSvg(String(wearableId), "?"))}`;
+                              }
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {result.traitChanges.length > 0 && (
+                <div className="mt-4 pt-3 border-t">
+                  <div className="text-xs font-medium text-muted-foreground mb-2">Trait Respec Changes</div>
+                  <div className="flex flex-wrap gap-3">
+                    {result.traitChanges.map((change, idx) => (
+                      <div key={idx} className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded">
+                        <span className="font-medium">{TRAIT_NAMES[change.trait]}</span>: {change.from} → {change.to} 
+                        <span className="text-purple-500 ml-1">(+{change.brsGain} BRS)</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {result.explanation.length > 0 && (
                 <div className="mt-4 pt-3 border-t">
