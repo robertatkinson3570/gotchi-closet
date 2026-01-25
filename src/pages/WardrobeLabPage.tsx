@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FlaskConical, ArrowLeft, Check, ChevronRight } from "lucide-react";
+import { FlaskConical, ArrowLeft, Check, ChevronRight, TrendingUp, Minus } from "lucide-react";
 import { Button } from "@/ui/button";
 import { Card } from "@/ui/card";
 import { Checkbox } from "@/ui/checkbox";
@@ -13,6 +13,7 @@ import { shortenAddress, normalizeAddress, isValidAddress } from "@/lib/address"
 import { computeBRSBreakdown, traitToBRS, detectActiveSets } from "@/lib/rarity";
 import { useWearablesById } from "@/state/selectors";
 import { useAppStore } from "@/state/useAppStore";
+import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import type { Gotchi, Wearable } from "@/types";
 
 const STORAGE_MANUAL_VIEW = "gc_manualViewAddress";
@@ -35,6 +36,8 @@ type OptimizationResult = {
   gotchiId: string;
   gotchiName: string;
   ownerAddress: string;
+  hauntId: number;
+  collateral: string;
   before: {
     equippedWearables: number[];
     traits: number[];
@@ -48,6 +51,8 @@ type OptimizationResult = {
     respecAvailable: number;
   };
   explanation: string[];
+  isOptimized: boolean;
+  brsDelta: number;
 };
 
 const STEP_ORDER: WizardStep[] = ["scope", "strategy", "constraints", "run"];
@@ -246,23 +251,36 @@ export default function WardrobeLabPage() {
       }
       explanation.push(`Strategy: ${strategy.goal === "MAX_BRS" ? "Maximize BRS" : "Battler"}`);
 
+      const totalBrsDelta = afterBreakdown.totalBrs - currentBreakdown.totalBrs;
+      const isAlreadyOptimized = totalBrsDelta === 0;
+
+      if (isAlreadyOptimized) {
+        explanation.unshift("Already optimized for this strategy");
+      } else if (totalBrsDelta > 0) {
+        explanation.unshift(`+${totalBrsDelta} BRS improvement possible`);
+      }
+
       optimizationResults.push({
         gotchiId: gotchi.id,
         gotchiName: gotchi.name || `Gotchi #${gotchi.id}`,
         ownerAddress: owner,
+        hauntId: gotchi.hauntId || 1,
+        collateral: gotchi.collateral || "",
         before: {
           equippedWearables: [...equippedWearables],
-          traits: baseTraits.slice(0, 4),
+          traits: [...baseTraits],
           brs: currentBreakdown.totalBrs,
         },
         after: {
           equippedWearables: [...equippedWearables],
-          traits: optimizedTraits.slice(0, 4),
+          traits: [...optimizedTraits],
           brs: afterBreakdown.totalBrs,
           respecUsed,
           respecAvailable: usedSkillPoints,
         },
         explanation,
+        isOptimized: isAlreadyOptimized,
+        brsDelta: totalBrsDelta,
       });
     }
 
@@ -549,39 +567,91 @@ export default function WardrobeLabPage() {
           No results to display.
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {results.map((result) => (
             <Card key={result.gotchiId} className="p-4">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h4 className="font-medium">{result.gotchiName}</h4>
+                  <h4 className="font-medium text-lg">{result.gotchiName}</h4>
                   <span className="text-xs text-muted-foreground">
                     {shortenAddress(result.ownerAddress)}
                   </span>
                 </div>
-                <span className="text-xs px-2 py-1 rounded bg-muted">Simulated</span>
+                {result.isOptimized ? (
+                  <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 flex items-center gap-1">
+                    <Check className="w-3 h-3" />
+                    Already Optimal
+                  </span>
+                ) : result.brsDelta > 0 ? (
+                  <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700 flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" />
+                    +{result.brsDelta} BRS
+                  </span>
+                ) : (
+                  <span className="text-xs px-2 py-1 rounded bg-muted flex items-center gap-1">
+                    <Minus className="w-3 h-3" />
+                    No Change
+                  </span>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <span className="text-xs font-medium text-muted-foreground">Before</span>
-                  <div className="text-lg font-semibold">{result.before.brs} BRS</div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <div className="text-center">
+                    <span className="text-sm font-medium text-muted-foreground">Before</span>
+                  </div>
+                  <div className="aspect-square bg-muted/50 rounded-lg overflow-hidden">
+                    <GotchiSvg
+                      gotchiId={result.gotchiId}
+                      hauntId={result.hauntId}
+                      collateral={result.collateral}
+                      numericTraits={result.before.traits}
+                      equippedWearables={result.before.equippedWearables}
+                      mode="preview"
+                      className="w-full h-full"
+                    />
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold">{result.before.brs}</div>
+                    <div className="text-xs text-muted-foreground">BRS</div>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <span className="text-xs font-medium text-muted-foreground">After</span>
-                  <div className="text-lg font-semibold">{result.after.brs} BRS</div>
-                  <div className="text-xs text-muted-foreground">
-                    Respec: {result.after.respecUsed} / {result.after.respecAvailable}
+
+                <div className="space-y-2">
+                  <div className="text-center">
+                    <span className="text-sm font-medium text-muted-foreground">After</span>
+                  </div>
+                  <div className="aspect-square bg-muted/50 rounded-lg overflow-hidden">
+                    <GotchiSvg
+                      gotchiId={result.gotchiId}
+                      hauntId={result.hauntId}
+                      collateral={result.collateral}
+                      numericTraits={result.after.traits}
+                      equippedWearables={result.after.equippedWearables}
+                      mode="preview"
+                      className="w-full h-full"
+                    />
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold">{result.after.brs}</div>
+                    <div className="text-xs text-muted-foreground">BRS</div>
+                    {result.after.respecUsed > 0 && (
+                      <div className="text-xs text-purple-600 mt-1">
+                        Respec: {result.after.respecUsed} pts used
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
               {result.explanation.length > 0 && (
-                <ul className="mt-3 text-xs text-muted-foreground space-y-1">
-                  {result.explanation.map((line, i) => (
-                    <li key={i}>• {line}</li>
-                  ))}
-                </ul>
+                <div className="mt-4 pt-3 border-t">
+                  <ul className="text-xs text-muted-foreground space-y-1">
+                    {result.explanation.map((line, i) => (
+                      <li key={i}>• {line}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </Card>
           ))}
