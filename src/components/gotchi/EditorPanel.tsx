@@ -77,10 +77,9 @@ export function EditorPanel() {
                         size="sm"
                         className="h-5 px-1.5 text-[9px] gap-0.5"
                         onClick={() => applySetToInstance(instance.instanceId)}
-                        title={`Apply ${activeSet.name}`}
                       >
                         <Wand2 className="h-3 w-3" />
-                        Apply
+                        Apply {activeSet.name}
                       </Button>
                     )}
                   </div>
