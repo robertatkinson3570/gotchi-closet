@@ -47,7 +47,15 @@ export function WearablesPanel() {
 
     // Rarity filter
     if (filters.rarity) {
-      filtered = filtered.filter((w) => w.rarity === filters.rarity);
+      const getRarity = (mod: number) => {
+        if (mod >= 50) return "Godlike";
+        if (mod >= 20) return "Mythical";
+        if (mod >= 10) return "Legendary";
+        if (mod >= 5) return "Rare";
+        if (mod >= 2) return "Uncommon";
+        return "Common";
+      };
+      filtered = filtered.filter((w) => getRarity(w.rarityScoreModifier) === filters.rarity);
     }
 
     // Set filter
