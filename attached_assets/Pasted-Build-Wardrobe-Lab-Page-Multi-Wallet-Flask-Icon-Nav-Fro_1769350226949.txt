@@ -1,0 +1,386 @@
+Build “Wardrobe Lab” Page
+
+(Multi-Wallet + Flask Icon + Nav From Dress Page + Reuse Dress Logic Read-Only)
+
+Context
+
+This app already supports loading Gotchis from multiple wallet addresses at the same time (connected wallet + manually entered addresses). Wardrobe Lab must reuse this existing multi-wallet model.
+
+Wardrobe Lab is a wizard-style planning page that analyzes Gotchis and wearables across all loaded addresses, while respecting:
+
+Wearables → shared pool across the run (cannot be double-assigned, respect quantity)
+
+Respec → per-Gotchi only, never shared
+
+Simulation only → no on-chain actions and no permanent state mutation
+
+⚠️ Critical rule
+The existing Dress page already contains the canonical logic for:
+
+Trait calculation
+
+Wearable modifiers
+
+Set bonuses
+
+Respec point math
+
+BRS / battler scoring
+
+👉 You MUST reference and reuse that logic as read-only helpers.
+👉 DO NOT change, refactor, or otherwise modify the Dress page or its behavior.
+
+Wardrobe Lab must stay decoupled and non-destructive.
+
+1) Routing + Navigation
+New Page
+
+Route: /wardrobe-lab
+
+Page title: Wardrobe Lab
+
+Add a flask icon to the left of the title
+
+Icon requirements
+
+Use existing icon library (likely lucide-react)
+
+Use FlaskConical or FlaskRound
+
+Size: ~18–20px
+
+Tight spacing (e.g., gap-2)
+
+Same icon reused anywhere Wardrobe Lab is referenced
+
+Header layout example:
+
+[🧪] Wardrobe Lab
+
+Navigation from Dress Page
+
+On the Gotchi Dress / Editor page:
+
+Add a navigation control labeled Wardrobe Lab
+
+Include the same flask icon
+
+Clicking it routes to /wardrobe-lab
+
+Placement:
+
+Top-right of editor header OR
+
+Near other primary actions
+
+⚠️ This navigation must:
+
+Not trigger any logic
+
+Not alter editor state
+
+Not modify any Dress page code paths
+
+Also add a simple “Back to Dress” link on the Wardrobe Lab page.
+
+2) Wardrobe Lab Page Structure
+
+Single page
+
+Wizard-style steps
+
+No route changes per step
+
+State-driven UI (local state or existing global store)
+
+3) Multi-Wallet Awareness (Non-Negotiable)
+
+Wardrobe Lab must:
+
+Support multiple loaded wallet addresses simultaneously
+
+Group Gotchis by owner wallet in UI
+
+Aggregate wearable inventory across all loaded wallets
+
+Never assume:
+
+A single wallet
+
+A single inventory source
+
+4) Data Model Requirements
+Gotchi Object (Read-Only)
+
+Each Gotchi must expose:
+
+id
+
+name
+
+ownerAddress
+
+baseTraits
+
+currentTraits
+
+equippedWearables
+
+availableRespecPoints
+
+baseBRS
+
+currentBRS
+
+If availableRespecPoints is derived:
+
+Use the same calculation logic used on the Dress page
+
+Import or call it as a helper
+
+Do not duplicate or reinvent it
+
+Wearables Inventory
+
+Aggregated across wallets:
+
+id
+
+name
+
+slot
+
+traitModifiers
+
+setId (nullable)
+
+quantity
+
+Wearables are a constrained pool:
+
+Quantity must be decremented when assigned
+
+Cannot be double-assigned beyond quantity
+
+5) Wizard Flow
+Step 1 — Scope
+
+Select which Gotchis are included.
+
+UI:
+
+Group by wallet address
+
+Select all / by wallet / individually
+
+Optional: exclude locked or favorited gotchis
+
+State:
+
+selectedGotchiIds: string[]
+
+Step 2 — Strategy
+
+No preferred trait input.
+
+Goal:
+
+MAX_BRS
+
+BATTLER
+
+Trait shape:
+
+ONE_DOMINANT
+
+TWO_EQUAL
+
+BALANCED
+
+State:
+
+strategy: {
+  goal: 'MAX_BRS' | 'BATTLER'
+  traitShape: 'ONE_DOMINANT' | 'TWO_EQUAL' | 'BALANCED'
+}
+
+Step 3 — Constraints
+
+Optional toggles:
+
+Prefer full wearable sets
+
+Do not break existing sets
+
+Skip gotchis with limited respec
+
+Best-effort fallback
+
+State:
+
+constraints: {
+  preferSets: boolean
+  preserveExistingSets: boolean
+  skipLowRespec: boolean
+  bestEffort: boolean
+}
+
+Step 4 — Run Wardrobe Lab
+
+CTA: Run Wardrobe Lab
+
+When clicked:
+
+Run optimizer once
+
+Produce result set
+
+Transition to Results view
+
+No mutations.
+
+6) Optimization Engine (Read-Only Logic Reuse)
+
+⚠️ Mandatory requirement
+
+All calculations for:
+
+Trait deltas
+
+Wearable modifiers
+
+Set bonuses
+
+Respec application
+
+BRS scoring
+
+Battler scoring
+
+Must call or reuse the same helper functions used by the Dress page
+
+Acceptable:
+
+Import shared utility modules
+
+Extract logic into shared helpers only if they are already shared
+
+Wrap Dress-page logic in a non-mutating adapter
+
+Not acceptable:
+
+Re-implementing math
+
+Copy-pasting logic
+
+“Close enough” calculations
+
+Editing Dress page files
+
+High-Level Algorithm
+
+Collect selected Gotchis (across wallets)
+
+Collect wearable inventory (across wallets)
+
+Rank Gotchis by optimization potential
+
+For each Gotchi:
+
+Try best compatible sets
+
+Avoid wearable conflicts
+
+Fill remaining slots
+
+Simulate respec using Dress-page logic
+
+Respect per-Gotchi respec limits
+
+Reserve wearables
+
+Return plan
+
+Keep optimizer isolated:
+
+src/lib/wardrobeLab/optimizer.ts
+
+Pure function, no side effects
+
+7) Results View (Main Output)
+
+Replace wizard with Results.
+
+For each Gotchi:
+
+Header:
+
+Name
+
+Owner wallet
+
+Status badge
+
+Side-by-side:
+
+Before (current wearables, traits, scores)
+
+After (proposed wearables, traits, scores)
+
+Respec used: X / available
+
+Short explanation bullets
+
+No apply buttons. No state mutation.
+
+8) UX Rules
+
+No modals
+
+No step routes
+
+No auto-apply
+
+Clear simulation messaging
+
+Graceful handling of:
+
+Empty selections
+
+Missing wearables
+
+Conflicts
+
+9) Non-Goals
+
+Do NOT build:
+
+Auto equip
+
+On-chain actions
+
+Saving plans
+
+Preferred trait selection
+
+Meta guarantees
+
+10) Acceptance Criteria
+
+/wardrobe-lab exists with flask icon + title
+
+Dress page links to Wardrobe Lab (without changing Dress behavior)
+
+Multi-wallet inventories work
+
+Calculations match Dress page exactly
+
+Before/after views render correctly
+
+Dress page remains untouched
+
+End State
+
+Wardrobe Lab feels like:
+
+“A safe, experimental planning room that uses the same math as the Dress page, without ever touching my actual Gotchis.”

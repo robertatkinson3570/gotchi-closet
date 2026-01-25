@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import {
   DndContext,
   DragEndEvent,
@@ -25,6 +25,7 @@ import type { Wearable } from "@/types";
 import { useAddressState } from "@/lib/addressState";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
 import { Button } from "@/ui/button";
+import { FlaskConical } from "lucide-react";
 
 const STORAGE_MANUAL_VIEW = "gc_manualViewAddress";
 
@@ -345,6 +346,12 @@ export default function DressPage() {
                 Use Connected
               </Button>
             )}
+            <Link to="/wardrobe-lab">
+              <Button size="sm" variant="outline">
+                <FlaskConical className="w-4 h-4 mr-1" />
+                Wardrobe Lab
+              </Button>
+            </Link>
           </div>
         </div>
         {appError && (
