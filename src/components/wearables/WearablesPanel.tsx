@@ -45,6 +45,11 @@ export function WearablesPanel() {
       );
     }
 
+    // Rarity filter
+    if (filters.rarity) {
+      filtered = filtered.filter((w) => w.rarity === filters.rarity);
+    }
+
     // Set filter
     if (filters.set) {
       const set = sets.find((s) => s.id === filters.set);
