@@ -58,18 +58,32 @@ export function EditorPanel() {
             >
               <div className="flex flex-col gap-2 md:flex-row md:items-start min-w-0">
                 <div className="flex items-start gap-2 min-w-0 md:w-[280px] shrink-0">
-                  <GotchiSvg
-                    gotchiId={
-                      instance.baseGotchi.gotchiId || instance.baseGotchi.id
-                    }
-                    hauntId={instance.baseGotchi.hauntId}
-                    collateral={instance.baseGotchi.collateral}
-                    numericTraits={instance.baseGotchi.numericTraits}
-                    equippedWearables={instance.equippedBySlot}
-                    className="h-16 w-16 flex-shrink-0"
-                    mode="preview"
-                    testId={`editor-gotchi-svg-${instance.instanceId}`}
-                  />
+                  <div className="flex flex-col items-center gap-1 shrink-0">
+                    <GotchiSvg
+                      gotchiId={
+                        instance.baseGotchi.gotchiId || instance.baseGotchi.id
+                      }
+                      hauntId={instance.baseGotchi.hauntId}
+                      collateral={instance.baseGotchi.collateral}
+                      numericTraits={instance.baseGotchi.numericTraits}
+                      equippedWearables={instance.equippedBySlot}
+                      className="h-16 w-16"
+                      mode="preview"
+                      testId={`editor-gotchi-svg-${instance.instanceId}`}
+                    />
+                    {activeSet && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-5 px-1.5 text-[9px] gap-0.5"
+                        onClick={() => applySetToInstance(instance.instanceId)}
+                        title={`Apply ${activeSet.name}`}
+                      >
+                        <Wand2 className="h-3 w-3" />
+                        Apply
+                      </Button>
+                    )}
+                  </div>
                   <div className="min-w-0 overflow-hidden">
                     {(() => {
                       const isBaseEquipment =
@@ -142,19 +156,6 @@ export function EditorPanel() {
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-              {activeSet && (
-                <div className="flex justify-end pt-1 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-[11px] gap-1"
-                    onClick={() => applySetToInstance(instance.instanceId)}
-                  >
-                    <Wand2 className="h-3.5 w-3.5" />
-                    Apply {activeSet.name}
-                  </Button>
-                </div>
-              )}
             </Card>
           ))}
         </div>
