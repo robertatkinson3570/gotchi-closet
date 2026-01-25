@@ -248,7 +248,7 @@ export function GotchiCard({
                           size="icon"
                           className="h-5 w-5 opacity-60 hover:opacity-100"
                           onClick={() => respec.decrement(index)}
-                          disabled={!respec.hasBaseline || respec.allocated[index] === 0}
+                          disabled={!respec.hasBaseline || !respec.canDecrement(index)}
                           aria-label={`Decrease ${label}`}
                         >
                           <Minus className="h-3 w-3" />
@@ -263,7 +263,7 @@ export function GotchiCard({
                           size="icon"
                           className="h-5 w-5 opacity-60 hover:opacity-100"
                           onClick={() => respec.increment(index)}
-                          disabled={!respec.hasBaseline || respec.spLeft === 0}
+                          disabled={!respec.hasBaseline || !respec.canIncrement(index)}
                           aria-label={`Increase ${label}`}
                         >
                           <Plus className="h-3 w-3" />

@@ -138,8 +138,20 @@ export function useRespecSimulator(params: {
     }
   };
 
+  const canIncrement = (index: number) => {
+    const current = allocated[index];
+    if (current < 0) return true;
+    return spLeft > 0;
+  };
+
+  const canDecrement = (index: number) => {
+    const current = allocated[index];
+    if (current > 0) return true;
+    return spLeft > 0;
+  };
+
   const increment = (index: number) => {
-    if (spLeft <= 0) return;
+    if (!canIncrement(index)) return;
     setAllocated((prev) => {
       const next = [...prev];
       next[index] += 1;
@@ -148,15 +160,10 @@ export function useRespecSimulator(params: {
   };
 
   const decrement = (index: number) => {
+    if (!canDecrement(index)) return;
     setAllocated((prev) => {
       const next = [...prev];
-      if (next[index] > 0) {
-        next[index] -= 1;
-      } else if (next[index] < 0) {
-        next[index] += 1;
-      } else {
-        return prev;
-      }
+      next[index] -= 1;
       return next;
     });
   };
@@ -181,6 +188,8 @@ export function useRespecSimulator(params: {
     usingFallback,
     increment,
     decrement,
+    canIncrement,
+    canDecrement,
   };
 }
 
