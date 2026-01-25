@@ -40,7 +40,7 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
-- 2026-01-25: Fixed respec to use subgraph's `baseNumericTraits` field for TRUE birth traits (without spirit points) instead of `numericTraits` (which includes spirit point allocations)
+- 2026-01-25: Added trait bounds checking (0-99) to respec simulator - prevents allocating points that would push traits outside valid range
 - 2026-01-25: Enhanced respec simulator with wearable/set delta modifiers - now properly calculates modified traits including equipment bonuses
 - 2026-01-25: Fixed Base chain wearable images (IDs 407, 418, 419, 420) by adding wiki.aavegotchi.com as fallback source
 - 2026-01-25: Fixed styling issues - removed unwanted scrollbars, optimized EditorPanel and wearable card sizing, added thin scrollbar styling, improved overall UX polish
@@ -48,5 +48,11 @@ See `.env.example` for required environment variables:
 
 ## Key Technical Details
 - Respec simulator uses `computeSimTraits()` in `src/lib/respec.ts` to calculate both simBase and simModified traits
-- Subgraph trait fields: `baseNumericTraits` = birth traits, `numericTraits` = base + spirit points, `modifiedNumericTraits` = + wearables, `withSetsNumericTraits` = + sets
+- Subgraph trait fields: numericTraits = base + spirit points, modifiedNumericTraits = + wearables, withSetsNumericTraits = + sets
 - Unit tests for respec logic in `src/lib/respec.test.ts` - run with `npm run test:unit`
+
+## Respec Limitations
+- The subgraph numericTraits includes spirit point allocations already baked in
+- True birth traits (before any spirit points) are not available from the Base subgraph
+- Respec simulator works by adjusting from CURRENT traits, not from birth traits
+- Trait bounds enforced: values cannot go below 0 or above 99

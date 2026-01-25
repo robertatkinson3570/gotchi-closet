@@ -9,7 +9,6 @@ export const GOTCHIS_BY_OWNER = gql`
         name
         level
         numericTraits
-        baseNumericTraits
         modifiedNumericTraits
         withSetsNumericTraits
         equippedWearables

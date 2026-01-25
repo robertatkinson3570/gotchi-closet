@@ -140,12 +140,18 @@ export function useRespecSimulator(params: {
 
   const canIncrement = (index: number) => {
     const current = allocated[index];
+    const baseValue = Number(params.respecBaseTraits?.[index] ?? params.baseTraits[index]) || 0;
+    const resultingTrait = baseValue + current + 1;
+    if (resultingTrait > 99) return false;
     if (current < 0) return true;
     return spLeft > 0;
   };
 
   const canDecrement = (index: number) => {
     const current = allocated[index];
+    const baseValue = Number(params.respecBaseTraits?.[index] ?? params.baseTraits[index]) || 0;
+    const resultingTrait = baseValue + current - 1;
+    if (resultingTrait < 0) return false;
     if (current > 0) return true;
     return spLeft > 0;
   };
