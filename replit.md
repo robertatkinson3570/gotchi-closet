@@ -40,13 +40,13 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-25: Fixed respec to use subgraph's `baseNumericTraits` field for TRUE birth traits (without spirit points) instead of `numericTraits` (which includes spirit point allocations)
 - 2026-01-25: Enhanced respec simulator with wearable/set delta modifiers - now properly calculates modified traits including equipment bonuses
-- 2026-01-25: Added /api/gotchis/base-traits endpoint using getNumericTraits contract function for accurate trait calculations
 - 2026-01-25: Fixed Base chain wearable images (IDs 407, 418, 419, 420) by adding wiki.aavegotchi.com as fallback source
 - 2026-01-25: Fixed styling issues - removed unwanted scrollbars, optimized EditorPanel and wearable card sizing, added thin scrollbar styling, improved overall UX polish
 - 2026-01-25: Initial Replit setup, configured Vite for port 5000 with allowedHosts
 
 ## Key Technical Details
 - Respec simulator uses `computeSimTraits()` in `src/lib/respec.ts` to calculate both simBase and simModified traits
-- Base traits fetched from Base chain diamond contract at `0xa99c4b08201f2913db8d28e71d020c4298f29dbf` using getNumericTraits function
+- Subgraph trait fields: `baseNumericTraits` = birth traits, `numericTraits` = base + spirit points, `modifiedNumericTraits` = + wearables, `withSetsNumericTraits` = + sets
 - Unit tests for respec logic in `src/lib/respec.test.ts` - run with `npm run test:unit`
