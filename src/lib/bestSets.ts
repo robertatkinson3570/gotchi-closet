@@ -27,6 +27,12 @@ function formatBonus(value: number): string {
   return value >= 0 ? `+${value}` : String(value);
 }
 
+function isModCompatible(traitValue: number, mod: number): boolean {
+  if (mod === 0) return true;
+  if (traitValue >= 50) return mod > 0;
+  return mod < 0;
+}
+
 export function computeBestSets(
   baseTraits: number[],
   limit = 0
@@ -43,12 +49,25 @@ export function computeBestSets(
 
   for (const set of sets) {
     const mods = set.mods;
-    const t = [...safeBaseTraits];
+    
+    const nrgMod = mods.nrg || 0;
+    const aggMod = mods.agg || 0;
+    const spkMod = mods.spk || 0;
+    const brnMod = mods.brn || 0;
 
-    t[0] = clamp(t[0] + (mods.nrg || 0), 0, 100);
-    t[1] = clamp(t[1] + (mods.agg || 0), 0, 100);
-    t[2] = clamp(t[2] + (mods.spk || 0), 0, 100);
-    t[3] = clamp(t[3] + (mods.brn || 0), 0, 100);
+    const compatible =
+      isModCompatible(safeBaseTraits[0], nrgMod) &&
+      isModCompatible(safeBaseTraits[1], aggMod) &&
+      isModCompatible(safeBaseTraits[2], spkMod) &&
+      isModCompatible(safeBaseTraits[3], brnMod);
+
+    if (!compatible) continue;
+
+    const t = [...safeBaseTraits];
+    t[0] = clamp(t[0] + nrgMod, 0, 100);
+    t[1] = clamp(t[1] + aggMod, 0, 100);
+    t[2] = clamp(t[2] + spkMod, 0, 100);
+    t[3] = clamp(t[3] + brnMod, 0, 100);
 
     const traitScore = traitsToBRS(t);
     const scoreAfter = traitScore + (set.setBonusBRS || 0);
@@ -56,10 +75,10 @@ export function computeBestSets(
 
     const bonusLabel = [
       `BRS ${formatBonus(set.setBonusBRS || 0)}`,
-      `NRG ${formatBonus(mods.nrg || 0)}`,
-      `AGG ${formatBonus(mods.agg || 0)}`,
-      `SPK ${formatBonus(mods.spk || 0)}`,
-      `BRN ${formatBonus(mods.brn || 0)}`,
+      `NRG ${formatBonus(nrgMod)}`,
+      `AGG ${formatBonus(aggMod)}`,
+      `SPK ${formatBonus(spkMod)}`,
+      `BRN ${formatBonus(brnMod)}`,
     ].join(" · ");
 
     ranked.push({
