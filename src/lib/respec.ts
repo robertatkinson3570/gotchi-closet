@@ -66,8 +66,8 @@ export function computeSimTraits(params: {
   const usingFallback = !Array.isArray(params.respecBaseTraits);
   const wearableDelta = Array.isArray(params.wearableDelta) ? params.wearableDelta : [0, 0, 0, 0];
   const setDelta = Array.isArray(params.setDelta) ? params.setDelta : [0, 0, 0, 0];
-  const simBase = [0, 0, 0, 0];
-  const simModified = [0, 0, 0, 0];
+  const simBase = [0, 0, 0, 0, 0, 0];
+  const simModified = [0, 0, 0, 0, 0, 0];
 
   for (let i = 0; i < EDITABLE_COUNT; i++) {
     const baseValue = Number(base[i]) || 0;
@@ -77,6 +77,11 @@ export function computeSimTraits(params: {
     simBase[i] = baseValue + delta;
     simModified[i] = simBase[i] + wearableMod + setMod;
   }
+  
+  simBase[4] = Number(base[4]) || 0;
+  simBase[5] = Number(base[5]) || 0;
+  simModified[4] = simBase[4];
+  simModified[5] = simBase[5];
 
   return { simBase, simModified, usingFallback };
 }
@@ -162,18 +167,12 @@ export function useRespecSimulator(params: {
 
   const canIncrement = (index: number) => {
     const current = allocated[index];
-    const baseValue = Number(birthTraits?.[index] ?? params.baseTraits[index]) || 0;
-    const resultingTrait = baseValue + current + 1;
-    if (resultingTrait > 99) return false;
     if (current < 0) return true;
     return spLeft > 0;
   };
 
   const canDecrement = (index: number) => {
     const current = allocated[index];
-    const baseValue = Number(birthTraits?.[index] ?? params.baseTraits[index]) || 0;
-    const resultingTrait = baseValue + current - 1;
-    if (resultingTrait < 0) return false;
     if (current > 0) return true;
     return spLeft > 0;
   };
