@@ -27,11 +27,6 @@ interface GotchiCardProps {
   showRespec?: boolean;
   respecResetKey?: string;
   baseTraits?: number[];
-  modifiedTraits?: number[];
-  canonicalModifiedTraits?: number[];
-  withSetsNumericTraits?: number[];
-  wearableDeltaOverride?: number[];
-  level?: number;
 }
 
 export function GotchiCard({
@@ -51,11 +46,6 @@ export function GotchiCard({
   showRespec = false,
   respecResetKey = "",
   baseTraits,
-  modifiedTraits,
-  canonicalModifiedTraits,
-  withSetsNumericTraits,
-  wearableDeltaOverride,
-  level,
 }: GotchiCardProps) {
   const tokenId = String(gotchi.gotchiId || gotchi.id);
   const numericTraitSource = baseTraits || gotchi.numericTraits;

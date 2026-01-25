@@ -54,6 +54,7 @@ export function GotchiCarousel() {
       timeoutMs: 8000,
     })
       .then(async (res) => {
+        if (!res) return null;
         if (!res.ok) {
           const errorBody = await res.json().catch(() => ({}));
           throw new Error(errorBody?.message || `HTTP ${res.status}`);
@@ -61,6 +62,7 @@ export function GotchiCarousel() {
         return res.json();
       })
       .then((json) => {
+        if (!json) return;
         if (!mounted) return;
         const svgs = json?.svgs || {};
         const merged: Record<string, string> = { ...gotchiSvgs };
