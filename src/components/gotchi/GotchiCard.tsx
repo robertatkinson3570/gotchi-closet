@@ -56,7 +56,7 @@ export function GotchiCard({
     resetKey: respecResetKey || gotchi.id,
     usedSkillPoints: gotchi.usedSkillPoints,
     baseTraits: numericTraitSource,
-    respecBaseTraits: gotchi.numericTraits,
+    respecBaseTraits: gotchi.baseNumericTraits || gotchi.numericTraits,
     wearableDelta,
     setDelta,
   });

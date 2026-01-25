@@ -28,6 +28,9 @@ export async function fetchGotchisByOwner(
     numericTraits: Array.isArray(g.numericTraits)
       ? g.numericTraits.map((t: any) => Number(t) || 0)
       : [0, 0, 0, 0, 0, 0],
+    baseNumericTraits: Array.isArray(g.baseNumericTraits)
+      ? g.baseNumericTraits.map((t: any) => Number(t) || 0)
+      : undefined,
     modifiedNumericTraits: Array.isArray(g.modifiedNumericTraits)
       ? g.modifiedNumericTraits.map((t: any) => Number(t) || 0)
       : undefined,
