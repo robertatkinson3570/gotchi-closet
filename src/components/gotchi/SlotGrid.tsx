@@ -15,7 +15,7 @@ export function SlotGrid({ instanceId, equippedBySlot }: SlotGridProps) {
   const wearablesById = useWearablesById();
 
   return (
-    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3 items-start min-w-0">
+    <div className="grid grid-cols-4 gap-2 items-start min-w-0">
       {Array.from({ length: 8 }, (_, i) => {
         const wearableId = equippedBySlot[i];
         const wearable = wearableId

@@ -50,8 +50,8 @@ export function GotchiCarousel() {
         <div
           ref={scrollRef}
           data-testid="gotchi-carousel"
-          className="gotchi-strip flex gap-4 overflow-x-auto flex-nowrap snap-x snap-mandatory p-2 scrollbar-hide"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="gotchi-strip flex gap-3 overflow-x-auto flex-nowrap snap-x snap-mandatory p-2 scrollbar-thin"
+          style={{ msOverflowStyle: "auto" }}
           onWheel={(event) => {
             if (Math.abs(event.deltaX) < Math.abs(event.deltaY)) {
               event.currentTarget.scrollLeft += event.deltaY;

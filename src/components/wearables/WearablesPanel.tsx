@@ -165,17 +165,17 @@ export function WearablesPanel() {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       <WearableFilters />
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
         {activeSet && <SetBanner set={activeSet} />}
-        <div className="h-full overflow-auto p-2">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 scrollbar-hide">
           {filteredWearables.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               No wearables found
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-3 justify-items-center">
+            <div className="grid grid-cols-3 gap-2 justify-items-center">
               {filteredWearables.map((wearable) => (
                 <WearableCard
                   key={wearable.id}

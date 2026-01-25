@@ -15,21 +15,21 @@ export function EditorPanel() {
   );
 
   return (
-    <div className="h-full overflow-auto">
+    <div className="h-full overflow-auto scrollbar-thin">
       {editorInstances.length === 0 ? (
         <div className="p-4 text-center text-muted-foreground text-sm">
           Click a gotchi to add it to the editor.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {editorInstances.map((instance) => (
             <Card
               key={instance.instanceId}
               data-testid={`editor-instance-${instance.instanceId}`}
-              className="p-4 flex flex-col gap-3"
+              className="p-3 flex flex-col gap-2"
             >
-              <div className="flex flex-col gap-3 md:flex-row md:items-start min-w-0">
-                <div className="flex items-start gap-3 min-w-0 md:w-[320px]">
+              <div className="flex flex-col gap-2 md:flex-row md:items-start min-w-0">
+                <div className="flex items-start gap-2 min-w-0 md:w-[280px] shrink-0">
                   <GotchiSvg
                     gotchiId={
                       instance.baseGotchi.gotchiId || instance.baseGotchi.id
@@ -38,11 +38,11 @@ export function EditorPanel() {
                     collateral={instance.baseGotchi.collateral}
                     numericTraits={instance.baseGotchi.numericTraits}
                     equippedWearables={instance.equippedBySlot}
-                    className="h-20 w-20 flex-shrink-0"
+                    className="h-16 w-16 flex-shrink-0"
                     mode="preview"
                     testId={`editor-gotchi-svg-${instance.instanceId}`}
                   />
-                  <div className="min-w-0">
+                  <div className="min-w-0 overflow-hidden">
                     {(() => {
                       const isBaseEquipment =
                         instance.equippedBySlot.length ===
@@ -93,7 +93,7 @@ export function EditorPanel() {
                     })()}
                   </div>
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 overflow-hidden">
                   <SlotGrid
                     instanceId={instance.instanceId}
                     equippedBySlot={instance.equippedBySlot}
@@ -102,7 +102,7 @@ export function EditorPanel() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="self-start md:ml-auto"
+                  className="self-start shrink-0"
                   onClick={() => removeEditorInstance(instance.instanceId)}
                 >
                   <X className="h-4 w-4" />

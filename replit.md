@@ -40,4 +40,5 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-25: Fixed styling issues - removed unwanted scrollbars, optimized EditorPanel and wearable card sizing, added thin scrollbar styling, improved overall UX polish
 - 2026-01-25: Initial Replit setup, configured Vite for port 5000 with allowedHosts

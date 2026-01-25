@@ -81,7 +81,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="relative overflow-x-hidden">
+    <div className="relative overflow-hidden min-h-screen">
       <Seo
         title="GotchiCloset – Dress Your Aavegotchi, Preview Wearables & Optimize Sets"
         description="Preview wearables, try full sets, and optimize traits for your Aavegotchi. A fast, clean fitting room built for battlers and collectors."

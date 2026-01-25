@@ -319,7 +319,7 @@ export default function DressPage() {
       onDragEnd={handleDragEnd}
       onDragStart={handleDragStart}
     >
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col overflow-x-hidden">
         <div className="w-full border-b bg-background px-4 py-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium">Viewing Wallets</span>
@@ -358,15 +358,15 @@ export default function DressPage() {
           </span>
           <GotchiCarousel />
         </div>
-        <div className="flex-1 max-w-screen-2xl mx-auto w-full px-4 py-3">
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-4">
-            <div className="min-w-0 flex flex-col gap-2">
-              <div className="w-full max-w-[860px] min-w-0">
+        <div className="flex-1 max-w-screen-2xl mx-auto w-full px-4 py-3 overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 h-full">
+            <div className="min-w-0 flex flex-col gap-2 overflow-hidden">
+              <div className="w-full min-w-0 overflow-auto">
                 <EditorPanel />
               </div>
               {debug && <DebugPanel />}
             </div>
-            <div className="w-[380px] shrink-0 h-full max-h-[calc(100vh-220px)] overflow-y-auto border rounded-md bg-background">
+            <div className="hidden lg:flex flex-col w-[340px] shrink-0 max-h-[calc(100vh-200px)] border rounded-md bg-background overflow-hidden">
               <WearablesPanel />
               {debug && <DebugPanel />}
             </div>

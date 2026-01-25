@@ -56,16 +56,16 @@ export function SlotCard({
       <Card
         data-testid={`slot-${instanceId}-${slotIndex}`}
         data-wearable-id={wearable ? String(wearable.id) : ""}
-        className={`group relative w-[88px] flex-shrink-0 p-1 ${
+        className={`group relative w-[72px] flex-shrink-0 p-1 overflow-hidden ${
           isDragOver ? "ring-2 ring-primary" : ""
         }`}
         onDrop={onDrop}
         onDragOver={onDragOver}
       >
-        <div className="text-[10px] text-muted-foreground mb-1">
+        <div className="text-[9px] text-muted-foreground mb-0.5 truncate">
           {SLOT_NAMES[slotIndex]}
         </div>
-        <div className="h-[64px] w-full rounded-md bg-muted flex items-center justify-center">
+        <div className="h-[52px] w-full rounded-md bg-muted flex items-center justify-center overflow-hidden">
           {!wearable ? (
             <div
               className="w-full h-full [&>svg]:w-full [&>svg]:h-full"
@@ -80,7 +80,7 @@ export function SlotCard({
             <img
               src={imageUrls[urlIndex]}
               alt={wearable?.name || "wearable"}
-              className={`max-h-[60px] max-w-[60px] object-contain transition-opacity duration-200 ${
+              className={`max-h-[48px] max-w-[48px] object-contain transition-opacity duration-200 ${
                 loaded ? "opacity-100" : "opacity-0"
               }`}
               loading="lazy"
@@ -112,16 +112,16 @@ export function SlotCard({
           </Button>
         )}
         {wearable && (
-          <div className="mt-1 flex flex-wrap gap-1 justify-center">
+          <div className="mt-0.5 flex flex-wrap gap-0.5 justify-center">
             {wearable.traitModifiers.slice(0, 4).map((mod, i) => {
               if (mod === 0) return null;
-              const labels = ["NRG", "AGG", "SPK", "BRN"];
+              const labels = ["N", "A", "S", "B"];
               return (
                 <span
                   key={`${wearable.id}-${i}`}
-                  className="text-[10px] leading-none px-1 py-[1px] rounded bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border"
+                  className="text-[8px] leading-none px-0.5 py-[1px] rounded bg-[hsl(var(--chip-bg))] text-[hsl(var(--chip-text))] border"
                 >
-                  {labels[i]} {formatTraitValue(mod)}
+                  {labels[i]}{formatTraitValue(mod)}
                 </span>
               );
             })}

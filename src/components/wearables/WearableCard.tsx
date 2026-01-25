@@ -57,7 +57,7 @@ export function WearableCardView({
   return (
     <Card
       data-testid={`wearable-card-${wearable.id}`}
-      className={`group relative w-[120px] p-1 overflow-visible ${onClick ? "cursor-pointer" : ""}`}
+      className={`group relative w-[100px] p-1 overflow-hidden ${onClick ? "cursor-pointer" : ""}`}
       onClick={onClick}
       draggable={nativeDrag}
       onDragStart={
@@ -69,10 +69,10 @@ export function WearableCardView({
       }
       title={tooltip}
     >
-      <div className="h-[96px] w-full flex items-center justify-center overflow-visible">
+      <div className="h-[80px] w-full flex items-center justify-center overflow-hidden">
         <div
           data-testid={`wearable-thumb-${wearable.id}`}
-          className="h-[96px] w-full flex items-center justify-center"
+          className="h-[80px] w-full flex items-center justify-center"
         >
           {!imageUrls[urlIndex] || errored ? (
             <div
@@ -83,7 +83,7 @@ export function WearableCardView({
             <img
               src={imageUrls[urlIndex]}
               alt={wearable.name}
-              className={`max-h-[92px] max-w-[92px] object-contain transition-opacity duration-200 ${
+              className={`max-h-[76px] max-w-[76px] object-contain transition-opacity duration-200 ${
                 loaded ? "opacity-100" : "opacity-0"
               }`}
               loading="lazy"
