@@ -35,7 +35,7 @@ export function MobileTabs({ edit, wearables }: MobileTabsProps) {
           </Button>
         )}
       </div>
-      <div className="flex-1 overflow-auto p-2">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {view === "edit" ? edit : wearables}
       </div>
     </div>
