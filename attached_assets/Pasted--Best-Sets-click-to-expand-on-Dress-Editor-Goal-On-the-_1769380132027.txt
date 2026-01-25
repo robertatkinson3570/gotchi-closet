@@ -1,0 +1,172 @@
+“Best Sets” (click-to-expand) on Dress Editor
+
+Goal
+On the Dress page’s Gotchi editor, add a small, unobtrusive “Best Sets” link/button that expands a panel showing the top recommended wearable sets for that Gotchi, based on its current numeric traits (NRG/AGG/SPK/BRN + the other 2 traits if available). This panel should be collapsed by default and only render when clicked. It should be easy to close/collapse.
+
+Do NOT change any existing Dress page behavior, wearable equipping logic, respec logic, routing, or layout beyond adding this small expandable section.
+
+Data source (authoritative)
+
+Use the Aavegotchi Wiki “Wearable Sets” table as the canonical source (it includes set name, item names, and set bonus like BRS +X, NRG -Y, AGG +Z ...).
+Reference: https://wiki.aavegotchi.com/en/sets
+
+We cannot depend on aadventure’s page for parsing (JS-only), but we can include an external link to it in the UI:
+https://www.aadventure.io/wearable-sets/gotchi
+
+Implementation Plan
+1) Add a Sets dataset file
+
+Create: src/data/wearableSets.ts
+
+Define a WearableSet type:
+
+name: string
+
+items: string[] (wearable names as displayed in the wiki)
+
+bonus: { brs: number; nrg: number; agg: number; spk: number; brn: number }
+
+source: "aavegotchi-wiki"
+
+Populate WEARABLE_SETS: WearableSet[] by one of these options:
+
+Option A (preferred, simplest/most reliable): Hardcode a curated list first (enough to be useful), then we can expand later.
+Include at least sets shown in wiki around where ETH Maxi / Foxy Meta / Pajamas / OKex Jaay / etc appear (the user examples).
+The wiki table is stable and the bonus format is consistent.
+
+Option B (if you want scale): Write a tiny build-time script (node) to parse a copied raw block of the wiki table lines into JSON once, then commit the generated JSON. (Do NOT fetch at runtime.)
+If doing this, keep it as a dev script only, not executed in production.
+
+Important: Many set names repeat with different item variants (e.g. Pajamas, Runner, Wizard). Treat each row as a separate set entry (name can repeat). In UI, show the items so the user can tell which one it is.
+
+2) Add a pure function to rank “best sets” for a Gotchi
+
+Create: src/lib/bestSets.ts
+
+Inputs:
+
+baseTraits: number[] (the gotchi’s current numeric traits array used by your rarity scoring; if you already have “final traits with wearables”, use baseTraits = the gotchi’s current traits before applying any set bonus)
+
+sets: WearableSet[]
+
+computeRarityScore(traits: number[]): number (use your existing one)
+
+limit = 10
+
+Logic:
+
+Compute baseScore = computeRarityScore(baseTraits)
+
+For each set:
+
+Copy traits: t = [...baseTraits]
+
+Apply set bonus to trait indices:
+
+You already use a 6-trait array; map:
+
+NRG -> index 0
+
+AGG -> index 1
+
+SPK -> index 2
+
+BRN -> index 3
+
+(leave last two traits unchanged)
+
+Clamp each trait to [0, 100] after applying.
+
+score = computeRarityScore(t) + set.bonus.brs
+
+delta = score - baseScore
+
+Sort descending by:
+
+delta (primary)
+
+then set.bonus.brs (secondary)
+
+then absolute sum of trait moves (as a stable tie-breaker)
+
+Return top limit with computed fields:
+
+scoreAfter, delta, afterTraits (only if needed), and a formatted bonusLabel like BRS +2 · NRG -1 · AGG +0 · SPK +0 · BRN -1
+
+Notes:
+
+This intentionally matches the “traits above/below 50 matter” intuition because computeRarityScore is sum(|trait-50|). So the same +1 can help or hurt depending on whether the trait is above/below 50.
+
+This is a suggestion tool only; it does not equip anything.
+
+3) UI: small “Best Sets” toggle in the Gotchi editor
+
+In the Gotchi editor component on the Dress page (where traits are visible), add:
+
+A tiny text button/link near the traits header area:
+
+Label: Best Sets
+
+Icon optional: small sparkles or list icon (keep subtle)
+
+On click: expand a panel under it (accordion style)
+
+Panel content:
+
+A short helper line: “Ranked by projected rarity score gain from set bonus.”
+
+A list of top 10 results. Each row shows:
+
+Set name
+
+Bonus summary (e.g. BRS +3 · AGG -2)
+
+Delta badge (e.g. +7)
+
+A tiny, muted list of item names (wrap, smaller font)
+
+Add two links at bottom-right:
+
+“View all sets (Wiki)” -> https://wiki.aavegotchi.com/en/sets
+
+“See sets on Aadventure” -> https://www.aadventure.io/wearable-sets/gotchi
+
+Style:
+
+Compact, non-intrusive, responsive.
+
+Use your existing design system (Tailwind/shadcn if present).
+
+The panel should not cause layout explosions; constrain height with max-height + scroll if needed.
+
+Behavior:
+
+Default collapsed.
+
+Clicking again collapses.
+
+Remember per-gotchi expansion state is optional; simplest is local component state.
+
+4) Wiring: use the correct traits source
+
+Use the Gotchi’s current numeric traits that you already display in the editor (the same array you pass into your rarity score calculator for “base”).
+
+Do not query new APIs.
+
+Do not change existing subgraph queries.
+
+If your trait data is sometimes undefined during load, guard safely and show “Best Sets unavailable” until traits are ready.
+
+Acceptance Criteria
+
+“Best Sets” appears as a subtle link/button in the editor.
+
+Clicking shows a ranked list of sets with bonuses + delta score.
+
+Collapses cleanly.
+
+No changes to existing wearable equip, rarity scoring, respec, or routing.
+
+No runtime scraping of external sites.
+
+Works on mobile widths without overlapping existing UI.

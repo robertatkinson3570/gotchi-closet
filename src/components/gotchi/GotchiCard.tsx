@@ -7,6 +7,7 @@ import { useRespecSimulator } from "@/lib/respec";
 import { Button } from "@/ui/button";
 import { Minus, Plus } from "lucide-react";
 import { BrsSummary } from "./BrsSummary";
+import { BestSetsPanel } from "./BestSetsPanel";
 import { sumTraitBrs } from "@/lib/rarity";
 
 interface GotchiCardProps {
@@ -155,6 +156,7 @@ export function GotchiCard({
             ageBrs={ageBrs ?? 0}
             totalBrs={totalBrsValue ?? 0}
           />
+          <BestSetsPanel baseTraits={numericTraitSource} />
           {activeSetNames && activeSetNames.length > 0 && (
             <div className="mt-1 text-[10px] text-muted-foreground">
               Active sets: {activeSetNames.join(", ")}
