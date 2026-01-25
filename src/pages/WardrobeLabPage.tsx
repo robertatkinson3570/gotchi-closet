@@ -839,7 +839,7 @@ export default function WardrobeLabPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <FlaskConical className="w-5 h-5 text-primary" />
-          <h1 className="text-2xl font-bold">Wardrobe Lab</h1>
+          <h1 className="text-2xl font-bold">Wardrobe Labs (Prototype)</h1>
         </div>
         <Link to="/dress">
           <Button variant="outline" size="sm">
@@ -847,6 +847,22 @@ export default function WardrobeLabPage() {
             Dress
           </Button>
         </Link>
+      </div>
+
+      <div className="mb-6 p-4 rounded-lg border border-amber-200 bg-amber-50">
+        <h2 className="text-lg font-semibold text-amber-800 mb-2">Wardrobe Labs (Prototype)</h2>
+        <p className="text-sm text-amber-700 mb-3">
+          A UI-first prototype that is absolutely ahead of its own logic.
+        </p>
+        <p className="text-sm text-amber-700 mb-3">
+          It confidently shows results it is not fully qualified to produce yet.
+        </p>
+        <p className="text-sm text-amber-700 mb-3">
+          Use this to explore the concept, not to trust the math. Optimization logic is still under construction.
+        </p>
+        <p className="text-xs text-amber-600 font-medium">
+          Status: Prototype · Math pending · Vibes approved
+        </p>
       </div>
 
       {currentStep !== "results" && renderStepIndicator()}

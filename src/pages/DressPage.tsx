@@ -349,7 +349,7 @@ export default function DressPage() {
             <Link to="/wardrobe-lab">
               <Button size="sm" variant="outline">
                 <FlaskConical className="w-4 h-4 mr-1" />
-                Wardrobe Lab
+                Wardrobe Labs (Prototype)
               </Button>
             </Link>
           </div>
