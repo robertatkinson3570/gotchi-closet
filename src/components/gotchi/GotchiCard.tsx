@@ -82,25 +82,27 @@ export function GotchiCard({
     : committedSim
       ? safeTraits(committedSim.simModified)
       : safeTraits(traits) || safeTraits(baseTraitSource) || currentTraits;
-  const birthBrs = respec.simBase ? sumTraitBrs(respec.simBase.map((v, i) => v - (respec.allocated[i] ?? 0))) : 0;
+  const birthTraitsArr = respec.simBase ? respec.simBase.map((v, i) => v - (respec.allocated[i] ?? 0)) : [];
+  const birthBrs = birthTraitsArr.length ? sumTraitBrs(birthTraitsArr) : 0;
   const simBrs = sumTraitBrs(respec.simBase);
-  const simModBrs = sumTraitBrs(respec.simModified);
   const brsDelta = simBrs - birthBrs;
+  const committedBirthBrs = committedSim ? sumTraitBrs(committedSim.simBase.map((v, i) => v - (respec.committedAllocated?.[i] ?? 0))) : 0;
+  const committedDelta = committedSim ? sumTraitBrs(committedSim.simBase) - committedBirthBrs : 0;
   const traitBaseValue = showRespec && respec.isRespecMode
-    ? birthBrs + brsDelta
+    ? (traitBase ?? 0) - respec.totalSP + brsDelta
     : committedSim
-      ? sumTraitBrs(committedSim.simBase)
+      ? (traitBase ?? 0) - respec.totalSP + committedDelta
       : traitBase;
   const traitWithModsValue = showRespec && respec.isRespecMode
-    ? simModBrs
+    ? (traitWithMods ?? 0) - respec.totalSP + brsDelta
     : committedSim
-      ? sumTraitBrs(committedSim.simModified)
+      ? (traitWithMods ?? 0) - respec.totalSP + committedDelta
       : traitWithMods;
   const totalBrsValue =
     showRespec && respec.isRespecMode
-      ? simModBrs + (wearableFlat ?? 0) + (setFlatBrs ?? 0) + (ageBrs ?? 0)
+      ? (totalBrs ?? 0) - respec.totalSP + brsDelta
       : committedSim
-        ? sumTraitBrs(committedSim.simModified) + (wearableFlat ?? 0) + (setFlatBrs ?? 0) + (ageBrs ?? 0)
+        ? (totalBrs ?? 0) - respec.totalSP + committedDelta
         : totalBrs;
   return (
     <motion.div
