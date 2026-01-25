@@ -41,9 +41,10 @@ See `.env.example` for required environment variables:
 
 ## Recent Changes
 - 2026-01-25: Added "Best Sets" feature to GotchiCard on Dress page
-  - Collapsible panel showing top 10 wearable sets ranked by projected BRS gain
-  - Full bonus label format: BRS +X · NRG +Y · AGG +Z · SPK +A · BRN +B
-  - Shows wearable names for each set and delta badge
+  - Collapsible panel showing ALL wearable sets ranked by projected BRS gain
+  - Uses reference data from aadventure.io stored in data/setsByTraitDirection.json
+  - Shows set name, delta badge, and trait direction modifiers (+/-NRG, AGG, SPK, BRN)
+  - Sets with negative modifiers benefit gotchis with traits under 50
   - Links to wiki and aadventure for more set info
   - Located in src/lib/bestSets.ts and src/components/gotchi/BestSetsPanel.tsx
 - 2026-01-25: Enhanced Wardrobe Lab optimizer with proper respec simulation

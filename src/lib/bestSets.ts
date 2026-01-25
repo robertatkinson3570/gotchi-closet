@@ -1,12 +1,22 @@
-import { SETS, type SetDefinition } from "@/lib/sets";
+import setsByTraitDirection from "../../data/setsByTraitDirection.json";
 import { traitsToBRS } from "@/lib/rarity";
 
+type SetData = {
+  name: string;
+  setBonusBRS: number;
+  mods: {
+    nrg?: number;
+    agg?: number;
+    spk?: number;
+    brn?: number;
+  };
+};
+
 export type RankedSet = {
-  set: SetDefinition;
+  set: SetData;
   scoreAfter: number;
   delta: number;
   bonusLabel: string;
-  itemCount: number;
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -29,9 +39,10 @@ export function computeBestSets(
   const baseScore = traitsToBRS(safeBaseTraits);
 
   const ranked: RankedSet[] = [];
+  const sets = setsByTraitDirection.sets as SetData[];
 
-  for (const set of SETS) {
-    const mods = set.traitModifiers;
+  for (const set of sets) {
+    const mods = set.mods;
     const t = [...safeBaseTraits];
 
     t[0] = clamp(t[0] + (mods.nrg || 0), 0, 100);
@@ -56,21 +67,20 @@ export function computeBestSets(
       scoreAfter,
       delta,
       bonusLabel,
-      itemCount: set.requiredWearableIds.length,
     });
   }
 
   ranked.sort((a, b) => {
     if (b.delta !== a.delta) return b.delta - a.delta;
     if (b.set.setBonusBRS !== a.set.setBonusBRS) return b.set.setBonusBRS - a.set.setBonusBRS;
-    const aMoves = Math.abs(a.set.traitModifiers.nrg || 0) +
-                   Math.abs(a.set.traitModifiers.agg || 0) +
-                   Math.abs(a.set.traitModifiers.spk || 0) +
-                   Math.abs(a.set.traitModifiers.brn || 0);
-    const bMoves = Math.abs(b.set.traitModifiers.nrg || 0) +
-                   Math.abs(b.set.traitModifiers.agg || 0) +
-                   Math.abs(b.set.traitModifiers.spk || 0) +
-                   Math.abs(b.set.traitModifiers.brn || 0);
+    const aMoves = Math.abs(a.set.mods.nrg || 0) +
+                   Math.abs(a.set.mods.agg || 0) +
+                   Math.abs(a.set.mods.spk || 0) +
+                   Math.abs(a.set.mods.brn || 0);
+    const bMoves = Math.abs(b.set.mods.nrg || 0) +
+                   Math.abs(b.set.mods.agg || 0) +
+                   Math.abs(b.set.mods.spk || 0) +
+                   Math.abs(b.set.mods.brn || 0);
     return bMoves - aMoves;
   });
 

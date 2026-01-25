@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { ChevronDown, ChevronUp, ExternalLink, Sparkles } from "lucide-react";
 import { computeBestSets, type RankedSet } from "@/lib/bestSets";
-import { useWearablesById } from "@/state/selectors";
 
 interface BestSetsPanelProps {
   baseTraits: number[];
@@ -9,7 +8,6 @@ interface BestSetsPanelProps {
 
 export function BestSetsPanel({ baseTraits }: BestSetsPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const wearablesById = useWearablesById();
 
   const rankedSets = useMemo(() => {
     if (!isExpanded) return [];
@@ -17,13 +15,6 @@ export function BestSetsPanel({ baseTraits }: BestSetsPanelProps) {
   }, [baseTraits, isExpanded]);
 
   const traitsReady = Array.isArray(baseTraits) && baseTraits.length >= 4;
-
-  const getWearableNames = (wearableIds: number[]): string[] => {
-    return wearableIds.map((id) => {
-      const wearable = wearablesById.get(id);
-      return wearable?.name || `#${id}`;
-    });
-  };
 
   if (!traitsReady) {
     return (
@@ -65,9 +56,8 @@ export function BestSetsPanel({ baseTraits }: BestSetsPanelProps) {
             <div className="space-y-2">
               {rankedSets.map((ranked, idx) => (
                 <SetRow
-                  key={`${ranked.set.id}-${idx}`}
+                  key={`${ranked.set.name}-${idx}`}
                   ranked={ranked}
-                  wearableNames={getWearableNames(ranked.set.requiredWearableIds)}
                 />
               ))}
             </div>
@@ -101,12 +91,10 @@ export function BestSetsPanel({ baseTraits }: BestSetsPanelProps) {
 
 function SetRow({
   ranked,
-  wearableNames,
 }: {
   ranked: RankedSet;
-  wearableNames: string[];
 }) {
-  const mods = ranked.set.traitModifiers;
+  const mods = ranked.set.mods;
   const traitChanges: string[] = [];
   if (mods.nrg) traitChanges.push(mods.nrg > 0 ? "+NRG" : "-NRG");
   if (mods.agg) traitChanges.push(mods.agg > 0 ? "+AGG" : "-AGG");
@@ -115,33 +103,24 @@ function SetRow({
 
   return (
     <div className="p-2 bg-background rounded border border-border">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span
-              className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                ranked.delta > 0
-                  ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                  : ranked.delta < 0
-                  ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {ranked.delta > 0 ? `+${ranked.delta}` : ranked.delta}
-            </span>
-            <span className="font-medium text-[11px] truncate">
-              {ranked.set.name}
-            </span>
-          </div>
-          <div className="mt-0.5 text-[10px] text-muted-foreground">
-            {traitChanges.length > 0
-              ? `(${traitChanges.join(", ")})`
-              : "(no trait mods)"}
-          </div>
-        </div>
-      </div>
-      <div className="mt-1 text-[9px] text-muted-foreground leading-relaxed">
-        {wearableNames.join(" · ")}
+      <div className="flex items-center gap-2">
+        <span
+          className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+            ranked.delta > 0
+              ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+              : ranked.delta < 0
+              ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+              : "bg-muted text-muted-foreground"
+          }`}
+        >
+          {ranked.delta > 0 ? `+${ranked.delta}` : ranked.delta}
+        </span>
+        <span className="font-medium text-[11px]">
+          {ranked.set.name}
+        </span>
+        <span className="text-[10px] text-muted-foreground">
+          {traitChanges.length > 0 ? `(${traitChanges.join(", ")})` : ""}
+        </span>
       </div>
     </div>
   );
