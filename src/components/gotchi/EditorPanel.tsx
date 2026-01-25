@@ -2,16 +2,44 @@ import { Card } from "@/ui/card";
 import { SlotGrid } from "./SlotGrid";
 import { useAppStore } from "@/state/useAppStore";
 import { GotchiSvg } from "./GotchiSvg";
-import { X } from "lucide-react";
+import { X, Wand2 } from "lucide-react";
 import { Button } from "@/ui/button";
 import { computeInstanceTraits, useWearablesById } from "@/state/selectors";
 import { GotchiCard } from "./GotchiCard";
+import { useMemo, useCallback } from "react";
 
 export function EditorPanel() {
   const editorInstances = useAppStore((state) => state.editorInstances);
   const wearablesById = useWearablesById();
   const removeEditorInstance = useAppStore(
     (state) => state.removeEditorInstance
+  );
+  const filters = useAppStore((state) => state.filters);
+  const sets = useAppStore((state) => state.sets);
+  const equipWearable = useAppStore((state) => state.equipWearable);
+
+  const activeSet = useMemo(() => {
+    if (!filters.set) return null;
+    return sets.find((s) => s.id === filters.set) || null;
+  }, [filters.set, sets]);
+
+  const applySetToInstance = useCallback(
+    (instanceId: string) => {
+      if (!activeSet) return;
+      for (const wearableId of activeSet.wearableIds) {
+        const wearable = wearablesById.get(wearableId);
+        if (!wearable) continue;
+        let slotIndex = wearable.slotPositions.findIndex((allowed) => allowed);
+        if (slotIndex === -1) continue;
+        if (wearable.handPlacement === "left" && wearable.slotPositions[4]) {
+          slotIndex = 4;
+        } else if (wearable.handPlacement === "right" && wearable.slotPositions[5]) {
+          slotIndex = 5;
+        }
+        equipWearable(instanceId, wearableId, slotIndex);
+      }
+    },
+    [activeSet, wearablesById, equipWearable]
   );
 
   return (
@@ -114,6 +142,19 @@ export function EditorPanel() {
                   <X className="h-4 w-4" />
                 </Button>
               </div>
+              {activeSet && (
+                <div className="flex justify-end pt-1 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-[11px] gap-1"
+                    onClick={() => applySetToInstance(instance.instanceId)}
+                  >
+                    <Wand2 className="h-3.5 w-3.5" />
+                    Apply {activeSet.name}
+                  </Button>
+                </div>
+              )}
             </Card>
           ))}
         </div>
