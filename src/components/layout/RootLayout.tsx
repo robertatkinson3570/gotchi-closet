@@ -29,10 +29,12 @@ export function RootLayout() {
       <main className="flex-1">
         <Outlet />
       </main>
-      <FooterAttribution
-        className="px-4 py-4 text-center"
-        showLink={!isHome && !isDress}
-      />
+      {!isDress && (
+        <FooterAttribution
+          className="px-4 py-4 text-center"
+          showLink={!isHome}
+        />
+      )}
     </div>
   );
 }
