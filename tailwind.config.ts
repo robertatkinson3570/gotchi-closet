@@ -9,6 +9,18 @@ const config = {
     './src/**/*.{ts,tsx}',
   ],
   prefix: "",
+  safelist: [
+    "grid-cols-4",
+    "sm:grid-cols-5",
+    "md:grid-cols-6",
+    "gap-3",
+    "items-start",
+    "min-w-0",
+    "w-20",
+    "sm:w-[88px]",
+    "md:w-24",
+    "lg:w-24",
+  ],
   theme: {
     container: {
       center: true,
