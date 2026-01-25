@@ -120,9 +120,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!instance) return;
 
     const equippedBySlot = [...instance.equippedBySlot];
+    const isHandSlot = slotIndex === 4 || slotIndex === 5;
 
     for (let i = 0; i < equippedBySlot.length; i++) {
       if (equippedBySlot[i] === wearableId) {
+        if (isHandSlot && i !== slotIndex && (i === 4 || i === 5)) {
+          continue;
+        }
         equippedBySlot[i] = 0;
       }
     }
