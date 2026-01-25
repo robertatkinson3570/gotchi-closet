@@ -92,6 +92,7 @@ export function EditorPanel() {
                           baseTraits={instance.baseGotchi.numericTraits}
                           wearableDelta={wearableDelta}
                           setDelta={setTraitModsDelta}
+                          enableSetFilter
                         />
                       );
                     })()}

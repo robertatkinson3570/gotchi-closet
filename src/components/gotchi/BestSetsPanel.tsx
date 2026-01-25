@@ -5,9 +5,10 @@ import { useAppStore } from "@/state/useAppStore";
 
 interface BestSetsPanelProps {
   baseTraits: number[];
+  enableSetFilter?: boolean;
 }
 
-export function BestSetsPanel({ baseTraits }: BestSetsPanelProps) {
+export function BestSetsPanel({ baseTraits, enableSetFilter = false }: BestSetsPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const storeSets = useAppStore((state) => state.sets);
   const setFilters = useAppStore((state) => state.setFilters);
@@ -20,6 +21,7 @@ export function BestSetsPanel({ baseTraits }: BestSetsPanelProps) {
   const traitsReady = Array.isArray(baseTraits) && baseTraits.length >= 4;
 
   const handleSetClick = (setName: string) => {
+    if (!enableSetFilter) return;
     const normalized = setName.toLowerCase().replace(/\s*\(.*\)\s*$/, "").trim();
     const match = storeSets.find(
       (s) => s.name.toLowerCase().trim() === normalized
@@ -71,7 +73,7 @@ export function BestSetsPanel({ baseTraits }: BestSetsPanelProps) {
                 <SetRow
                   key={`${ranked.set.name}-${idx}`}
                   ranked={ranked}
-                  onClick={() => handleSetClick(ranked.set.name)}
+                  onClick={enableSetFilter ? () => handleSetClick(ranked.set.name) : undefined}
                 />
               ))}
             </div>
@@ -108,7 +110,7 @@ function SetRow({
   onClick,
 }: {
   ranked: RankedSet;
-  onClick: () => void;
+  onClick?: () => void;
 }) {
   const mods = ranked.set.mods;
   const traitChanges: string[] = [];
@@ -118,9 +120,11 @@ function SetRow({
   if (mods.brn) traitChanges.push(mods.brn > 0 ? "+BRN" : "-BRN");
 
   return (
-    <button
+    <div
       onClick={onClick}
-      className="w-full p-2 bg-background rounded border border-border hover:bg-muted/50 hover:border-primary/50 transition-colors text-left"
+      className={`w-full p-2 bg-background rounded border border-border text-left ${
+        onClick ? "cursor-pointer hover:bg-muted/50 hover:border-primary/50 transition-colors" : ""
+      }`}
     >
       <div className="flex items-center gap-2">
         <span
@@ -141,6 +145,6 @@ function SetRow({
           {traitChanges.length > 0 ? `(${traitChanges.join(", ")})` : ""}
         </span>
       </div>
-    </button>
+    </div>
   );
 }
