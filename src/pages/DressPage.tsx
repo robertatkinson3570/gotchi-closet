@@ -358,15 +358,15 @@ export default function DressPage() {
           </span>
           <GotchiCarousel />
         </div>
-        <div className="flex-1 max-w-screen-2xl mx-auto w-full px-4 py-3 overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 h-full">
+        <div className="hidden lg:block flex-1 max-w-screen-2xl mx-auto w-full px-4 py-3 overflow-hidden">
+          <div className="grid grid-cols-[1fr_340px] gap-4 h-full">
             <div className="min-w-0 flex flex-col gap-2 overflow-hidden">
               <div className="w-full min-w-0 overflow-auto">
                 <EditorPanel />
               </div>
               {debug && <DebugPanel />}
             </div>
-            <div className="hidden lg:flex flex-col w-[340px] shrink-0 max-h-[calc(100vh-200px)] border rounded-md bg-background overflow-hidden">
+            <div className="flex flex-col w-[340px] shrink-0 max-h-[calc(100vh-200px)] border rounded-md bg-background overflow-hidden">
               <WearablesPanel />
               {debug && <DebugPanel />}
             </div>
