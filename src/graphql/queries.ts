@@ -13,6 +13,7 @@ export const GOTCHIS_BY_OWNER = gql`
         withSetsNumericTraits
         equippedWearables
         baseRarityScore
+        usedSkillPoints
         hauntId
         collateral
         createdAt

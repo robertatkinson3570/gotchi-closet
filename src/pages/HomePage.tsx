@@ -7,7 +7,6 @@ import { normalizeAddress, isValidAddress } from "@/lib/address";
 import { cacheGet, cacheSet, CACHE_KEYS } from "@/lib/cache";
 import { formatAddress } from "@/lib/format";
 import { X } from "lucide-react";
-import { Logo } from "@/components/Logo";
 import { DonateCard } from "@/components/DonateCard";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
@@ -104,12 +103,20 @@ export default function HomePage() {
           <Card className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--surface))] shadow-[0_20px_60px_hsl(var(--shadow))]">
             <CardHeader className="space-y-3 text-center py-8">
               <header className="hero">
-                <div className="hero-content space-y-3">
-                  <Logo variant="hero" className="mx-auto" />
+                <div className="hero-content space-y-0">
+                  <div className="flex justify-center">
+                    <img
+                      src="/logo.png"
+                      alt="GotchiCloset"
+                      width={320}
+                      height={320}
+                      style={{ display: "block", flexShrink: 0 }}
+                    />
+                  </div>
                   <h1 className="text-xl font-semibold tracking-tight text-foreground">
                     Your Gotchi’s Been in the Closet Long Enough
                   </h1>
-                  <p className="text-sm text-[hsl(var(--muted))]">
+                  <p className="mt-2 text-sm text-[hsl(var(--muted))]">
                     Put an outfit on it already!
                   </p>
                 </div>

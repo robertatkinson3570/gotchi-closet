@@ -2,10 +2,34 @@ import { useEffect, useMemo, useState } from "react";
 import { getCanonicalModifiedTraits } from "@/lib/traits";
 
 const EDITABLE_COUNT = 4;
+const respecBaseTraitsCache = new Map<string, number[]>();
 
-export function totalSpiritPoints(level?: number): number {
-  if (!Number.isFinite(level)) return 0;
-  return Math.floor((level as number) / 3);
+export async function getRespecBaseTraits(tokenId: string): Promise<number[]> {
+  const cached = respecBaseTraitsCache.get(tokenId);
+  if (cached) return cached;
+  const response = await fetch("/api/gotchis/base-traits", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tokenId }),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = payload?.message || "Failed to fetch base traits";
+    throw new Error(message);
+  }
+  const traits = Array.isArray(payload?.baseTraits)
+    ? payload.baseTraits.map((value: unknown) => Number(value) || 0)
+    : [];
+  if (traits.length < 6) {
+    throw new Error("Base traits response was invalid");
+  }
+  respecBaseTraitsCache.set(tokenId, traits);
+  return traits;
+}
+
+export function totalSpiritPoints(usedSkillPoints?: number): number {
+  if (!Number.isFinite(usedSkillPoints)) return 0;
+  return Math.max(0, Math.floor(usedSkillPoints as number));
 }
 
 export function computeWearableDelta(
@@ -32,7 +56,6 @@ export function computeWearableDelta(
 export function computeSimTraits(params: {
   baseTraits: number[];
   respecBaseTraits?: number[];
-  wearableDelta: number[];
   allocated: number[];
 }) {
   const base = Array.isArray(params.respecBaseTraits)
@@ -46,7 +69,7 @@ export function computeSimTraits(params: {
     const baseValue = Number(base[i]) || 0;
     const delta = Number(params.allocated[i]) || 0;
     simBase[i] = baseValue + delta;
-    simModified[i] = simBase[i] + (Number(params.wearableDelta[i]) || 0);
+    simModified[i] = simBase[i];
   }
 
   return { simBase, simModified, usingFallback };
@@ -54,13 +77,9 @@ export function computeSimTraits(params: {
 
 export function useRespecSimulator(params: {
   resetKey: string;
-  level?: number;
+  usedSkillPoints?: number;
   baseTraits: number[];
-  modifiedTraits?: number[];
-  canonicalModifiedTraits?: number[];
-  withSetsNumericTraits?: number[];
   respecBaseTraits?: number[];
-  wearableDeltaOverride?: number[];
 }) {
   const [isRespecMode, setIsRespecMode] = useState(false);
   const [allocated, setAllocated] = useState([0, 0, 0, 0]);
@@ -70,37 +89,20 @@ export function useRespecSimulator(params: {
     setAllocated([0, 0, 0, 0]);
   }, [params.resetKey]);
 
-  const totalSP = totalSpiritPoints(params.level);
-  const used = allocated.reduce((acc, val) => acc + val, 0);
+  const totalSP = totalSpiritPoints(params.usedSkillPoints);
+  const used = allocated.reduce((acc, val) => acc + Math.abs(val), 0);
   const spLeft = Math.max(0, totalSP - used);
-
-  const wearableDelta = useMemo(() => {
-    if (params.wearableDeltaOverride) {
-      return params.wearableDeltaOverride.slice(0, EDITABLE_COUNT);
-    }
-    return computeWearableDelta(
-      params.baseTraits,
-      params.modifiedTraits,
-      params.canonicalModifiedTraits,
-      params.withSetsNumericTraits
-    );
-  }, [
-    params.baseTraits,
-    params.modifiedTraits,
-    params.canonicalModifiedTraits,
-    params.withSetsNumericTraits,
-    params.wearableDeltaOverride,
-  ]);
+  const hasBaseline =
+    Array.isArray(params.respecBaseTraits) && params.respecBaseTraits.length >= 6;
 
   const { simBase, simModified, usingFallback } = useMemo(
     () =>
       computeSimTraits({
         baseTraits: params.baseTraits,
         respecBaseTraits: params.respecBaseTraits,
-        wearableDelta,
         allocated,
       }),
-    [params.baseTraits, params.respecBaseTraits, wearableDelta, allocated]
+    [params.baseTraits, params.respecBaseTraits, allocated]
   );
 
   const increment = (index: number) => {
@@ -114,9 +116,14 @@ export function useRespecSimulator(params: {
 
   const decrement = (index: number) => {
     setAllocated((prev) => {
-      if (prev[index] <= 0) return prev;
       const next = [...prev];
-      next[index] -= 1;
+      if (next[index] > 0) {
+        next[index] -= 1;
+      } else if (next[index] < 0) {
+        next[index] += 1;
+      } else {
+        return prev;
+      }
       return next;
     });
   };
@@ -127,7 +134,7 @@ export function useRespecSimulator(params: {
     allocated,
     totalSP,
     spLeft,
-    wearableDelta,
+    hasBaseline,
     simBase,
     simModified,
     usingFallback,

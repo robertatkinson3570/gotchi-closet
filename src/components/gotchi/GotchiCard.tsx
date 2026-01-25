@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 import { Card } from "@/ui/card";
 import { SvgInline } from "./SvgInline";
+import { GotchiSvg } from "./GotchiSvg";
 import type { Gotchi } from "@/types";
-import { useRespecSimulator } from "@/lib/respec";
+import { getRespecBaseTraits, useRespecSimulator } from "@/lib/respec";
+import { useEffect, useState } from "react";
 import { Button } from "@/ui/button";
 import { Minus, Plus } from "lucide-react";
 import { sumTraitBrs } from "@/lib/rarity";
@@ -55,22 +57,46 @@ export function GotchiCard({
   wearableDeltaOverride,
   level,
 }: GotchiCardProps) {
+  const tokenId = String(gotchi.gotchiId || gotchi.id);
+  const numericTraitSource = baseTraits || gotchi.numericTraits;
+  const [respecBaseTraits, setRespecBaseTraits] = useState<number[] | null>(null);
+  const baseTraitSource = baseTraits || gotchi.numericTraits;
+  const respecBaselineTraits = respecBaseTraits || undefined;
   const respec = useRespecSimulator({
     resetKey: respecResetKey || gotchi.id,
-    level,
-    baseTraits: baseTraits || gotchi.numericTraits,
-    modifiedTraits: modifiedTraits,
-    canonicalModifiedTraits,
-    withSetsNumericTraits,
-    wearableDeltaOverride,
+    usedSkillPoints: gotchi.usedSkillPoints,
+    baseTraits: numericTraitSource,
+    respecBaseTraits: respecBaselineTraits,
   });
-  const baseTraitSource = baseTraits || gotchi.numericTraits;
+  useEffect(() => {
+    setRespecBaseTraits(null);
+  }, [tokenId]);
+  useEffect(() => {
+    if (!showRespec || !respec.isRespecMode) return;
+    let cancelled = false;
+    getRespecBaseTraits(tokenId)
+      .then((traits) => {
+        if (cancelled) return;
+        setRespecBaseTraits(traits);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        if (import.meta.env.DEV) {
+          console.error("[respec] base traits fetch failed", err);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showRespec, respec.isRespecMode, tokenId]);
+  const currentTraits = numericTraitSource?.slice(0, 4) || traits?.slice(0, 4) || [];
+  const baselineTraits = respecBaselineTraits?.slice(0, 4);
   const displayBaseTraits = showRespec && respec.isRespecMode
     ? respec.simBase
-    : baseTraitSource?.slice(0, 4) || traits?.slice(0, 4) || [];
+    : baseTraitSource?.slice(0, 4) || currentTraits;
   const displayModifiedTraits = showRespec && respec.isRespecMode
-    ? respec.simModified
-    : traits?.slice(0, 4) || baseTraitSource?.slice(0, 4) || [];
+    ? undefined
+    : traits?.slice(0, 4) || baseTraitSource?.slice(0, 4) || currentTraits;
   const traitBaseValue = showRespec && respec.isRespecMode
     ? sumTraitBrs(respec.simBase)
     : traitBase;
@@ -107,7 +133,16 @@ export function GotchiCard({
                 {svg ? (
                   <SvgInline svg={svg} className="h-12 w-12" />
                 ) : (
-                  <div className="h-12 w-12 rounded-md bg-muted" />
+                  // Selector falls back to the editor's SVG pipeline.
+                  <GotchiSvg
+                    gotchiId={gotchi.gotchiId || gotchi.id}
+                    hauntId={gotchi.hauntId}
+                    collateral={gotchi.collateral}
+                    numericTraits={gotchi.numericTraits}
+                    equippedWearables={gotchi.equippedWearables}
+                    className="h-12 w-12"
+                    mode="preview"
+                  />
                 )}
               </>
             )}
@@ -142,7 +177,7 @@ export function GotchiCard({
                         className="rounded-full border border-[hsl(var(--border))] px-2 py-0.5 text-[10px] text-muted-foreground"
                         title={
                           respec.usingFallback
-                            ? "Baseline: current traits (respec baseline unavailable from subgraph)"
+                            ? "Baseline: current traits (respec baseline unavailable)"
                             : undefined
                         }
                       >
@@ -170,8 +205,23 @@ export function GotchiCard({
                   <span>{label}</span>
                   <div className="flex items-center gap-2">
                     <span data-testid={`trait-value-${label}`}>
-                      {displayBaseTraits[index] ?? traits[index]} (
-                      {displayModifiedTraits[index] ?? traits[index]})
+                      {displayBaseTraits[index] ?? traits[index]}
+                      {Number.isFinite(
+                        (showRespec && respec.isRespecMode
+                          ? baselineTraits?.[index]
+                          : displayModifiedTraits?.[index]) as number
+                      ) && (
+                        <>
+                          {" "}
+                          (
+                        <span data-testid={`trait-${label}`}>
+                          {showRespec && respec.isRespecMode
+                            ? baselineTraits?.[index]
+                            : displayModifiedTraits?.[index]}
+                        </span>
+                          )
+                        </>
+                      )}
                     </span>
                     {showRespec && respec.isRespecMode && (
                       <div className="flex items-center gap-1">
@@ -180,7 +230,7 @@ export function GotchiCard({
                           size="icon"
                           className="h-5 w-5 opacity-60 hover:opacity-100"
                           onClick={() => respec.decrement(index)}
-                          disabled={respec.allocated[index] === 0}
+                          disabled={!respec.hasBaseline || respec.allocated[index] === 0}
                           aria-label={`Decrease ${label}`}
                         >
                           <Minus className="h-3 w-3" />
@@ -195,7 +245,7 @@ export function GotchiCard({
                           size="icon"
                           className="h-5 w-5 opacity-60 hover:opacity-100"
                           onClick={() => respec.increment(index)}
-                          disabled={respec.spLeft === 0}
+                          disabled={!respec.hasBaseline || respec.spLeft === 0}
                           aria-label={`Increase ${label}`}
                         >
                           <Plus className="h-3 w-3" />

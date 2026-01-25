@@ -44,7 +44,41 @@ export function computeInstanceTraits(params: {
   blocksElapsed?: number;
 }) {
   const baseTraits = params.baseTraits;
-  const equippedIds = params.equippedBySlot.filter((id) => id !== 0);
+  const equippedBySlot = [...params.equippedBySlot];
+  const equippedIds = equippedBySlot.filter((id) => id !== 0);
+
+  if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_TRAITS) {
+    const slotLabels = [
+      "body",
+      "face",
+      "eyes",
+      "head",
+      "leftHand",
+      "rightHand",
+      "pet",
+      "background",
+    ];
+    const bySlot = equippedBySlot.map((id, idx) => ({
+      slot: slotLabels[idx],
+      id,
+    }));
+    const mods = equippedIds.map((id) => {
+      const wearable = params.wearablesById.get(id);
+      const traitModifiers = wearable?.traitModifiers?.slice(0, 4) || [0, 0, 0, 0];
+      return { id, name: wearable?.name, traitModifiers };
+    });
+    const sums = mods.reduce(
+      (acc, item) => {
+        acc.nrg += Number(item.traitModifiers[0]) || 0;
+        acc.agg += Number(item.traitModifiers[1]) || 0;
+        acc.spk += Number(item.traitModifiers[2]) || 0;
+        acc.brn += Number(item.traitModifiers[3]) || 0;
+        return acc;
+      },
+      { nrg: 0, agg: 0, spk: 0, brn: 0 }
+    );
+    console.debug("[traits-debug]", { baseTraits, bySlot, mods, sums });
+  }
   const breakdown = computeBRSBreakdown({
     baseTraits,
     modifiedNumericTraits: params.modifiedNumericTraits,

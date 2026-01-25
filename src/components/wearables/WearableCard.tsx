@@ -128,6 +128,7 @@ interface WearableCardProps extends WearableCardViewProps {}
 export function WearableCard({ wearable, onClick }: WearableCardProps) {
   return (
     <motion.div
+      data-testid={`wearable-${wearable.id}`}
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.2 }}
       className="touch-none select-none"

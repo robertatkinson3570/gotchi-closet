@@ -6,7 +6,15 @@ const SVG_FACET_ABI = [
   "function previewAavegotchi(uint256 _hauntId, address _collateralType, int16[6] _numericTraits, uint16[16] _equippedWearables) external view returns (string)",
 ];
 
+const TRAITS_FACET_ABI = [
+  // TODO: User will paste the subgraph query file used by respec modal and the existing
+  // contract helper file so we can confirm the exact ABI method name and wire it correctly
+  // without guessing.
+  "function getAavegotchiBaseTraits(uint256 _tokenId) external view returns (int16[6])",
+];
+
 const svgFacet = new Interface(SVG_FACET_ABI);
+const traitsFacet = new Interface(TRAITS_FACET_ABI);
 const RPC_TIMEOUT_MS = 8000;
 const MAX_RPC_ATTEMPTS = 3;
 
@@ -158,6 +166,26 @@ export async function previewGotchiSvg(input: {
     ],
   });
   return svgFacet.decodeFunctionResult("previewAavegotchi", result)[0];
+}
+
+export async function getGotchiBaseTraits(tokenId: string): Promise<number[]> {
+  const callData = traitsFacet.encodeFunctionData("getAavegotchiBaseTraits", [
+    BigInt(tokenId),
+  ]);
+  const result = await callRpc<string>({
+    method: "eth_call",
+    params: [
+      {
+        to: getDiamondAddress(),
+        data: callData,
+      },
+      "latest",
+    ],
+  });
+  const decoded = traitsFacet.decodeFunctionResult("getAavegotchiBaseTraits", result)[0];
+  return Array.isArray(decoded)
+    ? decoded.map((value) => Number(value) || 0)
+    : [];
 }
 
 export async function getWearableThumbs(

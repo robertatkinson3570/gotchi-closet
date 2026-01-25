@@ -76,6 +76,10 @@
   }
 }
 
+img {
+  max-width: none;
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;

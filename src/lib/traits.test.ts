@@ -67,3 +67,25 @@ describe("wearable trait order mapping", () => {
   });
 });
 
+describe("Jordan set swap regression", () => {
+  it("matches expected final traits and total BRS for 21403 swap", () => {
+    const wearablesPath = join(process.cwd(), "data", "wearables.json");
+    const wearablesData = JSON.parse(readFileSync(wearablesPath, "utf8")) as any[];
+    const wearablesById = new Map(wearablesData.map((w) => [Number(w.id), w]));
+
+    const baseTraits = [12, 15, 107, 109, 8, 13];
+    const equippedWearables = [31, 263, 86, 30, 223, 32, 361, 0];
+
+    const breakdown = computeBRSBreakdown({
+      baseTraits,
+      equippedWearables,
+      wearablesById,
+      blocksElapsed: 0,
+    });
+
+    expect(traitsToBRS(baseTraits)).toBe(570);
+    expect(breakdown.finalTraits).toEqual([9, 5, 120, 115, 8, 13]);
+    expect(breakdown.totalBrs).toBe(719);
+  });
+});
+

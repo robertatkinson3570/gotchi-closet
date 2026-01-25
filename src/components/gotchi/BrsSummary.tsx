@@ -16,7 +16,13 @@ export function BrsSummary({ traitBase, totalBrs, className }: BrsSummaryProps) 
   return (
     <div className={`text-[11px] text-muted-foreground ${className ?? ""}`}>
       <div className="text-foreground font-medium" data-testid="rarity-score">
-        Rarity Score {formatNumber(totalBrs)} ({formatNumber(traitBase)})
+        <span>Rarity Score </span>
+        <span data-testid="rarity-with-wearables">
+          {formatNumber(totalBrs)}
+        </span>
+        <span> (</span>
+        <span data-testid="rarity-base">{formatNumber(traitBase)}</span>
+        <span>)</span>
       </div>
       <div className="sr-only">
         <div>Trait BRS (base)</div>

@@ -104,6 +104,9 @@ export function GotchiSvg({
         signal: controller.signal,
         timeoutMs: 8000,
       });
+      if (!res) {
+        return null;
+      }
       if (!res.ok) {
         const errorBody = await res.json().catch(() => ({}));
         throw new Error(errorBody?.message || `HTTP ${res.status}`);
@@ -114,6 +117,7 @@ export function GotchiSvg({
 
     fetchSvg()
       .then((data) => {
+        if (!data) return;
         if (mounted && requestId === requestIdRef.current) {
           setSvg(data || fallbackSvg(requestKey));
           setLoading(false);

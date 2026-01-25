@@ -5,7 +5,6 @@ import { useAddressState } from "@/lib/addressState";
 import { shortenAddress } from "@/lib/address";
 import { switchToBaseChain } from "@/lib/chains";
 import { useToast } from "@/ui/use-toast";
-import { Logo } from "@/components/Logo";
 import { ConnectButton } from "./ConnectButton";
 import { NetworkBanner } from "./NetworkBanner";
 import { ArrowLeft } from "lucide-react";
@@ -40,8 +39,8 @@ export function WalletHeader({ showBack = true }: WalletHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-      <div className="px-4 py-4 flex items-center justify-between">
+    <header className="sticky top-0 z-50 h-14 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <div className="px-4 flex h-14 items-center justify-between">
         <div className="flex items-center gap-3 min-w-0">
           {showBack && (
             <Button
@@ -52,7 +51,6 @@ export function WalletHeader({ showBack = true }: WalletHeaderProps) {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
-          <Logo variant="navbar" />
           <div className="min-w-0 flex flex-col leading-tight">
             <div className="text-xl font-semibold tracking-tight truncate">
               Gotchi

@@ -127,6 +127,7 @@ export function WearablesPanel() {
       timeoutMs: 8000,
     })
       .then(async (res) => {
+        if (!res) return null;
         if (!res.ok) {
           const errorBody = await res.json().catch(() => ({}));
           throw new Error(errorBody?.message || `HTTP ${res.status}`);
@@ -134,6 +135,7 @@ export function WearablesPanel() {
         return res.json();
       })
       .then((json) => {
+        if (!json) return;
         if (json?.thumbs) {
           setWearableThumbs(json.thumbs);
         }

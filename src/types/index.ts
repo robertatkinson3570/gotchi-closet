@@ -4,10 +4,12 @@ export type Gotchi = {
   name: string;
   level?: number;
   numericTraits: number[];
+  baseNumericTraits?: number[];
   modifiedNumericTraits?: number[];
   withSetsNumericTraits?: number[];
   equippedWearables: number[];
   baseRarityScore?: number | null;
+  usedSkillPoints?: number;
   hauntId?: number;
   collateral?: string;
   createdAt?: number;

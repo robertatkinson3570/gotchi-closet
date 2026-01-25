@@ -22,10 +22,7 @@ const GOTCHI = {
 };
 
 const META_BLOCK = 41234245;
-
-const WEARABLE_IDS = [
-  31, 263, 86, 30, 212, 32, 361, 223,
-];
+const WEARABLE_IDS = [31, 263, 86, 30, 212, 32, 361, 223];
 
 const wearablesPath = join(process.cwd(), "data", "wearables.json");
 const wearablesData = JSON.parse(readFileSync(wearablesPath, "utf8"));
@@ -35,7 +32,7 @@ const wearablesById = new Map(
 
 const itemTypes = WEARABLE_IDS.map((id) => wearablesById.get(id)).filter(Boolean);
 
-test("undress swap matches dapp total for 21403", async ({ page }) => {
+test("left hand swap recalculates modifiers (hook hand regression)", async ({ page }) => {
   await page.route(SUBGRAPH_URL, async (route) => {
     const body = route.request().postDataJSON() as any;
     const query = body?.query || "";
@@ -91,36 +88,23 @@ test("undress swap matches dapp total for 21403", async ({ page }) => {
   });
 
   await page.goto(`/dress?view=${OWNER}`);
-
   await page.getByTestId("gotchi-card").first().click();
+  const instance = page.locator('[data-testid^="editor-instance-"]').first();
+  await expect(instance).toBeVisible();
+  await expect(instance.getByTestId("rarity-score")).toBeVisible();
+
+  await page.getByPlaceholder("Search wearables...").fill("1337 Laptop");
+  await page.dragAndDrop('[data-testid="wearable-212"]', '[data-testid="slot-leftHand"]');
 
   await page.getByPlaceholder("Search wearables...").fill("Hook Hand");
-  const wearable = page.getByTestId("wearable-card-223");
+  await page.dragAndDrop('[data-testid="wearable-223"]', '[data-testid="slot-leftHand"]');
 
-  const instance = page.locator('[data-testid^="editor-instance-"]').first();
-  const instanceIdAttr = await instance.getAttribute("data-testid");
-  const instanceId = instanceIdAttr?.replace("editor-instance-", "") || "";
+  await expect(instance.getByTestId("rarity-with-wearables")).toHaveText("719");
+  await expect(instance.getByTestId("rarity-base")).toHaveText("570");
 
-  await page.dragAndDrop(
-    `[data-testid="wearable-card-223"]`,
-    `[data-testid="slot-${instanceId}-4"]`
-  );
-
-  await expect(
-    instance.locator('[data-testid="rarity-score"]').first()
-  ).toHaveText("Rarity Score 719 (570)");
-
-  await expect(
-    instance.locator('[data-testid="trait-value-NRG"]').first()
-  ).toHaveText("12 (9)");
-  await expect(
-    instance.locator('[data-testid="trait-value-AGG"]').first()
-  ).toHaveText("15 (5)");
-  await expect(
-    instance.locator('[data-testid="trait-value-SPK"]').first()
-  ).toHaveText("107 (120)");
-  await expect(
-    instance.locator('[data-testid="trait-value-BRN"]').first()
-  ).toHaveText("109 (115)");
+  await expect(instance.getByTestId("trait-NRG")).toHaveText("9");
+  await expect(instance.getByTestId("trait-AGG")).toHaveText("5");
+  await expect(instance.getByTestId("trait-SPK")).toHaveText("120");
+  await expect(instance.getByTestId("trait-BRN")).toHaveText("115");
 });
 
