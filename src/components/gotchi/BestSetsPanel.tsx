@@ -28,6 +28,7 @@ export function BestSetsPanel({ baseTraits, enableSetFilter = false }: BestSetsP
     );
     if (match) {
       setFilters({ set: match.id });
+      setIsExpanded(false);
     }
   };
 
