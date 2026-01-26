@@ -7,12 +7,11 @@ import { switchToBaseChain } from "@/lib/chains";
 import { useToast } from "@/ui/use-toast";
 import { ConnectButton } from "./ConnectButton";
 import { NetworkBanner } from "./NetworkBanner";
-import { ArrowLeft, FlaskConical, Eye, X } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
+import { Home, FlaskConical, Eye, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 type WalletHeaderProps = {
-  showBack?: boolean;
   manualAddress?: string | null;
   connectedOwner?: string | null;
   onClearManual?: () => void;
@@ -20,13 +19,11 @@ type WalletHeaderProps = {
 };
 
 export function WalletHeader({ 
-  showBack = true,
   manualAddress,
   connectedOwner,
   onClearManual,
   onUseConnected,
 }: WalletHeaderProps) {
-  const navigate = useNavigate();
   const { disconnect } = useDisconnect();
   const { toast } = useToast();
   const {
@@ -51,17 +48,12 @@ export function WalletHeader({
   return (
     <header className="sticky top-0 z-50 h-12 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="px-4 flex h-12 items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          {showBack && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => navigate("/")}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          )}
+        <div className="flex items-center gap-1.5 min-w-0">
+          <img
+            src="/logo.png"
+            alt="GotchiCloset"
+            className="h-12 w-12 object-contain -my-2"
+          />
           <div className="text-lg font-semibold tracking-tight">
             Gotchi<span className="font-normal text-muted-foreground">Closet</span>
           </div>
@@ -108,6 +100,11 @@ export function WalletHeader({
         </div>
 
         <div className="flex items-center gap-1.5">
+          <Link to="/">
+            <Button size="sm" variant="ghost" className="h-8 px-2" title="Home">
+              <Home className="h-4 w-4" />
+            </Button>
+          </Link>
           <Link to="/wardrobe-lab">
             <Button size="sm" variant="ghost" className="h-8 px-2" title="Wardrobe Lab">
               <FlaskConical className="h-4 w-4" />
