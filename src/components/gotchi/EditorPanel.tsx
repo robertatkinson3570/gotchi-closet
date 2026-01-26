@@ -49,12 +49,15 @@ export function EditorPanel() {
     return traits.slice(0, 4).map((t) => (t >= 50 ? 1 : -1));
   }, []);
 
+  const clearFilters = useAppStore((state) => state.clearFilters);
+
   const filterBestForGotchi = useCallback(
     (traits: number[]) => {
+      clearFilters();
       const directions = getTraitDirections(traits);
       setFilters({ traitDirections: directions });
     },
-    [getTraitDirections, setFilters]
+    [getTraitDirections, setFilters, clearFilters]
   );
 
   return (
