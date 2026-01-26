@@ -104,7 +104,7 @@ export default function HomePage() {
         <div className="w-full max-w-md">
           <div className="backdrop-blur-sm bg-card/80 rounded-2xl border border-border/50 shadow-2xl shadow-black/5 overflow-hidden">
             <div className="px-5 pt-3 pb-2 text-center">
-              <div className="flex justify-center -mb-4">
+              <div className="flex justify-center mb-2">
                 <img
                   src="/logo.png"
                   alt="GotchiCloset"
