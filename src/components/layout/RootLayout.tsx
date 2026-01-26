@@ -16,7 +16,7 @@ export function RootLayout() {
               <img
                 src="/logo.png"
                 alt="GotchiCloset"
-                className="h-14 w-14 object-contain -my-2"
+                className="h-12 w-12 object-contain -my-2"
               />
               <div className="text-xl font-semibold tracking-tight truncate">
                 Gotchi
