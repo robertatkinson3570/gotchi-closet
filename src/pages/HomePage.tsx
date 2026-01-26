@@ -100,11 +100,11 @@ export default function HomePage() {
         <div className="absolute bottom-1/4 right-0 w-80 h-80 bg-pink-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center px-4 sm:px-6 pt-8 sm:pt-12 pb-8">
+      <div className="relative z-10 flex flex-col items-center px-4 sm:px-6 pt-4 pb-6">
         <div className="w-full max-w-md">
-          <div className="backdrop-blur-sm bg-card/80 rounded-3xl border border-border/50 shadow-2xl shadow-black/5 overflow-hidden">
-            <div className="px-6 pt-8 pb-6 text-center">
-              <div className="flex justify-center mb-4">
+          <div className="backdrop-blur-sm bg-card/80 rounded-2xl border border-border/50 shadow-2xl shadow-black/5 overflow-hidden">
+            <div className="px-5 pt-3 pb-2 text-center">
+              <div className="flex justify-center -mb-4">
                 <img
                   src="/logo.png"
                   alt="GotchiCloset"
@@ -114,14 +114,14 @@ export default function HomePage() {
               <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
                 Your Gotchi's Been in the Closet Long Enough
               </h1>
-              <p className="mt-1.5 text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Put an outfit on it already!
               </p>
             </div>
 
-            <div className="px-6 pb-8 space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <div className="px-5 pb-5 space-y-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
                   Wallet Address
                 </label>
                 <Input
@@ -129,47 +129,39 @@ export default function HomePage() {
                   value={manualAddressInput}
                   onChange={(e) => setManualAddressInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleDress()}
-                  className="h-11 bg-background/50 border-border/50 rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/50 placeholder:text-muted-foreground/50 transition-all"
+                  className="h-10 bg-background/50 border-border/50 rounded-lg focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/50 placeholder:text-muted-foreground/50 transition-all"
                   data-testid="home-manual-input"
                 />
                 {hasManualInput && !isManualValid && (
                   <p className="text-xs text-destructive">Enter a valid Ethereum address</p>
                 )}
-                <p className="text-xs text-muted-foreground/70">
-                  Paste any wallet to dress those gotchis
-                </p>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-border/50" />
-                <span className="text-xs text-muted-foreground/60 uppercase tracking-wider">or</span>
-                <div className="flex-1 h-px bg-border/50" />
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-px bg-border/40" />
+                <span className="text-[10px] text-muted-foreground/50 uppercase">or</span>
+                <div className="flex-1 h-px bg-border/40" />
               </div>
 
-              <div className="space-y-2">
-                {isConnected && connectedAddress ? (
-                  <Button
-                    onClick={() => disconnect()}
-                    variant="secondary"
-                    className="w-full h-11 rounded-xl border border-border/50 bg-background/50 hover:bg-muted/50 transition-all"
-                  >
-                    <span className="font-mono text-sm">{formatAddress(connectedOwner || "")}</span>
-                  </Button>
-                ) : (
-                  <ConnectButton
-                    variant="secondary"
-                    className="w-full h-11 rounded-xl border border-border/50 bg-background/50 hover:bg-muted/50 transition-all"
-                    testId="home-connect-wallet-btn"
-                  />
-                )}
-                <p className="text-xs text-muted-foreground/70">
-                  Connect wallet for quick access. No transactions.
-                </p>
-              </div>
+              {isConnected && connectedAddress ? (
+                <Button
+                  onClick={() => disconnect()}
+                  variant="secondary"
+                  className="w-full h-10 rounded-lg border border-border/50 bg-background/50 hover:bg-muted/50 transition-all"
+                >
+                  <span className="font-mono text-sm">{formatAddress(connectedOwner || "")}</span>
+                </Button>
+              ) : (
+                <ConnectButton
+                  variant="secondary"
+                  className="w-full h-10 rounded-lg border border-border/50 bg-background/50 hover:bg-muted/50 transition-all"
+                  testId="home-connect-wallet-btn"
+                />
+              )}
 
               <Button
                 onClick={handleDress}
-                className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 hover:-translate-y-0.5 transition-all duration-200"
+                className="w-full h-11 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 hover:-translate-y-0.5 transition-all duration-200"
                 data-testid="home-dress-btn"
                 disabled={!isManualValid}
               >
@@ -177,91 +169,74 @@ export default function HomePage() {
               </Button>
 
               {recentAddresses.length > 0 && (
-                <div className="pt-2 space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Recent
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {recentAddresses.map((addr) => (
-                      <button
-                        key={addr}
-                        className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 hover:bg-muted text-sm font-mono border border-border/30 hover:border-border/50 transition-all"
-                        onClick={() => handleRecentClick(addr)}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {recentAddresses.map((addr) => (
+                    <button
+                      key={addr}
+                      className="group flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted/40 hover:bg-muted text-xs font-mono border border-border/20 hover:border-border/40 transition-all"
+                      onClick={() => handleRecentClick(addr)}
+                    >
+                      <span className="text-foreground/70">{formatAddress(addr)}</span>
+                      <span
+                        onClick={(e) => handleRemoveRecent(addr, e)}
+                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
                       >
-                        <span className="text-foreground/80">{formatAddress(addr)}</span>
-                        <span
-                          onClick={(e) => handleRemoveRecent(addr, e)}
-                          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
-                        >
-                          <X className="h-3 w-3" />
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                        <X className="h-2.5 w-2.5" />
+                      </span>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
           </div>
 
-          <div className="mt-8 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="mt-4 space-y-3">
+            <div className="grid grid-cols-3 gap-2">
               <Link 
                 to="/sets" 
-                className="group flex flex-col items-center gap-2 p-4 rounded-2xl bg-card/50 border border-border/30 hover:border-primary/30 hover:bg-card/80 transition-all"
+                className="group flex flex-col items-center gap-1 p-2.5 rounded-xl bg-card/50 border border-border/30 hover:border-primary/30 hover:bg-card/80 transition-all"
               >
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:scale-110 transition-transform">
-                  <Layers className="h-5 w-5" />
+                <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+                  <Layers className="h-4 w-4" />
                 </div>
-                <span className="text-sm font-medium text-foreground">Browse Sets</span>
+                <span className="text-xs font-medium text-foreground">Sets</span>
               </Link>
               <Link 
                 to="/traits/nrg" 
-                className="group flex flex-col items-center gap-2 p-4 rounded-2xl bg-card/50 border border-border/30 hover:border-primary/30 hover:bg-card/80 transition-all"
+                className="group flex flex-col items-center gap-1 p-2.5 rounded-xl bg-card/50 border border-border/30 hover:border-primary/30 hover:bg-card/80 transition-all"
               >
-                <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-500 group-hover:scale-110 transition-transform">
-                  <Sparkles className="h-5 w-5" />
+                <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500 group-hover:scale-110 transition-transform">
+                  <Sparkles className="h-4 w-4" />
                 </div>
-                <span className="text-sm font-medium text-foreground">Trait Optimization</span>
+                <span className="text-xs font-medium text-foreground">Traits</span>
               </Link>
               <Link 
                 to="/rarity-score" 
-                className="group flex flex-col items-center gap-2 p-4 rounded-2xl bg-card/50 border border-border/30 hover:border-primary/30 hover:bg-card/80 transition-all"
+                className="group flex flex-col items-center gap-1 p-2.5 rounded-xl bg-card/50 border border-border/30 hover:border-primary/30 hover:bg-card/80 transition-all"
               >
-                <div className="p-2.5 rounded-xl bg-pink-500/10 text-pink-500 group-hover:scale-110 transition-transform">
-                  <BarChart3 className="h-5 w-5" />
+                <div className="p-2 rounded-lg bg-pink-500/10 text-pink-500 group-hover:scale-110 transition-transform">
+                  <BarChart3 className="h-4 w-4" />
                 </div>
-                <span className="text-sm font-medium text-foreground">Rarity Score</span>
+                <span className="text-xs font-medium text-foreground">Rarity</span>
               </Link>
             </div>
 
-            <div className="space-y-4 p-5 rounded-2xl bg-card/30 border border-border/20">
+            <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-card/30 border border-border/20">
               <div>
-                <h2 className="text-sm font-semibold text-foreground mb-1">
-                  What GotchiCloset does
+                <h2 className="text-xs font-semibold text-foreground mb-0.5">
+                  What it does
                 </h2>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Load any wallet, preview wearables, and compare set bonuses and
-                  trait changes without extra clicks.
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Preview wearables, compare sets, and see trait changes instantly.
                 </p>
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-foreground mb-1">
-                  Why it's great for power users
+                <h2 className="text-xs font-semibold text-foreground mb-0.5">
+                  For power users
                 </h2>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-1">•</span>
-                    Fast previews with clear trait impact
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-1">•</span>
-                    Side-by-side set and wearable checks
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary mt-1">•</span>
-                    No clutter, just dress your Gotchi
-                  </li>
-                </ul>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Fast previews, side-by-side comparisons, zero clutter.
+                </p>
               </div>
             </div>
 
