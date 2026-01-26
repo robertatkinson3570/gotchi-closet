@@ -54,5 +54,6 @@ export type WearableFilters = {
   rarity: string | null; // rarity tier or null
   set: string | null; // set id or null
   showMissingOnly: boolean;
+  traitDirections: number[] | null; // [NRG, AGG, SPK, BRN] direction: -1 (low), 0 (neutral), 1 (high)
 };
 

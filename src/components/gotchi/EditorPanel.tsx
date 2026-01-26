@@ -2,7 +2,7 @@ import { Card } from "@/ui/card";
 import { SlotGrid } from "./SlotGrid";
 import { useAppStore } from "@/state/useAppStore";
 import { GotchiSvg } from "./GotchiSvg";
-import { X, Wand2 } from "lucide-react";
+import { X, Wand2, Sparkles, Shirt, RotateCcw } from "lucide-react";
 import { Button } from "@/ui/button";
 import { computeInstanceTraits, useWearablesById } from "@/state/selectors";
 import { GotchiCard } from "./GotchiCard";
@@ -17,6 +17,9 @@ export function EditorPanel() {
   const filters = useAppStore((state) => state.filters);
   const sets = useAppStore((state) => state.sets);
   const equipWearable = useAppStore((state) => state.equipWearable);
+  const setFilters = useAppStore((state) => state.setFilters);
+  const stripAllWearables = useAppStore((state) => state.stripAllWearables);
+  const restoreOriginalWearables = useAppStore((state) => state.restoreOriginalWearables);
 
   const activeSet = useMemo(() => {
     if (!filters.set) return null;
@@ -40,6 +43,18 @@ export function EditorPanel() {
       }
     },
     [activeSet, wearablesById, equipWearable]
+  );
+
+  const getTraitDirections = useCallback((traits: number[]) => {
+    return traits.slice(0, 4).map((t) => (t >= 50 ? 1 : -1));
+  }, []);
+
+  const filterBestForGotchi = useCallback(
+    (traits: number[]) => {
+      const directions = getTraitDirections(traits);
+      setFilters({ traitDirections: directions });
+    },
+    [getTraitDirections, setFilters]
   );
 
   return (
@@ -85,6 +100,38 @@ export function EditorPanel() {
                         <span className="text-[8px] text-muted-foreground">{activeSet.name}</span>
                       </Button>
                     )}
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-1.5 text-[8px]"
+                        onClick={() => filterBestForGotchi(instance.baseGotchi.numericTraits)}
+                        title="Filter wearables that benefit this gotchi"
+                      >
+                        <Sparkles className="h-3 w-3 mr-0.5" />
+                        Best
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-1.5 text-[8px]"
+                        onClick={() => stripAllWearables(instance.instanceId)}
+                        title="Remove all wearables"
+                      >
+                        <Shirt className="h-3 w-3 mr-0.5" />
+                        Nakey
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-1.5 text-[8px]"
+                        onClick={() => restoreOriginalWearables(instance.instanceId)}
+                        title="Restore original wearables"
+                      >
+                        <RotateCcw className="h-3 w-3 mr-0.5" />
+                        Restore
+                      </Button>
+                    </div>
                   </div>
                   <div className="min-w-0 overflow-hidden">
                     {(() => {

@@ -38,6 +38,9 @@ interface AppState {
   setError: (error: string | null) => void;
   equipWearable: (instanceId: string, wearableId: number, slotIndex: number) => void;
   unequipSlot: (instanceId: string, slotIndex: number) => void;
+  stripAllWearables: (instanceId: string) => void;
+  restoreOriginalWearables: (instanceId: string) => void;
+  clearFilters: () => void;
 }
 
 const initialFilters: WearableFilters = {
@@ -46,6 +49,7 @@ const initialFilters: WearableFilters = {
   rarity: null,
   set: null,
   showMissingOnly: false,
+  traitDirections: null,
 };
 
 let lastAddAt = 0;
@@ -159,6 +163,44 @@ export const useAppStore = create<AppState>((set, get) => ({
           : item
       ),
     });
+  },
+
+  stripAllWearables: (instanceId) => {
+    const state = get();
+    const instance = state.editorInstances.find(
+      (item) => item.instanceId === instanceId
+    );
+    if (!instance) return;
+
+    const equippedBySlot = instance.equippedBySlot.map(() => 0);
+
+    set({
+      editorInstances: state.editorInstances.map((item) =>
+        item.instanceId === instanceId
+          ? { ...item, equippedBySlot }
+          : item
+      ),
+    });
+  },
+
+  restoreOriginalWearables: (instanceId) => {
+    const state = get();
+    const instance = state.editorInstances.find(
+      (item) => item.instanceId === instanceId
+    );
+    if (!instance) return;
+
+    set({
+      editorInstances: state.editorInstances.map((item) =>
+        item.instanceId === instanceId
+          ? { ...item, equippedBySlot: [...instance.baseGotchi.equippedWearables] }
+          : item
+      ),
+    });
+  },
+
+  clearFilters: () => {
+    set({ filters: { ...initialFilters } });
   },
 }));
 

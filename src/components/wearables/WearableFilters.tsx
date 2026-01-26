@@ -6,6 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/ui/select";
+import { Button } from "@/ui/button";
+import { X } from "lucide-react";
 import { SLOT_NAMES } from "@/lib/constants";
 import { useAppStore } from "@/state/useAppStore";
 
@@ -15,15 +17,31 @@ export function WearableFilters() {
   const filters = useAppStore((state) => state.filters);
   const sets = useAppStore((state) => state.sets);
   const setFilters = useAppStore((state) => state.setFilters);
+  const clearFilters = useAppStore((state) => state.clearFilters);
+
+  const hasActiveFilters = filters.search || filters.slot !== null || filters.rarity || filters.set || filters.traitDirections;
 
   return (
     <div className="flex flex-col gap-1.5 p-1.5 border-b bg-muted/30">
-      <Input
-        placeholder="Search..."
-        value={filters.search}
-        onChange={(e) => setFilters({ search: e.target.value })}
-        className="h-7 text-[11px]"
-      />
+      <div className="flex items-center gap-1">
+        <Input
+          placeholder="Search..."
+          value={filters.search}
+          onChange={(e) => setFilters({ search: e.target.value })}
+          className="h-7 text-[11px] flex-1"
+        />
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-[10px]"
+            onClick={clearFilters}
+            title="Clear all filters"
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        )}
+      </div>
       <div className="flex items-center gap-1">
         <Select
           value={filters.slot?.toString() || "all"}

@@ -58,6 +58,22 @@ export function WearablesPanel() {
       filtered = filtered.filter((w) => getRarity(w.rarityScoreModifier) === filters.rarity);
     }
 
+    // Trait directions filter (best for gotchi)
+    if (filters.traitDirections) {
+      const dirs = filters.traitDirections;
+      filtered = filtered.filter((w) => {
+        const mods = w.traitModifiers.slice(0, 4);
+        for (let i = 0; i < 4; i++) {
+          const mod = mods[i] || 0;
+          const dir = dirs[i];
+          if (mod === 0) continue;
+          if (dir > 0 && mod < 0) return false;
+          if (dir < 0 && mod > 0) return false;
+        }
+        return mods.some((m) => m !== 0);
+      });
+    }
+
     // Set filter
     if (filters.set) {
       const set = sets.find((s) => s.id === filters.set);
