@@ -12,11 +12,11 @@ export function RootLayout() {
       {!isDress && (
         <header className="h-14 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex h-14 items-center justify-between px-4">
-            <Link to="/" className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity">
+            <Link to="/" className="flex items-center gap-1.5 min-w-0 hover:opacity-80 transition-opacity">
               <img
                 src="/logo.png"
                 alt="GotchiCloset"
-                className="h-10 w-10 object-contain"
+                className="h-14 w-14 object-contain -my-2"
               />
               <div className="text-xl font-semibold tracking-tight truncate">
                 Gotchi
