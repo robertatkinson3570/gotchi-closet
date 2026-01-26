@@ -100,36 +100,42 @@ export function EditorPanel() {
                         <span className="text-[8px] text-muted-foreground">{activeSet.name}</span>
                       </Button>
                     )}
-                    <div className="flex flex-wrap gap-1 justify-center">
+                    <div className="flex flex-col gap-1">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="h-5 px-1.5 text-[8px]"
+                        className="h-auto py-1 px-1.5 text-[9px] flex-col leading-tight"
                         onClick={() => filterBestForGotchi(instance.baseGotchi.numericTraits)}
-                        title="Filter wearables that benefit this gotchi"
                       >
-                        <Sparkles className="h-3 w-3 mr-0.5" />
-                        Best
+                        <span className="flex items-center gap-0.5">
+                          <Sparkles className="h-3 w-3" />
+                          Best
+                        </span>
+                        <span className="text-[8px] text-muted-foreground">Wearables</span>
                       </Button>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="h-5 px-1.5 text-[8px]"
+                        className="h-auto py-1 px-1.5 text-[9px] flex-col leading-tight"
                         onClick={() => stripAllWearables(instance.instanceId)}
-                        title="Remove all wearables"
                       >
-                        <Shirt className="h-3 w-3 mr-0.5" />
-                        Nakey
+                        <span className="flex items-center gap-0.5">
+                          <Shirt className="h-3 w-3" />
+                          Nakey
+                        </span>
+                        <span className="text-[8px] text-muted-foreground">Strip All</span>
                       </Button>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="h-5 px-1.5 text-[8px]"
+                        className="h-auto py-1 px-1.5 text-[9px] flex-col leading-tight"
                         onClick={() => restoreOriginalWearables(instance.instanceId)}
-                        title="Restore original wearables"
                       >
-                        <RotateCcw className="h-3 w-3 mr-0.5" />
-                        Restore
+                        <span className="flex items-center gap-0.5">
+                          <RotateCcw className="h-3 w-3" />
+                          Restore
+                        </span>
+                        <span className="text-[8px] text-muted-foreground">Original</span>
                       </Button>
                     </div>
                   </div>
