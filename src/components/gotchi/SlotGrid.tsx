@@ -13,6 +13,11 @@ interface SlotGridProps {
 
 export function SlotGrid({ instanceId, equippedBySlot }: SlotGridProps) {
   const wearablesById = useWearablesById();
+  const setFilters = useAppStore((state) => state.setFilters);
+
+  const handleSlotClick = (slotIndex: number) => {
+    setFilters({ slot: slotIndex });
+  };
 
   return (
     <div className="grid grid-cols-4 gap-2 items-start min-w-0">
@@ -27,6 +32,7 @@ export function SlotGrid({ instanceId, equippedBySlot }: SlotGridProps) {
             slotIndex={i}
             wearable={wearable}
             instanceId={instanceId}
+            onSlotClick={handleSlotClick}
           />
         );
       })}
@@ -38,10 +44,12 @@ function SlotDropTarget({
   slotIndex,
   wearable,
   instanceId,
+  onSlotClick,
 }: {
   slotIndex: number;
   wearable: Wearable | null;
   instanceId: string;
+  onSlotClick?: (slotIndex: number) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `slot:${instanceId}:${slotIndex}`,
@@ -107,6 +115,7 @@ function SlotDropTarget({
         instanceId={instanceId}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        onSlotClick={onSlotClick}
       />
     </div>
   );

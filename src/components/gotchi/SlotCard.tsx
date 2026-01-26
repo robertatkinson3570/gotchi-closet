@@ -17,6 +17,7 @@ interface SlotCardProps {
   instanceId: string;
   onDrop?: React.DragEventHandler<HTMLDivElement>;
   onDragOver?: React.DragEventHandler<HTMLDivElement>;
+  onSlotClick?: (slotIndex: number) => void;
 }
 
 export function SlotCard({
@@ -26,6 +27,7 @@ export function SlotCard({
   instanceId,
   onDrop,
   onDragOver,
+  onSlotClick,
 }: SlotCardProps) {
   const unequipSlot = useAppStore((state) => state.unequipSlot);
   const imageUrls = wearable ? getWearableIconUrlCandidates(wearable.id) : [];
@@ -56,11 +58,12 @@ export function SlotCard({
       <Card
         data-testid={`slot-${instanceId}-${slotIndex}`}
         data-wearable-id={wearable ? String(wearable.id) : ""}
-        className={`group relative w-[72px] flex-shrink-0 p-1 overflow-hidden ${
+        className={`group relative w-[72px] flex-shrink-0 p-1 overflow-hidden cursor-pointer hover:ring-1 hover:ring-primary/50 ${
           isDragOver ? "ring-2 ring-primary" : ""
         }`}
         onDrop={onDrop}
         onDragOver={onDragOver}
+        onClick={() => onSlotClick?.(slotIndex)}
       >
         <div className="text-[9px] text-muted-foreground mb-0.5 truncate">
           {SLOT_NAMES[slotIndex]}
@@ -106,7 +109,10 @@ export function SlotCard({
             variant="ghost"
             size="icon"
             className="absolute top-0 right-0 h-5 w-5 opacity-0 group-hover:opacity-100 transition"
-            onClick={() => unequipSlot(instanceId, slotIndex)}
+            onClick={(e) => {
+              e.stopPropagation();
+              unequipSlot(instanceId, slotIndex);
+            }}
           >
             <X className="h-3 w-3" />
           </Button>
