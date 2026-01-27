@@ -40,6 +40,14 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-27: Added "Show Only My Wearables" feature with inventory counts
+  - Toggle "My Items" in wearable selector shows only wearables owned by loaded gotchis
+  - Displays ×N count badges showing available quantity
+  - Counts decrement as wearables are equipped in editor, increment on unequip
+  - Wearables disappear from list when all copies are in use
+  - Toggle state persists via localStorage (gc_ownedWearablesOnly)
+  - Located in src/state/selectors.ts (computeOwnedCounts, computeUsedCounts, computeAvailCounts)
+- 2026-01-27: Updated logo across all pages with consistent sizing
 - 2026-01-25: Added "Best Sets" feature to GotchiCard on Dress page
   - Collapsible panel showing ALL wearable sets ranked by projected BRS gain
   - Uses reference data from aadventure.io stored in data/setsByTraitDirection.json
