@@ -38,15 +38,17 @@ export function WearableFilters() {
           onChange={(e) => setFilters({ search: e.target.value })}
           className="h-7 text-[11px] flex-1 min-w-0"
         />
-        <div className="flex items-center gap-0.5 shrink-0 bg-muted rounded-md p-0.5">
-          {MODE_OPTIONS.map((opt) => (
+        <div className="flex items-center shrink-0 border rounded-md overflow-hidden">
+          {MODE_OPTIONS.map((opt, idx) => (
             <button
               key={opt.value}
               onClick={() => setFilters({ wearableMode: opt.value })}
-              className={`px-2 py-0.5 text-[10px] rounded transition-colors ${
+              className={`px-2.5 py-1 text-[10px] font-medium transition-all ${
+                idx > 0 ? "border-l" : ""
+              } ${
                 filters.wearableMode === opt.value
                   ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "bg-background text-foreground hover:bg-muted"
               }`}
               disabled={opt.value === "baazaar" && baazaarLoading}
             >
