@@ -40,6 +40,14 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-27: Added "Baazaar Only" wearable selector with GHST pricing
+  - 3-way toggle: All | Owned | Baazaar (replaces previous My Items toggle)
+  - Baazaar mode shows only wearables with active listings on Base Baazaar
+  - Displays minimum GHST price for each listed wearable
+  - Queries Goldsky Base core subgraph for ERC1155 listings
+  - Prices cached per session for performance
+  - Mode persists via localStorage (gc_wearableMode)
+  - Located in src/lib/baazaar.ts, src/hooks/useBaazaar.ts
 - 2026-01-27: Added "Show Only My Wearables" feature with inventory counts
   - Toggle "My Items" in wearable selector shows only wearables owned by loaded gotchis
   - Displays ×N count badges showing available quantity

@@ -7,18 +7,25 @@ import {
   SelectValue,
 } from "@/ui/select";
 import { Button } from "@/ui/button";
-import { Switch } from "@/ui/switch";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { SLOT_NAMES } from "@/lib/constants";
 import { useAppStore } from "@/state/useAppStore";
+import type { WearableMode } from "@/types";
 
 const RARITIES = ["Godlike", "Mythical", "Legendary", "Rare", "Uncommon", "Common"] as const;
+
+const MODE_OPTIONS: { value: WearableMode; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "owned", label: "Owned" },
+  { value: "baazaar", label: "Baazaar" },
+];
 
 export function WearableFilters() {
   const filters = useAppStore((state) => state.filters);
   const sets = useAppStore((state) => state.sets);
   const setFilters = useAppStore((state) => state.setFilters);
   const clearFilters = useAppStore((state) => state.clearFilters);
+  const baazaarLoading = useAppStore((state) => state.baazaarLoading);
 
   const hasActiveFilters = filters.search || filters.slot !== null || filters.rarity || filters.set || filters.traitDirections;
 
@@ -29,16 +36,28 @@ export function WearableFilters() {
           placeholder="Search..."
           value={filters.search}
           onChange={(e) => setFilters({ search: e.target.value })}
-          className="h-7 text-[11px] flex-1"
+          className="h-7 text-[11px] flex-1 min-w-0"
         />
-        <label className="flex items-center gap-2 text-[10px] text-muted-foreground whitespace-nowrap cursor-pointer select-none shrink-0">
-          <Switch
-            checked={filters.ownedOnly}
-            onCheckedChange={(checked) => setFilters({ ownedOnly: checked })}
-            className="h-4 w-8 shrink-0 data-[state=checked]:bg-primary"
-          />
-          <span>My Items</span>
-        </label>
+        <div className="flex items-center gap-0.5 shrink-0 bg-muted rounded-md p-0.5">
+          {MODE_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setFilters({ wearableMode: opt.value })}
+              className={`px-2 py-0.5 text-[10px] rounded transition-colors ${
+                filters.wearableMode === opt.value
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              disabled={opt.value === "baazaar" && baazaarLoading}
+            >
+              {opt.value === "baazaar" && baazaarLoading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                opt.label
+              )}
+            </button>
+          ))}
+        </div>
         {hasActiveFilters && (
           <Button
             variant="ghost"

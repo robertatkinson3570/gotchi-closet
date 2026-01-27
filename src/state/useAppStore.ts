@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import type { Gotchi, Wearable, WearableSet, EditorInstance, WearableFilters } from "@/types";
+import type { Gotchi, Wearable, WearableSet, EditorInstance, WearableFilters, WearableMode } from "@/types";
+import type { BaazaarPriceMap } from "@/lib/baazaar";
 
 interface AppState {
   // Address & Gotchis
@@ -12,6 +13,11 @@ interface AppState {
   wearables: Wearable[];
   sets: WearableSet[];
   wearableThumbs: Record<number, string>;
+  
+  // Baazaar
+  baazaarPrices: BaazaarPriceMap;
+  baazaarLoading: boolean;
+  baazaarError: string | null;
 
   // Filters
   filters: WearableFilters;
@@ -31,6 +37,9 @@ interface AppState {
   setWearables: (wearables: Wearable[]) => void;
   setSets: (sets: WearableSet[]) => void;
   setWearableThumbs: (thumbs: Record<number, string>) => void;
+  setBaazaarPrices: (prices: BaazaarPriceMap) => void;
+  setBaazaarLoading: (loading: boolean) => void;
+  setBaazaarError: (error: string | null) => void;
   setFilters: (filters: Partial<WearableFilters>) => void;
   setLoadingGotchis: (loading: boolean) => void;
   setLoadingWearables: (loading: boolean) => void;
@@ -43,12 +52,15 @@ interface AppState {
   clearFilters: () => void;
 }
 
-const getInitialOwnedOnly = (): boolean => {
-  if (typeof window === 'undefined') return false;
+const getInitialWearableMode = (): WearableMode => {
+  if (typeof window === 'undefined') return 'all';
   try {
-    return localStorage.getItem('gc_ownedWearablesOnly') === 'true';
+    const stored = localStorage.getItem('gc_wearableMode');
+    if (stored === 'owned' || stored === 'baazaar') return stored;
+    if (localStorage.getItem('gc_ownedWearablesOnly') === 'true') return 'owned';
+    return 'all';
   } catch {
-    return false;
+    return 'all';
   }
 };
 
@@ -59,7 +71,8 @@ const initialFilters: WearableFilters = {
   set: null,
   showMissingOnly: false,
   traitDirections: null,
-  ownedOnly: getInitialOwnedOnly(),
+  ownedOnly: false,
+  wearableMode: getInitialWearableMode(),
 };
 
 let lastAddAt = 0;
@@ -72,6 +85,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   wearables: [],
   sets: [],
   wearableThumbs: {},
+  baazaarPrices: {},
+  baazaarLoading: false,
+  baazaarError: null,
   filters: initialFilters,
   loadingGotchis: false,
   loadingWearables: false,
@@ -119,12 +135,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSets: (sets) => set({ sets }),
   setWearableThumbs: (thumbs) =>
     set((state) => ({ wearableThumbs: { ...state.wearableThumbs, ...thumbs } })),
+  setBaazaarPrices: (prices) => set({ baazaarPrices: prices }),
+  setBaazaarLoading: (loading) => set({ baazaarLoading: loading }),
+  setBaazaarError: (error) => set({ baazaarError: error }),
   setFilters: (filters) =>
     set((state) => {
       const newFilters = { ...state.filters, ...filters };
-      if (filters.ownedOnly !== undefined) {
+      if (filters.wearableMode !== undefined) {
         try {
-          localStorage.setItem('gc_ownedWearablesOnly', String(filters.ownedOnly));
+          localStorage.setItem('gc_wearableMode', filters.wearableMode);
         } catch {}
       }
       return { filters: newFilters };

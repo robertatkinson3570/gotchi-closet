@@ -5,6 +5,7 @@ import { SetBanner } from "./SetBanner";
 import { EquipModal } from "./EquipModal";
 import { useAppStore } from "@/state/useAppStore";
 import { useWearableInventory } from "@/state/selectors";
+import { useBaazaar } from "@/hooks/useBaazaar";
 import type { Wearable } from "@/types";
 import { placeholderSvg } from "@/lib/placeholderSvg";
 import { fetchWithTimeout } from "@/lib/http";
@@ -19,6 +20,7 @@ export function WearablesPanel() {
   const gotchis = useAppStore((state) => state.gotchis);
   const setError = useAppStore((state) => state.setError);
   const { availCounts } = useWearableInventory();
+  const { baazaarPrices, baazaarLoading, isBaazaarMode } = useBaazaar();
   const equippedIds = editorInstances
     .flatMap((instance) => instance.equippedBySlot)
     .filter((id) => id !== 0);
@@ -32,8 +34,11 @@ export function WearablesPanel() {
   const filteredWearables = useMemo(() => {
     let filtered = [...wearables];
 
-    if (filters.ownedOnly) {
+    // Apply wearableMode filter first
+    if (filters.wearableMode === "owned") {
       filtered = filtered.filter((w) => (availCounts[w.id] || 0) > 0);
+    } else if (filters.wearableMode === "baazaar") {
+      filtered = filtered.filter((w) => baazaarPrices[w.id] !== undefined);
     }
 
     // Search filter
@@ -96,7 +101,7 @@ export function WearablesPanel() {
     }
 
     return filtered;
-  }, [wearables, filters, sets, equippedIds, availCounts]);
+  }, [wearables, filters, sets, equippedIds, availCounts, baazaarPrices]);
 
   const activeSet = useMemo(() => {
     if (!filters.set) return null;
@@ -205,10 +210,16 @@ export function WearablesPanel() {
       <div className="flex flex-col min-h-0">
         {activeSet && <SetBanner set={activeSet} />}
         <div className="max-h-[320px] overflow-y-auto overflow-x-hidden p-1.5">
-          {filteredWearables.length === 0 ? (
+          {baazaarLoading && isBaazaarMode ? (
             <div className="text-center text-muted-foreground py-4 text-[11px]">
-              {filters.ownedOnly
+              Loading Baazaar listings...
+            </div>
+          ) : filteredWearables.length === 0 ? (
+            <div className="text-center text-muted-foreground py-4 text-[11px]">
+              {filters.wearableMode === "owned"
                 ? "No available wearables in inventory (or all currently used in editor)"
+                : filters.wearableMode === "baazaar"
+                ? "No wearables currently listed on the Baazaar."
                 : "No wearables found"}
             </div>
           ) : (
@@ -218,7 +229,8 @@ export function WearablesPanel() {
                   key={wearable.id}
                   wearable={wearable}
                   onClick={isMobile ? () => handleWearableClick(wearable) : undefined}
-                  availCount={filters.ownedOnly ? availCounts[wearable.id] : undefined}
+                  availCount={filters.wearableMode === "owned" ? availCounts[wearable.id] : undefined}
+                  priceGHST={isBaazaarMode ? baazaarPrices[wearable.id]?.minPriceGHST : undefined}
                 />
               ))}
             </div>

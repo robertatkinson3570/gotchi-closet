@@ -48,6 +48,8 @@ export type EditorInstance = {
   equippedBySlot: number[];
 };
 
+export type WearableMode = "all" | "owned" | "baazaar";
+
 export type WearableFilters = {
   search: string;
   slot: number | null; // 0-7 or null
@@ -55,6 +57,7 @@ export type WearableFilters = {
   set: string | null; // set id or null
   showMissingOnly: boolean;
   traitDirections: number[] | null; // [NRG, AGG, SPK, BRN] direction: -1 (low), 0 (neutral), 1 (high)
-  ownedOnly: boolean; // Show only wearables owned by loaded gotchis
+  ownedOnly: boolean; // Show only wearables owned by loaded gotchis (legacy, use wearableMode)
+  wearableMode: WearableMode; // "all" | "owned" | "baazaar"
 };
 

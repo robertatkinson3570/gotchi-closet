@@ -1,0 +1,189 @@
+“Baazaar Only” Wearable Selector (STRICT)
+
+Goal:
+Add a toggle to the wearable selector that, when enabled, shows only wearables that currently have at least one active listing on the Aavegotchi Baazaar (Base) and displays the minimum listed price (GHST) for each wearable.
+
+Wearables that are NOT listed on the Baazaar must NOT appear at all.
+
+Use the existing Base core subgraph endpoint:
+
+https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn
+
+Hard Rules (do not violate)
+
+If a wearable has zero active Baazaar listings, it is completely hidden.
+
+No placeholders.
+
+No disabled tiles.
+
+No “price unavailable”.
+
+No mixing with non-listed wearables.
+
+Read-only pricing only (no buying).
+
+Non-Negotiables
+
+Do not change existing layout or styling beyond adding:
+
+one toggle
+
+one small price label
+
+Do not affect non-wearable pages.
+
+Existing filters (slot, rarity, set, search) must still work.
+
+Keep logic isolated and additive.
+
+Feature Spec
+1. Toggle UI
+
+Add a toggle near wearable selector filters:
+
+Label: Baazaar Only
+
+Default: OFF
+
+OFF → wearable selector works exactly as today
+
+ON → wearable selector shows only Baazaar-listed wearables
+
+If “Show Only My Wearables” exists:
+
+Make modes mutually exclusive, or
+
+Replace with:
+
+Wearables: [ All | Owned | Baazaar ]
+
+2. Baazaar Data Source (Base)
+
+Query the Base Aavegotchi core subgraph for active ERC1155 Baazaar listings.
+
+Entity:
+
+erc1155Listings
+
+Required fields:
+
+erc1155TypeId (wearableId)
+
+priceInWei
+
+quantity
+
+Filter requirements:
+
+erc1155TokenAddress = Base wearable ERC1155 contract
+
+quantity > 0 (active listings only)
+
+3. GraphQL Query Pattern
+query BaazaarWearables($token: String!, $first: Int!, $skip: Int!) {
+  erc1155Listings(
+    first: $first
+    skip: $skip
+    where: {
+      erc1155TokenAddress: $token
+      quantity_gt: 0
+    }
+    orderBy: priceInWei
+    orderDirection: asc
+  ) {
+    erc1155TypeId
+    priceInWei
+    quantity
+  }
+}
+
+
+Paginate until no more results.
+
+4. Min Price Computation (MANDATORY)
+
+For each erc1155TypeId:
+
+Take the lowest priceInWei
+
+Convert to GHST using formatUnits(priceInWei, 18)
+
+Store only wearables that have ≥1 listing
+
+Example map:
+
+type BaazaarPriceMap = Record<
+  number,
+  {
+    minPriceWei: bigint;
+    minPriceGHST: string;
+  }
+>;
+
+5. Selector Behavior (Baazaar Only = ON)
+
+Wearable selector list = keys of BaazaarPriceMap only
+
+Wearables not in the map must not render
+
+Each tile shows:
+
+From X GHST
+
+
+Apply existing filters after Baazaar filtering
+
+6. Best Wearables Integration
+
+When Baazaar Only is ON:
+
+Best Wearables must:
+
+Only consider Baazaar-listed wearables
+
+Never suggest non-listed items
+
+When OFF:
+
+Leave current logic untouched
+
+7. Performance & Stability
+
+Fetch Baazaar data once per session
+
+Cache results (memory or state)
+
+Do not refetch on filter/search changes
+
+On subgraph error:
+
+Disable Baazaar Only toggle
+
+Fail silently (no crashes)
+
+8. Empty State
+
+If Baazaar Only is ON and there are no listings:
+
+No wearables currently listed on the Baazaar.
+
+Testing Checklist
+
+Toggle OFF → selector unchanged
+
+Toggle ON → ONLY Baazaar-listed wearables appear
+
+Non-listed wearables never render
+
+Correct minimum GHST price shown
+
+Filters/search still function
+
+Best Wearables respects Baazaar Only mode
+
+Deliverable
+
+Commit message:
+
+feat: strict Baazaar-only wearable selector with min GHST pricing

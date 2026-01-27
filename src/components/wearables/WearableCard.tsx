@@ -16,6 +16,7 @@ interface WearableCardViewProps {
   onClick?: () => void;
   nativeDrag?: boolean;
   availCount?: number;
+  priceGHST?: string;
 }
 
 export function WearableCardView({
@@ -23,6 +24,7 @@ export function WearableCardView({
   onClick,
   nativeDrag = false,
   availCount,
+  priceGHST,
 }: WearableCardViewProps) {
   const traitSummary = wearable.traitModifiers
     .slice(0, 4)
@@ -126,13 +128,18 @@ export function WearableCardView({
           );
         })}
       </div>
+      {priceGHST && (
+        <div className="mt-0.5 text-center text-[9px] text-emerald-600 dark:text-emerald-400 font-medium truncate">
+          From {parseFloat(priceGHST).toFixed(0)} GHST
+        </div>
+      )}
     </Card>
   );
 }
 
 interface WearableCardProps extends WearableCardViewProps {}
 
-export function WearableCard({ wearable, onClick, availCount }: WearableCardProps) {
+export function WearableCard({ wearable, onClick, availCount, priceGHST }: WearableCardProps) {
   return (
     <motion.div
       data-testid={`wearable-${wearable.id}`}
@@ -145,6 +152,7 @@ export function WearableCard({ wearable, onClick, availCount }: WearableCardProp
         onClick={onClick}
         nativeDrag
         availCount={availCount}
+        priceGHST={priceGHST}
       />
     </motion.div>
   );
