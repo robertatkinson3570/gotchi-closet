@@ -31,11 +31,11 @@ export function WearableFilters() {
           onChange={(e) => setFilters({ search: e.target.value })}
           className="h-7 text-[11px] flex-1"
         />
-        <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground whitespace-nowrap cursor-pointer select-none shrink-0">
+        <label className="flex items-center gap-2 text-[10px] text-muted-foreground whitespace-nowrap cursor-pointer select-none shrink-0">
           <Switch
             checked={filters.ownedOnly}
             onCheckedChange={(checked) => setFilters({ ownedOnly: checked })}
-            className="h-4 w-7 shrink-0 data-[state=checked]:bg-primary"
+            className="h-4 w-8 shrink-0 data-[state=checked]:bg-primary"
           />
           <span>My Items</span>
         </label>
