@@ -2,11 +2,12 @@ import { Card } from "@/ui/card";
 import { SlotGrid } from "./SlotGrid";
 import { useAppStore } from "@/state/useAppStore";
 import { GotchiSvg } from "./GotchiSvg";
-import { X, Wand2, Sparkles, Shirt, RotateCcw } from "lucide-react";
+import { X, Wand2, Sparkles, Shirt, RotateCcw, Lock, Unlock } from "lucide-react";
 import { Button } from "@/ui/button";
 import { computeInstanceTraits, useWearablesById } from "@/state/selectors";
 import { GotchiCard } from "./GotchiCard";
 import { useMemo, useCallback } from "react";
+import type { LockedOverride } from "@/lib/lockedBuilds";
 
 export function EditorPanel() {
   const editorInstances = useAppStore((state) => state.editorInstances);
@@ -20,6 +21,9 @@ export function EditorPanel() {
   const setFilters = useAppStore((state) => state.setFilters);
   const stripAllWearables = useAppStore((state) => state.stripAllWearables);
   const restoreOriginalWearables = useAppStore((state) => state.restoreOriginalWearables);
+  const lockedById = useAppStore((state) => state.lockedById);
+  const lockGotchi = useAppStore((state) => state.lockGotchi);
+  const unlockGotchi = useAppStore((state) => state.unlockGotchi);
 
   const activeSet = useMemo(() => {
     if (!filters.set) return null;
@@ -140,6 +144,40 @@ export function EditorPanel() {
                         </span>
                         <span className="text-[8px] text-muted-foreground">Original</span>
                       </Button>
+                      {lockedById[instance.baseGotchi.id] ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-auto py-1 px-1.5 text-[9px] flex-col leading-tight border-amber-500/50 bg-amber-500/10"
+                          onClick={() => unlockGotchi(instance.baseGotchi.id)}
+                        >
+                          <span className="flex items-center gap-0.5">
+                            <Unlock className="h-3 w-3" />
+                            Unlock
+                          </span>
+                          <span className="text-[8px] text-muted-foreground">Release Items</span>
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-auto py-1 px-1.5 text-[9px] flex-col leading-tight"
+                          onClick={() => {
+                            const override: LockedOverride = {
+                              wearablesBySlot: [...instance.equippedBySlot],
+                              respecAllocated: null,
+                              timestamp: Date.now(),
+                            };
+                            lockGotchi(instance.baseGotchi.id, override);
+                          }}
+                        >
+                          <span className="flex items-center gap-0.5">
+                            <Lock className="h-3 w-3" />
+                            Lock & Set
+                          </span>
+                          <span className="text-[8px] text-muted-foreground">Reserve Items</span>
+                        </Button>
+                      )}
                     </div>
                   </div>
                   <div className="min-w-0 overflow-hidden">

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useAppStore } from "./useAppStore";
 import { computeBRSBreakdown } from "@/lib/rarity";
 import type { Wearable, Gotchi, EditorInstance } from "@/types";
-import { computeLockedWearableAllocations, type LockedOverride } from "@/lib/lockedBuilds";
+import { computeLockedWearableAllocations } from "@/lib/lockedBuilds";
 
 export type WearableCounts = Record<number, number>;
 

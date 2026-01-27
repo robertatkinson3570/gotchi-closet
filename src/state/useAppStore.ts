@@ -115,7 +115,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   loadingSets: false,
   error: null,
 
-  setLoadedAddress: (address) => set({ loadedAddress: address }),
+  setLoadedAddress: (address) => {
+    set({ loadedAddress: address });
+    if (address) {
+      const data = loadLockedBuilds(BASE_CHAIN_ID, address);
+      set({ lockedById: data.lockedById, overridesById: data.overridesById });
+    } else {
+      set({ lockedById: {}, overridesById: {} });
+    }
+  },
   setGotchis: (gotchis) => {
     set({ gotchis });
     const state = get();
