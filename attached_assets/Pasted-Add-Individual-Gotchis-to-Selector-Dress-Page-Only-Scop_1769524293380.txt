@@ -1,0 +1,99 @@
+Add Individual Gotchis to Selector (Dress Page Only)
+Scope
+
+This feature applies ONLY to the Dress page and its existing Gotchi Selector.
+Do not add this to Home, Labs, or any other page.
+
+Purpose
+
+Allow users on the Dress page to manually search for and add individual Gotchis (by name or token ID) to the Gotchi Selector, in addition to loading Gotchis via wallet address.
+
+Core Behavior (Dress Page)
+
+Add a type-ahead search input inside the Dress page Gotchi Selector area.
+
+The input must support searching by:
+
+Gotchi name
+
+Gotchi token ID
+
+As the user types:
+
+Display a live, type-ahead results panel
+
+Results update in real time
+
+Search Results UI
+
+The search results panel:
+
+Appears only while typing or when manually expanded
+
+Shows matching Gotchis as selectable cards/rows
+
+Each result must:
+
+Use the same image size, layout, and styling as Gotchis in the Dress page Gotchi Selector
+
+Render the Gotchi fully dressed
+
+Display the same metadata/info shown for Gotchis already in the selector
+
+This should reuse existing Dress page Gotchi rendering logic (do not create a new card style).
+
+Selecting a Gotchi
+
+Clicking a Gotchi in the search results:
+
+Adds that Gotchi to the Dress page Gotchi Selector
+
+Immediately collapses the search results panel
+
+Triggers a re-sort of all Gotchis in the selector by rarity score (descending)
+
+Selector Integration
+
+Manually added Gotchis:
+
+Behave exactly like wallet-loaded Gotchis
+
+Participate in rarity sorting
+
+Can be removed/deselected individually
+
+Removal behavior should match the existing UX for removing manually added wallet addresses (but scoped to individual Gotchis).
+
+Expand / Collapse Rules
+
+Default state on the Dress page:
+
+Only the type-ahead input is visible
+
+While typing:
+
+The search results section expands
+
+After selecting a Gotchi:
+
+The results section auto-collapses
+
+Users may manually expand or collapse the results section at any time after initial use.
+
+Constraints & Notes
+
+This feature is Dress page only.
+
+Do not introduce new global state outside the Dress page flow.
+
+You may reference GotchiSlap for conceptual guidance only.
+
+Do not replicate its UX, layout, or implementation.
+
+Prioritize reuse of existing Dress page logic for:
+
+Gotchi rendering
+
+Metadata display
+
+Sorting behavior

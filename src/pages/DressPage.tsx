@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   DndContext,
@@ -34,6 +34,7 @@ export default function DressPage() {
   const [activeWearable, setActiveWearable] = useState<Wearable | null>(null);
   const { connectedAddress, isConnected, isOnBase } = useAddressState();
   const [multiWallets, setMultiWallets] = useState<string[]>(() => loadMultiWallets());
+  const [manualGotchis, setManualGotchis] = useState<Gotchi[]>([]);
 
   const {
     setLoadedAddress,
@@ -58,6 +59,21 @@ export default function DressPage() {
     const updated = removeWallet(addr);
     setMultiWallets(updated);
   };
+
+  const handleAddManualGotchi = useCallback((gotchi: Gotchi) => {
+    setManualGotchis((prev) => {
+      if (prev.some((g) => g.id === gotchi.id)) return prev;
+      return [...prev, gotchi];
+    });
+    toast({
+      title: "Gotchi Added",
+      description: `${gotchi.name} added to selector`,
+    });
+  }, [toast]);
+
+  const handleRemoveManualGotchi = useCallback((gotchiId: string) => {
+    setManualGotchis((prev) => prev.filter((g) => g.id !== gotchiId));
+  }, []);
 
   const connectedOwner =
     isConnected && isOnBase && connectedAddress
@@ -281,7 +297,11 @@ export default function DressPage() {
           <span className="sr-only" data-testid="gotchi-list-owner">
             {ownersKey}
           </span>
-          <GotchiCarousel />
+          <GotchiCarousel
+            manualGotchis={manualGotchis}
+            onAddManualGotchi={handleAddManualGotchi}
+            onRemoveManualGotchi={handleRemoveManualGotchi}
+          />
         </div>
         <div className="hidden lg:block flex-1 max-w-screen-2xl mx-auto w-full px-4 py-3 overflow-hidden">
           <div className="grid grid-cols-[1fr_340px] gap-4 h-full">

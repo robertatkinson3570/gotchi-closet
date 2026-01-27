@@ -1,5 +1,5 @@
 import { client } from "./client";
-import { GOTCHIS_BY_OWNER, WEARABLES } from "./queries";
+import { GOTCHIS_BY_OWNER, GOTCHI_BY_ID, GOTCHIS_SEARCH, WEARABLES } from "./queries";
 import type { Gotchi, Wearable, WearableSet } from "@/types";
 import wearablesData from "../../data/wearables.json";
 import wearableSetsData from "../../data/wearableSets.json";
@@ -47,6 +47,78 @@ export async function fetchGotchisByOwner(
         ? Math.max(0, currentBlock - Number(g.createdAt))
         : undefined,
   }));
+}
+
+function mapGotchiData(g: any, currentBlock: number | null): Gotchi {
+  return {
+    id: g.id,
+    gotchiId:
+      typeof g.id === "string"
+        ? g.id.split("-").slice(-1)[0] || undefined
+        : undefined,
+    name: g.name || "Unnamed Gotchi",
+    level: g.level ? Number(g.level) : undefined,
+    numericTraits: Array.isArray(g.numericTraits)
+      ? g.numericTraits.map((t: any) => Number(t) || 0)
+      : [0, 0, 0, 0, 0, 0],
+    modifiedNumericTraits: Array.isArray(g.modifiedNumericTraits)
+      ? g.modifiedNumericTraits.map((t: any) => Number(t) || 0)
+      : undefined,
+    withSetsNumericTraits: Array.isArray(g.withSetsNumericTraits)
+      ? g.withSetsNumericTraits.map((t: any) => Number(t) || 0)
+      : undefined,
+    equippedWearables: Array.isArray(g.equippedWearables)
+      ? g.equippedWearables.map((w: any) => Number(w) || 0)
+      : [0, 0, 0, 0, 0, 0, 0, 0],
+    baseRarityScore: g.baseRarityScore ? Number(g.baseRarityScore) : null,
+    usedSkillPoints: g.usedSkillPoints ? Number(g.usedSkillPoints) : undefined,
+    hauntId: g.hauntId ? Number(g.hauntId) : undefined,
+    collateral: g.collateral ? String(g.collateral) : undefined,
+    createdAt: g.createdAt ? Number(g.createdAt) : undefined,
+    blocksElapsed:
+      currentBlock && g.createdAt
+        ? Math.max(0, currentBlock - Number(g.createdAt))
+        : undefined,
+  };
+}
+
+export async function fetchGotchiById(id: string): Promise<Gotchi | null> {
+  const result = await client
+    .query(GOTCHI_BY_ID, { id })
+    .toPromise();
+
+  if (result.error) {
+    throw new Error(result.error.message);
+  }
+
+  const gotchi = result.data?.aavegotchi;
+  if (!gotchi) return null;
+
+  const currentBlock = Number(result.data?._meta?.block?.number) || null;
+  return mapGotchiData(gotchi, currentBlock);
+}
+
+export async function searchGotchis(search: string, limit: number = 10): Promise<Gotchi[]> {
+  if (!search.trim()) return [];
+
+  const isNumeric = /^\d+$/.test(search.trim());
+
+  if (isNumeric) {
+    const gotchi = await fetchGotchiById(search.trim());
+    return gotchi ? [gotchi] : [];
+  }
+
+  const result = await client
+    .query(GOTCHIS_SEARCH, { search: search.trim(), first: limit })
+    .toPromise();
+
+  if (result.error) {
+    throw new Error(result.error.message);
+  }
+
+  const gotchis = result.data?.aavegotchis || [];
+  const currentBlock = Number(result.data?._meta?.block?.number) || null;
+  return gotchis.map((g: any) => mapGotchiData(g, currentBlock));
 }
 
 async function fetchAllWearablesFromSubgraph(): Promise<Wearable[]> {
