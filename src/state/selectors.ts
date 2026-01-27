@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useAppStore } from "./useAppStore";
 import { computeBRSBreakdown } from "@/lib/rarity";
 import type { Wearable, Gotchi, EditorInstance } from "@/types";
+import { computeLockedWearableAllocations, type LockedOverride } from "@/lib/lockedBuilds";
 
 export type WearableCounts = Record<number, number>;
 
@@ -42,16 +43,35 @@ export function computeAvailCounts(
   return avail;
 }
 
+export function computeAvailCountsWithLocked(
+  ownedCounts: WearableCounts,
+  usedCounts: WearableCounts,
+  lockedAllocations: WearableCounts
+): WearableCounts {
+  const avail: WearableCounts = {};
+  for (const [idStr, owned] of Object.entries(ownedCounts)) {
+    const id = Number(idStr);
+    const used = usedCounts[id] || 0;
+    const locked = lockedAllocations[id] || 0;
+    avail[id] = Math.max(owned - used - locked, 0);
+  }
+  return avail;
+}
+
 export function useWearableInventory() {
   const gotchis = useAppStore((state) => state.gotchis);
   const editorInstances = useAppStore((state) => state.editorInstances);
+  const lockedById = useAppStore((state) => state.lockedById);
+  const overridesById = useAppStore((state) => state.overridesById);
   
   return useMemo(() => {
     const ownedCounts = computeOwnedCounts(gotchis);
     const usedCounts = computeUsedCounts(editorInstances);
+    const lockedAllocations = computeLockedWearableAllocations(overridesById, lockedById);
     const availCounts = computeAvailCounts(ownedCounts, usedCounts);
-    return { ownedCounts, usedCounts, availCounts };
-  }, [gotchis, editorInstances]);
+    const availCountsWithLocked = computeAvailCountsWithLocked(ownedCounts, usedCounts, lockedAllocations);
+    return { ownedCounts, usedCounts, availCounts, lockedAllocations, availCountsWithLocked };
+  }, [gotchis, editorInstances, lockedById, overridesById]);
 }
 
 export function useWearablesById() {

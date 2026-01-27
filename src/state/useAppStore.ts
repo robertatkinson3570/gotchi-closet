@@ -1,6 +1,14 @@
 import { create } from "zustand";
 import type { Gotchi, Wearable, WearableSet, EditorInstance, WearableFilters, WearableMode } from "@/types";
 import type { BaazaarPriceMap } from "@/lib/baazaar";
+import {
+  type LockedOverride,
+  loadLockedBuilds,
+  saveLockedBuilds,
+  cleanupStaleLockedBuilds,
+} from "@/lib/lockedBuilds";
+
+const BASE_CHAIN_ID = 8453;
 
 interface AppState {
   // Address & Gotchis
@@ -21,6 +29,10 @@ interface AppState {
 
   // Filters
   filters: WearableFilters;
+
+  // Locked builds
+  lockedById: Record<string, boolean>;
+  overridesById: Record<string, LockedOverride>;
 
   // Loading & Errors
   loadingGotchis: boolean;
@@ -50,6 +62,13 @@ interface AppState {
   stripAllWearables: (instanceId: string) => void;
   restoreOriginalWearables: (instanceId: string) => void;
   clearFilters: () => void;
+
+  // Locked builds actions
+  isLocked: (gotchiId: string) => boolean;
+  getOverride: (gotchiId: string) => LockedOverride | null;
+  lockGotchi: (gotchiId: string, override: LockedOverride) => void;
+  unlockGotchi: (gotchiId: string) => void;
+  loadLockedBuildsFromStorage: () => void;
 }
 
 const getInitialWearableMode = (): WearableMode => {
@@ -89,13 +108,27 @@ export const useAppStore = create<AppState>((set, get) => ({
   baazaarLoading: false,
   baazaarError: null,
   filters: initialFilters,
+  lockedById: {},
+  overridesById: {},
   loadingGotchis: false,
   loadingWearables: false,
   loadingSets: false,
   error: null,
 
   setLoadedAddress: (address) => set({ loadedAddress: address }),
-  setGotchis: (gotchis) => set({ gotchis }),
+  setGotchis: (gotchis) => {
+    set({ gotchis });
+    const state = get();
+    if (state.loadedAddress) {
+      const gotchiIds = new Set(gotchis.map((g) => g.id));
+      const cleaned = cleanupStaleLockedBuilds(
+        { version: 1, lockedById: state.lockedById, overridesById: state.overridesById },
+        gotchiIds
+      );
+      set({ lockedById: cleaned.lockedById, overridesById: cleaned.overridesById });
+      saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, cleaned);
+    }
+  },
   addEditorInstance: (gotchi) =>
     set((state) => {
       const now = Date.now();
@@ -243,6 +276,51 @@ export const useAppStore = create<AppState>((set, get) => ({
         ownedOnly: state.filters.ownedOnly 
       } 
     }));
+  },
+
+  isLocked: (gotchiId: string) => {
+    return !!get().lockedById[gotchiId];
+  },
+
+  getOverride: (gotchiId: string) => {
+    return get().overridesById[gotchiId] || null;
+  },
+
+  lockGotchi: (gotchiId: string, override: LockedOverride) => {
+    const state = get();
+    const newLockedById = { ...state.lockedById, [gotchiId]: true };
+    const newOverridesById = { ...state.overridesById, [gotchiId]: override };
+    set({ lockedById: newLockedById, overridesById: newOverridesById });
+    if (state.loadedAddress) {
+      saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, {
+        version: 1,
+        lockedById: newLockedById,
+        overridesById: newOverridesById,
+      });
+    }
+  },
+
+  unlockGotchi: (gotchiId: string) => {
+    const state = get();
+    const newLockedById = { ...state.lockedById };
+    const newOverridesById = { ...state.overridesById };
+    delete newLockedById[gotchiId];
+    delete newOverridesById[gotchiId];
+    set({ lockedById: newLockedById, overridesById: newOverridesById });
+    if (state.loadedAddress) {
+      saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, {
+        version: 1,
+        lockedById: newLockedById,
+        overridesById: newOverridesById,
+      });
+    }
+  },
+
+  loadLockedBuildsFromStorage: () => {
+    const state = get();
+    if (!state.loadedAddress) return;
+    const data = loadLockedBuilds(BASE_CHAIN_ID, state.loadedAddress);
+    set({ lockedById: data.lockedById, overridesById: data.overridesById });
   },
 }));
 
