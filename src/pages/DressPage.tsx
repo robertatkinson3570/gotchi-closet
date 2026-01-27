@@ -18,24 +18,22 @@ import { DebugPanel } from "@/components/debug/DebugPanel";
 import { useAppStore } from "@/state/useAppStore";
 import { fetchAllWearables, fetchAllWearableSets } from "@/graphql/fetchers";
 import { cacheGet, cacheSet, cacheIsStale, CACHE_KEYS } from "@/lib/cache";
-import { normalizeAddress, isValidAddress } from "@/lib/address";
+import { normalizeAddress } from "@/lib/address";
 import { useToast } from "@/ui/use-toast";
 import { useWearablesById } from "@/state/selectors";
-import type { Wearable } from "@/types";
+import type { Wearable, Gotchi } from "@/types";
 import { useAddressState } from "@/lib/addressState";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
 import { WalletHeader } from "@/components/wallet/WalletHeader";
-
-const STORAGE_MANUAL_VIEW = "gc_manualViewAddress";
+import { loadMultiWallets, removeWallet } from "@/lib/multiWallet";
 
 export default function DressPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const viewParam = searchParams.get("view");
+  const [searchParams] = useSearchParams();
   const debug = searchParams.get("debug") === "1";
   const { toast } = useToast();
   const [activeWearable, setActiveWearable] = useState<Wearable | null>(null);
   const { connectedAddress, isConnected, isOnBase } = useAddressState();
-  const [manualViewAddress, setManualViewAddress] = useState<string | null>(null);
+  const [multiWallets, setMultiWallets] = useState<string[]>(() => loadMultiWallets());
 
   const {
     setLoadedAddress,
@@ -53,89 +51,44 @@ export default function DressPage() {
   const wearablesById = useWearablesById();
 
   useEffect(() => {
-    if (viewParam && isValidAddress(viewParam)) {
-      const normalized = normalizeAddress(viewParam);
-      if (normalized !== manualViewAddress) {
-        setManualViewAddress(normalized);
-      }
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(STORAGE_MANUAL_VIEW, normalized);
-      }
-      return;
-    }
+    setMultiWallets(loadMultiWallets());
+  }, []);
 
-    if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(STORAGE_MANUAL_VIEW);
-    if (stored && isValidAddress(stored)) {
-      const normalized = normalizeAddress(stored);
-      if (normalized !== manualViewAddress) {
-        setManualViewAddress(normalized);
-      }
-    }
-  }, [viewParam, manualViewAddress]);
-
-  useEffect(() => {
-    if (manualViewAddress) {
-      if (viewParam !== manualViewAddress) {
-        const next: Record<string, string> = { view: manualViewAddress };
-        if (debug) next.debug = "1";
-        setSearchParams(next, { replace: true });
-      }
-      return;
-    }
-
-    if (viewParam) {
-      const next: Record<string, string> = {};
-      if (debug) next.debug = "1";
-      setSearchParams(next, { replace: true });
-    }
-  }, [manualViewAddress, debug, viewParam, setSearchParams]);
+  const handleRemoveWallet = (addr: string) => {
+    const updated = removeWallet(addr);
+    setMultiWallets(updated);
+  };
 
   const connectedOwner =
     isConnected && isOnBase && connectedAddress
       ? normalizeAddress(connectedAddress)
       : null;
-  const manualOwner = manualViewAddress;
 
   const connectedResult = useGotchisByOwner(connectedOwner || undefined);
-  const manualResult = useGotchisByOwner(manualOwner || undefined);
+  const wallet1Result = useGotchisByOwner(multiWallets[0] || undefined);
+  const wallet2Result = useGotchisByOwner(multiWallets[1] || undefined);
+  const wallet3Result = useGotchisByOwner(multiWallets[2] || undefined);
 
   const combinedGotchis = useMemo(() => {
-    const map = new Map<string, (typeof manualResult.gotchis)[number]>();
-    for (const gotchi of manualResult.gotchis) {
-      map.set(gotchi.id, gotchi);
-    }
-    for (const gotchi of connectedResult.gotchis) {
-      map.set(gotchi.id, gotchi);
+    const map = new Map<string, Gotchi>();
+    const allResults = [connectedResult, wallet1Result, wallet2Result, wallet3Result];
+    for (const result of allResults) {
+      for (const gotchi of result.gotchis) {
+        map.set(gotchi.id, gotchi);
+      }
     }
     return Array.from(map.values());
-  }, [manualResult.gotchis, connectedResult.gotchis]);
+  }, [connectedResult.gotchis, wallet1Result.gotchis, wallet2Result.gotchis, wallet3Result.gotchis]);
 
   const isLoadingGotchis =
-    (manualOwner ? manualResult.isLoading : false) ||
-    (connectedOwner ? connectedResult.isLoading : false);
-  const gotchiError = manualResult.error || connectedResult.error;
-  const viewLabel =
-    manualOwner && connectedOwner
-      ? "both"
-      : manualOwner || connectedOwner || "";
+    (connectedOwner ? connectedResult.isLoading : false) ||
+    (multiWallets[0] ? wallet1Result.isLoading : false) ||
+    (multiWallets[1] ? wallet2Result.isLoading : false) ||
+    (multiWallets[2] ? wallet3Result.isLoading : false);
 
-  const clearManualView = () => {
-    setManualViewAddress(null);
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(STORAGE_MANUAL_VIEW);
-    }
-    const next: Record<string, string> = {};
-    if (debug) next.debug = "1";
-    setSearchParams(next, { replace: true });
-  };
+  const gotchiError = connectedResult.error || wallet1Result.error || wallet2Result.error || wallet3Result.error;
 
-  const useConnectedOnly = () => {
-    if (!connectedOwner) return;
-    clearManualView();
-  };
-
-  const ownersKey = [manualOwner, connectedOwner].filter(Boolean).join("|");
+  const ownersKey = [connectedOwner, ...multiWallets].filter(Boolean).join("|");
 
   useEffect(() => {
     setLoadedAddress(ownersKey || null);
@@ -154,10 +107,10 @@ export default function DressPage() {
     }
     if (!isLoadingGotchis) {
       setGotchis(combinedGotchis);
-      if (combinedGotchis.length === 0 && (manualOwner || connectedOwner)) {
+      if (combinedGotchis.length === 0 && (connectedOwner || multiWallets.length > 0)) {
         toast({
           title: "No Gotchis Found",
-          description: "This address doesn't own any gotchis",
+          description: "These addresses don't own any gotchis",
         });
       }
     }
@@ -166,7 +119,7 @@ export default function DressPage() {
     connectedOwner,
     gotchiError,
     isLoadingGotchis,
-    manualOwner,
+    multiWallets,
     setGotchis,
     setLoadingGotchis,
     setError,
@@ -174,11 +127,10 @@ export default function DressPage() {
   ]);
 
   useEffect(() => {
-    if (!manualOwner && !connectedOwner) {
+    if (!connectedOwner && multiWallets.length === 0) {
       setError(null);
     }
 
-    // Load wearables (cache first, then fetch)
     type WearablesState = ReturnType<typeof useAppStore.getState>["wearables"];
     const cachedWearables = cacheGet<WearablesState>(CACHE_KEYS.WEARABLES);
     if (cachedWearables) {
@@ -203,7 +155,6 @@ export default function DressPage() {
         .finally(() => setLoadingWearables(false));
     }
 
-    // Load sets (cache first, then fetch)
     type SetsState = ReturnType<typeof useAppStore.getState>["sets"];
     const cachedSets = cacheGet<SetsState>(CACHE_KEYS.SETS);
     if (cachedSets) {
@@ -228,13 +179,10 @@ export default function DressPage() {
         .finally(() => setLoadingSets(false));
     }
 
-    // Save to recent addresses
+    const allWallets = [connectedOwner, ...multiWallets].filter((w): w is string => !!w);
     const recent = cacheGet<string[]>(CACHE_KEYS.ADDRESSES) || [];
-    const ownersToSave = [manualOwner, connectedOwner].filter(
-      (owner): owner is string => !!owner
-    );
     let updated = recent;
-    for (const owner of ownersToSave) {
+    for (const owner of allWallets) {
       if (!updated.includes(owner)) {
         updated = [owner, ...updated].slice(0, 5);
       }
@@ -242,7 +190,7 @@ export default function DressPage() {
     if (updated !== recent) {
       cacheSet(CACHE_KEYS.ADDRESSES, updated);
     }
-  }, [manualOwner, connectedOwner, setWearables, setSets, setLoadingWearables, setLoadingSets, setError, toast]);
+  }, [connectedOwner, multiWallets, setWearables, setSets, setLoadingWearables, setLoadingSets, setError, toast]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -276,7 +224,6 @@ export default function DressPage() {
           (handPlacement === "left" && isLeftHand) ||
           (handPlacement === "right" && isRightHand) ||
           (handPlacement === "none" && wearable.slotPositions[slotIndex]);
-      // Validate slot
       if (!wearable.slotPositions[slotIndex] || !matchesHand) {
         toast({
           title: "Invalid Slot",
@@ -321,10 +268,9 @@ export default function DressPage() {
     >
       <div className="min-h-screen flex flex-col overflow-x-hidden">
         <WalletHeader
-          manualAddress={manualOwner}
+          multiWallets={multiWallets}
           connectedOwner={connectedOwner}
-          onClearManual={manualOwner ? clearManualView : undefined}
-          onUseConnected={useConnectedOnly}
+          onRemoveWallet={handleRemoveWallet}
         />
         {appError && (
           <div className="w-full border-b bg-background px-4 py-2 text-sm text-red-500">
@@ -333,11 +279,10 @@ export default function DressPage() {
         )}
         <div data-testid="gotchi-list">
           <span className="sr-only" data-testid="gotchi-list-owner">
-            {viewLabel}
+            {ownersKey}
           </span>
           <GotchiCarousel />
         </div>
-        {/* Desktop layout */}
         <div className="hidden lg:block flex-1 max-w-screen-2xl mx-auto w-full px-4 py-3 overflow-hidden">
           <div className="grid grid-cols-[1fr_340px] gap-4 h-full">
             <div className="min-w-0 flex flex-col gap-2 overflow-hidden">
@@ -352,7 +297,6 @@ export default function DressPage() {
             </div>
           </div>
         </div>
-        {/* Mobile layout with tabs */}
         <div className="lg:hidden flex-1 flex flex-col overflow-hidden">
           <MobileTabs
             edit={
@@ -380,4 +324,3 @@ export default function DressPage() {
     </DndContext>
   );
 }
-

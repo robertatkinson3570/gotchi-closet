@@ -5,18 +5,18 @@ import { Input } from "@/ui/input";
 import { normalizeAddress, isValidAddress } from "@/lib/address";
 import { cacheGet, cacheSet, CACHE_KEYS } from "@/lib/cache";
 import { formatAddress } from "@/lib/format";
-import { X, Sparkles, Layers, BarChart3 } from "lucide-react";
+import { X, Sparkles, Layers, BarChart3, Plus, Wallet } from "lucide-react";
 import { DonateCard } from "@/components/DonateCard";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { useAccount, useChainId, useDisconnect } from "wagmi";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-
-const STORAGE_MANUAL_VIEW = "gc_manualViewAddress";
+import { loadMultiWallets, addWallet, removeWallet } from "@/lib/multiWallet";
 
 export default function HomePage() {
   const [manualAddressInput, setManualAddressInput] = useState("");
+  const [multiWallets, setMultiWallets] = useState<string[]>(() => loadMultiWallets());
   const [recentAddresses, setRecentAddresses] = useState<string[]>(() => {
     const cached = cacheGet<string[]>(CACHE_KEYS.ADDRESSES);
     return cached || [];
@@ -40,36 +40,42 @@ export default function HomePage() {
   );
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(STORAGE_MANUAL_VIEW);
-    if (stored && isValidAddress(stored)) {
-      setManualAddressInput(normalizeAddress(stored));
-    }
+    setMultiWallets(loadMultiWallets());
   }, []);
 
+  const handleAddWallet = () => {
+    if (!hasManualInput || !isManualValid) return;
+    const normalized = normalizeAddress(manualTrimmed);
+    if (multiWallets.includes(normalized)) return;
+    if (multiWallets.length >= 3) return;
+    const updated = addWallet(normalized);
+    setMultiWallets(updated);
+    setManualAddressInput("");
+    const recentUpdated = [
+      normalized,
+      ...recentAddresses.filter((addr) => addr !== normalized),
+    ].slice(0, 5);
+    setRecentAddresses(recentUpdated);
+    cacheSet(CACHE_KEYS.ADDRESSES, recentUpdated);
+  };
+
+  const handleRemoveWallet = (addr: string) => {
+    const updated = removeWallet(addr);
+    setMultiWallets(updated);
+  };
+
   const handleDress = () => {
-    if (hasManualInput && !isManualValid) {
-      return;
-    }
-
-    if (hasManualInput) {
-      const normalized = normalizeAddress(manualTrimmed);
-      window.localStorage.setItem(STORAGE_MANUAL_VIEW, normalized);
-      const updated = [
-        normalized,
-        ...recentAddresses.filter((addr) => addr !== normalized),
-      ].slice(0, 5);
-      setRecentAddresses(updated);
-      cacheSet(CACHE_KEYS.ADDRESSES, updated);
-      navigate(`/dress?view=${normalized}`);
-      return;
-    }
-
     navigate("/dress");
   };
 
   const handleRecentClick = (addr: string) => {
-    setManualAddressInput(addr);
+    if (multiWallets.length >= 3) {
+      setManualAddressInput(addr);
+      return;
+    }
+    if (multiWallets.includes(normalizeAddress(addr))) return;
+    const updated = addWallet(addr);
+    setMultiWallets(updated);
   };
 
   const handleRemoveRecent = (addr: string, e: React.MouseEvent) => {
@@ -78,6 +84,8 @@ export default function HomePage() {
     setRecentAddresses(updated);
     cacheSet(CACHE_KEYS.ADDRESSES, updated);
   };
+
+  const canAddMore = multiWallets.length < 3;
 
   return (
     <div className="relative min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
@@ -120,37 +128,83 @@ export default function HomePage() {
             </div>
 
             <div className="px-5 pb-5 space-y-3">
-              <div className="space-y-1">
-                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                  Wallet Address
-                </label>
-                <Input
-                  placeholder="0x..."
-                  value={manualAddressInput}
-                  onChange={(e) => setManualAddressInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleDress()}
-                  className="h-10 bg-background/50 border-border/50 rounded-lg focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/50 placeholder:text-muted-foreground/50 transition-all"
-                  data-testid="home-manual-input"
-                />
-                {hasManualInput && !isManualValid && (
-                  <p className="text-xs text-destructive">Enter a valid Ethereum address</p>
-                )}
-              </div>
+              {multiWallets.length > 0 && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                    <Wallet className="h-3 w-3" />
+                    Wallets ({multiWallets.length}/3)
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {multiWallets.map((addr) => (
+                      <span
+                        key={addr}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/30 text-xs font-mono text-primary"
+                      >
+                        {formatAddress(addr)}
+                        <button
+                          onClick={() => handleRemoveWallet(addr)}
+                          className="hover:text-destructive ml-0.5"
+                          title="Remove wallet"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {canAddMore && (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                    {multiWallets.length === 0 ? "Add Wallet Address" : "Add Another Wallet"}
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="0x..."
+                      value={manualAddressInput}
+                      onChange={(e) => setManualAddressInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAddWallet()}
+                      className="h-10 bg-background/50 border-border/50 rounded-lg focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/50 placeholder:text-muted-foreground/50 transition-all"
+                      data-testid="home-manual-input"
+                    />
+                    <Button
+                      onClick={handleAddWallet}
+                      disabled={!hasManualInput || !isManualValid}
+                      variant="secondary"
+                      size="icon"
+                      className="h-10 w-10 shrink-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {hasManualInput && !isManualValid && (
+                    <p className="text-xs text-destructive">Enter a valid Ethereum address</p>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-center gap-2">
                 <div className="flex-1 h-px bg-border/40" />
-                <span className="text-[10px] text-muted-foreground/50 uppercase">or</span>
+                <span className="text-[10px] text-muted-foreground/50 uppercase">or connect</span>
                 <div className="flex-1 h-px bg-border/40" />
               </div>
 
               {isConnected && connectedAddress ? (
-                <Button
-                  onClick={() => disconnect()}
-                  variant="secondary"
-                  className="w-full h-10 rounded-lg border border-border/50 bg-background/50 hover:bg-muted/50 transition-all"
-                >
-                  <span className="font-mono text-sm">{formatAddress(connectedOwner || "")}</span>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border border-green-500/30 bg-green-500/10">
+                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="font-mono text-sm text-green-600 dark:text-green-400">{formatAddress(connectedOwner || "")}</span>
+                  </div>
+                  <Button
+                    onClick={() => disconnect()}
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs text-muted-foreground hover:text-destructive"
+                  >
+                    Disconnect
+                  </Button>
+                </div>
               ) : (
                 <ConnectButton
                   variant="secondary"
@@ -163,28 +217,45 @@ export default function HomePage() {
                 onClick={handleDress}
                 className="w-full h-11 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 hover:-translate-y-0.5 transition-all duration-200"
                 data-testid="home-dress-btn"
-                disabled={!isManualValid}
+                disabled={multiWallets.length === 0 && !connectedOwner}
               >
                 Dress Gotchis
               </Button>
 
               {recentAddresses.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {recentAddresses.map((addr) => (
-                    <button
-                      key={addr}
-                      className="group flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted/40 hover:bg-muted text-xs font-mono border border-border/20 hover:border-border/40 transition-all"
-                      onClick={() => handleRecentClick(addr)}
-                    >
-                      <span className="text-foreground/70">{formatAddress(addr)}</span>
-                      <span
-                        onClick={(e) => handleRemoveRecent(addr, e)}
-                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
-                      >
-                        <X className="h-2.5 w-2.5" />
-                      </span>
-                    </button>
-                  ))}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                    Recent
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {recentAddresses.map((addr) => {
+                      const isAdded = multiWallets.includes(normalizeAddress(addr));
+                      return (
+                        <button
+                          key={addr}
+                          className={`group flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-mono border transition-all ${
+                            isAdded 
+                              ? "bg-muted/60 border-border/40 text-muted-foreground cursor-default"
+                              : "bg-muted/40 hover:bg-muted border-border/20 hover:border-border/40"
+                          }`}
+                          onClick={() => !isAdded && handleRecentClick(addr)}
+                          disabled={isAdded}
+                        >
+                          <span className={isAdded ? "text-muted-foreground/50" : "text-foreground/70"}>
+                            {formatAddress(addr)}
+                          </span>
+                          {!isAdded && (
+                            <span
+                              onClick={(e) => handleRemoveRecent(addr, e)}
+                              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
+                            >
+                              <X className="h-2.5 w-2.5" />
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

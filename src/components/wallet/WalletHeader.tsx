@@ -7,22 +7,20 @@ import { switchToBaseChain } from "@/lib/chains";
 import { useToast } from "@/ui/use-toast";
 import { ConnectButton } from "./ConnectButton";
 import { NetworkBanner } from "./NetworkBanner";
-import { Home, FlaskConical, Eye, X } from "lucide-react";
+import { Home, FlaskConical, X, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 type WalletHeaderProps = {
-  manualAddress?: string | null;
+  multiWallets?: string[];
   connectedOwner?: string | null;
-  onClearManual?: () => void;
-  onUseConnected?: () => void;
+  onRemoveWallet?: (addr: string) => void;
 };
 
 export function WalletHeader({ 
-  manualAddress,
+  multiWallets = [],
   connectedOwner,
-  onClearManual,
-  onUseConnected,
+  onRemoveWallet,
 }: WalletHeaderProps) {
   const { disconnect } = useDisconnect();
   const { toast } = useToast();
@@ -45,61 +43,55 @@ export function WalletHeader({
     }
   };
 
+  const totalWallets = multiWallets.length + (connectedOwner ? 1 : 0);
+
   return (
-    <header className="sticky top-0 z-50 h-12 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="px-4 flex h-12 items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0 shrink-0">
           <img
             src="/logo.png"
             alt="GotchiCloset"
             className="h-12 w-12 object-contain -my-2"
           />
-          <div className="text-lg font-semibold tracking-tight">
+          <div className="text-lg font-semibold tracking-tight hidden sm:block">
             Gotchi<span className="font-normal text-muted-foreground">Closet</span>
           </div>
         </div>
         
-        {/* Viewing wallets section - hidden on mobile, visible on sm+ */}
-        <div className="hidden sm:flex items-center gap-1.5 flex-1 justify-center min-w-0">
-          <Eye className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          {connectedOwner && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted/50 border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
-              <span className="hidden md:inline">Connected</span> {shortenAddress(connectedOwner)}
-            </span>
-          )}
-          {manualAddress && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/30 px-2 py-0.5 text-[10px] text-primary">
-              <span className="hidden md:inline">Manual</span> {shortenAddress(manualAddress)}
-              {onClearManual && (
-                <button onClick={onClearManual} className="hover:text-destructive ml-0.5" title="Clear manual">
-                  <X className="h-3 w-3" />
-                </button>
+        <div className="flex items-center gap-1 flex-1 justify-center min-w-0 overflow-hidden">
+          {totalWallets > 0 && (
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none max-w-full">
+              <Wallet className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              {connectedOwner && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 border border-green-500/30 px-2 py-0.5 text-[10px] text-green-600 dark:text-green-400 shrink-0">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                  <span className="hidden md:inline">Connected</span>
+                  {shortenAddress(connectedOwner)}
+                </span>
               )}
-            </span>
-          )}
-          {manualAddress && connectedOwner && onUseConnected && (
-            <Button size="sm" variant="ghost" onClick={onUseConnected} className="hidden md:inline-flex h-6 px-2 text-[10px]">
-              Use Connected
-            </Button>
-          )}
-        </div>
-        
-        {/* Mobile: compact wallet indicator */}
-        <div className="flex sm:hidden items-center gap-1 flex-1 justify-center min-w-0">
-          {(connectedOwner || manualAddress) && (
-            <span className="inline-flex items-center gap-1 text-[9px] text-muted-foreground truncate">
-              <Eye className="h-3 w-3 shrink-0" />
-              {manualAddress ? shortenAddress(manualAddress) : connectedOwner ? shortenAddress(connectedOwner) : ""}
-              {manualAddress && onClearManual && (
-                <button onClick={onClearManual} className="hover:text-destructive" title="Clear">
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </span>
+              {multiWallets.map((addr) => (
+                <span
+                  key={addr}
+                  className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/30 px-2 py-0.5 text-[10px] text-primary shrink-0"
+                >
+                  {shortenAddress(addr)}
+                  {onRemoveWallet && (
+                    <button
+                      onClick={() => onRemoveWallet(addr)}
+                      className="hover:text-destructive ml-0.5"
+                      title="Remove wallet"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </span>
+              ))}
+            </div>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           <Link to="/">
             <Button size="sm" variant="ghost" className="h-8 px-2" title="Home">
               <Home className="h-4 w-4" />
@@ -115,7 +107,7 @@ export function WalletHeader({
             <ConnectButton />
           ) : (
             <Menu as="div" className="relative">
-              <Menu.Button as={Button} variant="secondary">
+              <Menu.Button as={Button} variant="secondary" size="sm" className="h-8">
                 {connectedAddress
                   ? shortenAddress(connectedAddress)
                   : "Connected"}
@@ -171,4 +163,3 @@ export function WalletHeader({
     </header>
   );
 }
-
