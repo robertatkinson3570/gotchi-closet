@@ -129,9 +129,15 @@ export function WearableCardView({
         })}
       </div>
       {priceGHST && (
-        <div className="mt-0.5 text-center text-[9px] text-emerald-600 dark:text-emerald-400 font-medium truncate">
+        <a
+          href={`https://dapp.aavegotchi.com/baazaar/wearables?id=${wearable.id}&chainId=8453`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="mt-0.5 block text-center text-[9px] text-emerald-600 dark:text-emerald-400 font-medium truncate hover:underline"
+        >
           From {parseFloat(priceGHST).toFixed(0)} GHST
-        </div>
+        </a>
       )}
     </Card>
   );
