@@ -40,6 +40,12 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-27: Added "Lock & Set" feature for reserving wearables
+  - Lock button in EditorPanel reserves current build's wearables
+  - Locked Gotchis show amber badge in carousel with override wearables
+  - Locked wearables excluded from "Owned" mode available pool
+  - Persists per wallet/chain in localStorage (gotchicloset.lockedBuilds.v1)
+  - Located in src/lib/lockedBuilds.ts, src/state/selectors.ts (computeLockedCounts, availCountsWithLocked)
 - 2026-01-27: Added "Baazaar Only" wearable selector with GHST pricing
   - 3-way toggle: All | Owned | Baazaar (replaces previous My Items toggle)
   - Baazaar mode shows only wearables with active listings on Base Baazaar
