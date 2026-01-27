@@ -145,6 +145,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
       lastAddAt = now;
       lastAddId = gotchi.id;
+      const override = state.overridesById[gotchi.id];
+      const initialWearables = override?.wearablesBySlot || gotchi.equippedWearables;
       return {
         editorInstances: [
           ...state.editorInstances,
@@ -153,7 +155,7 @@ export const useAppStore = create<AppState>((set, get) => ({
               .toString(36)
               .slice(2, 8)}`,
             baseGotchi: gotchi,
-            equippedBySlot: [...gotchi.equippedWearables],
+            equippedBySlot: [...initialWearables],
           },
         ],
       };
