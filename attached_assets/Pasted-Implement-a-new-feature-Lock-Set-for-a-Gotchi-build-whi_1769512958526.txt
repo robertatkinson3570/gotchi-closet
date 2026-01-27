@@ -1,0 +1,146 @@
+Implement a new feature: **Lock & Set** for a Gotchi build, which commits the current editor configuration (wearables + respec + traits) into the Gotchi Selector view and reserves owned wearables so they are no longer available in the Wearable Selector when “Only My Wearables” is enabled.
+
+High-level behavior (MUST MATCH)
+1) Editor has 2 states per gotchi: UNLOCKED (draft) and LOCKED (committed).
+2) While editing a gotchi, changes are “draft” until user clicks **Lock & Set**.
+3) When user clicks **Lock & Set**:
+   - persist a snapshot override for that gotchi (equipped wearables by slot + respec delta/spirit allocation + any derived traits you already compute)
+   - mark gotchi as LOCKED
+   - the Gotchi Selector tile for that gotchi must visually show a lock icon/badge
+   - the Gotchi Selector “display gotchi” must reflect the locked snapshot (wearables shown as equipped, traits/respec shown as the locked version)
+   - owned wearables reserved by ANY locked gotchi must NOT be available in the Wearable Selector (when “Only My Wearables” filter is on)
+4) Unlock:
+   - user selects that same gotchi in the selector, and in the editor they can click **Unlock**
+   - unlocking removes the reservation and the selector tile returns to showing the base/onchain gotchi state (no override)
+5) IMPORTANT UX RULE (keep it sane): Only LOCKED gotchis reserve items. Draft edits do NOT reserve wearables.
+
+Non-negotiables
+- Do NOT mutate the base gotchi objects fetched from subgraph. Use an overrides map keyed by gotchiId.
+- Wearable availability must be COUNT-AWARE (inventory counts). If user owns 2 copies, locking one should still allow 1 remaining to be selected.
+- Keep changes scoped: do not overhaul UI. Add the buttons + lock icon + filtering logic.
+- Do not break existing “Only My Wearables” behavior; extend it.
+
+Acceptance criteria checklist
+- [ ] Lock & Set appears in editor when a gotchi is selected.
+- [ ] Unlock appears when that gotchi is locked.
+- [ ] Locked gotchi tile shows lock icon/badge in selector.
+- [ ] After Lock & Set, selector tile reflects locked wearables/respec/traits.
+- [ ] Wearable Selector hides/disables owned wearables whose remainingCount <= 0 after subtracting locked allocations.
+- [ ] If user unlocks, reserved wearables become selectable again immediately.
+- [ ] Refreshing gotchis from wallet does NOT lose lock state within the same session (localStorage persistence required).
+- [ ] Locking validates respec/trait constraints (if invalid, disable Lock & Set and show small inline reason).
+
+Implementation details (do this)
+A) Add persistent state (localStorage)
+- Create a small storage module (or extend your existing storage utilities):
+  - Key: `gotchicloset.lockedBuilds.v1:{chainId}:{walletAddressNormalized}`
+  - Value: JSON record:
+    {
+      version: 1,
+      lockedById: { [gotchiId: string]: true },
+      overridesById: {
+        [gotchiId: string]: {
+          wearablesBySlot: { [slotKey: string]: wearableId | null },
+          // store exactly what your editor uses to represent “respec changes”
+          // e.g. delta array, or spirit allocations, etc:
+          respecState: <yourExistingRespecStateShape>,
+          // optional but helpful:
+          timestamp: number
+        }
+      }
+    }
+- On app load (or when wallet changes), load this storage into state.
+- On any lock/unlock, persist back to localStorage.
+- If a locked gotchiId is no longer present in the loaded gotchis list, clean it from storage on next load.
+
+B) Core data model (in React state/store)
+- Add (wherever you keep app state for editor/selector):
+  - `lockedById: Record<string, boolean>`
+  - `overridesById: Record<string, LockedOverride>`
+- Provide helpers:
+  - `isLocked(gotchiId)`
+  - `getOverride(gotchiId)`
+  - `lockGotchi(gotchiId, snapshotOverride)`
+  - `unlockGotchi(gotchiId)`
+  - `getDisplayGotchi(baseGotchi)` → returns merged view:
+      if locked: baseGotchi + override applied (wearables/respec/traits)
+      else baseGotchi
+
+C) Snapshot creation on Lock & Set
+When user clicks Lock & Set in the editor:
+- Capture current editor state for that gotchi:
+  - Equipped wearables by slot (use the editor’s canonical state, not UI derived)
+  - Respec state (whatever your editor uses)
+- Validate:
+  - respec points not negative
+  - doesn’t exceed max spirit points
+  - trait computations remain valid
+If invalid: disable Lock & Set and show inline message.
+If valid: call `lockGotchi()` and persist.
+
+D) Apply override to selector display
+Wherever you render selector tiles:
+- Instead of rendering base gotchi directly, call `getDisplayGotchi(baseGotchi)` so locked gotchis show locked wearables/traits.
+- Add a lock icon/badge if locked:
+  - e.g. small 🔒 in the corner, or a “Locked” pill.
+
+E) Reserve owned wearables ONLY for locked gotchis
+You must compute allocations from locked overrides:
+- Build a function `computeLockedWearableAllocations(overridesById, lockedById)` returning:
+  - `allocatedCountsByWearableId: Record<string, number>`
+  - It should count each wearableId in each locked gotchi’s `wearablesBySlot` (ignore null/0).
+- Use this to adjust owned inventory counts:
+  - `remainingCount = ownedCount - allocatedCount`
+- In the Wearable Selector filter logic for “Only My Wearables”:
+  - when listing owned wearables, exclude or disable those with `remainingCount <= 0`
+  - If you currently fully remove “used items” without counts, upgrade it to counts now.
+
+F) Inventory counts source
+- Use your existing “owned wearables” source (whatever structure you currently build for “Only My Wearables”).
+- If you have only a boolean “owned” today, you must extend it to carry a `count` per wearableId.
+  - If your subgraph/API already provides quantity, use it.
+  - If not, implement quantity as 1 for now, but structure it as counts so it’s future-proof.
+
+G) Unlock behavior
+- In editor, if selected gotchi is locked:
+  - show **Unlock** button
+  - clicking it removes `lockedById[gotchiId]` and `overridesById[gotchiId]`
+  - persist
+  - selector display immediately reverts to base gotchi
+  - wearable selector immediately recalculates remainingCount and shows freed items
+
+H) UX details
+- Buttons placement: near the existing editor controls (don’t redesign layout).
+- Lock button label: “Lock & Set”
+- Unlock button label: “Unlock”
+- Small helper text under buttons:
+  - Unlocked: “Draft changes won’t reserve items until you Lock & Set.”
+  - Locked: “Locked builds reserve owned wearables.”
+
+I) Don’t break existing editor computations
+- You already have logic that computes final traits / rarity / set bonuses / wearables effects.
+- Reuse that logic to render the locked display. Do NOT duplicate calculations.
+- Do NOT change existing dress page logic beyond plumbing overrides into display + adding buttons.
+
+Where to touch code (search + implement)
+- Gotchi Selector component (tile renderer): add lock badge + use display gotchi merging
+- Gotchi Editor component: add Lock & Set / Unlock buttons + snapshot creation + validation
+- Wearable Selector component: update “Only My Wearables” filtering to use remainingCount after locked allocations
+- Shared state/store (context/zustand/etc): add locked state + storage load/save + helper functions
+- Utility: `computeLockedWearableAllocations()`
+
+Edge cases to handle
+- Multiple copies: counts-based reservation required.
+- Wallet switch: load separate storage namespace per wallet.
+- Chain switch (if supported): include chainId in storage key.
+- If locked gotchi not in current gotchi list after reload, drop it from storage.
+- If a wearableId in override is unknown/missing in wearable metadata, still reserve by id; just don’t render fancy metadata.
+
+Deliverables
+- Implement feature end-to-end.
+- No UI regressions.
+- Add minimal unit test if you already have test setup:
+  - allocation counts for locked overrides
+  - remainingCount calculation
+
+Do NOT ask me questions—make reasonable assumptions from existing code patterns and implement accordingly.
