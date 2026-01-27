@@ -7,6 +7,7 @@ import {
   SelectValue,
 } from "@/ui/select";
 import { Button } from "@/ui/button";
+import { Switch } from "@/ui/switch";
 import { X } from "lucide-react";
 import { SLOT_NAMES } from "@/lib/constants";
 import { useAppStore } from "@/state/useAppStore";
@@ -30,6 +31,14 @@ export function WearableFilters() {
           onChange={(e) => setFilters({ search: e.target.value })}
           className="h-7 text-[11px] flex-1"
         />
+        <label className="flex items-center gap-1 text-[10px] text-muted-foreground whitespace-nowrap cursor-pointer select-none">
+          <Switch
+            checked={filters.ownedOnly}
+            onCheckedChange={(checked) => setFilters({ ownedOnly: checked })}
+            className="h-4 w-7 data-[state=checked]:bg-primary"
+          />
+          <span>My Items</span>
+        </label>
         {hasActiveFilters && (
           <Button
             variant="ghost"

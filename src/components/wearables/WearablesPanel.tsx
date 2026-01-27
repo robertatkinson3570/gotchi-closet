@@ -4,6 +4,7 @@ import { WearableFilters } from "./WearableFilters";
 import { SetBanner } from "./SetBanner";
 import { EquipModal } from "./EquipModal";
 import { useAppStore } from "@/state/useAppStore";
+import { useWearableInventory } from "@/state/selectors";
 import type { Wearable } from "@/types";
 import { placeholderSvg } from "@/lib/placeholderSvg";
 import { fetchWithTimeout } from "@/lib/http";
@@ -17,6 +18,7 @@ export function WearablesPanel() {
   const editorInstances = useAppStore((state) => state.editorInstances);
   const gotchis = useAppStore((state) => state.gotchis);
   const setError = useAppStore((state) => state.setError);
+  const { availCounts } = useWearableInventory();
   const equippedIds = editorInstances
     .flatMap((instance) => instance.equippedBySlot)
     .filter((id) => id !== 0);
@@ -29,6 +31,10 @@ export function WearablesPanel() {
 
   const filteredWearables = useMemo(() => {
     let filtered = [...wearables];
+
+    if (filters.ownedOnly) {
+      filtered = filtered.filter((w) => (availCounts[w.id] || 0) > 0);
+    }
 
     // Search filter
     if (filters.search) {
@@ -90,7 +96,7 @@ export function WearablesPanel() {
     }
 
     return filtered;
-  }, [wearables, filters, sets, equippedIds]);
+  }, [wearables, filters, sets, equippedIds, availCounts]);
 
   const activeSet = useMemo(() => {
     if (!filters.set) return null;
@@ -201,7 +207,9 @@ export function WearablesPanel() {
         <div className="max-h-[320px] overflow-y-auto overflow-x-hidden p-1.5">
           {filteredWearables.length === 0 ? (
             <div className="text-center text-muted-foreground py-4 text-[11px]">
-              No wearables found
+              {filters.ownedOnly
+                ? "No available wearables in inventory (or all currently used in editor)"
+                : "No wearables found"}
             </div>
           ) : (
             <div className="grid grid-cols-4 gap-1 justify-items-center">
@@ -210,6 +218,7 @@ export function WearablesPanel() {
                   key={wearable.id}
                   wearable={wearable}
                   onClick={isMobile ? () => handleWearableClick(wearable) : undefined}
+                  availCount={filters.ownedOnly ? availCounts[wearable.id] : undefined}
                 />
               ))}
             </div>

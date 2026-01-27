@@ -15,12 +15,14 @@ interface WearableCardViewProps {
   wearable: Wearable;
   onClick?: () => void;
   nativeDrag?: boolean;
+  availCount?: number;
 }
 
 export function WearableCardView({
   wearable,
   onClick,
   nativeDrag = false,
+  availCount,
 }: WearableCardViewProps) {
   const traitSummary = wearable.traitModifiers
     .slice(0, 4)
@@ -69,7 +71,12 @@ export function WearableCardView({
       }
       title={tooltip}
     >
-      <div className="h-[52px] w-full flex items-center justify-center overflow-hidden rounded-md bg-muted">
+      <div className="h-[52px] w-full flex items-center justify-center overflow-hidden rounded-md bg-muted relative">
+        {availCount !== undefined && availCount > 0 && (
+          <span className="absolute top-0.5 right-0.5 z-10 text-[9px] font-semibold px-1 py-0.5 rounded bg-primary text-primary-foreground leading-none">
+            ×{availCount}
+          </span>
+        )}
         <div
           data-testid={`wearable-thumb-${wearable.id}`}
           className="h-[52px] w-full flex items-center justify-center"
@@ -125,7 +132,7 @@ export function WearableCardView({
 
 interface WearableCardProps extends WearableCardViewProps {}
 
-export function WearableCard({ wearable, onClick }: WearableCardProps) {
+export function WearableCard({ wearable, onClick, availCount }: WearableCardProps) {
   return (
     <motion.div
       data-testid={`wearable-${wearable.id}`}
@@ -137,6 +144,7 @@ export function WearableCard({ wearable, onClick }: WearableCardProps) {
         wearable={wearable}
         onClick={onClick}
         nativeDrag
+        availCount={availCount}
       />
     </motion.div>
   );
