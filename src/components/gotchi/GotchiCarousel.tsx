@@ -140,7 +140,7 @@ export function GotchiCarousel({
               return (
                 <div
                   key={gotchi.id}
-                  className={`snap-start flex-shrink-0 relative ${isManual ? "ring-2 ring-primary/50 rounded-lg" : ""}`}
+                  className={`snap-start flex-shrink-0 relative ${isManual ? "ring-2 ring-purple-500 rounded-lg" : ""}`}
                   data-testid="gotchi-card"
                 >
                   {isLocked && (

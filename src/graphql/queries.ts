@@ -27,9 +27,12 @@ export const GOTCHIS_BY_OWNER = gql`
   }
 `;
 
-export const GOTCHI_BY_ID = gql`
-  query GotchiById($id: ID!) {
-    aavegotchi(id: $id) {
+export const GOTCHI_BY_TOKEN_ID = gql`
+  query GotchiByTokenId($tokenId: BigInt!) {
+    aavegotchis(
+      first: 1
+      where: { gotchiId: $tokenId, status: 3 }
+    ) {
       id
       name
       level

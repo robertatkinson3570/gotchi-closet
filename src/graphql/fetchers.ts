@@ -1,5 +1,5 @@
 import { client } from "./client";
-import { GOTCHIS_BY_OWNER, GOTCHI_BY_ID, GOTCHIS_SEARCH, WEARABLES } from "./queries";
+import { GOTCHIS_BY_OWNER, GOTCHI_BY_TOKEN_ID, GOTCHIS_SEARCH, WEARABLES } from "./queries";
 import type { Gotchi, Wearable, WearableSet } from "@/types";
 import wearablesData from "../../data/wearables.json";
 import wearableSetsData from "../../data/wearableSets.json";
@@ -82,20 +82,20 @@ function mapGotchiData(g: any, currentBlock: number | null): Gotchi {
   };
 }
 
-export async function fetchGotchiById(id: string): Promise<Gotchi | null> {
+export async function fetchGotchiByTokenId(tokenId: string): Promise<Gotchi | null> {
   const result = await client
-    .query(GOTCHI_BY_ID, { id })
+    .query(GOTCHI_BY_TOKEN_ID, { tokenId })
     .toPromise();
 
   if (result.error) {
     throw new Error(result.error.message);
   }
 
-  const gotchi = result.data?.aavegotchi;
-  if (!gotchi) return null;
+  const gotchis = result.data?.aavegotchis || [];
+  if (gotchis.length === 0) return null;
 
   const currentBlock = Number(result.data?._meta?.block?.number) || null;
-  return mapGotchiData(gotchi, currentBlock);
+  return mapGotchiData(gotchis[0], currentBlock);
 }
 
 export async function searchGotchis(search: string, limit: number = 10): Promise<Gotchi[]> {
@@ -104,7 +104,7 @@ export async function searchGotchis(search: string, limit: number = 10): Promise
   const isNumeric = /^\d+$/.test(search.trim());
 
   if (isNumeric) {
-    const gotchi = await fetchGotchiById(search.trim());
+    const gotchi = await fetchGotchiByTokenId(search.trim());
     return gotchi ? [gotchi] : [];
   }
 
