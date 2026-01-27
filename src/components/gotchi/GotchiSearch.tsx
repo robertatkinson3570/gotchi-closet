@@ -46,7 +46,7 @@ export function GotchiSearch({ onAdd, excludeIds }: GotchiSearchProps) {
         <Input
           ref={inputRef}
           type="text"
-          placeholder="Search gotchi by name or ID..."
+          placeholder="Search entire Aavegotchi collection by name or ID..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onFocus={() => search.length >= 2 && setIsExpanded(true)}
