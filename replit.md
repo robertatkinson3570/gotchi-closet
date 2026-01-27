@@ -40,6 +40,12 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-27: Added multi-wallet support (up to 3 additional wallets)
+  - HomePage allows adding/removing up to 3 wallet addresses
+  - WalletHeader shows all active wallets with responsive layout
+  - DressPage loads gotchis from connected wallet + all added wallets
+  - Persists in localStorage (gc_multiWallet)
+  - Located in src/lib/multiWallet.ts
 - 2026-01-27: Added "Lock & Set" feature for reserving wearables
   - Lock button in EditorPanel reserves current build's wearables
   - Locked Gotchis show amber badge in carousel with override wearables
