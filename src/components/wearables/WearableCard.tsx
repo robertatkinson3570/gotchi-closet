@@ -130,7 +130,7 @@ export function WearableCardView({
       </div>
       {priceGHST && (
         <a
-          href={`https://dapp.aavegotchi.com/baazaar/wearables?id=${wearable.id}&chainId=8453`}
+          href={`https://dapp.aavegotchi.com/baazaar/wearables?search=${encodeURIComponent(wearable.name)}&chainId=8453`}
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
