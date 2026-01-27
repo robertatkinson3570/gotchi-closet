@@ -40,6 +40,13 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-27: Added individual Gotchi search on Dress page
+  - Type-ahead search bar at top of carousel (min 2 chars)
+  - Search by name (partial match) or exact token ID
+  - Results displayed as GotchiCards, click to add to carousel
+  - Manually added Gotchis shown with purple ring and X button to remove
+  - Session-only persistence (not localStorage)
+  - Located in src/lib/hooks/useGotchiSearch.ts, src/components/gotchi/GotchiSearch.tsx
 - 2026-01-27: Added multi-wallet support (up to 3 additional wallets)
   - HomePage allows adding/removing up to 3 wallet addresses
   - WalletHeader shows all active wallets with responsive layout
