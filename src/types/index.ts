@@ -55,5 +55,6 @@ export type WearableFilters = {
   set: string | null; // set id or null
   showMissingOnly: boolean;
   traitDirections: number[] | null; // [NRG, AGG, SPK, BRN] direction: -1 (low), 0 (neutral), 1 (high)
+  ownedOnly: boolean; // Show only wearables owned by loaded gotchis
 };
 

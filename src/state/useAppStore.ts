@@ -43,6 +43,15 @@ interface AppState {
   clearFilters: () => void;
 }
 
+const getInitialOwnedOnly = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem('gc_ownedWearablesOnly') === 'true';
+  } catch {
+    return false;
+  }
+};
+
 const initialFilters: WearableFilters = {
   search: "",
   slot: null,
@@ -50,6 +59,7 @@ const initialFilters: WearableFilters = {
   set: null,
   showMissingOnly: false,
   traitDirections: null,
+  ownedOnly: getInitialOwnedOnly(),
 };
 
 let lastAddAt = 0;
@@ -110,7 +120,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   setWearableThumbs: (thumbs) =>
     set((state) => ({ wearableThumbs: { ...state.wearableThumbs, ...thumbs } })),
   setFilters: (filters) =>
-    set((state) => ({ filters: { ...state.filters, ...filters } })),
+    set((state) => {
+      const newFilters = { ...state.filters, ...filters };
+      if (filters.ownedOnly !== undefined) {
+        try {
+          localStorage.setItem('gc_ownedWearablesOnly', String(filters.ownedOnly));
+        } catch {}
+      }
+      return { filters: newFilters };
+    }),
   setLoadingGotchis: (loading) => set({ loadingGotchis: loading }),
   setLoadingWearables: (loading) => set({ loadingWearables: loading }),
   setLoadingSets: (loading) => set({ loadingSets: loading }),
@@ -200,7 +218,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   clearFilters: () => {
-    set({ filters: { ...initialFilters } });
+    set((state) => ({ 
+      filters: { 
+        ...initialFilters, 
+        ownedOnly: state.filters.ownedOnly 
+      } 
+    }));
   },
 }));
 

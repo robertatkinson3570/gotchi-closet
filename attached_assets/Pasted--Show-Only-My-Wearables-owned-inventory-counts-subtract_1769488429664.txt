@@ -1,0 +1,158 @@
+“Show Only My Wearables” (owned inventory + counts + subtract when used in editor)
+
+Goal: Add a toggle to the wearable selector: “Show Only My Wearables”.
+When enabled, the wearable selector should only show wearables owned by the gotchis loaded in the gotchi selector wallets, with accurate counts, and those counts should decrement as wearables are equipped on any gotchi currently open in the editor. When a wearable’s available count hits 0, it should disappear from the selector. All existing filters/search must still work.
+
+Non-negotiables
+
+Do not change the overall UI layout, styling system, or existing filter controls. Add the toggle neatly near the wearable selector header/filters.
+
+Do not change Dress page logic or other pages not involved.
+
+Filtering/search behavior must remain the same, just applied to a smaller “owned only” pool when toggle is ON.
+
+Must handle multiple copies: show ×N and decrement based on editor usage.
+
+Editor usage includes: wearables already on the gotchi when loaded into editor + any wearables added while editing. Unequip restores count.
+
+Functional Spec
+1) Toggle UI
+
+Add a toggle switch labeled “Show Only My Wearables” in the wearable selector panel (near the Search/filters row).
+
+Default: OFF
+
+Persist per session (optional but nice): localStorage key e.g. gc_ownedWearablesOnly=true/false
+
+2) Build “Owned Wearables” inventory pool (counts)
+
+When toggle is ON, the wearable selector list should be derived from an inventory pool:
+
+Owned pool = union of wearables across all gotchis currently loaded in the gotchi selector wallets.
+
+Implementation detail:
+
+Use the gotchi list you already fetch for the top carousel/selector (the set of gotchis shown/loaded for the selected wallets).
+
+For each gotchi, read its currently equipped wearables (whatever field you already use to render wearables on the gotchi).
+
+Count duplicates by wearableId.
+
+Result shape example:
+
+type WearableId = number;
+
+type OwnedCounts = Record<WearableId, number>;     // total owned across loaded gotchis
+type UsedCounts  = Record<WearableId, number>;     // used by editor instances
+type AvailCounts = Record<WearableId, number>;     // max(owned - used, 0)
+
+3) Track “used” wearables from editor instances only
+
+Scope rule: Only gotchis currently open in the editor consume from inventory.
+
+Definition: “In editor” = gotchis currently present in your editor state (selected/opened) and their equipped wearables (including defaults when loaded + user changes).
+
+Compute UsedCounts by iterating all editor gotchis and counting each equipped wearableId.
+
+Each slot equipped consumes 1 from that wearableId count.
+
+If a wearable is equipped twice across two editor gotchis, used count is 2, etc.
+
+4) Available list logic
+
+When toggle is ON:
+
+AvailCounts[id] = max(OwnedCounts[id] - UsedCounts[id], 0)
+
+Wearable selector should only show wearables where AvailCounts[id] > 0
+
+Each wearable tile should display count as ×{AvailCounts[id]} (small badge top-right or near the name; minimal UI change)
+
+When toggle is OFF:
+
+behave exactly like today (all wearables list, no counting, no subtraction).
+
+5) Equipping / unequipping
+
+When user equips a wearable onto any editor gotchi:
+
+It updates the editor gotchi’s equipped wearables state
+
+That automatically increases UsedCounts (derived) and reduces AvailCounts
+
+If a wearable’s avail hits 0, it disappears from selector immediately
+
+When user unequips:
+
+Counts restore immediately
+
+Important: Do not allow selecting a wearable if AvailCounts[id] === 0 (it should already be hidden). If something races, guard in the equip handler.
+
+6) Filters & Search
+
+Keep your existing filtering pipeline (slot, rarity, sets, search).
+
+If toggle is ON, start from the “available owned list” subset (where avail > 0), then apply the existing filters/search.
+
+If toggle is OFF, start from the full wearable list as today.
+
+7) Best Wearables button integration
+
+Wherever “Best Wearables” logic chooses wearables:
+
+When toggle is ON, it must only consider wearables with AvailCounts[id] > 0 (and decrementing availability as it builds a set if it equips multiple items).
+
+When toggle is OFF, leave current behavior unchanged.
+
+If Best Wearables applies multiple slots at once, it must not pick the same wearableId more times than available count.
+
+Implementation Steps (do this in small safe passes)
+
+Locate wearable selector component and add toggle state + UI.
+
+Implement computeOwnedCounts(gotchisLoaded) from the gotchi selector list (loaded wallets).
+
+Implement computeUsedCounts(editorGotchis) from editor state.
+
+Implement availCounts derived memo and filter wearable list when toggle ON.
+
+Add ×N badge to tiles when toggle ON.
+
+Update equip/unequip logic only if needed (ideally no changes if usedCounts is derived).
+
+Update Best Wearables: respect availCounts in owned-only mode.
+
+Add quick console assertions (dev only):
+
+sum(usedCounts[id]) <= ownedCounts[id] + something? (should never exceed if UI hides)
+
+availCounts[id] >= 0
+
+Edge Cases to Handle
+
+Loaded wallets change → recompute owned pool and refresh selector immediately.
+
+Editor contains gotchi whose wearables aren’t in the owned pool (shouldn’t happen in owned mode, but if wallets change mid-session): clamp availability and ensure no crashes.
+
+Multiple addresses loaded: owned pool includes all gotchis from both.
+
+If owned mode ON and avail empty, show empty-state text: “No available wearables in inventory (or all currently used in editor).”
+
+Testing Checklist (manual)
+
+Toggle OFF → selector unchanged.
+
+Toggle ON → selector only shows owned wearables; counts match.
+
+Equip wearable on editor gotchi → selector count decrements; disappears at 0.
+
+Unequip → count restores.
+
+Open a second gotchi in editor; equip same wearable → shared pool decrements again.
+
+Best Wearables in owned mode never uses unavailable wearables.
+
+Deliverable: Commit changes with a clear message like:
+feat: owned-only wearable selector with inventory counts and editor consumption
+
+Do not refactor unrelated code. Keep changes localized to wearable selector + shared state helpers + best-wearables logic.

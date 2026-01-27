@@ -1,6 +1,58 @@
+import { useMemo } from "react";
 import { useAppStore } from "./useAppStore";
 import { computeBRSBreakdown } from "@/lib/rarity";
-import type { Wearable } from "@/types";
+import type { Wearable, Gotchi, EditorInstance } from "@/types";
+
+export type WearableCounts = Record<number, number>;
+
+export function computeOwnedCounts(gotchis: Gotchi[]): WearableCounts {
+  const counts: WearableCounts = {};
+  for (const gotchi of gotchis) {
+    for (const wearableId of gotchi.equippedWearables) {
+      if (wearableId !== 0) {
+        counts[wearableId] = (counts[wearableId] || 0) + 1;
+      }
+    }
+  }
+  return counts;
+}
+
+export function computeUsedCounts(editorInstances: EditorInstance[]): WearableCounts {
+  const counts: WearableCounts = {};
+  for (const instance of editorInstances) {
+    for (const wearableId of instance.equippedBySlot) {
+      if (wearableId !== 0) {
+        counts[wearableId] = (counts[wearableId] || 0) + 1;
+      }
+    }
+  }
+  return counts;
+}
+
+export function computeAvailCounts(
+  ownedCounts: WearableCounts,
+  usedCounts: WearableCounts
+): WearableCounts {
+  const avail: WearableCounts = {};
+  for (const [idStr, owned] of Object.entries(ownedCounts)) {
+    const id = Number(idStr);
+    const used = usedCounts[id] || 0;
+    avail[id] = Math.max(owned - used, 0);
+  }
+  return avail;
+}
+
+export function useWearableInventory() {
+  const gotchis = useAppStore((state) => state.gotchis);
+  const editorInstances = useAppStore((state) => state.editorInstances);
+  
+  return useMemo(() => {
+    const ownedCounts = computeOwnedCounts(gotchis);
+    const usedCounts = computeUsedCounts(editorInstances);
+    const availCounts = computeAvailCounts(ownedCounts, usedCounts);
+    return { ownedCounts, usedCounts, availCounts };
+  }, [gotchis, editorInstances]);
+}
 
 export function useWearablesById() {
   const wearables = useAppStore((state) => state.wearables);
