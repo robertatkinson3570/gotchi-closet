@@ -40,14 +40,17 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-28: Major Catwalk visual overhaul - real runway fashion show
+  - 3D perspective runway with CSS perspective:900px and rotateX transforms
+  - Crowd gotchis on left/right sides as fashion show audience (rotateY facing inward)
+  - Active gotchi walks from far (scale 0.3, top) to near (scale 1, center) - forced perspective
+  - Approach → Pose → Move → Exit phase flow (no more left/right entry)
+  - Removed all flash/flicker effects for stable animations
+  - Removed card borders - gotchis render with transparent backgrounds
+  - Vignette, haze, and subtle spotlight for depth
+  - Located in src/components/catwalk/CatwalkModal.tsx, catwalk.css
 - 2026-01-28: Polished Catwalk visual quality
   - Asset preloading with progress bar before show starts
-  - Cartoon runway platform with glow effect and center stripe
-  - Centered backstage lineup above runway (2-row responsive layout)
-  - Consistent GotchiCard framing for all gotchis (purple/teal borders)
-  - Drop shadow under active gotchi for grounding
-  - Improved motion: cubic-bezier easing, bob animations, arrival overshoot
-  - Vignette overlay for focus, refined badge styling
   - Located in src/components/catwalk/usePreloadAssets.ts
 - 2026-01-28: Added Catwalk feature on Dress page
   - "Catwalk" button opens full-screen modal overlay
