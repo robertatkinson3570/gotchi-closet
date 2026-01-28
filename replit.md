@@ -40,6 +40,16 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-28: Added Catwalk feature on Dress page
+  - "Catwalk" button opens full-screen modal overlay
+  - Animates all Gotchis in selector walking a runway in rarity order
+  - Each Gotchi performs one deterministic "model-style" move (7 move types)
+  - Dark haunted stage aesthetic with floating particles and spotlight
+  - Shows backstage queue, active Gotchi with name/BRS, progress counter
+  - End screen with Replay and Back to Dress buttons
+  - Respects prefers-reduced-motion (disables animations with note)
+  - ESC/backdrop click to close, no state mutations (visual-only)
+  - Located in src/components/catwalk/CatwalkModal.tsx, catwalk.css
 - 2026-01-27: Added individual Gotchi search on Dress page
   - Type-ahead search bar at top of carousel (min 2 chars)
   - Search by name (partial match) or exact token ID
