@@ -1,0 +1,80 @@
+POLISH PASS: Catwalk modal works but looks bad. Fix visuals + staging + motion quality. Do NOT change any dress/editor logic or state. Keep Catwalk as modal overlay only.
+
+PROBLEMS TO FIX (OBSERVED)
+- Backstage gotchis are bottom-left thumbnails. Needs to look like a lineup behind the runway.
+- No runway/stage; just a line. Needs a cartoon runway platform + depth.
+- Active gotchi floats in empty space; needs grounding (shadow + alignment to runway).
+- Some gotchis render as white tiles/boxes; either render SVG with transparent background or wrap as intentional “card frame”.
+- Motion feels like teleport / slide; needs easing + bob + pose timing.
+- Occasional blank/grey placeholder: images not preloaded before sequence starts.
+
+GOALS
+- Make the Catwalk scene feel Aavegotchi-cartoon: haunted/carnival stage, playful and clean.
+- Composition must read instantly: BACKSTAGE (center) → RUNWAY (foreground) → ACTIVE WALKER (on runway).
+- Ensure every gotchi is loaded before animation begins (no placeholders mid-show).
+
+IMPLEMENTATION REQUIREMENTS
+1) PRELOAD ASSETS BEFORE START
+   - When modal opens, preload all gotchi preview images/SVGs used in Catwalk.
+   - Show a “Loading Catwalk…” state until ALL assets are ready.
+   - Only then begin animation sequence.
+   - If an asset fails, still render fallback but do not show grey blank tile; show a default gotchi silhouette card.
+
+2) SCENE LAYOUT (FIX COMPOSITION)
+   - Create a runway platform in the bottom third of the screen:
+     - A rounded rectangle “floor” (cartoon) with soft glow outline.
+     - Add subtle floor gradient and a center highlight stripe (like a catwalk lane).
+   - Place BACKSTAGE centered above runway:
+     - 2–3 rows or a shallow arc, centered horizontally.
+     - Each backstage gotchi is small, opacity ~0.45, slight blur optional.
+     - Add tiny idle float keyframe (very subtle).
+   - ACTIVE gotchi is centered on runway:
+     - scale ~1.8x of backstage.
+     - align visually so it sits “on” the runway (use consistent baseline).
+     - Add drop shadow under active gotchi (soft, blurred ellipse) that scales slightly during bounce.
+
+3) FIX GOTCHI FRAMING (STOP LOOKING LIKE RANDOM TILES)
+   Preferred: render SVG with transparent background (no white square).
+   If transparency cannot be guaranteed:
+   - Wrap gotchi in a consistent “stage card”:
+     - rounded corners
+     - subtle border in purple/teal
+     - inner padding
+     - soft shadow
+   - Ensure ALL gotchis share the same frame style so it looks intentional.
+
+4) MOTION QUALITY UPGRADE (KEEP SAME PHASES, IMPROVE FEEL)
+   - All animations must use transform/opacity only.
+   - Ensure transform-origin: center bottom for active gotchi.
+   - Use non-linear easing: cubic-bezier(0.22, 1, 0.36, 1) for entrances/exits.
+   - Add bob loop during movement:
+     - y: 0 → -4px → 0 (sync with travel)
+   - Add arrival overshoot:
+     - on reaching center: scale 1.0 → 1.04 → 1.0 over ~220ms
+   - Pose timing:
+     - pause at center: 200–300ms
+     - then run the deterministic Move Pack (already implemented)
+   - Keep spins tasteful (max 1 full spin).
+
+5) UI TEXT / CHROME POLISH
+   - Move “Backstage” label near the lineup (not bottom-left).
+   - Keep CATWALK MODE badge top-left but reduce its visual weight slightly.
+   - Add subtle vignette edges to focus attention on runway.
+
+6) RESPONSIVE
+   - Backstage layout adapts:
+     - desktop: arc/rows centered
+     - mobile: single row + horizontal scroll OR 2 rows but still centered
+   - Active gotchi stays centered and never clips.
+
+FILES
+- Modify CatwalkModal + styles only.
+- If needed add: src/components/catwalk/usePreloadAssets.ts (small hook).
+- Do NOT touch Dress page logic besides opening modal + passing gotchis.
+
+ACCEPTANCE
+- No grey placeholder frames during show (preloaded).
+- Backstage is centered behind runway and looks like a lineup.
+- Runway looks like a cartoon stage (platform + glow).
+- Active gotchi feels grounded (shadow + baseline).
+- Motion feels smooth and intentional (ease + bob + overshoot).
