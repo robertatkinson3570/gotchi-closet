@@ -164,12 +164,12 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
     }
 
     if (phase === "approach") {
-      setTimeout(() => setPhase("pose"), 1800);
+      setTimeout(() => setPhase("pose"), 2200);
     } else if (phase === "pose") {
-      setTimeout(() => setPhase("move"), 300);
+      setTimeout(() => setPhase("move"), 400);
     } else if (phase === "move") {
       const move = getMoveForGotchi(sortedGotchis[activeIndex]?.id || "0");
-      const duration = move === "moonwalk" ? 900 : 700;
+      const duration = move === "moonwalk" ? 1200 : 800;
       setTimeout(() => setPhase("exit"), duration);
     } else if (phase === "exit") {
       setTimeout(() => {
@@ -179,7 +179,7 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
         } else {
           setStatus("done");
         }
-      }, 600);
+      }, 1000);
     }
   }, [phase, activeIndex, sortedGotchis, reducedMotion]);
 
@@ -247,12 +247,20 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
     >
       <div className="catwalk-stage">
         <div className="catwalk-backdrop" />
+        
+        <div className="catwalk-ghost-orb catwalk-ghost-orb-1" />
+        <div className="catwalk-ghost-orb catwalk-ghost-orb-2" />
+        <div className="catwalk-ghost-orb catwalk-ghost-orb-3" />
+        
+        <div className="catwalk-portal" />
         <div className="catwalk-haze" />
         
         <div className="catwalk-runway-container">
           <div className="catwalk-runway-glow" />
           <div className="catwalk-runway-plane" />
           <div className="catwalk-runway-lane" />
+          <div className="catwalk-runway-edge-left" />
+          <div className="catwalk-runway-edge-right" />
         </div>
 
         <div className="catwalk-crowd catwalk-crowd-left">
@@ -262,6 +270,26 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
           {renderCrowdRows(rightCrowd)}
         </div>
 
+        <div className="catwalk-mist">
+          <div className="catwalk-mist-layer" />
+          <div className="catwalk-mist-layer catwalk-mist-layer-2" />
+        </div>
+        
+        <div className="catwalk-sparkles">
+          {Array.from({ length: 12 }, (_, i) => (
+            <div
+              key={i}
+              className="catwalk-sparkle"
+              style={{
+                left: `${10 + Math.random() * 80}%`,
+                top: `${10 + Math.random() * 60}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${2 + Math.random() * 2}s`,
+              }}
+            />
+          ))}
+        </div>
+        
         <div className="catwalk-spotlight" />
         <div className="catwalk-vignette" />
       </div>

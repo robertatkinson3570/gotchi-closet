@@ -40,6 +40,15 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-28: Ghostly haunted theme for Catwalk fashion show
+  - Floating ghost orbs (3 large blurred purple orbs with floatingGhost animation)
+  - Portal swirl effect at top center (rotating conic gradient)
+  - Drifting mist layers at bottom with ethereal feel
+  - Sparkles scattered across scene
+  - Glowing runway edges with pulsing purple light
+  - Smoother exit animations (1000ms with 4-stage progression)
+  - Approach animation with blur fade-in effect (2200ms)
+  - Purple ghostly shadow under active gotchi
 - 2026-01-28: Major Catwalk visual overhaul - real runway fashion show
   - 3D perspective runway with CSS perspective:900px and rotateX transforms
   - Crowd gotchis on left/right sides as fashion show audience (rotateY facing inward)
