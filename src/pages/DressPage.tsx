@@ -314,22 +314,24 @@ export default function DressPage() {
           <span className="sr-only" data-testid="gotchi-list-owner">
             {ownersKey}
           </span>
-          <div className="flex items-center justify-end px-2 py-1 border-b bg-muted/30">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowCatwalk(true)}
-              disabled={allSelectorGotchis.length === 0}
-              className="gap-2"
-            >
-              <Footprints className="h-4 w-4" />
-              Catwalk
-            </Button>
-          </div>
           <GotchiCarousel
             manualGotchis={manualGotchis}
             onAddManualGotchi={handleAddManualGotchi}
             onRemoveManualGotchi={handleRemoveManualGotchi}
+            searchRightElement={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCatwalk(true)}
+                disabled={allSelectorGotchis.length === 0}
+                className="h-auto py-1 px-1.5 text-[9px] flex-col leading-tight shrink-0"
+              >
+                <span className="flex items-center gap-0.5">
+                  <Footprints className="h-3 w-3" />
+                  Catwalk
+                </span>
+              </Button>
+            }
           />
         </div>
         <div className="hidden lg:block flex-1 max-w-screen-2xl mx-auto w-full px-4 py-3 overflow-hidden">

@@ -10,9 +10,10 @@ import type { Gotchi } from "@/types";
 type GotchiSearchProps = {
   onAdd: (gotchi: Gotchi) => void;
   excludeIds: Set<string>;
+  rightElement?: React.ReactNode;
 };
 
-export function GotchiSearch({ onAdd, excludeIds }: GotchiSearchProps) {
+export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchProps) {
   const [search, setSearch] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -58,6 +59,7 @@ export function GotchiSearch({ onAdd, excludeIds }: GotchiSearchProps) {
             size="icon"
             className="h-6 w-6 shrink-0"
             onClick={handleClear}
+            aria-label="Clear search"
           >
             <X className="h-3.5 w-3.5" />
           </Button>
@@ -77,6 +79,7 @@ export function GotchiSearch({ onAdd, excludeIds }: GotchiSearchProps) {
             )}
           </Button>
         )}
+        {rightElement}
       </div>
 
       {isExpanded && search.length >= 2 && (

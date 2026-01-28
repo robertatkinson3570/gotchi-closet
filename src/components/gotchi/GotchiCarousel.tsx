@@ -11,12 +11,14 @@ type GotchiCarouselProps = {
   manualGotchis?: Gotchi[];
   onAddManualGotchi?: (gotchi: Gotchi) => void;
   onRemoveManualGotchi?: (gotchiId: string) => void;
+  searchRightElement?: React.ReactNode;
 };
 
 export function GotchiCarousel({ 
   manualGotchis = [], 
   onAddManualGotchi,
   onRemoveManualGotchi,
+  searchRightElement,
 }: GotchiCarouselProps) {
   const walletGotchis = useSortedGotchis();
   const addEditorInstance = useAppStore((state) => state.addEditorInstance);
@@ -64,7 +66,7 @@ export function GotchiCarousel({
   return (
     <div className="border-b bg-muted/50">
       {onAddManualGotchi && (
-        <GotchiSearch onAdd={onAddManualGotchi} excludeIds={allGotchiIds} />
+        <GotchiSearch onAdd={onAddManualGotchi} excludeIds={allGotchiIds} rightElement={searchRightElement} />
       )}
       {gotchis.length === 0 ? (
         <div className="p-4 text-center text-muted-foreground">
