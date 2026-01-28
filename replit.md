@@ -40,6 +40,15 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-28: Polished Catwalk visual quality
+  - Asset preloading with progress bar before show starts
+  - Cartoon runway platform with glow effect and center stripe
+  - Centered backstage lineup above runway (2-row responsive layout)
+  - Consistent GotchiCard framing for all gotchis (purple/teal borders)
+  - Drop shadow under active gotchi for grounding
+  - Improved motion: cubic-bezier easing, bob animations, arrival overshoot
+  - Vignette overlay for focus, refined badge styling
+  - Located in src/components/catwalk/usePreloadAssets.ts
 - 2026-01-28: Added Catwalk feature on Dress page
   - "Catwalk" button opens full-screen modal overlay
   - Animates all Gotchis in selector walking a runway in rarity order
