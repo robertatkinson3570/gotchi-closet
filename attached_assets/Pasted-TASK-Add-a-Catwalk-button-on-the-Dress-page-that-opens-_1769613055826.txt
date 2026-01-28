@@ -1,0 +1,170 @@
+TASK: Add a “Catwalk” button on the Dress page that opens a full-screen modal overlay and animates all Gotchis currently in the Gotchi Selector in rarity order using alternating “model-style” catwalk moves. This is purely visual (no trait/BRS/respec/respect changes). Must not affect existing Dress page logic, state, or layout.
+
+APP CONTEXT
+- App: GotchiCloset (React + Vite)
+- Page: Dress page (Gotchi Selector + Gotchi Editor)
+- Gotchis are already renderable as SVGs or preview images.
+- Catwalk must feel native to Aavegotchi: playful, cartoonish, ghosty (NOT realistic fashion runway).
+
+NON-NEGOTIABLE GUARDRAILS
+1) DO NOT change any existing calculations or data: traits, BRS, wearables, sets, respec, respect, rarity, selector state.
+2) DO NOT restructure the Dress page. Catwalk must be a modal overlay (position: fixed) so no layout shifts occur.
+3) Visual-only feature. No state mutation, no saving, no side effects.
+4) Use transforms only (translate, scale, rotate, opacity). No top/left animation.
+5) No true 3D or real 360 assets. Gotchis are flat SVGs.
+6) Modal must have Close (X), Replay, ESC-to-close, and backdrop click to close.
+7) Lock body scroll while modal is open; restore on close.
+8) Respect prefers-reduced-motion. If enabled, skip animations and show a static gallery with a note.
+9) Must be performant even with many gotchis (limit heavy re-renders).
+
+FEATURE OVERVIEW
+- Add a button labeled “Catwalk” on the Dress page header near existing controls.
+- Clicking opens <CatwalkModal />.
+- Modal behavior:
+  - Sort all gotchis currently in the Gotchi Selector by rarityScore DESC (highest first).
+  - All gotchis appear “backstage” in the background.
+  - One gotchi at a time walks the Catwalk in the foreground.
+  - Each gotchi performs one “model-style” move at center stage.
+  - Sequence continues until all gotchis have walked.
+  - End screen appears with Replay + Back to Dress.
+
+DATA INPUTS
+- Pass CatwalkModal the current selector gotchi list with:
+  - tokenId (number or string)
+  - rarityScore (number; default 0 if missing)
+  - renderable SVG or preview source already used in the app
+- IMPORTANT:
+  - Use a lightweight GotchiPreview renderer.
+  - Do NOT mount the full Gotchi Editor component inside the modal.
+  - Reuse existing preview components if available, but in compact mode only.
+
+UI COPY (LOCKED)
+- Button: “Catwalk”
+- Modal badge: “CATWALK MODE”
+- Subtext: “Pure vibes. Zero stat changes.”
+- Backstage label: “Backstage”
+- End headline: “That’s the show”
+- End subtext: “All gotchis have walked the Catwalk.”
+- Buttons: “Replay”, “Back to Dress”
+- Reduced motion note: “Reduced motion enabled. Animations disabled.”
+
+VISUAL STYLE
+- Cartoon haunted stage aesthetic (Aavegotchi-native).
+- Background: dark purple/teal gradient with subtle floating particles (CSS-only).
+- Runway: floating platform or stitched planks with soft cartoon glow.
+- Spotlight: blob-shaped light that softly follows the active gotchi.
+- Backstage gotchis:
+  - Smaller scale
+  - Opacity ~0.4
+  - Slight idle float
+- Active gotchi:
+  - Larger scale (1.6–2x)
+  - Centered on runway
+  - No overlapping with others
+
+ANIMATION SEQUENCE (PER GOTCHI)
+Total duration per gotchi: ~2.2–2.8s depending on move.
+
+Phases:
+1) ENTER
+   - Start off-screen (left by default, occasionally right).
+   - Glide to center with ghosty float:
+     - translateX + subtle bob (2–4px)
+     - slight sway (±1–2deg)
+   - Duration: 1100–1400ms
+
+2) CENTER PAUSE
+   - Duration: 150–300ms
+   - Name + rarity label fades in
+
+3) MODEL MOVE (ONE PER GOTCHI)
+   - Deterministically selected from the Move Pack (see below)
+
+4) EXIT
+   - Glide off-screen opposite side
+   - Duration: 700–900ms
+
+MOVE PACK (MODEL-STYLE POSES)
+Each gotchi uses ONE move, selected deterministically via tokenId seed.
+Use these exact move identifiers:
+
+1) CLASSIC_TWIRL
+   - rotateZ: 0 → 360deg
+   - duration: ~650ms
+   - slight scale overshoot (1 → 1.04 → 1)
+
+2) HALF_TURN_ILLUSION
+   - rotateZ: 0 → 18 → -12 → 0
+   - optional rotateY: 0 → 60 → 0 with scaleX dip at peak
+   - NO rotation beyond 70deg on Y axis
+
+3) PIVOT_POSE
+   - micro slide: x +10px → 0
+   - rotateZ: 0 → 120 → 0
+   - bob during pivot
+
+4) SQUASH_STRETCH_POSE
+   - scaleY: 1 → 0.92 → 1.03 → 1
+   - scaleX: 1 → 1.05 → 0.98 → 1
+   - rotateZ: 0 → 6 → -4 → 0
+
+5) FLOAT_STRUT
+   - y: 0 → -6 → 0
+   - rotateZ: -4 → +4 → -2 → 0
+   - no spin
+
+6) SPOTLIGHT_POP
+   - scale: 1 → 1.08 → 1
+   - spotlight brightness increases briefly (~200ms)
+
+7) MOONWALK_EXIT (RARE)
+   - exit movement appears backward briefly before normal exit
+   - Use for <=10% of gotchis only
+
+MOVE SELECTION LOGIC
+- Define MOVES array in fixed order.
+- moveIndex = tokenId % MOVES.length
+- entrySide:
+  - if (tokenId % 100 < 10) enter from right
+  - else enter from left
+- All variation must be deterministic (same gotchi always performs same move).
+
+IMPLEMENTATION DETAILS
+- Modal internal state:
+  - status: "idle" | "running" | "done"
+  - activeIndex
+  - phase: "enter" | "pause" | "move" | "exit"
+  - reducedMotion (from matchMedia)
+- Use animationend events and short setTimeouts for phase transitions.
+- Do NOT introduce new animation libraries unless already present.
+- Prefer CSS keyframes + React state.
+
+ACCESSIBILITY
+- Focus trap inside modal.
+- ESC closes modal.
+- ARIA labels on buttons.
+- Reduced motion fallback required.
+
+FILES / STRUCTURE
+- New folder: src/components/catwalk/
+  - CatwalkModal.tsx
+  - GotchiPreview.tsx (if needed)
+  - catwalk.module.css (or Tailwind classes if used)
+- Dress page:
+  - Add Catwalk button
+  - Pass current selector gotchis into modal
+  - No changes to existing selector/editor logic
+
+ACCEPTANCE CHECKLIST
+- Clicking Catwalk opens modal instantly with no layout shift.
+- Gotchis walk in rarity DESC order.
+- Each gotchi performs exactly one deterministic model move.
+- Closing returns user to identical Dress page state.
+- No trait, rarity, wearable, or selector changes.
+- Mobile and desktop supported.
+- Zero-gotchis selected: disable button or show “No gotchis in selector”.
+
+DELIVERABLE
+- Implement Catwalk button + modal per spec.
+- Keep changes tightly scoped.
+- Add short comments explaining rarity sort and move selection.

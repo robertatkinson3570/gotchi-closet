@@ -1,0 +1,177 @@
+@keyframes floatIdle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes spotlightPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.85; }
+}
+
+@keyframes particleFloat {
+  0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+}
+
+@keyframes enterFromLeft {
+  0% { transform: translateX(-100vw) translateY(0) rotate(0deg); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 1; }
+}
+
+@keyframes enterFromRight {
+  0% { transform: translateX(100vw) translateY(0) rotate(0deg); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 1; }
+}
+
+@keyframes exitToRight {
+  0% { transform: translateX(0) translateY(0); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(100vw) translateY(0); opacity: 0; }
+}
+
+@keyframes exitToLeft {
+  0% { transform: translateX(0) translateY(0); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(-100vw) translateY(0); opacity: 0; }
+}
+
+@keyframes classicTwirl {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.04); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes halfTurnIllusion {
+  0% { transform: rotateZ(0deg) scaleX(1); }
+  25% { transform: rotateZ(18deg) scaleX(0.95); }
+  50% { transform: rotateZ(-12deg) scaleX(0.9); }
+  100% { transform: rotateZ(0deg) scaleX(1); }
+}
+
+@keyframes pivotPose {
+  0% { transform: translateX(10px) rotateZ(0deg); }
+  30% { transform: translateX(5px) rotateZ(60deg); }
+  60% { transform: translateX(0) rotateZ(120deg); }
+  100% { transform: translateX(0) rotateZ(0deg); }
+}
+
+@keyframes squashStretchPose {
+  0% { transform: scaleY(1) scaleX(1) rotateZ(0deg); }
+  25% { transform: scaleY(0.92) scaleX(1.05) rotateZ(6deg); }
+  50% { transform: scaleY(1.03) scaleX(0.98) rotateZ(-4deg); }
+  100% { transform: scaleY(1) scaleX(1) rotateZ(0deg); }
+}
+
+@keyframes floatStrut {
+  0% { transform: translateY(0) rotateZ(-4deg); }
+  33% { transform: translateY(-6px) rotateZ(4deg); }
+  66% { transform: translateY(-3px) rotateZ(-2deg); }
+  100% { transform: translateY(0) rotateZ(0deg); }
+}
+
+@keyframes spotlightPop {
+  0% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.08); filter: brightness(1.2); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+@keyframes moonwalkExit {
+  0% { transform: translateX(0); }
+  30% { transform: translateX(30px); }
+  100% { transform: translateX(100vw); }
+}
+
+.catwalk-stage {
+  background: linear-gradient(135deg, #1a1033 0%, #0d1f2d 50%, #1a1033 100%);
+}
+
+.catwalk-runway {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.3) 50%, rgba(139, 92, 246, 0.1) 100%);
+  box-shadow: 0 0 60px rgba(139, 92, 246, 0.4), inset 0 2px 20px rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.catwalk-spotlight {
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3) 0%, rgba(139, 92, 246, 0.1) 40%, transparent 70%);
+  animation: spotlightPulse 2s ease-in-out infinite;
+}
+
+.catwalk-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(139, 92, 246, 0.6);
+  border-radius: 50%;
+  animation: particleFloat linear infinite;
+}
+
+.gotchi-backstage {
+  animation: floatIdle 3s ease-in-out infinite;
+}
+
+.gotchi-enter-left {
+  animation: enterFromLeft 1200ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.gotchi-enter-right {
+  animation: enterFromRight 1200ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.gotchi-exit-right {
+  animation: exitToRight 800ms cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
+}
+
+.gotchi-exit-left {
+  animation: exitToLeft 800ms cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
+}
+
+.move-classic-twirl {
+  animation: classicTwirl 650ms ease-in-out forwards;
+}
+
+.move-half-turn {
+  animation: halfTurnIllusion 700ms ease-in-out forwards;
+}
+
+.move-pivot-pose {
+  animation: pivotPose 750ms ease-in-out forwards;
+}
+
+.move-squash-stretch {
+  animation: squashStretchPose 600ms ease-in-out forwards;
+}
+
+.move-float-strut {
+  animation: floatStrut 700ms ease-in-out forwards;
+}
+
+.move-spotlight-pop {
+  animation: spotlightPop 500ms ease-in-out forwards;
+}
+
+.move-moonwalk {
+  animation: moonwalkExit 900ms ease-in-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gotchi-backstage,
+  .catwalk-spotlight,
+  .catwalk-particle,
+  .gotchi-enter-left,
+  .gotchi-enter-right,
+  .gotchi-exit-right,
+  .gotchi-exit-left,
+  .move-classic-twirl,
+  .move-half-turn,
+  .move-pivot-pose,
+  .move-squash-stretch,
+  .move-float-strut,
+  .move-spotlight-pop,
+  .move-moonwalk {
+    animation: none !important;
+  }
+}
