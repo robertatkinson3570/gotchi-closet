@@ -26,6 +26,10 @@ import { useAddressState } from "@/lib/addressState";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
 import { WalletHeader } from "@/components/wallet/WalletHeader";
 import { loadMultiWallets, removeWallet } from "@/lib/multiWallet";
+import { CatwalkModal } from "@/components/catwalk/CatwalkModal";
+import { useSortedGotchis } from "@/state/selectors";
+import { Button } from "@/ui/button";
+import { Footprints } from "lucide-react";
 
 export default function DressPage() {
   const [searchParams] = useSearchParams();
@@ -35,6 +39,19 @@ export default function DressPage() {
   const { connectedAddress, isConnected, isOnBase } = useAddressState();
   const [multiWallets, setMultiWallets] = useState<string[]>(() => loadMultiWallets());
   const [manualGotchis, setManualGotchis] = useState<Gotchi[]>([]);
+  const [showCatwalk, setShowCatwalk] = useState(false);
+  const storeGotchis = useSortedGotchis();
+
+  const allSelectorGotchis = useMemo(() => {
+    const storeIds = new Set(storeGotchis.map((g) => g.id));
+    const combined = [...storeGotchis];
+    for (const mg of manualGotchis) {
+      if (!storeIds.has(mg.id)) {
+        combined.push(mg);
+      }
+    }
+    return combined.sort((a, b) => (b.baseRarityScore ?? 0) - (a.baseRarityScore ?? 0));
+  }, [storeGotchis, manualGotchis]);
 
   const {
     setLoadedAddress,
@@ -297,6 +314,18 @@ export default function DressPage() {
           <span className="sr-only" data-testid="gotchi-list-owner">
             {ownersKey}
           </span>
+          <div className="flex items-center justify-end px-2 py-1 border-b bg-muted/30">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCatwalk(true)}
+              disabled={allSelectorGotchis.length === 0}
+              className="gap-2"
+            >
+              <Footprints className="h-4 w-4" />
+              Catwalk
+            </Button>
+          </div>
           <GotchiCarousel
             manualGotchis={manualGotchis}
             onAddManualGotchi={handleAddManualGotchi}
@@ -341,6 +370,12 @@ export default function DressPage() {
           </div>
         )}
       </DragOverlay>
+      {showCatwalk && (
+        <CatwalkModal
+          gotchis={allSelectorGotchis}
+          onClose={() => setShowCatwalk(false)}
+        />
+      )}
     </DndContext>
   );
 }
