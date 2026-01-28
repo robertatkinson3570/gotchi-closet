@@ -13,7 +13,7 @@ type CatwalkModalProps = {
 };
 
 type Status = "loading" | "idle" | "running" | "done";
-type Phase = "enter" | "arrival" | "pause" | "move" | "exit";
+type Phase = "approach" | "pose" | "move" | "exit";
 
 const MOVES = [
   "classic-twirl",
@@ -33,64 +33,54 @@ function getMoveForGotchi(tokenId: string): Move {
   return MOVES[index];
 }
 
-function getEntrySide(tokenId: string): "left" | "right" {
+function getExitSide(tokenId: string): "left" | "right" {
   const numId = parseInt(tokenId.replace(/\D/g, ""), 10) || 0;
-  return numId % 100 < 10 ? "right" : "left";
+  return numId % 2 === 0 ? "left" : "right";
 }
 
-function Particles() {
-  const particles = useMemo(() => {
-    return Array.from({ length: 20 }, (_, i) => ({
-      id: i,
-      left: `${Math.random() * 100}%`,
-      delay: `${Math.random() * 8}s`,
-      duration: `${12 + Math.random() * 8}s`,
-      size: `${2 + Math.random() * 3}px`,
-    }));
-  }, []);
-
+function CrowdGotchi({ gotchi, size = 28 }: { gotchi: Gotchi; size?: number }) {
   return (
-    <>
-      {particles.map((p) => (
-        <div
-          key={p.id}
-          className="catwalk-particle"
-          style={{
-            left: p.left,
-            animationDelay: p.delay,
-            animationDuration: p.duration,
-            width: p.size,
-            height: p.size,
-          }}
+    <div className="catwalk-crowd-gotchi">
+      <div className="gotchi-svg-wrapper" style={{ width: size, height: size }}>
+        <GotchiSvg
+          gotchiId={gotchi.gotchiId || gotchi.id}
+          hauntId={gotchi.hauntId}
+          collateral={gotchi.collateral}
+          numericTraits={gotchi.numericTraits}
+          equippedWearables={gotchi.equippedWearables}
+          className="w-full h-full"
+          mode="preview"
         />
-      ))}
-    </>
+      </div>
+    </div>
   );
 }
 
-function GotchiCard({
-  gotchi,
-  size = "sm",
-  className = "",
-}: {
-  gotchi: Gotchi;
-  size?: "sm" | "lg";
-  className?: string;
+function ActiveGotchi({ 
+  gotchi, 
+  phaseClass 
+}: { 
+  gotchi: Gotchi; 
+  phaseClass: string;
 }) {
-  const sizeClass = size === "lg" ? "h-40 w-40 sm:h-48 sm:w-48" : "h-10 w-10 sm:h-12 sm:w-12";
-  const cardClass = size === "lg" ? "gotchi-card-active" : "gotchi-card";
-
   return (
-    <div className={`${cardClass} ${className}`}>
-      <GotchiSvg
-        gotchiId={gotchi.gotchiId || gotchi.id}
-        hauntId={gotchi.hauntId}
-        collateral={gotchi.collateral}
-        numericTraits={gotchi.numericTraits}
-        equippedWearables={gotchi.equippedWearables}
-        className={sizeClass}
-        mode="preview"
-      />
+    <div className={`catwalk-active-container ${phaseClass}`}>
+      <div className="gotchi-svg-wrapper" style={{ width: 160, height: 160 }}>
+        <GotchiSvg
+          gotchiId={gotchi.gotchiId || gotchi.id}
+          hauntId={gotchi.hauntId}
+          collateral={gotchi.collateral}
+          numericTraits={gotchi.numericTraits}
+          equippedWearables={gotchi.equippedWearables}
+          className="w-full h-full"
+          mode="preview"
+        />
+      </div>
+      <div className="catwalk-active-shadow" />
+      <div className="catwalk-active-info">
+        <div className="catwalk-active-name">{gotchi.name}</div>
+        <div className="catwalk-active-brs">BRS: {gotchi.baseRarityScore ?? "—"}</div>
+      </div>
     </div>
   );
 }
@@ -98,7 +88,7 @@ function GotchiCard({
 export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
   const [status, setStatus] = useState<Status>("loading");
   const [activeIndex, setActiveIndex] = useState(0);
-  const [phase, setPhase] = useState<Phase>("enter");
+  const [phase, setPhase] = useState<Phase>("approach");
   const [reducedMotion, setReducedMotion] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -109,6 +99,18 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
   }, [gotchis]);
 
   const { loading: assetsLoading, progress } = usePreloadAssets(sortedGotchis);
+
+  const crowdGotchis = useMemo(() => {
+    return sortedGotchis.slice(0, 40);
+  }, [sortedGotchis]);
+
+  const leftCrowd = useMemo(() => {
+    return crowdGotchis.filter((_, i) => i % 2 === 0).slice(0, 16);
+  }, [crowdGotchis]);
+
+  const rightCrowd = useMemo(() => {
+    return crowdGotchis.filter((_, i) => i % 2 === 1).slice(0, 16);
+  }, [crowdGotchis]);
 
   useEffect(() => {
     if (!assetsLoading && status === "loading") {
@@ -147,7 +149,7 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
   const startShow = useCallback(() => {
     if (sortedGotchis.length === 0) return;
     setActiveIndex(0);
-    setPhase("enter");
+    setPhase("approach");
     setStatus("running");
   }, [sortedGotchis.length]);
 
@@ -161,12 +163,10 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
       return;
     }
 
-    if (phase === "enter") {
-      setTimeout(() => setPhase("arrival"), 1000);
-    } else if (phase === "arrival") {
-      setTimeout(() => setPhase("pause"), 250);
-    } else if (phase === "pause") {
-      setTimeout(() => setPhase("move"), 250);
+    if (phase === "approach") {
+      setTimeout(() => setPhase("pose"), 1800);
+    } else if (phase === "pose") {
+      setTimeout(() => setPhase("move"), 300);
     } else if (phase === "move") {
       const move = getMoveForGotchi(sortedGotchis[activeIndex]?.id || "0");
       const duration = move === "moonwalk" ? 900 : 700;
@@ -175,11 +175,11 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
       setTimeout(() => {
         if (activeIndex < sortedGotchis.length - 1) {
           setActiveIndex((i) => i + 1);
-          setPhase("enter");
+          setPhase("approach");
         } else {
           setStatus("done");
         }
-      }, 700);
+      }, 600);
     }
   }, [phase, activeIndex, sortedGotchis, reducedMotion]);
 
@@ -200,29 +200,39 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
   };
 
   const activeGotchi = sortedGotchis[activeIndex];
-  const entrySide = activeGotchi ? getEntrySide(activeGotchi.id) : "left";
+  const exitSide = activeGotchi ? getExitSide(activeGotchi.id) : "left";
   const move = activeGotchi ? getMoveForGotchi(activeGotchi.id) : "classic-twirl";
 
   const getPhaseClass = () => {
-    if (reducedMotion) return "";
+    if (reducedMotion) return "gotchi-pose";
     switch (phase) {
-      case "enter":
-        return entrySide === "left" ? "gotchi-enter-left" : "gotchi-enter-right";
-      case "arrival":
-        return "gotchi-arrival";
-      case "pause":
-        return "";
+      case "approach":
+        return "gotchi-approach";
+      case "pose":
+        return "gotchi-pose";
       case "move":
         return `move-${move}`;
       case "exit":
         if (move === "moonwalk") return "move-moonwalk";
-        return entrySide === "left" ? "gotchi-exit-right" : "gotchi-exit-left";
+        return exitSide === "left" ? "gotchi-exit-left" : "gotchi-exit-right";
       default:
         return "";
     }
   };
 
-  const backstageGotchis = sortedGotchis.slice(activeIndex + 1, activeIndex + 7);
+  const renderCrowdRows = (crowdList: Gotchi[]) => {
+    const rows: Gotchi[][] = [[], [], [], []];
+    crowdList.forEach((g, i) => {
+      rows[i % 4].push(g);
+    });
+    return rows.map((row, i) => (
+      <div key={i} className="catwalk-crowd-row">
+        {row.map((g) => (
+          <CrowdGotchi key={g.id} gotchi={g} size={24 + (i * 2)} />
+        ))}
+      </div>
+    ));
+  };
 
   const content = (
     <div
@@ -231,60 +241,74 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
       role="dialog"
       aria-modal="true"
       aria-label="Catwalk Mode"
-      className="fixed inset-0 z-50 flex flex-col items-center justify-end pb-8 sm:pb-12"
+      className="fixed inset-0 z-50"
       onKeyDown={handleKeyDown}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="absolute inset-0 catwalk-stage">
-        <Particles />
+      <div className="catwalk-stage">
+        <div className="catwalk-backdrop" />
+        <div className="catwalk-haze" />
+        
+        <div className="catwalk-runway-container">
+          <div className="catwalk-runway-glow" />
+          <div className="catwalk-runway-plane" />
+          <div className="catwalk-runway-lane" />
+        </div>
+
+        <div className="catwalk-crowd catwalk-crowd-left">
+          {renderCrowdRows(leftCrowd)}
+        </div>
+        <div className="catwalk-crowd catwalk-crowd-right">
+          {renderCrowdRows(rightCrowd)}
+        </div>
+
+        <div className="catwalk-spotlight" />
         <div className="catwalk-vignette" />
       </div>
 
-      <div className="absolute top-4 left-4 z-10">
-        <div className="bg-purple-600/60 text-white px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm">
-          CATWALK
-        </div>
-        <div className="text-purple-400/60 text-[10px] mt-1">
-          Visual showcase only
-        </div>
+      <div className="catwalk-badge">
+        <div className="catwalk-badge-title">CATWALK</div>
+        <div className="catwalk-badge-subtitle">Visual showcase</div>
       </div>
 
       <Button
         variant="ghost"
         size="icon"
-        className="absolute top-4 right-4 z-10 text-white/70 hover:text-white hover:bg-white/10"
+        className="catwalk-close text-white/60 hover:text-white hover:bg-white/10"
         onClick={onClose}
         aria-label="Close catwalk"
       >
         <X className="h-5 w-5" />
       </Button>
 
-      {reducedMotion && status !== "loading" && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-10 bg-amber-600/70 text-white px-3 py-1.5 rounded-lg text-xs backdrop-blur-sm">
+      {reducedMotion && status !== "loading" && status !== "done" && (
+        <div className="catwalk-reduced-motion">
           Reduced motion enabled
         </div>
       )}
 
-      {status === "loading" ? (
-        <div className="relative z-10 flex flex-col items-center justify-center h-full loading-container">
+      {status === "loading" && (
+        <div className="catwalk-loading">
           <Loader2 className="h-10 w-10 text-purple-400 animate-spin mb-4" />
-          <div className="text-white font-medium mb-2">Loading Catwalk...</div>
-          <div className="text-purple-300 text-sm">{progress}%</div>
-          <div className="w-48 h-1.5 bg-purple-900/50 rounded-full mt-3 overflow-hidden">
+          <div className="catwalk-loading-text">Loading Catwalk...</div>
+          <div className="catwalk-loading-percent">{progress}%</div>
+          <div className="catwalk-loading-bar">
             <div 
-              className="h-full bg-purple-500 rounded-full transition-all duration-300"
+              className="catwalk-loading-fill"
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
-      ) : status === "done" ? (
-        <div className="relative z-10 text-center flex flex-col items-center justify-center h-full">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">That's the show!</h2>
-          <p className="text-purple-300/80 mb-6 text-sm">All gotchis have walked the runway.</p>
-          <div className="flex gap-3 justify-center">
+      )}
+
+      {status === "done" && (
+        <div className="catwalk-end">
+          <div className="catwalk-end-title">That's the show!</div>
+          <div className="catwalk-end-subtitle">All gotchis have walked the runway.</div>
+          <div className="catwalk-end-buttons">
             <Button
               onClick={handleReplay}
-              className="bg-purple-600 hover:bg-purple-700 text-sm"
+              className="bg-purple-600 hover:bg-purple-700"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
               Replay
@@ -292,59 +316,24 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
             <Button 
               variant="outline" 
               onClick={onClose} 
-              className="text-white border-white/20 hover:bg-white/10 text-sm"
+              className="text-white border-white/20 hover:bg-white/10"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dress
             </Button>
           </div>
         </div>
-      ) : (
+      )}
+
+      {status === "running" && activeGotchi && (
         <>
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 z-5 flex flex-col items-center">
-            <div className="text-purple-400/50 text-[10px] uppercase tracking-widest mb-3">
-              Backstage
-            </div>
-            <div className="backstage-container">
-              {backstageGotchis.map((g, i) => (
-                <div
-                  key={g.id}
-                  className="backstage-gotchi"
-                  style={{ animationDelay: `${i * 0.3}s` }}
-                >
-                  <GotchiCard gotchi={g} size="sm" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative z-10 flex flex-col items-center w-full px-4">
-            <div className="catwalk-spotlight absolute w-72 h-72 sm:w-96 sm:h-96 rounded-full -top-48 sm:-top-56" />
-
-            {activeGotchi && (
-              <div className="relative mb-6">
-                <div 
-                  className={`active-gotchi-wrapper ${getPhaseClass()}`} 
-                  key={`${activeGotchi.id}-${phase}`}
-                >
-                  <GotchiCard gotchi={activeGotchi} size="lg" />
-                </div>
-                <div className="gotchi-shadow" />
-                
-                <div className="text-center mt-4 transition-opacity duration-300">
-                  <div className="text-white font-bold text-base sm:text-lg">{activeGotchi.name}</div>
-                  <div className="text-purple-300/70 text-xs sm:text-sm">
-                    BRS: {activeGotchi.baseRarityScore ?? "—"}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="catwalk-runway-platform" />
-
-            <div className="mt-4 text-purple-400/50 text-xs">
-              {activeIndex + 1} / {sortedGotchis.length}
-            </div>
+          <ActiveGotchi
+            key={`${activeGotchi.id}-${activeIndex}`}
+            gotchi={activeGotchi}
+            phaseClass={getPhaseClass()}
+          />
+          <div className="catwalk-progress">
+            {activeIndex + 1} / {sortedGotchis.length}
           </div>
         </>
       )}

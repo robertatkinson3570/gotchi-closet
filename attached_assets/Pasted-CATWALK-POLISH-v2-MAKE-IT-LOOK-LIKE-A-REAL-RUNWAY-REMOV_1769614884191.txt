@@ -1,0 +1,141 @@
+CATWALK POLISH v2 (MAKE IT LOOK LIKE A REAL RUNWAY, REMOVE FLASH, REMOVE CARD BORDERS)
+
+Context: Catwalk modal works but looks like crap.
+Problems to fix:
+1) Gotchis “flash” (looks like a bug / opacity flicker). Remove all flash/camera effects on the active gotchi and any full-screen flashing overlays.
+2) Background does not read as a runway/fashion show. Need a runway with forced perspective, crowd, and photographers vibe.
+3) Gotchi rendering looks like square cards/tiles with borders. We want the gotchi itself, not a card UI.
+4) “Walking” should look like moving from far-away to close-up (small → big), not sliding in 2D.
+
+Hard guardrails:
+- Do NOT change any dress/editor logic, selection, traits, BRS, respec, respect, or data.
+- Catwalk remains a modal overlay only.
+- Do NOT add new dependencies.
+- Must support prefers-reduced-motion (static view).
+
+GOAL VISUAL:
+- Aavegotchi-cartoon vibe.
+- A real runway scene:
+  - a 3D-ish runway plane (perspective)
+  - crowds of gotchis on left/right edges (they ARE the crowd)
+  - optional static “photographer” silhouettes near the front corners (no flashing)
+- Active gotchi “walks” down runway: starts tiny at top center (far end), grows as it approaches, then does pose/move near front, then exits off to side.
+
+IMPLEMENTATION PLAN
+
+A) REMOVE FLASH / FLICKER BUG
+- Search CatwalkModal styles/animations for any:
+  - opacity keyframes
+  - brightness/contrast filter pulses
+  - full-screen overlay flashes
+  - rapid box-shadow pulses
+- Remove them completely.
+- Ensure the active gotchi container never toggles display/visibility mid-animation.
+- Ensure transforms are stable:
+  - set transform-origin consistently (center bottom)
+  - avoid re-mounting the active node between phases (keep one DOM node, change class/phase).
+
+B) BUILD A REAL RUNWAY (CSS-ONLY, NO EXTERNAL IMAGES)
+Inside the modal, create a “stage” scene:
+
+Structure:
+- <div class="catwalkStage">
+    <div class="catwalkBackdrop" />
+    <div class="catwalkCrowd catwalkCrowdLeft"> ...small gotchis... </div>
+    <div class="catwalkCrowd catwalkCrowdRight"> ...small gotchis... </div>
+    <div class="catwalkRunwayPerspective">
+        <div class="catwalkRunwayPlane" />
+        <div class="catwalkRunwayLane" />
+    </div>
+    <div class="catwalkActive">...active gotchi...</div>
+  </div>
+
+Key styling requirements:
+- catwalkStage: position: relative; inset:0; overflow:hidden;
+- Apply perspective on a parent:
+  - .catwalkStage { perspective: 900px; }
+- Runway plane:
+  - .catwalkRunwayPlane should look like a long runway receding into the distance:
+    - position absolute
+    - width ~ 60vw
+    - height ~ 90vh (tall)
+    - centered horizontally
+    - transform: translateX(-50%) rotateX(70deg) translateY(25vh);
+    - background: subtle dark purple with a cartoon glow edge
+- Runway lane marking:
+  - Use repeating-linear-gradient to create center stripes that also recede with perspective.
+- Add soft vignette and overhead haze so edges fade nicely.
+
+C) CROWD = GOTCHIS (LEFT/RIGHT)
+Replace “backstage cards” concept with a crowd:
+- Use the same gotchi list to render crowd members (or subset if performance).
+- Crowd placement:
+  - left and right side of runway, arranged in 2–4 rows.
+  - Each crowd gotchi is small, slightly rotated toward runway (left crowd rotateY(12deg), right rotateY(-12deg)).
+  - Opacity ~0.6 but with some variation (seeded).
+  - Add tiny idle float (slow, subtle) but NO flashing.
+- IMPORTANT: crowd should frame the runway so you instantly read “fashion show”.
+
+D) ACTIVE GOTCHI “WALK DOWN THE RUNWAY” (FORCED PERSPECTIVE)
+Change the active movement path:
+- Instead of moving left->right across screen, the gotchi moves from far end to near end.
+- Start position (far):
+  - top-center of runway
+  - scale ~0.30–0.40
+  - y near top (e.g. 10–15% from top)
+- End position (near):
+  - near bottom-center (e.g. 60–70% from top)
+  - scale ~1.0–1.1
+- Use a single keyframe for approach:
+  - transform: translate(-50%, <farY>) scale(0.35) -> translate(-50%, <nearY>) scale(1.05)
+  - include slight bob (2–4px) in the keyframe (cartoon walk).
+- After reaching near end:
+  - pause 200–300ms
+  - perform the existing Move Pack (CLASSIC_TWIRL, PIVOT_POSE, etc.) but adapted to happen “in place” near the front.
+- Exit:
+  - step off to the side (translateX) while slightly scaling down (like leaving the runway), then fade out gently.
+  - Do NOT flash.
+
+E) REMOVE CARD BORDERS / SQUARE TILES (IMPORTANT)
+Right now gotchis look like cards/tiles. Fix rendering:
+Preferred approach:
+- Render gotchis as inline SVG with transparent background.
+- If you already have the gotchi SVG string (common in Aavegotchi tooling), inject it with dangerouslySetInnerHTML in a wrapper and style it.
+
+If the SVG includes a background rect:
+- Create a small helper that sanitizes the SVG string before render:
+  - remove the first <rect> that fills the full canvas (common background)
+  - remove elements with id/class containing: "bg", "background"
+  - ensure svg root has style="background: transparent;"
+Implementation notes:
+- Do this only for Catwalk (do not affect editor rendering elsewhere).
+- If current Catwalk uses an <img> with a baked background, replace it with SVG rendering used elsewhere in app (the same helper used to render gotchis on Dress page if available).
+
+F) KEEP THE MODEL MOVE PACK (BUT NO EXTRA EFFECTS)
+Keep the existing deterministic Move Pack:
+- CLASSIC_TWIRL
+- HALF_TURN_ILLUSION (cap rotateY <= 60deg)
+- PIVOT_POSE
+- SQUASH_STRETCH_POSE
+- FLOAT_STRUT
+- SPOTLIGHT_POP (but DO NOT flash the whole screen; only a subtle spotlight brightness, max 10%)
+- MOONWALK_EXIT (<=10%)
+
+But ensure moves are applied AFTER approach completes, near the front.
+
+G) PREFERS REDUCED MOTION
+If prefers-reduced-motion:
+- show the runway scene static
+- show crowd
+- show the “top rarity gotchi” parked near the front
+- show note: “Reduced motion enabled. Animations disabled.”
+
+PERFORMANCE
+- If selector has many gotchis, cap crowd to e.g. 30–50 gotchis (highest rarity first) and keep the rest unrendered in crowd.
+- Use transforms only; avoid rerender loops during animation.
+- Preload assets before starting animation sequence (no grey placeholders).
+
+DELIVERABLES
+- Update CatwalkModal + catwalk styles only.
+- No changes to Dress page logic besides opening modal + passing list.
+- The scene must clearly read as: RUNWAY + CROWD + ACTIVE GOTCHI WALKING TOWARD CAMERA.

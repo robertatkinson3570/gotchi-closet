@@ -1,267 +1,331 @@
-@keyframes floatIdleSubtle {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
-}
-
-@keyframes spotlightPulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.7; }
-}
-
-@keyframes particleFloat {
-  0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-  10% { opacity: 0.4; }
-  90% { opacity: 0.4; }
-  100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
-}
-
-@keyframes enterFromLeft {
-  0% { 
-    transform: translateX(-60vw) translateY(-8px); 
-    opacity: 0; 
-  }
-  40% { opacity: 1; }
-  100% { 
-    transform: translateX(0) translateY(0); 
-    opacity: 1; 
-  }
-}
-
-@keyframes enterFromRight {
-  0% { 
-    transform: translateX(60vw) translateY(-8px); 
-    opacity: 0; 
-  }
-  40% { opacity: 1; }
-  100% { 
-    transform: translateX(0) translateY(0); 
-    opacity: 1; 
-  }
-}
-
-@keyframes exitToRight {
-  0% { transform: translateX(0) translateY(0); opacity: 1; }
-  60% { opacity: 1; }
-  100% { transform: translateX(60vw) translateY(-6px); opacity: 0; }
-}
-
-@keyframes exitToLeft {
-  0% { transform: translateX(0) translateY(0); opacity: 1; }
-  60% { opacity: 1; }
-  100% { transform: translateX(-60vw) translateY(-6px); opacity: 0; }
-}
-
-@keyframes arrivalBounce {
-  0% { transform: scale(1) translateY(0); }
-  30% { transform: scale(1.04) translateY(-4px); }
-  60% { transform: scale(0.98) translateY(2px); }
-  100% { transform: scale(1) translateY(0); }
-}
-
-@keyframes classicTwirl {
-  0% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(180deg) scale(1.03); }
-  100% { transform: rotate(360deg) scale(1); }
-}
-
-@keyframes halfTurnIllusion {
-  0% { transform: rotateZ(0deg) scaleX(1); }
-  25% { transform: rotateZ(15deg) scaleX(0.96); }
-  50% { transform: rotateZ(-10deg) scaleX(0.92); }
-  100% { transform: rotateZ(0deg) scaleX(1); }
-}
-
-@keyframes pivotPose {
-  0% { transform: translateX(8px) rotateZ(0deg); }
-  30% { transform: translateX(4px) rotateZ(50deg); }
-  60% { transform: translateX(0) rotateZ(100deg); }
-  100% { transform: translateX(0) rotateZ(0deg); }
-}
-
-@keyframes squashStretchPose {
-  0% { transform: scaleY(1) scaleX(1) translateY(0); }
-  25% { transform: scaleY(0.94) scaleX(1.04) translateY(4px); }
-  50% { transform: scaleY(1.04) scaleX(0.96) translateY(-6px); }
-  100% { transform: scaleY(1) scaleX(1) translateY(0); }
-}
-
-@keyframes floatStrut {
-  0% { transform: translateY(0) rotateZ(-3deg); }
-  33% { transform: translateY(-8px) rotateZ(3deg); }
-  66% { transform: translateY(-4px) rotateZ(-2deg); }
-  100% { transform: translateY(0) rotateZ(0deg); }
-}
-
-@keyframes spotlightPop {
-  0% { transform: scale(1); filter: brightness(1); }
-  50% { transform: scale(1.06); filter: brightness(1.15); }
-  100% { transform: scale(1); filter: brightness(1); }
-}
-
-@keyframes moonwalkSlide {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(60vw); }
-}
-
-@keyframes bobWalk {
-  0%, 100% { transform: translateY(0); }
-  25% { transform: translateY(-3px); }
-  75% { transform: translateY(-3px); }
-}
-
-@keyframes runwayGlow {
-  0%, 100% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.3), 0 0 80px rgba(139, 92, 246, 0.15); }
-  50% { box-shadow: 0 0 60px rgba(139, 92, 246, 0.4), 0 0 100px rgba(139, 92, 246, 0.2); }
-}
-
-@keyframes shadowPulse {
-  0%, 100% { transform: scaleX(1) scaleY(1); opacity: 0.4; }
-  50% { transform: scaleX(1.05) scaleY(0.95); opacity: 0.5; }
-}
-
-@keyframes loadingPulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-
 .catwalk-stage {
-  background: linear-gradient(180deg, #0d0a1a 0%, #1a1033 40%, #0d1f2d 70%, #0a0a14 100%);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  perspective: 900px;
+  background: linear-gradient(180deg, 
+    #0a0612 0%, 
+    #120a1a 30%, 
+    #1a0f28 60%, 
+    #0d0815 100%
+  );
+}
+
+.catwalk-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 50% at 50% 20%, 
+    rgba(139, 92, 246, 0.08) 0%, 
+    transparent 60%
+  );
 }
 
 .catwalk-vignette {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
+  background: radial-gradient(ellipse 70% 60% at 50% 50%, 
+    transparent 30%, 
+    rgba(0, 0, 0, 0.7) 100%
+  );
+  z-index: 50;
 }
 
-.catwalk-runway-platform {
-  position: relative;
-  width: 100%;
-  max-width: 600px;
-  height: 80px;
-  background: linear-gradient(180deg, rgba(30, 20, 50, 0.9) 0%, rgba(20, 15, 35, 0.95) 100%);
-  border-radius: 40px 40px 20px 20px;
-  border: 2px solid rgba(139, 92, 246, 0.3);
-  animation: runwayGlow 3s ease-in-out infinite;
-}
-
-.catwalk-runway-platform::before {
-  content: '';
+.catwalk-haze {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80%;
-  height: 6px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(139, 92, 246, 0.2) 20%, 
-    rgba(139, 92, 246, 0.5) 50%, 
-    rgba(139, 92, 246, 0.2) 80%, 
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 30%;
+  background: linear-gradient(180deg, 
+    rgba(139, 92, 246, 0.06) 0%, 
     transparent 100%
   );
-  border-radius: 3px;
-}
-
-.catwalk-runway-platform::after {
-  content: '';
-  position: absolute;
-  bottom: -20px;
-  left: 10%;
-  width: 80%;
-  height: 20px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, transparent 100%);
-  border-radius: 50%;
-  filter: blur(8px);
-}
-
-.catwalk-spotlight {
-  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.25) 0%, rgba(139, 92, 246, 0.08) 35%, transparent 65%);
-  animation: spotlightPulse 2.5s ease-in-out infinite;
-  filter: blur(2px);
-}
-
-.catwalk-particle {
-  position: absolute;
-  background: rgba(139, 92, 246, 0.5);
-  border-radius: 50%;
-  animation: particleFloat linear infinite;
   pointer-events: none;
 }
 
-.gotchi-card {
-  background: linear-gradient(135deg, rgba(30, 20, 50, 0.8) 0%, rgba(20, 15, 40, 0.9) 100%);
-  border: 2px solid rgba(139, 92, 246, 0.4);
-  border-radius: 12px;
-  padding: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.05);
-}
-
-.gotchi-card-active {
-  background: linear-gradient(135deg, rgba(40, 25, 60, 0.9) 0%, rgba(25, 20, 50, 0.95) 100%);
-  border: 2px solid rgba(139, 92, 246, 0.6);
-  border-radius: 16px;
-  padding: 12px;
-  box-shadow: 0 8px 40px rgba(139, 92, 246, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.1);
-}
-
-.gotchi-shadow {
+.catwalk-runway-container {
   position: absolute;
-  bottom: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 70%;
-  height: 16px;
-  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.5) 0%, transparent 70%);
-  border-radius: 50%;
-  animation: shadowPulse 2s ease-in-out infinite;
-}
-
-.backstage-container {
+  inset: 0;
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
-  gap: 12px;
-  max-width: 400px;
+  transform-style: preserve-3d;
 }
 
-.backstage-gotchi {
+.catwalk-runway-plane {
+  position: absolute;
+  width: 55vw;
+  max-width: 500px;
+  height: 120vh;
+  left: 50%;
+  top: 10%;
+  transform: translateX(-50%) rotateX(72deg);
+  transform-origin: center top;
+  background: linear-gradient(180deg,
+    rgba(20, 12, 30, 0.95) 0%,
+    rgba(30, 18, 45, 0.9) 50%,
+    rgba(40, 25, 60, 0.85) 100%
+  );
+  border-left: 2px solid rgba(139, 92, 246, 0.25);
+  border-right: 2px solid rgba(139, 92, 246, 0.25);
+  box-shadow: 
+    0 0 60px rgba(139, 92, 246, 0.15),
+    inset 0 0 100px rgba(0, 0, 0, 0.5);
+}
+
+.catwalk-runway-lane {
+  position: absolute;
+  width: 8%;
+  max-width: 40px;
+  height: 120vh;
+  left: 50%;
+  top: 10%;
+  transform: translateX(-50%) rotateX(72deg);
+  transform-origin: center top;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(139, 92, 246, 0.4) 0px,
+    rgba(139, 92, 246, 0.4) 30px,
+    transparent 30px,
+    transparent 80px
+  );
+}
+
+.catwalk-runway-glow {
+  position: absolute;
+  width: 60vw;
+  max-width: 550px;
+  height: 120vh;
+  left: 50%;
+  top: 10%;
+  transform: translateX(-50%) rotateX(72deg);
+  transform-origin: center top;
+  background: transparent;
+  box-shadow: 
+    0 0 80px rgba(139, 92, 246, 0.2),
+    0 0 120px rgba(139, 92, 246, 0.1);
+  pointer-events: none;
+}
+
+.catwalk-crowd {
+  position: absolute;
+  top: 15%;
+  bottom: 25%;
+  width: 18%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+}
+
+.catwalk-crowd-left {
+  left: 3%;
+}
+
+.catwalk-crowd-right {
+  right: 3%;
+}
+
+.catwalk-crowd-row {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.catwalk-crowd-gotchi {
   opacity: 0.5;
-  animation: floatIdleSubtle 4s ease-in-out infinite;
-  filter: blur(0.5px);
-  transition: opacity 0.3s, transform 0.3s;
+  filter: blur(0.3px);
+  transition: opacity 0.3s;
 }
 
-.backstage-gotchi:hover {
-  opacity: 0.7;
-  transform: scale(1.05);
+.catwalk-crowd-left .catwalk-crowd-gotchi {
+  transform: rotateY(15deg) scale(0.9);
 }
 
-.active-gotchi-wrapper {
+.catwalk-crowd-right .catwalk-crowd-gotchi {
+  transform: rotateY(-15deg) scale(0.9);
+}
+
+@keyframes crowdIdleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+.catwalk-crowd-gotchi {
+  animation: crowdIdleFloat 4s ease-in-out infinite;
+}
+
+.catwalk-crowd-gotchi:nth-child(odd) {
+  animation-delay: -1s;
+}
+
+.catwalk-crowd-gotchi:nth-child(3n) {
+  opacity: 0.4;
+}
+
+.catwalk-crowd-gotchi:nth-child(5n) {
+  opacity: 0.6;
+}
+
+.catwalk-active-container {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
   transform-origin: center bottom;
 }
 
-.gotchi-enter-left {
-  animation: enterFromLeft 1000ms cubic-bezier(0.22, 1, 0.36, 1) forwards, 
-             bobWalk 400ms ease-in-out 2;
+.catwalk-active-shadow {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 20px;
+  background: radial-gradient(ellipse at center, 
+    rgba(0, 0, 0, 0.5) 0%, 
+    transparent 70%
+  );
+  border-radius: 50%;
+  pointer-events: none;
 }
 
-.gotchi-enter-right {
-  animation: enterFromRight 1000ms cubic-bezier(0.22, 1, 0.36, 1) forwards,
-             bobWalk 400ms ease-in-out 2;
+.catwalk-active-info {
+  text-align: center;
+  margin-top: 12px;
 }
 
-.gotchi-arrival {
-  animation: arrivalBounce 250ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.catwalk-active-name {
+  color: white;
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
-.gotchi-exit-right {
-  animation: exitToRight 700ms cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
+.catwalk-active-brs {
+  color: rgba(196, 181, 253, 0.8);
+  font-size: 0.85rem;
+}
+
+@keyframes approachWalk {
+  0% {
+    transform: translate(-50%, -180%) scale(0.3);
+    opacity: 0.6;
+  }
+  15% {
+    opacity: 1;
+  }
+  25% {
+    transform: translate(-50%, -120%) scale(0.45);
+  }
+  50% {
+    transform: translate(-50%, -60%) scale(0.65);
+  }
+  75% {
+    transform: translate(-50%, -20%) scale(0.85);
+  }
+  92% {
+    transform: translate(-50%, 0%) scale(1.02);
+  }
+  100% {
+    transform: translate(-50%, 0%) scale(1);
+  }
+}
+
+@keyframes walkBob {
+  0%, 100% { margin-top: 0; }
+  50% { margin-top: -3px; }
+}
+
+.gotchi-approach {
+  animation: 
+    approachWalk 1800ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.gotchi-approach .gotchi-svg-wrapper {
+  animation: walkBob 200ms ease-in-out 9;
+}
+
+.gotchi-pose {
+  transform: translate(-50%, 0%) scale(1);
+}
+
+@keyframes exitLeft {
+  0% {
+    transform: translate(-50%, 0%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-180%, 10%) scale(0.7);
+    opacity: 0;
+  }
+}
+
+@keyframes exitRight {
+  0% {
+    transform: translate(-50%, 0%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(80%, 10%) scale(0.7);
+    opacity: 0;
+  }
 }
 
 .gotchi-exit-left {
-  animation: exitToLeft 700ms cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
+  animation: exitLeft 600ms cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
+}
+
+.gotchi-exit-right {
+  animation: exitRight 600ms cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
+}
+
+@keyframes classicTwirl {
+  0% { transform: translate(-50%, 0%) rotate(0deg) scale(1); }
+  50% { transform: translate(-50%, 0%) rotate(180deg) scale(1.02); }
+  100% { transform: translate(-50%, 0%) rotate(360deg) scale(1); }
+}
+
+@keyframes halfTurn {
+  0% { transform: translate(-50%, 0%) rotateY(0deg) scale(1); }
+  50% { transform: translate(-50%, 0%) rotateY(50deg) scale(0.95); }
+  100% { transform: translate(-50%, 0%) rotateY(0deg) scale(1); }
+}
+
+@keyframes pivotPose {
+  0% { transform: translate(-50%, 0%) rotateZ(0deg) scale(1); }
+  30% { transform: translate(-48%, 0%) rotateZ(8deg) scale(1.02); }
+  70% { transform: translate(-52%, 0%) rotateZ(-8deg) scale(1.02); }
+  100% { transform: translate(-50%, 0%) rotateZ(0deg) scale(1); }
+}
+
+@keyframes squashStretch {
+  0% { transform: translate(-50%, 0%) scaleY(1) scaleX(1); }
+  30% { transform: translate(-50%, 3px) scaleY(0.92) scaleX(1.06); }
+  60% { transform: translate(-50%, -4px) scaleY(1.06) scaleX(0.95); }
+  100% { transform: translate(-50%, 0%) scaleY(1) scaleX(1); }
+}
+
+@keyframes floatStrut {
+  0% { transform: translate(-50%, 0%) rotateZ(-3deg); }
+  33% { transform: translate(-50%, -8px) rotateZ(3deg); }
+  66% { transform: translate(-50%, -4px) rotateZ(-2deg); }
+  100% { transform: translate(-50%, 0%) rotateZ(0deg); }
+}
+
+@keyframes spotlightPop {
+  0% { transform: translate(-50%, 0%) scale(1); }
+  50% { transform: translate(-50%, 0%) scale(1.08); }
+  100% { transform: translate(-50%, 0%) scale(1); }
+}
+
+@keyframes moonwalkExit {
+  0% { transform: translate(-50%, 0%) scale(1); opacity: 1; }
+  100% { transform: translate(80%, 10%) scale(0.7); opacity: 0; }
 }
 
 .move-classic-twirl {
@@ -269,7 +333,7 @@
 }
 
 .move-half-turn {
-  animation: halfTurnIllusion 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: halfTurn 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .move-pivot-pose {
@@ -277,7 +341,7 @@
 }
 
 .move-squash-stretch {
-  animation: squashStretchPose 600ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: squashStretch 600ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .move-float-strut {
@@ -289,44 +353,193 @@
 }
 
 .move-moonwalk {
-  animation: moonwalkSlide 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: moonwalkExit 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-.loading-container {
-  animation: loadingPulse 1.5s ease-in-out infinite;
+.catwalk-spotlight {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse at center, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(139, 92, 246, 0.03) 40%, 
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 25;
+}
+
+.catwalk-progress {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(196, 181, 253, 0.5);
+  font-size: 0.75rem;
+  z-index: 60;
+}
+
+.catwalk-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 60;
+}
+
+.catwalk-badge-title {
+  background: rgba(139, 92, 246, 0.5);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(4px);
+}
+
+.catwalk-badge-subtitle {
+  color: rgba(196, 181, 253, 0.5);
+  font-size: 0.6rem;
+  margin-top: 4px;
+  padding-left: 4px;
+}
+
+.catwalk-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 60;
+}
+
+.catwalk-reduced-motion {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(217, 119, 6, 0.6);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  backdrop-filter: blur(4px);
+  z-index: 60;
+}
+
+.catwalk-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 70;
+}
+
+.catwalk-loading-text {
+  color: white;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.catwalk-loading-percent {
+  color: rgba(196, 181, 253, 0.8);
+  font-size: 0.85rem;
+}
+
+.catwalk-loading-bar {
+  width: 180px;
+  height: 6px;
+  background: rgba(139, 92, 246, 0.2);
+  border-radius: 3px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.catwalk-loading-fill {
+  height: 100%;
+  background: rgba(139, 92, 246, 0.7);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.catwalk-end {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 70;
+}
+
+.catwalk-end-title {
+  color: white;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.catwalk-end-subtitle {
+  color: rgba(196, 181, 253, 0.7);
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+.catwalk-end-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.gotchi-svg-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gotchi-svg-wrapper svg {
+  background: transparent !important;
+}
+
+.gotchi-svg-wrapper img {
+  background: transparent !important;
 }
 
 @media (max-width: 640px) {
-  .backstage-container {
-    max-width: 300px;
-    gap: 8px;
+  .catwalk-crowd {
+    width: 15%;
   }
   
-  .catwalk-runway-platform {
-    max-width: 90vw;
-    height: 60px;
+  .catwalk-runway-plane {
+    width: 70vw;
+  }
+  
+  .catwalk-runway-lane {
+    width: 10%;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .backstage-gotchi,
-  .catwalk-spotlight,
-  .catwalk-particle,
-  .gotchi-shadow,
-  .gotchi-enter-left,
-  .gotchi-enter-right,
-  .gotchi-arrival,
-  .gotchi-exit-right,
+  .catwalk-crowd-gotchi,
+  .gotchi-approach,
+  .gotchi-pose,
   .gotchi-exit-left,
+  .gotchi-exit-right,
   .move-classic-twirl,
   .move-half-turn,
   .move-pivot-pose,
   .move-squash-stretch,
   .move-float-strut,
   .move-spotlight-pop,
-  .move-moonwalk,
-  .catwalk-runway-platform,
-  .loading-container {
+  .move-moonwalk {
     animation: none !important;
+  }
+  
+  .gotchi-approach,
+  .gotchi-pose {
+    transform: translate(-50%, 0%) scale(1);
+    opacity: 1;
   }
 }
