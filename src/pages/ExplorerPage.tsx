@@ -11,9 +11,8 @@ import { defaultFilters } from "@/lib/explorer/types";
 import { getActiveFilterCount } from "@/lib/explorer/filters";
 
 export default function ExplorerPage() {
-  const { connectedAddress } = useAddressState();
+  const { connectedAddress, isConnected } = useAddressState();
   const [mode, setMode] = useState<DataMode>("all");
-  const [ownerAddress, setOwnerAddress] = useState("");
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [showSort, setShowSort] = useState(false);
@@ -29,7 +28,7 @@ export default function ExplorerPage() {
     setFilters,
     sort,
     setSort,
-  } = useExplorerData(mode, ownerAddress || null, connectedAddress);
+  } = useExplorerData(mode, connectedAddress);
 
   const filteredBySearch = useMemo(() => {
     if (!search.trim()) return gotchis;
@@ -53,8 +52,6 @@ export default function ExplorerPage() {
       <ExplorerTopBar
         mode={mode}
         onModeChange={setMode}
-        ownerAddress={ownerAddress}
-        onOwnerChange={setOwnerAddress}
         search={search}
         onSearchChange={setSearch}
         sort={sort}
@@ -62,6 +59,8 @@ export default function ExplorerPage() {
         filterCount={filterCount}
         onOpenFilters={() => setShowFilters(true)}
         onOpenSort={() => setShowSort(true)}
+        connectedAddress={connectedAddress}
+        isConnected={isConnected}
       />
 
       <div className="flex-1 flex">
@@ -95,7 +94,7 @@ export default function ExplorerPage() {
             className="absolute inset-0 bg-black/50"
             onClick={() => setShowFilters(false)}
           />
-          <div className="absolute inset-x-0 bottom-0 top-16 bg-background rounded-t-xl overflow-hidden">
+          <div className="absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-background shadow-xl overflow-hidden animate-in slide-in-from-right duration-200">
             <ExplorerFilters
               filters={filters}
               onFiltersChange={handleFiltersChange}

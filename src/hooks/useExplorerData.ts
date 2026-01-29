@@ -60,6 +60,48 @@ const GOTCHIS_BY_OWNER_EXPLORER = gql`
   }
 `;
 
+const BAAZAAR_SUBGRAPH_URL =
+  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn";
+
+const BAAZAAR_GOTCHI_LISTINGS_QUERY = `
+  query BaazaarGotchiListings($first: Int!, $skip: Int!) {
+    erc721Listings(
+      first: $first
+      skip: $skip
+      where: {
+        category: 3
+        cancelled: false
+        timePurchased: null
+      }
+      orderBy: priceInWei
+      orderDirection: asc
+    ) {
+      id
+      tokenId
+      priceInWei
+      seller
+      timeCreated
+      gotchi {
+        id
+        gotchiId
+        name
+        level
+        numericTraits
+        modifiedNumericTraits
+        withSetsNumericTraits
+        equippedWearables
+        baseRarityScore
+        modifiedRarityScore
+        withSetsRarityScore
+        hauntId
+        collateral
+        kinship
+        experience
+      }
+    }
+  }
+`;
+
 const gotchiCache = new Map<string, ExplorerGotchi>();
 
 const BATCH_SIZE_MOBILE = 80;
@@ -98,7 +140,6 @@ function transformGotchi(raw: any): ExplorerGotchi {
 
 export function useExplorerData(
   mode: DataMode,
-  ownerAddress: string | null,
   connectedAddress: string | null
 ) {
   const client = useClient();
@@ -113,8 +154,8 @@ export function useExplorerData(
     ? BATCH_SIZE_MOBILE
     : BATCH_SIZE_DESKTOP;
 
-  const effectiveOwner = mode === "mine"
-    ? (ownerAddress || connectedAddress)?.toLowerCase()
+  const effectiveOwner = mode === "mine" && connectedAddress
+    ? connectedAddress.toLowerCase()
     : null;
 
   const loadInitial = useCallback(async () => {
@@ -151,6 +192,39 @@ export function useExplorerData(
         const rawGotchis = result.data?.aavegotchis || [];
         setGotchis(rawGotchis.map(transformGotchi));
         setHasMore(rawGotchis.length >= batchSize);
+      } else if (mode === "baazaar") {
+        const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: BAAZAAR_GOTCHI_LISTINGS_QUERY,
+            variables: { first: batchSize, skip: 0 },
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Baazaar request failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.errors) {
+          throw new Error(data.errors[0]?.message || "GraphQL error");
+        }
+
+        const listings = data.data?.erc721Listings || [];
+        const gotchisWithListings = listings
+          .filter((l: any) => l.gotchi)
+          .map((l: any) => {
+            const g = transformGotchi(l.gotchi);
+            g.listing = {
+              id: l.id,
+              priceInWei: l.priceInWei,
+              seller: l.seller,
+            };
+            return g;
+          });
+        setGotchis(gotchisWithListings);
+        setHasMore(listings.length >= batchSize);
       } else {
         setGotchis([]);
         setHasMore(false);

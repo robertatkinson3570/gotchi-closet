@@ -6,12 +6,12 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Search, X, SlidersHorizontal, ArrowUpDown, Shirt, FlaskConical } from "lucide-react";
 import type { DataMode, ExplorerSort } from "@/lib/explorer/types";
 import { sortOptions } from "@/lib/explorer/sorts";
+import { shortenAddress } from "@/lib/address";
+import { ConnectButton } from "@/components/wallet/ConnectButton";
 
 type Props = {
   mode: DataMode;
   onModeChange: (mode: DataMode) => void;
-  ownerAddress: string;
-  onOwnerChange: (addr: string) => void;
   search: string;
   onSearchChange: (s: string) => void;
   sort: ExplorerSort;
@@ -19,20 +19,19 @@ type Props = {
   filterCount: number;
   onOpenFilters: () => void;
   onOpenSort: () => void;
+  connectedAddress?: string | null;
+  isConnected?: boolean;
 };
 
 const modes: { value: DataMode; label: string }[] = [
-  { value: "mine", label: "Mine" },
   { value: "all", label: "All" },
+  { value: "mine", label: "Owned" },
   { value: "baazaar", label: "Baazaar" },
-  { value: "auction", label: "Auction" },
 ];
 
 export function ExplorerTopBar({
   mode,
   onModeChange,
-  ownerAddress,
-  onOwnerChange,
   search,
   onSearchChange,
   sort,
@@ -40,6 +39,8 @@ export function ExplorerTopBar({
   filterCount,
   onOpenFilters,
   onOpenSort,
+  connectedAddress,
+  isConnected,
 }: Props) {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
@@ -53,6 +54,14 @@ export function ExplorerTopBar({
           </span>
         </Link>
         <div className="flex items-center gap-1">
+          {isConnected && connectedAddress ? (
+            <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 border border-green-500/30 text-[10px] text-green-600 dark:text-green-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              {shortenAddress(connectedAddress)}
+            </div>
+          ) : (
+            <ConnectButton />
+          )}
           <Link
             to="/dress"
             className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
@@ -72,43 +81,21 @@ export function ExplorerTopBar({
       </div>
       <div className="flex flex-col gap-2 p-2 md:p-3">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
-          <div className="flex bg-muted rounded-lg p-0.5 shrink-0">
+          <div className="flex border rounded-lg overflow-hidden shrink-0">
             {modes.map((m) => (
               <button
                 key={m.value}
                 onClick={() => onModeChange(m.value)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                className={`px-3 py-1.5 text-xs font-medium transition-colors border-r last:border-r-0 ${
                   mode === m.value
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
                 {m.label}
               </button>
             ))}
           </div>
-
-          {mode === "mine" && (
-            <div className="flex items-center gap-1 shrink-0">
-              <Input
-                type="text"
-                placeholder="0x..."
-                value={ownerAddress}
-                onChange={(e) => onOwnerChange(e.target.value)}
-                className="h-8 w-32 md:w-48 text-xs"
-              />
-              {ownerAddress && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={() => onOwnerChange("")}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          )}
 
           <div className="hidden md:flex items-center gap-2 flex-1">
             <div className="relative flex-1 max-w-xs">

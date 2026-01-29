@@ -104,6 +104,7 @@ export type ExplorerGotchi = {
   listing?: {
     id: string;
     priceInWei: string;
-    timeCreated: string;
+    timeCreated?: string;
+    seller?: string;
   };
 };
