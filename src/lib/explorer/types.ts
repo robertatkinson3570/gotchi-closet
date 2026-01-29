@@ -5,7 +5,6 @@ export type SortField =
   | "kinship"
   | "level"
   | "xp"
-  | "ghst"
   | "tokenId"
   | "price"
   | "nrg"
@@ -25,7 +24,6 @@ export type ExplorerFilters = {
   tokenIdMin: string;
   tokenIdMax: string;
   nameContains: string;
-  owner: string;
   rarityMin: string;
   rarityMax: string;
   rarityTiers: string[];
@@ -39,14 +37,11 @@ export type ExplorerFilters = {
   brnMax: string;
   extremeTraits: boolean;
   balancedTraits: boolean;
-  eyeShapes: string[];
-  eyeColors: string[];
   levelMin: string;
   levelMax: string;
   hasWearables: boolean | null;
   wearableCountMin: string;
   wearableCountMax: string;
-  hasSet: boolean | null;
   haunts: string[];
   priceMin: string;
   priceMax: string;
@@ -63,7 +58,6 @@ export const defaultFilters: ExplorerFilters = {
   tokenIdMin: "",
   tokenIdMax: "",
   nameContains: "",
-  owner: "",
   rarityMin: "",
   rarityMax: "",
   rarityTiers: [],
@@ -77,14 +71,11 @@ export const defaultFilters: ExplorerFilters = {
   brnMax: "",
   extremeTraits: false,
   balancedTraits: false,
-  eyeShapes: [],
-  eyeColors: [],
   levelMin: "",
   levelMax: "",
   hasWearables: null,
   wearableCountMin: "",
   wearableCountMax: "",
-  hasSet: null,
   haunts: [],
   priceMin: "",
   priceMax: "",

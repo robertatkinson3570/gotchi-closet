@@ -3,7 +3,7 @@ import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { Label } from "@/ui/label";
 import { Checkbox } from "@/ui/checkbox";
-import { X, ChevronDown, ChevronUp } from "lucide-react";
+import { X, ChevronDown } from "lucide-react";
 import type { ExplorerFilters } from "@/lib/explorer/types";
 import { defaultFilters } from "@/lib/explorer/types";
 
@@ -121,6 +121,14 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile, a
     updateFilter("equippedSets", updated);
   };
 
+  const toggleRarityTier = (tier: string) => {
+    const current = localFilters.rarityTiers;
+    const updated = current.includes(tier)
+      ? current.filter((t) => t !== tier)
+      : [...current, tier];
+    updateFilter("rarityTiers", updated);
+  };
+
   return (
     <div className={`flex flex-col h-full ${isMobile ? "bg-background/95 backdrop-blur-xl" : "bg-background/95 backdrop-blur-xl"}`}>
       {isMobile && (
@@ -171,6 +179,28 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile, a
             onMinChange={(v) => updateFilter("rarityMin", v)}
             onMaxChange={(v) => updateFilter("rarityMax", v)}
           />
+          <div className="pt-2">
+            <Label className="text-xs text-muted-foreground mb-2 block">Rarity Tier</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: "godlike", label: "Godlike", color: "text-pink-500" },
+                { id: "mythical", label: "Mythical", color: "text-purple-500" },
+                { id: "legendary", label: "Legendary", color: "text-yellow-500" },
+                { id: "rare", label: "Rare", color: "text-blue-500" },
+                { id: "uncommon", label: "Uncommon", color: "text-green-500" },
+                { id: "common", label: "Common", color: "text-gray-400" },
+              ].map((tier) => (
+                <label key={tier.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/30 px-2 py-1 rounded">
+                  <Checkbox
+                    checked={localFilters.rarityTiers.includes(tier.id)}
+                    onCheckedChange={() => toggleRarityTier(tier.id)}
+                    className="h-3.5 w-3.5"
+                  />
+                  <span className={tier.color}>{tier.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
         </FilterSection>
 
         <FilterSection title="Traits">

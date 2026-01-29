@@ -46,6 +46,15 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-29: Explorer page UAT - comprehensive filter/sort verification and cleanup
+  - Added rarity tier filter checkboxes (Godlike, Mythical, Legendary, Rare, Uncommon, Common) with color coding
+  - Added XP sort option to sortOptions (was defined but not exposed)
+  - Removed unused filter types: eyeShapes, eyeColors, hasSet, owner (cleanup)
+  - Removed unused ghst sort field from types
+  - Removed unused ChevronUp import from ExplorerFilters
+  - All 18 filters verified working: tokenId, tokenIdMin/Max, nameContains, rarityMin/Max, rarityTiers, nrg/agg/spk/brnMin/Max, extremeTraits, balancedTraits, levelMin/Max, hasWearables, wearableCountMin/Max, haunts, priceMin/Max, hasGhstPocket, ghstBalanceMin/Max, hasEquippedSet, equippedSets, doubleMythEyes
+  - All 20 sort options verified: rarity, level, kinship, xp, tokenId, nrg/agg/spk/brn, price (asc/desc each)
+  - Price sort correctly places unlisted gotchis at end regardless of direction
 - 2026-01-29: Added Gotchi Explorer page (/explorer) - mobile-first power-user browsing
   - Single unified header with logo, Dress link, and theme toggle
   - Data modes: All, Owned, Baazaar with sticky top toggle
@@ -54,7 +63,7 @@ See `.env.example` for required environment variables:
   - Filter panel collapsed by default, opens on click (Filters button)
   - Filters: Token ID, name, rarity range/tier, traits, level, wearables, haunt (H1/H2 checkboxes)
   - Additional filters: GHST pocket, equipped set, double mythical eyes, GHST balance range
-  - Sort by rarity, level, kinship, token ID, traits, price
+  - Sort by rarity, level, kinship, xp, token ID, traits, price
   - GotchiExplorerCard uses GotchiSvg component for proper image loading
   - Shows: token ID, haunt, BRS, level, kinship, trait bars, eye rarity badge
   - Eye trait frequency rarity system: 1/N format showing how many gotchis share that eye combo per haunt

@@ -79,6 +79,8 @@ export const sortOptions: { value: ExplorerSort; label: string }[] = [
   { value: { field: "level", direction: "asc" }, label: "Level ↑" },
   { value: { field: "kinship", direction: "desc" }, label: "Kinship ↓" },
   { value: { field: "kinship", direction: "asc" }, label: "Kinship ↑" },
+  { value: { field: "xp", direction: "desc" }, label: "XP ↓" },
+  { value: { field: "xp", direction: "asc" }, label: "XP ↑" },
   { value: { field: "tokenId", direction: "asc" }, label: "Token ID ↑" },
   { value: { field: "tokenId", direction: "desc" }, label: "Token ID ↓" },
   { value: { field: "nrg", direction: "desc" }, label: "NRG ↓" },

@@ -170,12 +170,9 @@ export function getActiveFilterCount(filters: ExplorerFilters): number {
   if (filters.brnMin || filters.brnMax) count++;
   if (filters.extremeTraits) count++;
   if (filters.balancedTraits) count++;
-  if (filters.eyeShapes.length > 0) count++;
-  if (filters.eyeColors.length > 0) count++;
   if (filters.levelMin || filters.levelMax) count++;
   if (filters.hasWearables !== null) count++;
   if (filters.wearableCountMin || filters.wearableCountMax) count++;
-  if (filters.hasSet !== null) count++;
   if (filters.haunts && filters.haunts.length > 0) count++;
   if (filters.priceMin || filters.priceMax) count++;
   if (filters.hasGhstPocket !== null) count++;
