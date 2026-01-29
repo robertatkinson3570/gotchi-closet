@@ -14,15 +14,6 @@ type Props = {
   isMobile?: boolean;
 };
 
-const rarityTiers = [
-  { value: "common", label: "Common" },
-  { value: "uncommon", label: "Uncommon" },
-  { value: "rare", label: "Rare" },
-  { value: "legendary", label: "Legendary" },
-  { value: "mythical", label: "Mythical" },
-  { value: "godlike", label: "Godlike" },
-];
-
 function FilterSection({
   title,
   children,
@@ -113,14 +104,6 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile }:
     onFiltersChange(defaultFilters);
   };
 
-  const toggleRarityTier = (tier: string) => {
-    const current = localFilters.rarityTiers;
-    const updated = current.includes(tier)
-      ? current.filter((t) => t !== tier)
-      : [...current, tier];
-    updateFilter("rarityTiers", updated);
-  };
-
   const toggleHaunt = (haunt: string) => {
     const current = localFilters.haunts;
     const updated = current.includes(haunt)
@@ -179,24 +162,6 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile }:
             onMinChange={(v) => updateFilter("rarityMin", v)}
             onMaxChange={(v) => updateFilter("rarityMax", v)}
           />
-          <div>
-            <Label className="text-xs text-muted-foreground mb-2 block">Tiers</Label>
-            <div className="flex flex-wrap gap-2">
-              {rarityTiers.map((tier) => (
-                <button
-                  key={tier.value}
-                  onClick={() => toggleRarityTier(tier.value)}
-                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${
-                    localFilters.rarityTiers.includes(tier.value)
-                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
-                      : "bg-muted/50 border border-border/50 hover:bg-muted hover:border-primary/30"
-                  }`}
-                >
-                  {tier.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </FilterSection>
 
         <FilterSection title="Traits">
