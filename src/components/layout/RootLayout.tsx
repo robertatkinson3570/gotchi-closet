@@ -1,7 +1,6 @@
 import { Outlet, useLocation, Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { FooterAttribution } from "@/components/FooterAttribution";
-import { Shirt, Search } from "lucide-react";
 
 export function RootLayout() {
   const location = useLocation();
@@ -28,23 +27,7 @@ export function RootLayout() {
                 </span>
               </div>
             </Link>
-            <div className="flex items-center gap-1">
-              <Link
-                to="/explorer"
-                className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                title="Explorer"
-              >
-                <Search className="h-5 w-5" />
-              </Link>
-              <Link
-                to="/dress"
-                className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                title="Dress"
-              >
-                <Shirt className="h-5 w-5" />
-              </Link>
-              <ThemeToggle />
-            </div>
+            <ThemeToggle />
           </div>
         </header>
       )}
