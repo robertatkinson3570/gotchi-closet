@@ -317,6 +317,14 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
               <div className="font-semibold">{gotchi.experience ?? 0}</div>
             </div>
           </div>
+          {gotchi.escrow && parseFloat(gotchi.escrow) > 0 && (
+            <div className="flex items-center justify-center gap-1.5 text-xs">
+              <span className="text-muted-foreground">GHST Pocket:</span>
+              <span className="font-medium text-yellow-500">
+                {(parseFloat(gotchi.escrow) / 1e18).toFixed(2)} GHST
+              </span>
+            </div>
+          )}
           {gotchi.equippedSetName && (
             <div className="text-xs text-center text-purple-400">Set: {gotchi.equippedSetName}</div>
           )}
