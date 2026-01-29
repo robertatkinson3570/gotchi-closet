@@ -210,11 +210,10 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
               />
             </div>
           </div>
-          <div className="text-center mt-3">
-            <div className="text-sm text-muted-foreground">{gotchi.name || "Unnamed"}</div>
-            <div className="text-lg font-bold mt-1">
-              Rarity Score {gotchi.withSetsRarityScore} 
-              <span className="text-muted-foreground font-normal ml-1">({gotchi.baseRarityScore})</span>
+          <div className="text-center mt-3 space-y-1">
+            <div className="text-base font-medium">{gotchi.name || "Unnamed"}</div>
+            <div className="text-sm text-muted-foreground">
+              Rarity Score {gotchi.withSetsRarityScore} ({gotchi.baseRarityScore})
             </div>
           </div>
         </div>
