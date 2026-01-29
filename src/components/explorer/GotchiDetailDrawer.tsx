@@ -166,19 +166,28 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
           onMouseLeave={() => setIsHovered(false)}
         >
           <div className="relative aspect-square max-w-56 mx-auto">
-            <GotchiSvg
-              gotchiId={gotchi.tokenId}
-              hauntId={gotchi.hauntId}
-              collateral={gotchi.collateral}
-              numericTraits={gotchi.numericTraits}
-              equippedWearables={isHovered && wearableCount > 0 ? NAKED_WEARABLES : gotchi.equippedWearables}
-              className="w-full h-full drop-shadow-lg"
-            />
-            {isHovered && wearableCount > 0 && (
-              <div className="absolute top-2 left-2 text-xs px-2 py-1 rounded-full bg-amber-500 text-white font-medium shadow-lg">
-                Naked View
+            {wearableCount > 0 && (
+              <div className={`absolute inset-0 transition-opacity duration-300 ${isHovered ? "opacity-0" : "opacity-100"}`}>
+                <GotchiSvg
+                  gotchiId={gotchi.tokenId}
+                  hauntId={gotchi.hauntId}
+                  collateral={gotchi.collateral}
+                  numericTraits={gotchi.numericTraits}
+                  equippedWearables={gotchi.equippedWearables}
+                  className="w-full h-full drop-shadow-lg"
+                />
               </div>
             )}
+            <div className={`${wearableCount > 0 ? "absolute inset-0" : ""} transition-opacity duration-300 ${wearableCount > 0 && !isHovered ? "opacity-0" : "opacity-100"}`}>
+              <GotchiSvg
+                gotchiId={gotchi.tokenId}
+                hauntId={gotchi.hauntId}
+                collateral={gotchi.collateral}
+                numericTraits={gotchi.numericTraits}
+                equippedWearables={wearableCount > 0 ? NAKED_WEARABLES : gotchi.equippedWearables}
+                className="w-full h-full drop-shadow-lg"
+              />
+            </div>
           </div>
           <div className="flex items-center justify-center gap-3 mt-4">
             <span className={`text-sm px-3 py-1 rounded-full capitalize font-medium ${
@@ -193,9 +202,6 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
             </span>
             <span className="text-2xl font-bold">{gotchi.withSetsRarityScore} <span className="text-sm font-normal text-muted-foreground">BRS</span></span>
           </div>
-          {wearableCount > 0 && (
-            <p className="text-center text-xs text-muted-foreground mt-3">Hover to see naked</p>
-          )}
         </div>
 
         <Section title="Identity">

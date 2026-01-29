@@ -111,19 +111,28 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
       </div>
 
       <div className="relative aspect-square p-2 flex items-center justify-center bg-gradient-to-b from-transparent to-background/30">
-        <GotchiSvg
-          gotchiId={gotchi.tokenId}
-          hauntId={gotchi.hauntId}
-          collateral={gotchi.collateral}
-          numericTraits={gotchi.numericTraits as number[]}
-          equippedWearables={isHovered && wearableCount > 0 ? NAKED_WEARABLES : gotchi.equippedWearables as number[]}
-          className="w-full h-full transition-transform duration-200"
-        />
-        {isHovered && wearableCount > 0 && (
-          <div className="absolute top-2 left-2 text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/90 text-white font-medium">
-            Naked
+        {wearableCount > 0 && (
+          <div className={`absolute inset-2 transition-opacity duration-300 ${isHovered ? "opacity-0" : "opacity-100"}`}>
+            <GotchiSvg
+              gotchiId={gotchi.tokenId}
+              hauntId={gotchi.hauntId}
+              collateral={gotchi.collateral}
+              numericTraits={gotchi.numericTraits as number[]}
+              equippedWearables={gotchi.equippedWearables as number[]}
+              className="w-full h-full"
+            />
           </div>
         )}
+        <div className={`${wearableCount > 0 ? "absolute inset-2" : ""} transition-opacity duration-300 ${wearableCount > 0 && !isHovered ? "opacity-0" : "opacity-100"}`}>
+          <GotchiSvg
+            gotchiId={gotchi.tokenId}
+            hauntId={gotchi.hauntId}
+            collateral={gotchi.collateral}
+            numericTraits={gotchi.numericTraits as number[]}
+            equippedWearables={wearableCount > 0 ? NAKED_WEARABLES : gotchi.equippedWearables as number[]}
+            className="w-full h-full"
+          />
+        </div>
         
         <button
           onClick={handlePopoverToggle}
