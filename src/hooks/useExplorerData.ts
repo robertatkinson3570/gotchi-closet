@@ -230,7 +230,7 @@ function transformGotchi(raw: any): ExplorerGotchi {
     numericTraits: raw.numericTraits || [],
     modifiedNumericTraits: raw.modifiedNumericTraits || raw.numericTraits || [],
     withSetsNumericTraits: raw.withSetsNumericTraits || raw.modifiedNumericTraits || raw.numericTraits || [],
-    equippedWearables: raw.equippedWearables || [],
+    equippedWearables: (raw.equippedWearables || []).map((w: any) => Number(w) || 0),
     collateral: raw.collateral || "",
     owner: raw.owner?.id || "",
     kinship: raw.kinship,
