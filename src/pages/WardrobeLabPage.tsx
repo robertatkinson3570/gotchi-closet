@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FlaskConical, ArrowLeft, Check, ChevronRight, TrendingUp, Minus } from "lucide-react";
+import { FlaskConical, ArrowLeft, Check, ChevronRight, TrendingUp, Minus, Shirt, Search } from "lucide-react";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Button } from "@/ui/button";
 import { Card } from "@/ui/card";
 import { Checkbox } from "@/ui/checkbox";
@@ -86,7 +87,7 @@ export default function WardrobeLabPage() {
   const [results, setResults] = useState<OptimizationResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
 
-  const { connectedAddress, isOnBase } = useAddressState();
+  const { connectedAddress, isOnBase, isConnected } = useAddressState();
   const wearables = useAppStore((state) => state.wearables);
   const wearablesById = useWearablesById();
   const [manualViewAddress, setManualViewAddress] = useState<string | null>(null);
@@ -835,19 +836,51 @@ export default function WardrobeLabPage() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <FlaskConical className="w-5 h-5 text-primary" />
-          <h1 className="text-2xl font-bold">Wardrobe Labs (Prototype)</h1>
+    <div className="min-h-screen flex flex-col bg-background">
+      <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className="px-4 flex h-12 items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0 shrink-0">
+            <Link to="/" className="hover:opacity-80 transition-opacity">
+              <img src="/logo.png" alt="GotchiCloset" className="h-12 w-12 object-contain -my-2" />
+            </Link>
+            <div className="text-lg font-semibold tracking-tight hidden sm:block">
+              Gotchi<span className="font-normal text-muted-foreground">Closet</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-1 flex-1 justify-center min-w-0">
+            {isConnected && connectedAddress && (
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/30 text-[10px] text-green-600 dark:text-green-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                <span className="hidden md:inline">Connected</span>
+                {shortenAddress(connectedAddress)}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Link to="/dress">
+              <Button size="sm" variant="ghost" className="h-8 px-2" title="Dress">
+                <Shirt className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/explorer">
+              <Button size="sm" variant="ghost" className="h-8 px-2" title="Explorer">
+                <Search className="h-4 w-4" />
+              </Button>
+            </Link>
+            <ThemeToggle />
+          </div>
         </div>
-        <Link to="/dress">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Dress
-          </Button>
-        </Link>
-      </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-6 max-w-3xl">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <FlaskConical className="w-5 h-5 text-primary" />
+            <h1 className="text-2xl font-bold">Wardrobe Labs (Prototype)</h1>
+          </div>
+        </div>
 
       <div className="mb-6 p-4 rounded-lg border border-amber-200 bg-amber-50">
         <h2 className="text-lg font-semibold text-amber-800 mb-2">Wardrobe Labs (Prototype)</h2>
@@ -874,6 +907,7 @@ export default function WardrobeLabPage() {
         {currentStep === "run" && renderRunStep()}
         {currentStep === "results" && renderResults()}
       </Card>
+      </div>
     </div>
   );
 }

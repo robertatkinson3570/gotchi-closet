@@ -6,8 +6,9 @@ export function RootLayout() {
   const location = useLocation();
   const isDress = location.pathname.startsWith("/dress");
   const isExplorer = location.pathname.startsWith("/explorer");
+  const isWardrobeLab = location.pathname.startsWith("/wardrobe-lab");
   const isHome = location.pathname === "/";
-  const hideHeader = isDress || isExplorer;
+  const hideHeader = isDress || isExplorer || isWardrobeLab;
 
   return (
     <div className="min-h-screen flex flex-col">

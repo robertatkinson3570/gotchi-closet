@@ -46,36 +46,38 @@ export function ExplorerTopBar({
 
   return (
     <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b">
-      <div className="flex items-center justify-between px-3 py-2 border-b">
-        <Link to="/" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-          <img src="/logo.png" alt="GotchiCloset" className="h-7 w-7 object-contain" />
-          <span className="text-sm font-semibold">
-            Gotchi<span className="font-normal text-muted-foreground">Explorer</span>
-          </span>
-        </Link>
-        <div className="flex items-center gap-1">
-          {isConnected && connectedAddress ? (
-            <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 border border-green-500/30 text-[10px] text-green-600 dark:text-green-400">
+      <div className="flex items-center justify-between px-4 h-12 border-b">
+        <div className="flex items-center gap-1.5 min-w-0 shrink-0">
+          <Link to="/" className="hover:opacity-80 transition-opacity">
+            <img src="/logo.png" alt="GotchiCloset" className="h-12 w-12 object-contain -my-2" />
+          </Link>
+          <div className="text-lg font-semibold tracking-tight hidden sm:block">
+            Gotchi<span className="font-normal text-muted-foreground">Closet</span>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-1 flex-1 justify-center min-w-0">
+          {isConnected && connectedAddress && (
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/30 text-[10px] text-green-600 dark:text-green-400">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              <span className="hidden md:inline">Connected</span>
               {shortenAddress(connectedAddress)}
             </div>
-          ) : (
-            <ConnectButton />
           )}
-          <Link
-            to="/dress"
-            className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-            title="Dress"
-          >
-            <Shirt className="h-5 w-5" />
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Link to="/dress">
+            <Button size="sm" variant="ghost" className="h-8 px-2" title="Dress">
+              <Shirt className="h-4 w-4" />
+            </Button>
           </Link>
-          <Link
-            to="/wardrobe-lab"
-            className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-            title="Wardrobe Lab"
-          >
-            <FlaskConical className="h-5 w-5" />
+          <Link to="/wardrobe-lab">
+            <Button size="sm" variant="ghost" className="h-8 px-2" title="Wardrobe Lab">
+              <FlaskConical className="h-4 w-4" />
+            </Button>
           </Link>
+          {!isConnected && <ConnectButton />}
           <ThemeToggle />
         </div>
       </div>
