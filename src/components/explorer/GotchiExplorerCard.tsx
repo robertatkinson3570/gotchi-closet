@@ -102,12 +102,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
     >
       <div className="flex items-center justify-between px-2 py-1 bg-background/50 border-b border-border/30">
         <span className="text-[10px] text-muted-foreground font-mono">#{gotchi.tokenId}</span>
-        <div className="flex items-center gap-1">
-          <span className="text-[9px] bg-muted px-1 rounded">H{gotchi.hauntId}</span>
-          {wearableCount > 0 && (
-            <span className="text-[9px] bg-primary/20 text-primary px-1 rounded">{wearableCount}w</span>
-          )}
-        </div>
+        <span className="text-[9px] bg-muted px-1 rounded">H{gotchi.hauntId}</span>
       </div>
 
       <div className="relative aspect-square p-2 flex items-center justify-center bg-gradient-to-b from-transparent to-background/30">
