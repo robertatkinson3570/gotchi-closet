@@ -292,7 +292,7 @@ export function useExplorerData(
         const gotchisWithListings = applyListingsToGotchis(rawGotchis.map(transformGotchi));
         setGotchis(gotchisWithListings);
         setHasMore(false);
-      } else if (mode === "baazaar" || sort.field === "price") {
+      } else if (mode === "baazaar" || sort.field === "price" || filters.priceMin || filters.priceMax) {
         const priceDirection = sort.field === "price" ? sort.direction : "asc";
         const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
           method: "POST",
@@ -351,15 +351,16 @@ export function useExplorerData(
     } finally {
       setLoading(false);
     }
-  }, [client, mode, effectiveOwner, batchSize, sort]);
+  }, [client, mode, effectiveOwner, batchSize, sort, filters.priceMin, filters.priceMax]);
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
-    if (mode !== "all" && mode !== "baazaar" && sort.field !== "price") return;
+    const usesBaazaarSource = mode === "baazaar" || sort.field === "price" || filters.priceMin || filters.priceMax;
+    if (mode !== "all" && !usesBaazaarSource) return;
 
     setLoading(true);
     try {
-      if (sort.field === "price" || mode === "baazaar") {
+      if (usesBaazaarSource) {
         const priceDirection = sort.field === "price" ? sort.direction : "asc";
         const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
           method: "POST",
@@ -415,7 +416,7 @@ export function useExplorerData(
     } finally {
       setLoading(false);
     }
-  }, [client, loading, hasMore, mode, gotchis.length, batchSize, sort]);
+  }, [client, loading, hasMore, mode, gotchis.length, batchSize, sort, filters.priceMin, filters.priceMax]);
 
   useEffect(() => {
     loadInitial();
