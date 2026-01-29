@@ -37,6 +37,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   const colors = tierColors[tier] || tierColors.common;
   const wearableCount = gotchi.equippedWearables.filter((w) => w > 0).length;
   const [isHovered, setIsHovered] = useState(false);
+  const traits = gotchi.withSetsNumericTraits || gotchi.modifiedNumericTraits || gotchi.numericTraits;
 
   const comboRarityText = eyeRarities?.combo 
     ? `1/${eyeRarities.combo}` 
@@ -106,6 +107,14 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
             <span>Lv{gotchi.level}</span>
             {gotchi.kinship !== undefined && <span>❤️{gotchi.kinship}</span>}
           </div>
+        </div>
+
+        <div className="flex items-center justify-between text-[9px] text-muted-foreground">
+          {traits.map((val: number, i: number) => (
+            <span key={i} className={val <= 10 || val >= 90 ? "text-purple-400 font-medium" : ""}>
+              {val}
+            </span>
+          ))}
         </div>
 
         {priceGhst !== null && (
