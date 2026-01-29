@@ -1,0 +1,108 @@
+ISSUE: Main Gotchi card info layout is worse than before and must be aligned with the official Aavegotchi card style
+
+CONTEXT
+The current main Gotchi card layout has regressed. Information is harder to scan, traits are unclear, and space usage is inefficient. The card should closely resemble the official Aavegotchi gotchi card layout (see attached gotchiinfo image), which is compact, readable, and proven.
+
+PRIMARY PROBLEM
+The way traits are displayed on the main card is wrong.
+
+- Trait slider bars are visually noisy and misleading.
+- Trait deltas (-13, -17, etc.) are unclear and unlabeled.
+- Traits are not immediately readable at a glance.
+- The card feels cluttered instead of structured.
+
+The official Aavegotchi card solves this by showing:
+- Trait abbreviations
+- Trait scores
+- No progress bars
+- No unnecessary visual noise
+
+THIS IS THE DIRECTION TO FOLLOW.
+
+REQUIRED CHANGE (HIGH PRIORITY)
+Refactor the main Gotchi card to display traits in the SAME PHILOSOPHY as the official Aavegotchi site.
+
+TRAIT DISPLAY REQUIREMENTS (LOCKED)
+
+- Show ALL SIX traits with abbreviations and numeric scores:
+  - NRG
+  - AGG
+  - SPK
+  - BRN
+  - EYS
+  - EYC
+- Traits must be displayed as:
+  - Abbreviation + number
+  - No bars
+  - No sliders
+  - No progress metaphors
+- Traits should be grouped into a compact, grid-like or inline row layout.
+
+Example (conceptual):
+NRG 87   AGG 65   SPK 92  
+BRN 54   EYS 99   EYC 88
+
+(Exact spacing/style should match GotchiCloset aesthetic, but this structure is mandatory.)
+
+CARD HIERARCHY (IMPORTANT)
+
+The main Gotchi card should follow a clear hierarchy:
+
+1) Identity
+   - Gotchi image
+   - Name
+   - Token ID
+
+2) Core Value
+   - Rarity Score (ARS)
+   - Kinship
+   - Level (optional if space allows)
+
+3) Traits (compact numeric layout)
+   - All 6 traits with abbreviations
+
+4) Market Info
+   - Price (if listed)
+   - Sale state (listed / sold / auction)
+
+Remove anything that breaks this hierarchy.
+
+WHAT TO REMOVE (NON-NEGOTIABLE)
+
+- Remove trait slider bars entirely from the main card.
+- Remove unlabeled +/- deltas.
+- Do NOT replace bars with any other chart or progress indicator.
+- Do NOT hide traits behind hover or click on the main card.
+
+STYLE GUIDELINES
+
+- Match the visual density and clarity of the official Aavegotchi card.
+- Use:
+  - compact typography
+  - consistent alignment
+  - restrained color usage
+- Traits should read like data, not decoration.
+- Main card must remain compact enough to show many Gotchis per page.
+
+MOBILE CONSIDERATIONS
+
+- Trait abbreviations + numbers must wrap cleanly on mobile.
+- Maintain readability without expanding card height excessively.
+- Avoid stacking traits vertically unless absolutely necessary.
+
+NON-GOALS
+
+- Do NOT redesign the entire card visually.
+- Do NOT introduce new visual metaphors.
+- Do NOT add animations or flair here.
+
+SUCCESS CRITERIA
+
+- Traits are instantly readable.
+- Card scans cleanly left-to-right, top-to-bottom.
+- Layout feels similar to the official Aavegotchi card.
+- More Gotchis fit on screen.
+- No confusion about what a trait value represents.
+
+REFERENCE
+Use the attached official Aavegotchi gotchi card (gotchiinfo image) as the visual and structural reference for trait presentation.

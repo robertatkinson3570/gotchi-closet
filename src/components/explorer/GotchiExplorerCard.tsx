@@ -18,6 +18,8 @@ type Props = {
 
 const NAKED_WEARABLES = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
+const TRAIT_ABBR = ["NRG", "AGG", "SPK", "BRN", "EYS", "EYC"];
+
 const tierColors: Record<string, { bg: string; border: string; text: string }> = {
   common: { bg: "bg-gray-500/5", border: "border-gray-400/20", text: "text-gray-500" },
   uncommon: { bg: "bg-green-500/5", border: "border-green-400/20", text: "text-green-500" },
@@ -38,6 +40,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   const wearableCount = gotchi.equippedWearables.filter((w) => w > 0).length;
   const [isHovered, setIsHovered] = useState(false);
   const traits = gotchi.withSetsNumericTraits || gotchi.modifiedNumericTraits || gotchi.numericTraits;
+  const baseRarity = gotchi.baseRarityScore || null;
 
   const comboRarityText = eyeRarities?.combo 
     ? `1/${eyeRarities.combo}` 
@@ -96,31 +99,51 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
 
       <div className="px-2 py-1.5 space-y-1">
         <div className="flex items-center justify-between gap-1">
-          <span className="text-xs font-medium truncate flex-1">{gotchi.name || "Unnamed"}</span>
+          <span className="text-xs font-semibold truncate flex-1">{gotchi.name || "Unnamed"}</span>
           <span className="text-[9px] text-muted-foreground font-mono shrink-0">#{gotchi.tokenId}</span>
         </div>
 
+        <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
+          <span className="bg-muted/50 px-1 rounded">H{gotchi.hauntId}</span>
+          {eyeRarities?.combo && eyeRarities.combo <= 10 && (
+            <span className="bg-purple-500/20 text-purple-400 px-1 rounded font-medium">
+              {eyeRarities.combo === 1 ? "UNIQUE" : `${eyeRarities.combo}X`} 👁
+            </span>
+          )}
+        </div>
+
         <div className="flex items-center justify-between text-[10px]">
-          <span className={`font-semibold ${colors.text}`}>{gotchi.withSetsRarityScore} BRS</span>
+          <div className="flex items-center gap-1">
+            <span className="text-muted-foreground">RAR</span>
+            <span className={`font-semibold ${colors.text}`}>{gotchi.withSetsRarityScore}</span>
+            {baseRarity && baseRarity !== gotchi.withSetsRarityScore && (
+              <span className="text-muted-foreground/60">({baseRarity})</span>
+            )}
+          </div>
           <div className="flex items-center gap-1.5 text-muted-foreground">
-            <span>H{gotchi.hauntId}</span>
-            <span>Lv{gotchi.level}</span>
-            {gotchi.kinship !== undefined && <span>❤️{gotchi.kinship}</span>}
+            <span>KIN <span className="text-foreground">{gotchi.kinship || 0}</span></span>
+            <span>LVL <span className="text-foreground">{gotchi.level}</span></span>
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-[9px] text-muted-foreground">
-          {traits.map((val: number, i: number) => (
-            <span key={i} className={val <= 10 || val >= 90 ? "text-purple-400 font-medium" : ""}>
-              {val}
-            </span>
-          ))}
+        <div className="grid grid-cols-3 gap-x-2 gap-y-0.5 text-[9px]">
+          {traits.slice(0, 6).map((val: number, i: number) => {
+            const isExtreme = val <= 10 || val >= 90;
+            return (
+              <div key={i} className="flex items-center justify-between">
+                <span className="text-muted-foreground">{TRAIT_ABBR[i]}</span>
+                <span className={isExtreme ? "text-purple-400 font-semibold" : "text-foreground"}>
+                  {val}
+                </span>
+              </div>
+            );
+          })}
         </div>
 
         {priceGhst !== null && (
-          <div className="flex items-center justify-between pt-0.5 border-t border-border/30">
-            <span className="text-[9px] text-muted-foreground">Price</span>
-            <span className="text-[10px] text-green-500 font-medium">
+          <div className="flex items-center justify-between pt-1 border-t border-border/30">
+            <span className="text-[9px] text-muted-foreground">PRICE</span>
+            <span className="text-[10px] text-green-500 font-semibold">
               {priceGhst.toLocaleString(undefined, { maximumFractionDigits: 0 })} GHST
             </span>
           </div>
