@@ -116,9 +116,75 @@ const BAAZAAR_GOTCHI_LISTINGS_QUERY = `
 `;
 
 const gotchiCache = new Map<string, ExplorerGotchi>();
+const listingsCache = new Map<string, { id: string; priceInWei: string; seller: string }>();
+let listingsCacheLoaded = false;
 
 const BATCH_SIZE_MOBILE = 80;
 const BATCH_SIZE_DESKTOP = 120;
+
+async function fetchAllListings(): Promise<void> {
+  if (listingsCacheLoaded) return;
+  
+  try {
+    let skip = 0;
+    const batchSize = 1000;
+    let hasMore = true;
+    
+    while (hasMore) {
+      const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: `
+            query AllListings($first: Int!, $skip: Int!) {
+              erc721Listings(
+                first: $first
+                skip: $skip
+                where: { category: 3, cancelled: false, timePurchased: "0" }
+              ) {
+                id
+                tokenId
+                priceInWei
+                seller
+              }
+            }
+          `,
+          variables: { first: batchSize, skip },
+        }),
+      });
+      
+      if (!response.ok) break;
+      
+      const data = await response.json();
+      const listings = data.data?.erc721Listings || [];
+      
+      for (const l of listings) {
+        listingsCache.set(l.tokenId, {
+          id: l.id,
+          priceInWei: l.priceInWei,
+          seller: l.seller,
+        });
+      }
+      
+      hasMore = listings.length >= batchSize;
+      skip += batchSize;
+    }
+    
+    listingsCacheLoaded = true;
+  } catch (err) {
+    console.error("Failed to fetch listings:", err);
+  }
+}
+
+function applyListingsToGotchis(gotchis: ExplorerGotchi[]): ExplorerGotchi[] {
+  return gotchis.map(g => {
+    const listing = listingsCache.get(g.tokenId);
+    if (listing && !g.listing) {
+      return { ...g, listing };
+    }
+    return g;
+  });
+}
 
 function transformGotchi(raw: any): ExplorerGotchi {
   const tokenId = raw.gotchiId || raw.id;
@@ -183,6 +249,8 @@ export function useExplorerData(
     setHasMore(true);
 
     try {
+      await fetchAllListings();
+      
       if (mode === "mine" && effectiveOwner) {
         const result = await client.query(GOTCHIS_BY_OWNER_EXPLORER, {
           owner: effectiveOwner,
@@ -193,7 +261,8 @@ export function useExplorerData(
         }
 
         const rawGotchis = result.data?.user?.gotchisOwned || [];
-        setGotchis(rawGotchis.map(transformGotchi));
+        const gotchisWithListings = applyListingsToGotchis(rawGotchis.map(transformGotchi));
+        setGotchis(gotchisWithListings);
         setHasMore(false);
       } else if (mode === "all") {
         const result = await client.query(GOTCHIS_PAGINATED, {
@@ -208,7 +277,8 @@ export function useExplorerData(
         }
 
         const rawGotchis = result.data?.aavegotchis || [];
-        setGotchis(rawGotchis.map(transformGotchi));
+        const gotchisWithListings = applyListingsToGotchis(rawGotchis.map(transformGotchi));
+        setGotchis(gotchisWithListings);
         setHasMore(rawGotchis.length >= batchSize);
       } else if (mode === "baazaar") {
         const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
@@ -271,7 +341,7 @@ export function useExplorerData(
       }
 
       const rawGotchis = result.data?.aavegotchis || [];
-      const newGotchis = rawGotchis.map(transformGotchi);
+      const newGotchis = applyListingsToGotchis(rawGotchis.map(transformGotchi));
       setGotchis((prev) => [...prev, ...newGotchis]);
       setHasMore(rawGotchis.length >= batchSize);
     } catch (err) {
