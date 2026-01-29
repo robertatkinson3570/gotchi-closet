@@ -8,7 +8,6 @@ type PreviewInput = {
 };
 import { cn } from "@/lib/utils";
 import { fetchWithTimeout } from "@/lib/http";
-import { useToast } from "@/ui/use-toast";
 
 interface GotchiSvgProps {
   gotchiId?: string;
@@ -35,7 +34,6 @@ export function GotchiSvg({
   const [loading, setLoading] = useState(false);
   const requestIdRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
-  const { toast } = useToast();
   const fallbackSvg = (key: string) => {
     const hue = key
       .split("")
@@ -127,11 +125,6 @@ export function GotchiSvg({
         if (mounted && requestId === requestIdRef.current) {
           setSvg(fallbackSvg(requestKey));
           setLoading(false);
-          toast({
-            title: "Gotchi image failed to load",
-            description: "Using a placeholder while the server recovers.",
-            variant: "destructive",
-          });
         }
       });
     return () => {
