@@ -161,15 +161,15 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
           </div>
         )}
 
-        <div className="space-y-1.5 text-[10px] bg-muted/30 rounded p-1.5">
-          <div className="flex justify-between items-center">
-            <span className="text-purple-300 font-medium">Collateral</span>
-            <span className="font-semibold text-foreground">{collateralName}</span>
+        <div className="space-y-1 text-[10px] bg-muted/30 rounded p-1.5">
+          <div>
+            <div className="text-purple-300 font-medium text-[9px]">Collateral</div>
+            <div className="font-semibold text-foreground">{collateralName}</div>
           </div>
           
           {owner && (
-            <div className="flex justify-between items-center">
-              <span className="text-purple-300 font-medium">Owner</span>
+            <div>
+              <div className="text-purple-300 font-medium text-[9px]">Owner</div>
               <button 
                 onClick={copyOwner}
                 className="flex items-center gap-1 hover:text-primary transition-colors font-mono text-[9px] text-foreground"
@@ -180,14 +180,14 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
             </div>
           )}
           
-          <div className="flex justify-between items-center">
-            <span className="text-purple-300 font-medium">Age</span>
-            <span className="font-semibold text-foreground">{age}</span>
+          <div>
+            <div className="text-purple-300 font-medium text-[9px]">Age</div>
+            <div className="font-semibold text-foreground">{age}</div>
           </div>
 
-          <div className="flex justify-between items-center">
-            <span className="text-purple-300 font-medium">XP</span>
-            <span className="font-semibold text-foreground">{gotchi.experience || 0}</span>
+          <div>
+            <div className="text-purple-300 font-medium text-[9px]">XP</div>
+            <div className="font-semibold text-foreground">{gotchi.experience || 0}</div>
           </div>
         </div>
 
