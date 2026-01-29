@@ -37,7 +37,8 @@ export default function ExplorerPage() {
       (g) =>
         g.name.toLowerCase().includes(s) ||
         g.tokenId === s ||
-        g.tokenId.includes(s)
+        g.tokenId.includes(s) ||
+        (g.owner && g.owner.toLowerCase().includes(s))
     );
   }, [gotchis, search]);
 

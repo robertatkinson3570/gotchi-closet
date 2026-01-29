@@ -104,7 +104,7 @@ export function ExplorerTopBar({
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search by name or ID..."
+                placeholder="Search name, ID, or address..."
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
                 className="h-8 pl-8 text-sm"
@@ -190,7 +190,7 @@ export function ExplorerTopBar({
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search by name or ID..."
+              placeholder="Search name, ID, or address..."
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               className="h-9 pl-8 pr-8 text-sm"
