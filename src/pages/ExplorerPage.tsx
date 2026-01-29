@@ -75,30 +75,35 @@ export default function ExplorerPage() {
       />
 
       <div className="flex-1 flex">
-        <aside className={`hidden lg:flex flex-col border-r border-border/30 bg-muted/10 transition-all duration-300 ${sidebarOpen ? "w-72" : "w-0"} overflow-hidden relative`}>
-          <div className="flex-1 overflow-y-auto">
-            <ExplorerFilters
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              availableSets={availableSets}
-            />
-          </div>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-6 h-12 bg-background border border-border/50 rounded-r-lg flex items-center justify-center hover:bg-muted/50 transition-colors shadow-md"
-          >
-            {sidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </button>
+        <aside className={`hidden lg:flex flex-col border-r border-border/30 bg-muted/10 transition-all duration-300 ${sidebarOpen ? "w-72" : "w-12"} overflow-hidden relative`}>
+          {sidebarOpen ? (
+            <>
+              <div className="flex-1 overflow-y-auto">
+                <ExplorerFilters
+                  filters={filters}
+                  onFiltersChange={handleFiltersChange}
+                  availableSets={availableSets}
+                />
+              </div>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="absolute right-0 top-0 bottom-0 w-4 hover:bg-primary/10 transition-colors cursor-pointer flex items-center justify-center group"
+                title="Collapse filters"
+              >
+                <ChevronLeft className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="flex-1 flex flex-col items-center justify-center gap-2 hover:bg-primary/10 transition-colors cursor-pointer group"
+              title="Expand filters"
+            >
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
+              <span className="text-xs text-muted-foreground group-hover:text-primary writing-mode-vertical" style={{ writingMode: "vertical-rl" }}>Filters</span>
+            </button>
+          )}
         </aside>
-
-        {!sidebarOpen && (
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-6 h-12 bg-background border border-border/50 rounded-r-lg items-center justify-center hover:bg-muted/50 transition-colors shadow-md"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        )}
 
         <main className="flex-1 min-w-0">
           {filterCount > 0 && (
