@@ -57,11 +57,13 @@ function getCollateralName(address: string): string {
   return COLLATERAL_NAMES[lower] || "Unknown";
 }
 
-function formatAge(createdAtBlock: number | undefined): string {
-  if (!createdAtBlock) return "Unknown";
+function formatAge(createdAtTimestamp: number | undefined): string {
+  if (!createdAtTimestamp) return "Unknown";
   const now = Math.floor(Date.now() / 1000);
-  const ageSeconds = now - createdAtBlock;
+  const ageSeconds = now - createdAtTimestamp;
   const ageDays = Math.floor(ageSeconds / 86400);
+  
+  if (ageDays < 0) return "Unknown";
   
   let ageLabel = "";
   if (ageDays >= 730) ageLabel = "AANCIENT";
@@ -185,10 +187,14 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
             <div className="font-semibold text-foreground">{age}</div>
           </div>
 
-          <div>
-            <div className="text-purple-300 font-medium text-[9px]">XP</div>
-            <div className="font-semibold text-foreground">{gotchi.experience || 0}</div>
-          </div>
+          {gotchi.escrow && (
+            <div>
+              <div className="text-purple-300 font-medium text-[9px]">GHST Pocket</div>
+              <div className="font-semibold text-foreground">
+                {(parseFloat(gotchi.escrow) / 1e18).toFixed(2)} GHST
+              </div>
+            </div>
+          )}
         </div>
 
         {equippedWearables.length === 0 && (
