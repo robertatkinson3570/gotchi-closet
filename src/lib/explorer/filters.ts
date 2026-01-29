@@ -136,8 +136,8 @@ export function applyFilters(
     if (filters.doubleMythEyes) {
       const traits = g.withSetsNumericTraits || g.modifiedNumericTraits || g.numericTraits;
       if (traits.length >= 6) {
-        const eyeShape = traits[4];
-        const eyeColor = traits[5];
+        const eyeShape = Number(traits[4]);
+        const eyeColor = Number(traits[5]);
         const isMythShape = eyeShape <= 1 || eyeShape >= 98;
         const isMythColor = eyeColor <= 1 || eyeColor >= 98;
         if (!isMythShape || !isMythColor) return false;
