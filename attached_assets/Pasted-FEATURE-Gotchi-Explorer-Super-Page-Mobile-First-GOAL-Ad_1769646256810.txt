@@ -1,0 +1,281 @@
+FEATURE: Gotchi Explorer (Super Page – Mobile-First)
+
+GOAL
+Add a new Explorer page to GotchiCloset that allows users to browse, filter, and inspect Aavegotchis at very high information density, while still being fully usable and fast on mobile. This page must feel like a “power-user terminal” on desktop AND a compact, swipeable inspector on mobile.
+
+Mobile friendliness is a HARD REQUIREMENT, not optional.
+
+ROUTING / NAV
+- Add new route: /explorer
+- Add top-nav link: “Explorer”
+- Page title: Gotchi Explorer
+- Subtitle (desktop only): “Browse, filter, and inspect Gotchis without leaving the page.”
+
+DATA MODES (TOP TOGGLE – STICKY)
+Segmented toggle (single active at a time):
+- Mine
+- All
+- Baazaar
+- Auction
+
+Behavior:
+- Mine: loads gotchis owned by connected wallet OR manually entered address
+- All: loads entire collection
+- Baazaar: only listed gotchis
+- Auction: only auctioned gotchis
+
+Manual address input:
+- Visible when Mine is active
+- Accepts any valid EVM address
+- Shows “Viewing: 0xabc…123” with clear (X) to reset
+
+Mobile:
+- Toggle row is horizontally scrollable if needed
+- Toggle row stays sticky at top
+
+DESKTOP:
+- Toggle + search + sort in a single top bar
+
+MOBILE:
+- Toggle row
+- Search icon opens full-width search input
+- Sort icon opens bottom sheet
+
+LAZY LOADING / PERFORMANCE
+- No visible pagination
+- Initial load: ~80 gotchis on mobile, ~120 on desktop
+- Load next batch automatically on scroll
+- Virtualize grid (render only visible cards)
+- Cache gotchi preview data by tokenId
+- Use IntersectionObserver for images/SVGs
+- Filters always operate on already-loaded data + continue applying as new data loads
+
+FILTER PANEL (RESPONSIVE)
+DESKTOP:
+- Left-side sticky filter rail
+- Collapsible sections
+- Always visible
+
+MOBILE:
+- Filters open via a floating “Filter” button
+- Filters appear in a full-height bottom sheet
+- Bottom sheet supports:
+  - swipe down to close
+  - Apply / Clear buttons
+- Active filters shown as chips ABOVE the grid
+
+ALL numeric filters support MIN / MAX ranges.
+
+FILTERS
+
+CORE
+- Token ID (exact)
+- Token ID range
+- Name contains
+- Owner (Mine / Any Address)
+
+RARITY
+- Rarity score min / max
+- Rarity tier (multi-select)
+- Top X% rarity (chips)
+
+TRAITS
+- NRG min / max
+- AGG min / max
+- SPK min / max
+- BRN min / max
+- Balanced traits toggle
+- Extreme traits toggle (>=90 or <=10)
+
+EYES (HIGH PRIORITY)
+- Eye Shape (multi-select)
+- Eye Color (multi-select)
+- Eye combo rarity max (≤ N)
+- Unique only (1 / 1)
+
+KINSHIP / ACTIVITY
+- Kinship min / max
+- Zero kinship only
+- Last interaction time range
+
+LEVEL / XP
+- Level min / max
+- XP min / max
+- Max level only
+
+WEARABLES / SETS
+- Has wearables / none
+- Wearable count min / max
+- Has any set
+- Full set only
+- Partial set only
+
+GHST
+- GHST in pocket min / max
+- Has GHST / zero GHST
+
+MARKET (Baazaar / Auction only)
+- Price min / max (GHST)
+- Auction current bid min / max
+- Auction ending soon
+
+FILTER UX RULES
+- Filters auto-collapse when inactive
+- Incompatible filters auto-disable when switching modes
+- Active filters shown as removable chips
+- Clear all always visible
+- On mobile, filters do NOT apply until user taps “Apply”
+
+SORTING (RESPONSIVE)
+DESKTOP:
+- Sort dropdown in top bar
+
+MOBILE:
+- Sort icon opens bottom sheet
+- Single-column list of sort options
+
+Sort options:
+- Rarity score ↑ ↓
+- Kinship ↑ ↓
+- Level ↑ ↓
+- XP ↑ ↓
+- GHST ↑ ↓
+- Traits ↑ ↓
+- Eye combo rarity ↑ ↓
+- Token ID ↑ ↓
+- Last sale time ↑ ↓
+- Price ↑ ↓ (Baazaar)
+- Auction ending soon (Auction)
+
+SEARCH
+- Token ID exact (fast path)
+- Name substring
+- Mobile search opens full-width input
+- Clear (X) always visible
+
+GRID LAYOUT (RESPONSIVE, HIGH DENSITY)
+DESKTOP:
+- 4–8 cards per row depending on viewport
+- Tight spacing, compact cards
+
+TABLET:
+- 3–4 cards per row
+
+MOBILE:
+- 2 cards per row (default)
+- Optional single-column “focus mode” toggle
+- Cards must remain tappable without mis-taps
+
+GOTCHI CARD DESIGN (EXPLORER VIEW)
+
+TOP STRIP (ONE LINE)
+- Token ID
+- Haunt icon
+- Collateral icon
+- Market badge
+- Mine indicator
+
+CENTER
+- Transparent gotchi SVG (no borders)
+- Subtle rarity-tier background tint
+- Overlay:
+  - Eye combo rarity (1 / N)
+  - Full set icon (if applicable)
+
+BOTTOM SLAB
+- Rarity score
+- Kinship
+- Level
+- GHST in pocket
+
+TRAITS
+- 4 micro-bars (NRG / AGG / SPK / BRN)
+- Strongest trait auto-highlight
+- Extreme trait indicator
+
+MOBILE CARD RULES
+- No hover-only info
+- Essential info always visible
+- Secondary info revealed via:
+  - tap to expand mini panel
+  - or long-press tooltip
+
+CARD INTERACTIONS
+DESKTOP:
+- Hover reveals extra info
+- Click opens detail drawer
+
+MOBILE:
+- Tap opens detail drawer
+- Long-press opens quick actions menu
+
+QUICK ACTIONS
+- Add to Dress selector
+- Open in Dress
+- Copy token ID
+
+GOTCHI DETAIL DRAWER (RESPONSIVE)
+DESKTOP:
+- Right-side drawer
+- Scrollable independently
+
+MOBILE:
+- Full-height bottom sheet
+- Swipe down to close
+- Sticky header with gotchi name + ID
+
+DETAIL SECTIONS (COLLAPSIBLE)
+1) Identity
+2) Market
+3) Core Stats
+4) Traits
+5) Eye Traits & Rarity (1 / N + combo)
+6) Wearables & Sets
+
+Default open:
+- Identity
+- Traits
+- Eye Traits
+
+DATA CALCULATIONS
+- Trait frequency rarity (“1 / N”) for:
+  - Eye Shape
+  - Eye Color
+  - Eye Combo
+- Default population scope: same Haunt
+- Cache counts aggressively
+- Never recompute on every render
+
+ACCESSIBILITY
+- Fully keyboard navigable (desktop)
+- Touch-friendly hit targets (mobile)
+- Focus trapping in drawer
+- Reduced motion support
+
+FILES / STRUCTURE
+- src/pages/ExplorerPage.tsx
+- src/components/explorer/
+  - ExplorerTopBar.tsx
+  - ExplorerFilters.tsx
+  - ExplorerGrid.tsx
+  - GotchiExplorerCard.tsx
+  - GotchiDetailDrawer.tsx
+- src/hooks/useExplorerData.ts
+- src/lib/explorer/
+  - filters.ts
+  - sorts.ts
+  - traitFrequency.ts
+
+NON-NEGOTIABLES
+- Mobile usability is mandatory
+- No layout shifts on filter open/close
+- Do NOT modify Dress page logic
+- No battler classes or combat logic
+- Keep UI tight and information-dense
+
+SUCCESS CRITERIA
+- Smooth scrolling on mobile with hundreds of gotchis
+- No navigation needed to filter deeply
+- Filters usable with one hand
+- Eye rarity + combo rarity clearly visible
+- Explorer feels like a professional tool, not a gallery

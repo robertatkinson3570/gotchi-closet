@@ -15,7 +15,13 @@ GotchiCloset is a React/TypeScript web application for Aavegotchi that allows us
 src/           - React frontend source code
   app/         - Application routes and layouts
   components/  - Reusable UI components
+    explorer/  - Explorer page components (ExplorerTopBar, ExplorerGrid, etc.)
+    catwalk/   - Catwalk modal and animations
+    gotchi/    - Gotchi-related components
+    wearables/ - Wearable-related components
   lib/         - Utility functions and helpers
+    explorer/  - Explorer-specific logic (filters, sorts, types)
+  hooks/       - Custom React hooks
   pages/       - Page components
   providers/   - React context providers
   state/       - Zustand stores
@@ -40,6 +46,17 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-29: Added Gotchi Explorer page (/explorer) - mobile-first power-user browsing
+  - Data modes: Mine, All, Baazaar, Auction with sticky top toggle
+  - High-density responsive grid (2-8 columns based on viewport)
+  - Lazy loading with IntersectionObserver for infinite scroll
+  - Filter sidebar (desktop) / bottom sheet (mobile) with collapsible sections
+  - Filters: Token ID, name, rarity range/tier, traits, level, wearables, haunt, price
+  - Sort by rarity, level, token ID, traits, price
+  - GotchiExplorerCard shows: token ID, haunt, BRS, level, kinship, trait bars, eye rarity
+  - GotchiDetailDrawer with collapsible sections (Identity, Market, Traits, Eye Traits, Wearables)
+  - Mobile-optimized: bottom sheets, touch targets, sticky headers, responsive search
+  - Located in src/pages/ExplorerPage.tsx, src/components/explorer/*, src/lib/explorer/*
 - 2026-01-28: Ghostly haunted theme for Catwalk fashion show
   - Floating ghost orbs (3 large blurred purple orbs with floatingGhost animation)
   - Portal swirl effect at top center (rotating conic gradient)

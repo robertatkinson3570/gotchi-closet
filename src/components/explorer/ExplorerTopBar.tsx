@@ -1,0 +1,198 @@
+import { useState } from "react";
+import { Input } from "@/ui/input";
+import { Button } from "@/ui/button";
+import { Search, X, SlidersHorizontal, ArrowUpDown } from "lucide-react";
+import type { DataMode, ExplorerSort } from "@/lib/explorer/types";
+import { sortOptions } from "@/lib/explorer/sorts";
+
+type Props = {
+  mode: DataMode;
+  onModeChange: (mode: DataMode) => void;
+  ownerAddress: string;
+  onOwnerChange: (addr: string) => void;
+  search: string;
+  onSearchChange: (s: string) => void;
+  sort: ExplorerSort;
+  onSortChange: (s: ExplorerSort) => void;
+  filterCount: number;
+  onOpenFilters: () => void;
+  onOpenSort: () => void;
+};
+
+const modes: { value: DataMode; label: string }[] = [
+  { value: "mine", label: "Mine" },
+  { value: "all", label: "All" },
+  { value: "baazaar", label: "Baazaar" },
+  { value: "auction", label: "Auction" },
+];
+
+export function ExplorerTopBar({
+  mode,
+  onModeChange,
+  ownerAddress,
+  onOwnerChange,
+  search,
+  onSearchChange,
+  sort,
+  onSortChange,
+  filterCount,
+  onOpenFilters,
+  onOpenSort,
+}: Props) {
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+
+  return (
+    <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b">
+      <div className="flex flex-col gap-2 p-2 md:p-3">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+          <div className="flex bg-muted rounded-lg p-0.5 shrink-0">
+            {modes.map((m) => (
+              <button
+                key={m.value}
+                onClick={() => onModeChange(m.value)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  mode === m.value
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+
+          {mode === "mine" && (
+            <div className="flex items-center gap-1 shrink-0">
+              <Input
+                type="text"
+                placeholder="0x..."
+                value={ownerAddress}
+                onChange={(e) => onOwnerChange(e.target.value)}
+                className="h-8 w-32 md:w-48 text-xs"
+              />
+              {ownerAddress && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => onOwnerChange("")}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          )}
+
+          <div className="hidden md:flex items-center gap-2 flex-1">
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search by name or ID..."
+                value={search}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="h-8 pl-8 text-sm"
+              />
+              {search && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                  onClick={() => onSearchChange("")}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+
+            <select
+              value={`${sort.field}:${sort.direction}`}
+              onChange={(e) => {
+                const [field, dir] = e.target.value.split(":") as [string, "asc" | "desc"];
+                onSortChange({ field: field as any, direction: dir });
+              }}
+              className="h-8 px-2 text-xs bg-background border rounded-md"
+            >
+              {sortOptions.map((opt) => (
+                <option key={`${opt.value.field}:${opt.value.direction}`} value={`${opt.value.field}:${opt.value.direction}`}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex md:hidden items-center gap-1 ml-auto shrink-0">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onOpenSort}
+            >
+              <ArrowUpDown className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 relative"
+              onClick={onOpenFilters}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              {filterCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
+                  {filterCount}
+                </span>
+              )}
+            </Button>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden md:flex gap-1 relative shrink-0"
+            onClick={onOpenFilters}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            Filters
+            {filterCount > 0 && (
+              <span className="bg-primary text-primary-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center ml-1">
+                {filterCount}
+              </span>
+            )}
+          </Button>
+        </div>
+
+        {mobileSearchOpen && (
+          <div className="md:hidden relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search by name or ID..."
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="h-9 pl-8 pr-8 text-sm"
+              autoFocus
+            />
+            {search && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                onClick={() => onSearchChange("")}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

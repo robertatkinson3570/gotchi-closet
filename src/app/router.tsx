@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import HomePage from "@/pages/HomePage";
 import DressPage from "@/pages/DressPage";
 import WardrobeLabPage from "@/pages/WardrobeLabPage";
+import ExplorerPage from "@/pages/ExplorerPage";
 import SetsIndexPage from "@/pages/SetsIndexPage";
 import SetPage from "@/pages/SetPage";
 import TraitsIndexPage from "@/pages/TraitsIndexPage";
@@ -62,6 +63,10 @@ export const router = createBrowserRouter([
       {
         path: "wardrobe-lab",
         element: <WardrobeLabPage />,
+      },
+      {
+        path: "explorer",
+        element: <ExplorerPage />,
       },
     ],
   },

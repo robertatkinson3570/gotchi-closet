@@ -5,7 +5,7 @@ import { Input } from "@/ui/input";
 import { normalizeAddress, isValidAddress } from "@/lib/address";
 import { cacheGet, cacheSet, CACHE_KEYS } from "@/lib/cache";
 import { formatAddress } from "@/lib/format";
-import { X, Sparkles, Layers, BarChart3, Plus, Wallet } from "lucide-react";
+import { X, Sparkles, Layers, BarChart3, Plus, Wallet, Search } from "lucide-react";
 import { DonateCard } from "@/components/DonateCard";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
@@ -262,7 +262,16 @@ export default function HomePage() {
           </div>
 
           <div className="mt-4 space-y-3">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
+              <Link 
+                to="/explorer" 
+                className="group flex flex-col items-center gap-1 p-2.5 rounded-xl bg-card/50 border border-border/30 hover:border-primary/30 hover:bg-card/80 transition-all"
+              >
+                <div className="p-2 rounded-lg bg-green-500/10 text-green-500 group-hover:scale-110 transition-transform">
+                  <Search className="h-4 w-4" />
+                </div>
+                <span className="text-xs font-medium text-foreground">Explorer</span>
+              </Link>
               <Link 
                 to="/sets" 
                 className="group flex flex-col items-center gap-1 p-2.5 rounded-xl bg-card/50 border border-border/30 hover:border-primary/30 hover:bg-card/80 transition-all"
