@@ -127,6 +127,10 @@ export function applyFilters(
       if (g.equippedSetID && g.equippedSetID > 0) return false;
     }
 
+    if (filters.equippedSets.length > 0) {
+      if (!g.equippedSetName || !filters.equippedSets.includes(g.equippedSetName)) return false;
+    }
+
     if (filters.doubleMythEyes) {
       const traits = g.withSetsNumericTraits || g.modifiedNumericTraits || g.numericTraits;
       if (traits.length >= 6) {
@@ -177,6 +181,7 @@ export function getActiveFilterCount(filters: ExplorerFilters): number {
   if (filters.hasGhstPocket !== null) count++;
   if (filters.ghstBalanceMin || filters.ghstBalanceMax) count++;
   if (filters.hasEquippedSet !== null) count++;
+  if (filters.equippedSets && filters.equippedSets.length > 0) count++;
   if (filters.doubleMythEyes) count++;
   return count;
 }

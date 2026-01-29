@@ -42,6 +42,14 @@ export default function ExplorerPage() {
     );
   }, [gotchis, search]);
 
+  const availableSets = useMemo(() => {
+    const sets = new Set<string>();
+    gotchis.forEach((g) => {
+      if (g.equippedSetName) sets.add(g.equippedSetName);
+    });
+    return Array.from(sets).sort();
+  }, [gotchis]);
+
   const filterCount = getActiveFilterCount(filters);
 
   const handleFiltersChange = useCallback((newFilters: FiltersType) => {
@@ -101,6 +109,7 @@ export default function ExplorerPage() {
               onFiltersChange={handleFiltersChange}
               onClose={() => setShowFilters(false)}
               isMobile
+              availableSets={availableSets}
             />
           </div>
         </div>

@@ -54,6 +54,7 @@ export type ExplorerFilters = {
   ghstBalanceMin: string;
   ghstBalanceMax: string;
   hasEquippedSet: boolean | null;
+  equippedSets: string[];
   doubleMythEyes: boolean;
 };
 
@@ -91,6 +92,7 @@ export const defaultFilters: ExplorerFilters = {
   ghstBalanceMin: "",
   ghstBalanceMax: "",
   hasEquippedSet: null,
+  equippedSets: [],
   doubleMythEyes: false,
 };
 

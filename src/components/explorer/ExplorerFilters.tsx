@@ -12,6 +12,7 @@ type Props = {
   onFiltersChange: (filters: ExplorerFilters) => void;
   onClose?: () => void;
   isMobile?: boolean;
+  availableSets?: string[];
 };
 
 function FilterSection({
@@ -79,7 +80,7 @@ function RangeInputs({
   );
 }
 
-export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile }: Props) {
+export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile, availableSets = [] }: Props) {
   const [localFilters, setLocalFilters] = useState(filters);
   
   useEffect(() => {
@@ -110,6 +111,14 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile }:
       ? current.filter((h) => h !== haunt)
       : [...current, haunt];
     updateFilter("haunts", updated);
+  };
+
+  const toggleEquippedSet = (setName: string) => {
+    const current = localFilters.equippedSets;
+    const updated = current.includes(setName)
+      ? current.filter((s) => s !== setName)
+      : [...current, setName];
+    updateFilter("equippedSets", updated);
   };
 
   return (
@@ -313,6 +322,22 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile }:
               No Complete Set
             </label>
           </div>
+          {availableSets.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border/20">
+              <Label className="text-xs text-muted-foreground mb-2 block">Filter by Set</Label>
+              <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                {availableSets.map((setName) => (
+                  <label key={setName} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/30 px-2 py-1 rounded">
+                    <Checkbox
+                      checked={localFilters.equippedSets.includes(setName)}
+                      onCheckedChange={() => toggleEquippedSet(setName)}
+                    />
+                    <span className="truncate">{setName}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
         </FilterSection>
 
         <FilterSection title="Eye Traits">
