@@ -10,6 +10,29 @@ function getWearableImageUrl(id: number): string {
   return `https://app.aavegotchi.com/images/items/${id}.svg`;
 }
 
+const COLLATERAL_NAMES: Record<string, string> = {
+  "0x20d3922b4a1a8560e1ac99fba4fade0c849e2142": "maWETH",
+  "0x823cd4264c1b951c9209ad0deaea9988fe8429bf": "maAAVE",
+  "0x98ea609569bd25119707451ef982b90e3eb719cd": "maLINK",
+  "0xe0b22e0037b130a9f56bbb537684e6fa18192341": "maDAI",
+  "0xf4b8888427b00d7caf21654408b7cba2ecf4ebd9": "maUSDT",
+  "0x8c8bdbe9cee455732525086264a4bf9cf821c498": "maUNI",
+  "0x9719d867a500ef117cc201206b8ab51e794d3f82": "maUSDC",
+  "0xdae5f1590db13e3b40423b5b5c5fbf175515910b": "maUSDC",
+  "0x28424507fefb6f7f8e9d3860f56504e4e5f5f390": "amWETH",
+  "0x1a13f4ca1d028320a707d99520abfefca3998b7f": "amUSDC",
+  "0x27f8d03b3a2196956ed754badc28d73be8830a6e": "amDAI",
+  "0x60d55f02a771d515e077c9c2403a1ef324885cec": "amUSDT",
+  "0x8df3aad3a84da6b69a4da8aec3ea40d9091b2ac4": "amWMATIC",
+  "0x1d2a0e5ec8e5bbdca5cb219e649b565d8e5c3360": "amAAVE",
+  "0x0ca2e42e8c21954af73bc9af1213e4e81d6a669a": "amWBTC",
+};
+
+function getCollateralName(address: string): string {
+  const lower = address.toLowerCase();
+  return COLLATERAL_NAMES[lower] || "Unknown";
+}
+
 type Props = {
   gotchi: ExplorerGotchi | null;
   onClose: () => void;
@@ -143,7 +166,7 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
           <StatRow label="Level" value={gotchi.level} />
           {gotchi.kinship !== undefined && <StatRow label="Kinship" value={gotchi.kinship} />}
           {gotchi.experience !== undefined && <StatRow label="XP" value={gotchi.experience} />}
-          <StatRow label="Collateral" value={gotchi.collateral.slice(0, 10) + "..."} />
+          <StatRow label="Collateral" value={getCollateralName(gotchi.collateral)} />
         </Section>
 
         {gotchi.listing && (
