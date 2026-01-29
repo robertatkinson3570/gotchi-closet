@@ -133,36 +133,6 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile, a
       )}
 
       <div className="flex-1 overflow-y-auto">
-        <FilterSection title="Token ID" defaultOpen>
-          <div>
-            <Label className="text-xs text-muted-foreground mb-1.5 block">Exact ID</Label>
-            <Input
-              type="text"
-              placeholder="e.g. 12345"
-              value={localFilters.tokenId}
-              onChange={(e) => updateFilter("tokenId", e.target.value)}
-              className="h-9 text-sm bg-muted/30 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
-            />
-          </div>
-          <RangeInputs
-            label="ID Range"
-            minValue={localFilters.tokenIdMin}
-            maxValue={localFilters.tokenIdMax}
-            onMinChange={(v) => updateFilter("tokenIdMin", v)}
-            onMaxChange={(v) => updateFilter("tokenIdMax", v)}
-          />
-        </FilterSection>
-
-        <FilterSection title="Name">
-          <Input
-            type="text"
-            placeholder="Search name..."
-            value={localFilters.nameContains}
-            onChange={(e) => updateFilter("nameContains", e.target.value)}
-            className="h-9 text-sm bg-muted/30 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
-          />
-        </FilterSection>
-
         <FilterSection title="Rarity" defaultOpen>
           <RangeInputs
             label="Score Range"
