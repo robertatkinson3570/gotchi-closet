@@ -51,7 +51,13 @@ type Props = {
   onAddToDress?: (gotchi: ExplorerGotchi) => void;
 };
 
-const TRAIT_NAMES = ["NRG", "AGG", "SPK", "BRN"];
+const TRAIT_NAMES = ["NRG", "AGG", "SPK", "BRN", "EYS", "EYC"];
+const TRAIT_LABELS: Record<string, [string, string]> = {
+  NRG: ["Lazy", "Energetic"],
+  AGG: ["Calm", "Aggressive"],
+  SPK: ["Creepy", "Spooky"],
+  BRN: ["Simple", "Big Brain"],
+};
 
 function formatAge(createdAtBlock: number | undefined): { age: string } {
   if (!createdAtBlock) return { age: "Unknown" };
@@ -101,30 +107,35 @@ function Section({
   );
 }
 
-function TraitBar({ label, value }: { label: string; value: number }) {
+function TraitRow({ 
+  label, 
+  value, 
+  isHighest, 
+  isLowest 
+}: { 
+  label: string; 
+  value: number; 
+  isHighest?: boolean; 
+  isLowest?: boolean;
+}) {
   const isExtreme = value <= 10 || value >= 90;
-  const percent = Math.min(100, Math.max(0, value));
-  const isLow = value < 50;
+  const traitLabel = TRAIT_LABELS[label];
+  const direction = value < 50 ? traitLabel?.[0] : traitLabel?.[1];
 
   return (
-    <div className="py-2">
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <span className={`text-xs font-mono px-2 py-0.5 rounded ${isExtreme ? "bg-purple-500/20 text-purple-400 font-bold" : "bg-muted"}`}>
+    <div className="flex items-center justify-between py-1">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground w-8">{label}</span>
+        {direction && (
+          <span className="text-[10px] text-muted-foreground/70">{direction}</span>
+        )}
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className={`text-sm font-mono tabular-nums ${isExtreme ? "text-purple-400 font-semibold" : ""}`}>
           {value}
         </span>
-      </div>
-      <div className="h-2.5 bg-muted/50 rounded-full overflow-hidden relative border border-border/30">
-        <div className="absolute inset-0 flex">
-          <div className="w-1/2 border-r border-muted-foreground/20" />
-        </div>
-        <div
-          className={`absolute h-full rounded-full transition-all ${isExtreme ? "bg-gradient-to-r from-purple-500 to-pink-500" : "bg-gradient-to-r from-primary/80 to-primary"}`}
-          style={{
-            left: isLow ? `${percent}%` : "50%",
-            width: isLow ? `${50 - percent}%` : `${percent - 50}%`,
-          }}
-        />
+        {isHighest && <span className="text-[10px] text-yellow-500">HIGH</span>}
+        {isLowest && <span className="text-[10px] text-blue-400">LOW</span>}
       </div>
     </div>
   );
@@ -336,17 +347,34 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
         </div>
 
         <Section title="Traits">
-          {traits.slice(0, 4).map((val, i) => (
-            <TraitBar key={i} label={TRAIT_NAMES[i]} value={val} />
-          ))}
-          <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-border/20">
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Eye Shape</span>
-              <span>{getEyeShapeName(eyeData.shape)}</span>
+          {(() => {
+            const mainTraits = traits.slice(0, 4);
+            const brsContributions = mainTraits.map((v: number) => Math.abs(v - 50));
+            const maxBrs = Math.max(...brsContributions);
+            const minBrs = Math.min(...brsContributions);
+            const highIdx = brsContributions.indexOf(maxBrs);
+            const lowIdx = brsContributions.lastIndexOf(minBrs);
+            
+            return mainTraits.map((val: number, i: number) => (
+              <TraitRow
+                key={i}
+                label={TRAIT_NAMES[i]}
+                value={val}
+                isHighest={i === highIdx}
+                isLowest={i === lowIdx && lowIdx !== highIdx}
+              />
+            ));
+          })()}
+          <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-border/20">
+            <div className="space-y-0.5">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Eye Shape</div>
+              <div className="text-sm font-medium">{getEyeShapeName(eyeData.shape)}</div>
+              <div className="text-xs text-muted-foreground">Value: {traits[4]}</div>
             </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Eye Color</span>
-              <span>{getEyeColorName(eyeData.color)}</span>
+            <div className="space-y-0.5">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Eye Color</div>
+              <div className="text-sm font-medium">{getEyeColorName(eyeData.color)}</div>
+              <div className="text-xs text-muted-foreground">Value: {traits[5]}</div>
             </div>
           </div>
         </Section>
