@@ -9,10 +9,9 @@ type Props = {
   hasMore: boolean;
   error?: string | null;
   onLoadMore: () => void;
-  onSelectGotchi: (gotchi: ExplorerGotchi) => void;
 };
 
-export function FamilyPhotoGrid({ gotchis, loading, hasMore, error, onLoadMore, onSelectGotchi }: Props) {
+export function FamilyPhotoGrid({ gotchis, loading, hasMore, error, onLoadMore }: Props) {
   const loaderRef = useRef<HTMLDivElement>(null);
 
   const handleIntersection = useCallback(
@@ -72,7 +71,6 @@ export function FamilyPhotoGrid({ gotchis, loading, hasMore, error, onLoadMore, 
           <FamilyPhotoItem
             key={gotchi.id}
             gotchi={gotchi}
-            onClick={() => onSelectGotchi(gotchi)}
           />
         ))}
       </div>

@@ -1,0 +1,110 @@
+ISSUE: Gotchi Detail panel is oversized, redundant, and disrupts Explorer flow — replace with hover / bottom-slider info reveal
+
+PROBLEM SUMMARY
+The current Gotchi Detail panel opens as a large side panel that:
+- Repeats information already visible on the main Gotchi card
+- Consumes excessive screen real estate
+- Breaks browsing flow
+- Feels heavy and unnecessary for Explorer use
+
+For the Explorer page, this panel is overkill and should be removed.
+
+Instead of a large detail panel, additional Gotchi info should be revealed **inline**, via:
+- Hover (desktop)
+- Bottom slide-up panel (mobile / optional desktop)
+
+This keeps the Explorer fast, dense, and focused.
+
+IMPORTANT CONSTRAINT
+- Do NOT affect the existing hover behavior on the Gotchi IMAGE.
+- Image hover is reserved exclusively for showing the Gotchi naked.
+- This new behavior applies ONLY when hovering or interacting with the **info/details area of the card**, NOT the image.
+
+REQUIRED CHANGE (HIGH PRIORITY)
+
+REMOVE / DISABLE:
+- The large Gotchi Detail side panel for Explorer usage.
+- Clicking a card should NO LONGER open a full detail drawer.
+
+REPLACE WITH:
+- A compact “Additional Info” reveal that appears when:
+  - Desktop: hovering over the card’s INFO section (name / traits / rarity area)
+  - Mobile: tapping an info icon OR swiping up a bottom mini-panel
+
+WHAT THIS NEW INFO REVEAL SHOULD SHOW
+
+When triggered, display a compact overlay / slide panel containing:
+
+SECTION 1: Wearables (with images)
+- Show wearable icons/images (small but clear)
+- Display wearable name on hover (desktop) or tap (mobile)
+- Indicate total wearable count
+- No long lists of text by default
+
+SECTION 2: Supplemental Gotchi Info
+Only info that is NOT already prominent on the main card:
+- Collateral
+- Owner (shortened + copy icon)
+- Age (Ancient / days)
+- Set name (if applicable)
+- Optional: last interaction time
+
+DO NOT repeat:
+- Name
+- Token ID
+- Rarity score
+- Traits
+- Kinship
+- Level
+These already exist on the main card.
+
+INTERACTION DETAILS
+
+DESKTOP:
+- Hovering over the info section triggers the overlay
+- Moving cursor away closes it
+- Overlay should not flicker or jump
+- No click required
+
+MOBILE:
+- Add a small “info” icon OR caret in the card info area
+- Tapping opens a bottom slide-up mini panel
+- Swipe down or tap outside closes it
+
+STYLE & BEHAVIOR REQUIREMENTS
+- Overlay / slide panel must be:
+  - compact
+  - fast
+  - visually calm
+- No full-screen takeovers
+- No large side drawers
+- Match GotchiCloset’s:
+  - typography
+  - colors
+  - spacing
+- Subtle shadow or elevation only if needed for separation
+
+WEARABLE DISPLAY RULES
+- Prefer icons/images over text
+- Keep wearable images uniform in size
+- No scrolling lists unless wearable count is large
+- If scrolling is needed, limit height
+
+NON-NEGOTIABLES
+- Do NOT interfere with Gotchi image hover (naked preview).
+- Do NOT show duplicate info.
+- Do NOT keep the large detail panel for Explorer.
+- Do NOT add new navigation steps.
+- This change applies ONLY to Explorer cards.
+
+SUCCESS CRITERIA
+- Explorer browsing feels faster and less cluttered.
+- Users can see wearables and extra info without leaving context.
+- Screen space is preserved.
+- Mobile interaction feels intentional, not hacked.
+- The detail experience feels “just enough,” not heavy.
+
+IMPLEMENTATION NOTES
+- Treat this as a replacement, not an addition.
+- Remove dead code related to Explorer detail panel if no longer used.
+- Keep Dress page detail behavior unchanged.

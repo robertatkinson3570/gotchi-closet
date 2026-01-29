@@ -10,10 +10,9 @@ type Props = {
   hasMore: boolean;
   error?: string | null;
   onLoadMore: () => void;
-  onSelectGotchi: (gotchi: ExplorerGotchi) => void;
 };
 
-export function ExplorerGrid({ gotchis, loading, hasMore, error, onLoadMore, onSelectGotchi }: Props) {
+export function ExplorerGrid({ gotchis, loading, hasMore, error, onLoadMore }: Props) {
   const loaderRef = useRef<HTMLDivElement>(null);
   const { loading: frequencyLoading, getRarities } = useTraitFrequency(gotchis);
 
@@ -65,7 +64,6 @@ export function ExplorerGrid({ gotchis, loading, hasMore, error, onLoadMore, onS
           <GotchiExplorerCard
             key={gotchi.id}
             gotchi={gotchi}
-            onClick={() => onSelectGotchi(gotchi)}
             eyeRarities={getRarities(gotchi)}
             frequencyLoading={frequencyLoading}
           />

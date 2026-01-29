@@ -3,13 +3,11 @@ import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 
 type Props = {
   gotchi: ExplorerGotchi;
-  onClick: () => void;
 };
 
-export function FamilyPhotoItem({ gotchi, onClick }: Props) {
+export function FamilyPhotoItem({ gotchi }: Props) {
   return (
-    <button
-      onClick={onClick}
+    <div
       className="flex flex-col items-center p-1 rounded hover:bg-muted/30 transition-colors text-center min-w-0 group"
     >
       <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 flex items-center justify-center">
@@ -28,6 +26,6 @@ export function FamilyPhotoItem({ gotchi, onClick }: Props) {
       <span className="text-[9px] sm:text-[10px] text-purple-500 font-medium leading-tight">
         {gotchi.withSetsRarityScore}
       </span>
-    </button>
+    </div>
   );
 }

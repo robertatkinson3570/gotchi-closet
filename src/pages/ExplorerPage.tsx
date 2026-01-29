@@ -4,11 +4,10 @@ import { ExplorerFilters } from "@/components/explorer/ExplorerFilters";
 import { ExplorerGrid } from "@/components/explorer/ExplorerGrid";
 import { FamilyPhotoGrid } from "@/components/explorer/FamilyPhotoGrid";
 import { TakePictureButton } from "@/components/explorer/TakePictureButton";
-import { GotchiDetailDrawer } from "@/components/explorer/GotchiDetailDrawer";
 import { SortSheet } from "@/components/explorer/SortSheet";
 import { useExplorerData } from "@/hooks/useExplorerData";
 import { useAddressState } from "@/lib/addressState";
-import type { DataMode, ExplorerGotchi, ExplorerFilters as FiltersType } from "@/lib/explorer/types";
+import type { DataMode, ExplorerFilters as FiltersType } from "@/lib/explorer/types";
 import { defaultFilters } from "@/lib/explorer/types";
 import { getActiveFilterCount } from "@/lib/explorer/filters";
 import { defaultBaazaarSort } from "@/lib/explorer/sorts";
@@ -24,7 +23,6 @@ export default function ExplorerPage() {
   const [search, setSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSort, setShowSort] = useState(false);
-  const [selectedGotchi, setSelectedGotchi] = useState<ExplorerGotchi | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(VIEW_MODE_KEY);
@@ -158,7 +156,6 @@ export default function ExplorerPage() {
                 hasMore={hasMore}
                 error={error}
                 onLoadMore={loadMore}
-                onSelectGotchi={setSelectedGotchi}
               />
             </div>
           ) : (
@@ -168,7 +165,6 @@ export default function ExplorerPage() {
               hasMore={hasMore}
               error={error}
               onLoadMore={loadMore}
-              onSelectGotchi={setSelectedGotchi}
             />
           )}
         </main>
@@ -182,19 +178,6 @@ export default function ExplorerPage() {
             onClose={() => setShowSort(false)}
           />
         </div>
-      )}
-
-      {selectedGotchi && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
-            onClick={() => setSelectedGotchi(null)}
-          />
-          <GotchiDetailDrawer
-            gotchi={selectedGotchi}
-            onClose={() => setSelectedGotchi(null)}
-          />
-        </>
       )}
     </div>
   );

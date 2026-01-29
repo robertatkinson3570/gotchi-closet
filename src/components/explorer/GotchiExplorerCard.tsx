@@ -1,7 +1,9 @@
-import { memo, useState } from "react";
+import { memo, useState, useRef, useEffect } from "react";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { getRarityTier } from "@/lib/explorer/filters";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
+import { GotchiInfoOverlay } from "./GotchiInfoOverlay";
+import { Info } from "lucide-react";
 
 type EyeRarities = {
   shape: number | null;
@@ -11,7 +13,6 @@ type EyeRarities = {
 
 type Props = {
   gotchi: ExplorerGotchi;
-  onClick: () => void;
   eyeRarities?: EyeRarities;
   frequencyLoading?: boolean;
 };
@@ -31,16 +32,37 @@ const tierColors: Record<string, { bg: string; border: string; text: string }> =
 
 export const GotchiExplorerCard = memo(function GotchiExplorerCard({ 
   gotchi, 
-  onClick, 
   eyeRarities,
   frequencyLoading 
 }: Props) {
   const tier = getRarityTier(gotchi.withSetsRarityScore);
   const colors = tierColors[tier] || tierColors.common;
   const wearableCount = gotchi.equippedWearables.filter((w) => w > 0).length;
-  const [isHovered, setIsHovered] = useState(false);
+  const [imageHovered, setImageHovered] = useState(false);
+  const [infoHovered, setInfoHovered] = useState(false);
+  const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const infoRef = useRef<HTMLDivElement>(null);
   const traits = gotchi.withSetsNumericTraits || gotchi.modifiedNumericTraits || gotchi.numericTraits;
   const baseRarity = gotchi.baseRarityScore || null;
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileInfoOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (infoRef.current && !infoRef.current.contains(e.target as Node)) {
+        setMobileInfoOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [mobileInfoOpen]);
 
   const comboRarityText = eyeRarities?.combo 
     ? `1/${eyeRarities.combo}` 
@@ -52,16 +74,26 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
     ? parseFloat(gotchi.listing.priceInWei) / 1e18 
     : null;
 
+  const showOverlay = isMobile ? mobileInfoOpen : infoHovered;
+
+  const handleInfoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isMobile) {
+      setMobileInfoOpen(!mobileInfoOpen);
+    }
+  };
+
   return (
     <div
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`cursor-pointer rounded-lg border ${colors.border} ${colors.bg} hover:ring-1 hover:ring-primary/40 transition-all duration-150 overflow-hidden active:scale-[0.98]`}
+      className={`cursor-pointer rounded-lg border ${colors.border} ${colors.bg} hover:ring-1 hover:ring-primary/40 transition-all duration-150 overflow-hidden active:scale-[0.98] relative`}
     >
-      <div className="relative aspect-square flex items-center justify-center bg-gradient-to-b from-transparent to-background/20">
+      <div 
+        className="relative aspect-square flex items-center justify-center bg-gradient-to-b from-transparent to-background/20"
+        onMouseEnter={() => setImageHovered(true)}
+        onMouseLeave={() => setImageHovered(false)}
+      >
         {wearableCount > 0 && (
-          <div className={`absolute inset-1 transition-opacity duration-200 ${isHovered ? "opacity-0" : "opacity-100"}`}>
+          <div className={`absolute inset-1 transition-opacity duration-200 ${imageHovered ? "opacity-0" : "opacity-100"}`}>
             <GotchiSvg
               gotchiId={gotchi.tokenId}
               hauntId={gotchi.hauntId}
@@ -72,7 +104,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
             />
           </div>
         )}
-        <div className={`${wearableCount > 0 ? "absolute inset-1" : ""} transition-opacity duration-200 ${wearableCount > 0 && !isHovered ? "opacity-0" : "opacity-100"}`}>
+        <div className={`${wearableCount > 0 ? "absolute inset-1" : ""} transition-opacity duration-200 ${wearableCount > 0 && !imageHovered ? "opacity-0" : "opacity-100"}`}>
           <GotchiSvg
             gotchiId={gotchi.tokenId}
             hauntId={gotchi.hauntId}
@@ -97,10 +129,23 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
         )}
       </div>
 
-      <div className="px-2 py-1.5 space-y-1">
+      <div 
+        ref={infoRef}
+        className="px-2 py-1.5 space-y-1 relative"
+        onMouseEnter={() => !isMobile && setInfoHovered(true)}
+        onMouseLeave={() => !isMobile && setInfoHovered(false)}
+      >
         <div className="flex items-center justify-between gap-1">
           <span className="text-xs font-semibold truncate flex-1">{gotchi.name || "Unnamed"}</span>
-          <span className="text-[9px] text-muted-foreground font-mono shrink-0">#{gotchi.tokenId}</span>
+          <div className="flex items-center gap-1">
+            <span className="text-[9px] text-muted-foreground font-mono shrink-0">#{gotchi.tokenId}</span>
+            <button
+              onClick={handleInfoClick}
+              className="md:hidden p-0.5 rounded hover:bg-muted/50 transition-colors"
+            >
+              <Info className="w-3 h-3 text-muted-foreground" />
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
@@ -147,6 +192,10 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
               {priceGhst.toLocaleString(undefined, { maximumFractionDigits: 0 })} GHST
             </span>
           </div>
+        )}
+
+        {showOverlay && (
+          <GotchiInfoOverlay gotchi={gotchi} position="below" />
         )}
       </div>
     </div>
