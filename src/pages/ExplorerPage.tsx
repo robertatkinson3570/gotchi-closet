@@ -3,6 +3,7 @@ import { ExplorerTopBar } from "@/components/explorer/ExplorerTopBar";
 import { ExplorerFilters } from "@/components/explorer/ExplorerFilters";
 import { ExplorerGrid } from "@/components/explorer/ExplorerGrid";
 import { FamilyPhotoGrid } from "@/components/explorer/FamilyPhotoGrid";
+import { TakePictureButton } from "@/components/explorer/TakePictureButton";
 import { GotchiDetailDrawer } from "@/components/explorer/GotchiDetailDrawer";
 import { SortSheet } from "@/components/explorer/SortSheet";
 import { useExplorerData } from "@/hooks/useExplorerData";
@@ -135,15 +136,23 @@ export default function ExplorerPage() {
             </div>
           )}
 
-          {viewMode === "family" ? (
-            <FamilyPhotoGrid
-              gotchis={filteredBySearch}
-              loading={loading}
-              hasMore={hasMore}
-              error={error}
-              onLoadMore={loadMore}
-              onSelectGotchi={setSelectedGotchi}
-            />
+          {viewMode === "family" && mode === "mine" ? (
+            <div>
+              <div className="flex justify-end px-2 md:px-3 pt-2">
+                <TakePictureButton 
+                  walletAddress={connectedAddress ?? undefined} 
+                  isActive={mode === "mine" && viewMode === "family"} 
+                />
+              </div>
+              <FamilyPhotoGrid
+                gotchis={filteredBySearch}
+                loading={loading}
+                hasMore={hasMore}
+                error={error}
+                onLoadMore={loadMore}
+                onSelectGotchi={setSelectedGotchi}
+              />
+            </div>
           ) : (
             <ExplorerGrid
               gotchis={filteredBySearch}

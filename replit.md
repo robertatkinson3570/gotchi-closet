@@ -46,6 +46,15 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-29: Added "Take a Picture" feature for Family Photo view
+  - Button appears only in Mine mode + Family Photo view
+  - Playful countdown: "Say Cheese! 🧀" → 3…2…1 → flash → PNG download
+  - Captures only the gotchi grid (excludes nav, filters, overlays)
+  - Respects prefers-reduced-motion (skips flash animation)
+  - Filename: gotchi-family-photo_<shortWallet>_<YYYY-MM-DD>.png
+  - Friendly error toast if capture fails
+  - Auto-cancels if user switches mode/view during countdown
+  - Located in src/components/explorer/TakePictureButton.tsx
 - 2026-01-29: Added "Family Photo" view mode for Owned gotchis
   - Dense roster-style overview showing tiny thumbnails + name + rarity score
   - Only available when Explorer mode is "Owned" (hidden in All/Baazaar modes)

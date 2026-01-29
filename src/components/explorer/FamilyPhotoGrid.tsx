@@ -64,7 +64,10 @@ export function FamilyPhotoGrid({ gotchis, loading, hasMore, error, onLoadMore, 
         </div>
       </div>
 
-      <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 gap-1">
+      <div 
+        data-family-photo="true"
+        className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 gap-1 bg-background"
+      >
         {gotchis.map((gotchi) => (
           <FamilyPhotoItem
             key={gotchi.id}

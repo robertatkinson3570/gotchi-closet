@@ -1,0 +1,130 @@
+FEATURE: “Take a Picture 📸” — Family Photo Snapshot (Cute + Funny)
+
+SCOPE (DO NOT OVERTHINK THIS)
+The Family Photo view already exists and works.
+Add ONE delightful feature on top of it:
+
+When the user is in Explorer → Mode = Mine / Owned → View = Family Photo:
+- Show a “Take a picture” button
+- Clicking it runs a playful photo moment:
+  “Say Cheese!” → 3…2…1 → flash → PNG downloads
+
+Do NOT redesign the page.
+Do NOT change filters, cards, layout, or data.
+This is pure fun + delight.
+
+AVAILABILITY (HARD RULE)
+- The “Take a picture” button ONLY appears when:
+  - Explorer mode = Mine / Owned
+  - View = Family Photo
+- If user switches mode or view mid-countdown:
+  - cancel everything gracefully
+  - no download
+  - no weird stuck overlays
+
+BUTTON COPY (LOCKED)
+- Button label: “Take a picture 📸”
+
+COUNTDOWN UX (CUTE BUT NOT CRINGE)
+On click:
+- Show a centered overlay above the Family Photo grid
+- Text:
+  - Header: “Say Cheese! 🧀”
+  - Subtext (small): “Everyone look spooky…”
+- Countdown:
+  - Big playful numbers:
+    - 3
+    - 2
+    - 1
+  - One per second
+  - Slight bounce/scale animation on each number (subtle)
+
+FLASH MOMENT
+- After “1”:
+  - Quick white flash overlay (120–180ms)
+  - Feels like a camera flash, NOT a bug
+  - Slight ease-in/ease-out
+- Respect prefers-reduced-motion:
+  - Skip animation, still capture
+
+CAPTURE BEHAVIOR (IMPORTANT)
+- Capture ONLY the Family Photo grid
+- Do NOT include:
+  - top nav
+  - filter sidebar
+  - mode/view toggles
+  - “Say Cheese” overlay
+  - flash overlay
+- Capture should look exactly like the grid as the user sees it
+
+If the grid scrolls:
+- Prefer capturing the FULL grid content
+- If not feasible without major complexity:
+  - capture visible portion only
+  - add a code comment explaining the limitation
+
+DOWNLOAD
+- Automatically download a PNG
+- Filename format:
+  - gotchi-family-photo_<shortWallet>_<YYYY-MM-DD>.png
+  - If wallet unavailable: gotchi-family-photo_<YYYY-MM-DD>.png
+- While saving:
+  - disable button
+  - button text becomes: “Saving the fam…”
+
+TECH IMPLEMENTATION (KEEP IT SIMPLE)
+- Use client-side DOM-to-image capture
+- Use existing dependency if present
+- Otherwise add ONE lightweight lib:
+  - html-to-image (preferred)
+  - html2canvas (acceptable)
+- No heavy frameworks
+
+IMPLEMENTATION STEPS
+1) Add a stable ref/id to the Family Photo grid container
+   - Example: data-family-photo="true"
+   - Do NOT change layout or styles
+2) Add small state machine:
+   - idle
+   - countingDown
+   - flashing
+   - saving
+3) Countdown logic:
+   - 3 → 2 → 1 (1s each)
+4) Flash:
+   - show white overlay briefly
+   - ensure it is NOT inside the captured element
+5) Capture:
+   - generate PNG
+   - trigger browser download
+6) Cleanup:
+   - remove overlays
+   - reset state
+   - restore button
+
+ERROR HANDLING (FRIENDLY)
+- If capture fails:
+  - show small toast:
+    “Uh oh. The ghosts blinked. Try again 👻”
+  - re-enable button
+
+STYLING GUIDELINES
+- Match GotchiCloset fonts, spacing, and colors
+- Fun copy, but visuals stay:
+  - clean
+  - crisp
+  - professional
+- No confetti
+- No loud colors
+- No sound effects
+
+ACCEPTANCE CRITERIA
+- Button only appears in Mine + Family Photo
+- Clicking feels delightful, not janky
+- Countdown + flash read as intentional
+- PNG downloads reliably
+- Mobile works (tap → countdown → download)
+- No regressions anywhere else
+
+DELIVERABLE
+Add the “Take a picture 📸” experience to the Family Photo view exactly as described, with playful copy and polished behavior.
