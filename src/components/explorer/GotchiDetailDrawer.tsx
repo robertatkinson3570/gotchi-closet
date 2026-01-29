@@ -317,11 +317,11 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
               <div className="font-semibold">{gotchi.experience ?? 0}</div>
             </div>
           </div>
-          {gotchi.escrow && parseFloat(gotchi.escrow) > 0 && (
+          {gotchi.stakedAmount && parseFloat(gotchi.stakedAmount) > 0 && (
             <div className="flex items-center justify-center gap-1.5 text-xs">
               <span className="text-muted-foreground">GHST Pocket:</span>
               <span className="font-medium text-yellow-500">
-                {(parseFloat(gotchi.escrow) / 1e18).toFixed(2)} GHST
+                {(parseFloat(gotchi.stakedAmount) / 1e18).toFixed(2)} GHST
               </span>
             </div>
           )}
