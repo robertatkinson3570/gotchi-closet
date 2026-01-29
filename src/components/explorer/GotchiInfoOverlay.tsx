@@ -3,16 +3,35 @@ import { Copy, Check, X } from "lucide-react";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 import wearablesData from "../../../data/wearables.json";
 
+type WearableData = {
+  id: number;
+  name: string;
+  traitModifiers: number[];
+  rarityScoreModifier: number;
+};
+
+const wearablesMap = new Map<number, WearableData>(
+  (wearablesData as WearableData[]).map((w) => [w.id, w])
+);
+
 function getWearableImageUrl(id: number): string {
   return `https://app.aavegotchi.com/images/items/${id}.svg`;
 }
 
-const wearableNameMap = new Map<number, string>(
-  (wearablesData as { id: number; name: string }[]).map((w) => [w.id, w.name])
-);
+function getWearable(id: number): WearableData | undefined {
+  return wearablesMap.get(id);
+}
 
-function getWearableName(id: number): string {
-  return wearableNameMap.get(id) || `#${id}`;
+const TRAIT_ABBR = ["NRG", "AGG", "SPK", "BRN"];
+
+function formatTraitMods(mods: number[]): string {
+  const parts: string[] = [];
+  mods.slice(0, 4).forEach((val, i) => {
+    if (val !== 0) {
+      parts.push(`${val > 0 ? "+" : ""}${val} ${TRAIT_ABBR[i]}`);
+    }
+  });
+  return parts.length > 0 ? parts.join(", ") : "—";
 }
 
 const COLLATERAL_NAMES: Record<string, string> = {
@@ -66,12 +85,13 @@ type Props = {
 
 export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
   const [copied, setCopied] = useState(false);
-  const [hoveredWearable, setHoveredWearable] = useState<number | null>(null);
 
-  const equippedWearables = gotchi.equippedWearables.filter((id) => id > 0);
+  const equippedWearableIds = gotchi.equippedWearables.filter((id) => id > 0);
+  const equippedWearables = equippedWearableIds.map((id) => getWearable(id)).filter(Boolean) as WearableData[];
   const collateralName = getCollateralName(gotchi.collateral);
   const owner = gotchi.owner || "";
   const age = formatAge(gotchi.createdAt);
+  const setName = gotchi.equippedSetName;
 
   const copyOwner = async () => {
     if (owner) {
@@ -100,32 +120,41 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
           {gotchi.name || "Unnamed"} Details
         </div>
 
+        {setName && (
+          <div className="bg-purple-500/10 border border-purple-500/20 rounded px-2 py-1 text-center">
+            <span className="text-[9px] text-muted-foreground">Set: </span>
+            <span className="text-[10px] font-medium text-purple-400">{setName}</span>
+          </div>
+        )}
+
         {equippedWearables.length > 0 && (
           <div>
             <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">
               Wearables ({equippedWearables.length})
             </div>
-            <div className="flex flex-wrap gap-1 justify-center">
-              {equippedWearables.map((id, idx) => (
+            <div className="space-y-1">
+              {equippedWearables.map((w, idx) => (
                 <div 
                   key={idx}
-                  className="relative"
-                  onMouseEnter={() => setHoveredWearable(id)}
-                  onMouseLeave={() => setHoveredWearable(null)}
+                  className="flex items-center gap-2 bg-muted/20 rounded p-1"
                 >
                   <img
-                    src={getWearableImageUrl(id)}
-                    alt={getWearableName(id)}
-                    className="w-8 h-8 rounded bg-muted/30 p-0.5 hover:bg-muted/50 transition-colors"
+                    src={getWearableImageUrl(w.id)}
+                    alt={w.name}
+                    className="w-6 h-6 rounded bg-muted/30 shrink-0"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
                   />
-                  {hoveredWearable === id && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-foreground text-background text-[8px] rounded whitespace-nowrap z-10 shadow-lg">
-                      {getWearableName(id)}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[9px] font-medium truncate">{w.name}</div>
+                    <div className="text-[8px] text-muted-foreground">
+                      {formatTraitMods(w.traitModifiers)}
+                      {w.rarityScoreModifier > 0 && (
+                        <span className="text-primary ml-1">+{w.rarityScoreModifier} BRS</span>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               ))}
             </div>
