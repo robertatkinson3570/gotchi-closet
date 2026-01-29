@@ -40,6 +40,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   const wearableCount = gotchi.equippedWearables.filter((w) => w > 0).length;
   const [imageHovered, setImageHovered] = useState(false);
   const [infoHovered, setInfoHovered] = useState(false);
+  const [eyeBadgeHovered, setEyeBadgeHovered] = useState(false);
   const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const infoRef = useRef<HTMLDivElement>(null);
@@ -83,12 +84,18 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
     }
   };
 
+  const eyeExplainText = eyeRarities?.combo 
+    ? eyeRarities.combo === 1 
+      ? "Unique eye combo in this haunt!" 
+      : `Only ${eyeRarities.combo} gotchis in H${gotchi.hauntId} share this eye combo`
+    : null;
+
   return (
     <div
-      className={`cursor-pointer rounded-lg border ${colors.border} ${colors.bg} hover:ring-1 hover:ring-primary/40 transition-all duration-150 overflow-hidden active:scale-[0.98] relative`}
+      className={`rounded-lg border ${colors.border} ${colors.bg} hover:ring-1 hover:ring-primary/40 transition-all duration-150 active:scale-[0.98] relative`}
     >
       <div 
-        className="relative aspect-square flex items-center justify-center bg-gradient-to-b from-transparent to-background/20"
+        className="relative aspect-square flex items-center justify-center bg-gradient-to-b from-transparent to-background/20 overflow-hidden rounded-t-lg"
         onMouseEnter={() => setImageHovered(true)}
         onMouseLeave={() => setImageHovered(false)}
       >
@@ -117,14 +124,21 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
         
         {comboRarityText && (
           <div
-            className={`absolute bottom-0.5 right-0.5 text-[9px] px-1 py-0.5 rounded flex items-center gap-0.5 ${
+            className={`absolute bottom-0.5 right-0.5 text-[9px] px-1 py-0.5 rounded flex items-center gap-0.5 cursor-help ${
               isUnique 
                 ? "bg-pink-500 text-white font-semibold" 
                 : "bg-background/80 text-muted-foreground"
             }`}
+            onMouseEnter={() => setEyeBadgeHovered(true)}
+            onMouseLeave={() => setEyeBadgeHovered(false)}
           >
             <span className="opacity-70">👁</span>
             <span>{comboRarityText}</span>
+            {eyeBadgeHovered && eyeExplainText && (
+              <div className="absolute bottom-full right-0 mb-1 px-2 py-1 bg-foreground text-background text-[9px] rounded whitespace-nowrap z-20 shadow-lg">
+                {eyeExplainText}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -142,6 +156,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
             <button
               onClick={handleInfoClick}
               className="md:hidden p-0.5 rounded hover:bg-muted/50 transition-colors"
+              title="Show details"
             >
               <Info className="w-3 h-3 text-muted-foreground" />
             </button>
@@ -151,9 +166,20 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
         <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
           <span className="bg-muted/50 px-1 rounded">H{gotchi.hauntId}</span>
           {eyeRarities?.combo && eyeRarities.combo <= 10 && (
-            <span className="bg-purple-500/20 text-purple-400 px-1 rounded font-medium">
-              {eyeRarities.combo === 1 ? "UNIQUE" : `${eyeRarities.combo}X`} 👁
-            </span>
+            <div 
+              className="relative"
+              onMouseEnter={() => setEyeBadgeHovered(true)}
+              onMouseLeave={() => setEyeBadgeHovered(false)}
+            >
+              <span className="bg-purple-500/20 text-purple-400 px-1 rounded font-medium cursor-help">
+                {eyeRarities.combo === 1 ? "UNIQUE" : `${eyeRarities.combo}X`} 👁
+              </span>
+              {eyeBadgeHovered && eyeExplainText && (
+                <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-foreground text-background text-[9px] rounded whitespace-nowrap z-20 shadow-lg">
+                  {eyeExplainText}
+                </div>
+              )}
+            </div>
           )}
         </div>
 
