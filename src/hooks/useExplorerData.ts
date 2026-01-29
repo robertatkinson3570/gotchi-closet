@@ -1,10 +1,29 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useClient } from "urql";
 import { gql } from "urql";
-import type { DataMode, ExplorerGotchi, ExplorerFilters, ExplorerSort } from "@/lib/explorer/types";
+import type { DataMode, ExplorerGotchi, ExplorerFilters, ExplorerSort, SortField } from "@/lib/explorer/types";
 import { defaultFilters } from "@/lib/explorer/types";
 import { applyFilters } from "@/lib/explorer/filters";
 import { applySorts } from "@/lib/explorer/sorts";
+
+function getSubgraphOrderBy(field: SortField): string {
+  switch (field) {
+    case "rarity":
+      return "withSetsRarityScore";
+    case "level":
+      return "level";
+    case "kinship":
+      return "kinship";
+    case "xp":
+      return "experience";
+    case "tokenId":
+      return "gotchiId";
+    case "price":
+      return "gotchiId";
+    default:
+      return "withSetsRarityScore";
+  }
+}
 
 const GOTCHIS_PAGINATED = gql`
   query GotchisPaginated($first: Int!, $skip: Int!, $orderBy: String!, $orderDirection: String!) {
@@ -80,7 +99,7 @@ const BAAZAAR_SUBGRAPH_URL =
   "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn";
 
 const BAAZAAR_GOTCHI_LISTINGS_QUERY = `
-  query BaazaarGotchiListings($first: Int!, $skip: Int!) {
+  query BaazaarGotchiListings($first: Int!, $skip: Int!, $orderDirection: String!) {
     erc721Listings(
       first: $first
       skip: $skip
@@ -90,7 +109,7 @@ const BAAZAAR_GOTCHI_LISTINGS_QUERY = `
         timePurchased: "0"
       }
       orderBy: priceInWei
-      orderDirection: asc
+      orderDirection: $orderDirection
     ) {
       id
       tokenId
@@ -273,29 +292,14 @@ export function useExplorerData(
         const gotchisWithListings = applyListingsToGotchis(rawGotchis.map(transformGotchi));
         setGotchis(gotchisWithListings);
         setHasMore(false);
-      } else if (mode === "all") {
-        const result = await client.query(GOTCHIS_PAGINATED, {
-          first: batchSize,
-          skip: 0,
-          orderBy: sort.field === "rarity" ? "withSetsRarityScore" : "gotchiId",
-          orderDirection: sort.direction,
-        }).toPromise();
-
-        if (result.error) {
-          throw new Error(result.error.message);
-        }
-
-        const rawGotchis = result.data?.aavegotchis || [];
-        const gotchisWithListings = applyListingsToGotchis(rawGotchis.map(transformGotchi));
-        setGotchis(gotchisWithListings);
-        setHasMore(rawGotchis.length >= batchSize);
-      } else if (mode === "baazaar") {
+      } else if (mode === "baazaar" || sort.field === "price") {
+        const priceDirection = sort.field === "price" ? sort.direction : "asc";
         const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             query: BAAZAAR_GOTCHI_LISTINGS_QUERY,
-            variables: { first: batchSize, skip: 0 },
+            variables: { first: batchSize, skip: 0, orderDirection: priceDirection },
           }),
         });
 
@@ -322,6 +326,22 @@ export function useExplorerData(
           });
         setGotchis(gotchisWithListings);
         setHasMore(listings.length >= batchSize);
+      } else if (mode === "all") {
+        const result = await client.query(GOTCHIS_PAGINATED, {
+          first: batchSize,
+          skip: 0,
+          orderBy: getSubgraphOrderBy(sort.field),
+          orderDirection: sort.direction,
+        }).toPromise();
+
+        if (result.error) {
+          throw new Error(result.error.message);
+        }
+
+        const rawGotchis = result.data?.aavegotchis || [];
+        const gotchisWithListings = applyListingsToGotchis(rawGotchis.map(transformGotchi));
+        setGotchis(gotchisWithListings);
+        setHasMore(rawGotchis.length >= batchSize);
       } else {
         setGotchis([]);
         setHasMore(false);
@@ -334,25 +354,62 @@ export function useExplorerData(
   }, [client, mode, effectiveOwner, batchSize, sort]);
 
   const loadMore = useCallback(async () => {
-    if (loading || !hasMore || mode !== "all") return;
+    if (loading || !hasMore) return;
+    if (mode !== "all" && mode !== "baazaar" && sort.field !== "price") return;
 
     setLoading(true);
     try {
-      const result = await client.query(GOTCHIS_PAGINATED, {
-        first: batchSize,
-        skip: gotchis.length,
-        orderBy: sort.field === "rarity" ? "withSetsRarityScore" : "gotchiId",
-        orderDirection: sort.direction,
-      }).toPromise();
+      if (sort.field === "price" || mode === "baazaar") {
+        const priceDirection = sort.field === "price" ? sort.direction : "asc";
+        const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: BAAZAAR_GOTCHI_LISTINGS_QUERY,
+            variables: { first: batchSize, skip: gotchis.length, orderDirection: priceDirection },
+          }),
+        });
 
-      if (result.error) {
-        throw new Error(result.error.message);
+        if (!response.ok) {
+          throw new Error(`Baazaar request failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.errors) {
+          throw new Error(data.errors[0]?.message || "GraphQL error");
+        }
+
+        const listings = data.data?.erc721Listings || [];
+        const newGotchis = listings
+          .filter((l: any) => l.gotchi)
+          .map((l: any) => {
+            const g = transformGotchi(l.gotchi);
+            g.listing = {
+              id: l.id,
+              priceInWei: l.priceInWei,
+              seller: l.seller,
+            };
+            return g;
+          });
+        setGotchis((prev) => [...prev, ...newGotchis]);
+        setHasMore(listings.length >= batchSize);
+      } else {
+        const result = await client.query(GOTCHIS_PAGINATED, {
+          first: batchSize,
+          skip: gotchis.length,
+          orderBy: getSubgraphOrderBy(sort.field),
+          orderDirection: sort.direction,
+        }).toPromise();
+
+        if (result.error) {
+          throw new Error(result.error.message);
+        }
+
+        const rawGotchis = result.data?.aavegotchis || [];
+        const newGotchis = applyListingsToGotchis(rawGotchis.map(transformGotchi));
+        setGotchis((prev) => [...prev, ...newGotchis]);
+        setHasMore(rawGotchis.length >= batchSize);
       }
-
-      const rawGotchis = result.data?.aavegotchis || [];
-      const newGotchis = applyListingsToGotchis(rawGotchis.map(transformGotchi));
-      setGotchis((prev) => [...prev, ...newGotchis]);
-      setHasMore(rawGotchis.length >= batchSize);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load more");
     } finally {
