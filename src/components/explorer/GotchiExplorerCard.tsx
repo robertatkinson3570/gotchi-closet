@@ -182,7 +182,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
           <span className="text-[10px] font-bold text-primary">{gotchi.withSetsRarityScore}</span>
         </div>
 
-        <div className="flex items-center gap-2 text-[9px] text-muted-foreground mb-1.5">
+        <div className="flex items-center gap-2 text-[9px] text-muted-foreground mb-1">
           <span>Lv.{gotchi.level}</span>
           {gotchi.kinship !== undefined && <span>❤️{gotchi.kinship}</span>}
           {gotchi.listing && (
@@ -191,6 +191,11 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
             </span>
           )}
         </div>
+        {gotchi.equippedSetName && (
+          <div className="text-[9px] text-purple-400 mb-1 truncate">
+            Set: {gotchi.equippedSetName}
+          </div>
+        )}
 
         <div className="space-y-0.5">
           {traits.slice(0, 4).map((val, i) => (
