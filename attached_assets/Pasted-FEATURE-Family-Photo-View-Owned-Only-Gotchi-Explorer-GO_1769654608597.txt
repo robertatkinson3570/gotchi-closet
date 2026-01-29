@@ -1,0 +1,148 @@
+FEATURE: “Family Photo” View (Owned-Only) — Gotchi Explorer
+
+GOAL
+Add a new Explorer view mode called “Family Photo” that provides a dense, roster-style overview of a user’s OWNED Gotchis only. This view is designed for fast scanning, comparison, and sharing (a “contact sheet” or “yearbook” for your wallet).
+
+This view must feel sleek, professional, and intentional — not gimmicky. Styling should match GotchiCloset’s existing aesthetic: crisp typography, tight spacing, muted colors, and subtle accents.
+
+This is a VIEW MODE only. It reuses existing Explorer data, filters, and sorts.
+
+AVAILABILITY RULE (IMPORTANT)
+- The “Family Photo” view option must ONLY be available when:
+  - Explorer mode = “Mine / Owned”
+- If mode is:
+  - All
+  - Baazaar
+  - Auction
+  → Family Photo option must be hidden (not disabled).
+- If user switches away from Mine while Family Photo is active:
+  - Automatically revert to default “Cards” view.
+
+VIEW MODE TOGGLE
+- View selector located near Sort controls.
+- Options:
+  - Cards
+  - Dense (if present)
+  - Family Photo (Owned-only)
+- Remember last selected view per mode in localStorage.
+
+FAMILY PHOTO — DEFAULT PRESENTATION
+- Default: **tiny gotchi thumbnails + name + rarity**
+- Default sort when entering Family Photo:
+  - Rarity score DESC
+- Designed to show as many Gotchis as possible without looking cluttered.
+
+FAMILY PHOTO — LAYOUT & DENSITY
+DESKTOP:
+- 8–12 items per row depending on viewport
+- Tight, uniform grid (contact-sheet style)
+- No card borders, no heavy shadows
+- Subtle hover highlight only (background tint or underline)
+
+MOBILE:
+- 3–5 items per row
+- Touch-friendly spacing
+- Sticky top bar for View + Sort
+- No hover-only interactions
+
+Each Family Photo tile includes:
+- Tiny gotchi image (transparent SVG, no border or card frame)
+- Gotchi name (single line, ellipsis)
+- Rarity score (small, numeric, secondary color)
+
+Optional micro-icons (icons only, no text):
+- Listed on Baazaar
+- In Auction
+- Full set equipped
+
+No additional stats are shown by default in this view.
+
+TEXT-ONLY TOGGLE (WITHIN FAMILY PHOTO)
+- Inside Family Photo view only, add a minimal toggle:
+  - “Thumbnails” (default ON)
+  - “Text-only”
+- Styling:
+  - Small icon toggle (no large labels)
+  - Subtle, professional (not playful)
+
+Text-only mode behavior:
+- Hide gotchi images entirely
+- Show:
+  - Name
+  - Token ID (small)
+  - Rarity score
+- Increase density further (more items per row)
+- Grid layout (NOT a table)
+
+INTERACTIONS
+DESKTOP:
+- Click tile → open Gotchi Detail Drawer
+- Right-click → quick actions menu
+
+MOBILE:
+- Tap tile → open Gotchi Detail Drawer
+- Long-press → quick actions menu
+
+Quick actions:
+- Add to Dress selector
+- Open in Dress
+- Copy token ID
+
+FILTERS & SORTS
+- Family Photo must respect ALL active Explorer filters and sorts.
+- Filters remain accessible via the collapsible filter sidebar.
+- Sorting updates Family Photo instantly.
+- No navigation or reloads.
+
+PERFORMANCE REQUIREMENTS
+- Must be extremely fast for large wallets.
+- Use existing virtualization/windowing strategy.
+- Reuse cached gotchi preview data.
+- Do NOT refetch SVGs.
+- Text-only mode must avoid rendering images entirely.
+
+STYLING & AESTHETICS (IMPORTANT)
+- Match GotchiCloset’s existing:
+  - font family
+  - color palette
+  - spacing rhythm
+- Visual goals:
+  - clean
+  - modern
+  - confident
+  - understated
+- Avoid:
+  - playful gimmicks
+  - loud colors
+  - heavy borders
+  - excessive animations
+- Animations (if any):
+  - subtle fade/translate on mount
+  - respect prefers-reduced-motion
+
+ACCESSIBILITY
+- Keyboard navigable on desktop
+- Adequate tap targets on mobile
+- Truncated names reveal full value on tooltip (desktop) or long-press (mobile)
+
+FILES / STRUCTURE
+- Update ExplorerGrid to support Family Photo view OR add:
+  - FamilyPhotoGrid.tsx
+  - FamilyPhotoItem.tsx
+- Reuse:
+  - existing Explorer data hooks
+  - existing filters/sorts
+  - existing Gotchi Detail Drawer
+
+NON-NEGOTIABLES
+- Family Photo is OWNED-ONLY.
+- Must not appear in All / Baazaar / Auction modes.
+- Must not affect Card or Dense views.
+- No new data fetching.
+- No battler or combat-related info.
+
+SUCCESS CRITERIA
+- Users can view their entire wallet at a glance.
+- Family Photo looks intentional, premium, and polished.
+- Switching modes never leaves the UI in a broken state.
+- Mobile experience is as good as desktop.
