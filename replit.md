@@ -49,6 +49,7 @@ See `.env.example` for required environment variables:
 - 2026-01-29: Explorer page UAT - comprehensive filter/sort verification and cleanup
   - Added rarity tier filter checkboxes (Godlike, Mythical, Legendary, Rare, Uncommon, Common) with color coding
   - Added XP sort option to sortOptions (was defined but not exposed)
+  - Fixed Equipped Set filter to show all 165 wearable sets (from setsByTraitDirection.json) instead of only sets on loaded gotchis
   - Removed unused filter types: eyeShapes, eyeColors, hasSet, owner (cleanup)
   - Removed unused ghst sort field from types
   - Removed unused ChevronUp import from ExplorerFilters

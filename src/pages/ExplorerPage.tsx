@@ -10,6 +10,7 @@ import type { DataMode, ExplorerGotchi, ExplorerFilters as FiltersType } from "@
 import { defaultFilters } from "@/lib/explorer/types";
 import { getActiveFilterCount } from "@/lib/explorer/filters";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import setsData from "../../data/setsByTraitDirection.json";
 
 export default function ExplorerPage() {
   const { connectedAddress, isConnected } = useAddressState();
@@ -44,12 +45,8 @@ export default function ExplorerPage() {
   }, [gotchis, search]);
 
   const availableSets = useMemo(() => {
-    const sets = new Set<string>();
-    gotchis.forEach((g) => {
-      if (g.equippedSetName) sets.add(g.equippedSetName);
-    });
-    return Array.from(sets).sort();
-  }, [gotchis]);
+    return setsData.sets.map((s) => s.name).sort();
+  }, []);
 
   const filterCount = getActiveFilterCount(filters);
 
