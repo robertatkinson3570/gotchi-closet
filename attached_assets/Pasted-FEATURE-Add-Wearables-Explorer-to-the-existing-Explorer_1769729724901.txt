@@ -1,0 +1,173 @@
+FEATURE: Add “Wearables Explorer” to the existing Explorer page (multi-asset Explorer)
+
+GOAL
+Extend the existing Gotchi Explorer into a multi-asset Explorer by adding support for browsing Wearables. The Gotchi Explorer must remain unchanged in behavior and layout. Wearables are a new asset type, accessed via a tab or toggle, and displayed using the same Explorer-style UX (filters, sorts, dense grid, no navigation away).
+
+This is NOT the Dress page.
+This is NOT a modal.
+This is a parallel Explorer view for Wearables.
+
+HIGH-LEVEL UX
+- Explorer page gains an asset selector:
+  - Gotchis
+  - Wearables
+- Switching assets swaps the Explorer content while keeping:
+  - top search
+  - mode toggles (All / Owned / Baazaar)
+  - filter sidebar
+  - grid layout philosophy
+
+Asset selection must be instant and not reload the page.
+
+ASSET MODES (REUSED)
+Wearables Explorer supports the same modes:
+- All
+- Owned
+- Baazaar
+
+Behavior:
+- All: all wearables in collection
+- Owned: wearables owned by connected wallet or entered address
+- Baazaar: wearables currently listed for sale
+
+Auction mode is NOT required for wearables at this stage.
+
+SEARCH
+- Search by wearable name
+- Search by wearable ID
+- Case-insensitive
+- Live filtering
+
+WEARABLE DATA SOURCE
+- Reuse the wearable data and rendering logic already used in the Dress page.
+- Do NOT duplicate wearable SVG rendering logic.
+- Do NOT change Dress page behavior.
+- Lift shared logic into reusable components if needed.
+
+WEARABLE GRID (EXPLORER STYLE)
+- Dense, scrollable grid similar to Gotchi Explorer (not the Dress selector layout).
+- Cards are compact, uniform, and scannable.
+- Show many wearables per screen.
+
+Each wearable card should show:
+- Wearable image (same asset as Dress page)
+- Wearable name
+- Wearable slot (Head, Face, Body, Hands, etc.)
+- Trait modifiers (NRG / AGG / SPK / BRN deltas, numeric only)
+- Quantity owned (Owned mode)
+- Price (Baazaar mode only)
+
+NO large descriptions.
+NO sliders.
+NO progress bars.
+
+FILTER SIDEBAR (LEFT, COLLAPSIBLE, SAME PATTERN AS GOTCHI EXPLORER)
+
+REQUIRED WEARABLE FILTERS
+
+CORE
+- Slot (multi-select):
+  - Head
+  - Face
+  - Body
+  - Hands
+  - Eyes
+  - Other (if applicable)
+- Rarity tier (Common → Godlike)
+- Set:
+  - Any set
+  - Specific set name
+
+TRAIT MODIFIERS
+- NRG delta min / max
+- AGG delta min / max
+- SPK delta min / max
+- BRN delta min / max
+- Has positive modifiers only
+- Has negative modifiers only
+
+OWNERSHIP / MARKET
+- Quantity owned min / max
+- Listed only (Baazaar)
+- Price min / max (GHST)
+- Cheapest listing only (optional toggle)
+
+QUALITY / META
+- Has set bonus
+- Part of full set
+- Visual-only (no trait mods)
+- Stat-modifying only
+
+FILTER UX RULES
+- Same collapsible accordion sidebar as Gotchi Explorer
+- Active filters shown as removable chips
+- Clear all button
+- Filters update grid live
+
+SORTING (TOP BAR)
+
+All modes:
+- Name A–Z / Z–A
+- Slot
+- Rarity tier
+- Total stat impact (sum of deltas)
+
+Owned mode:
+- Quantity owned ↑ ↓
+
+Baazaar mode:
+- Price ↑ ↓
+- Cheapest first
+- Rarity per GHST (optional)
+
+LAYOUT RULES
+- Keep the same Explorer layout:
+  - search + asset toggle at top
+  - mode toggle (All / Owned / Baazaar)
+  - left filter sidebar
+  - main grid
+- Do NOT copy Dress page layout positioning.
+- Explorer layout > Dress layout.
+
+INTERACTIONS
+- Hover (desktop):
+  - Show slightly expanded wearable info (trait deltas)
+- Click:
+  - Optional mini info overlay or drawer (lightweight)
+- No heavy detail panels required for v1.
+
+MOBILE REQUIREMENTS
+- Asset toggle becomes segmented control
+- Filters open as bottom sheet
+- Grid adapts to 2–4 items per row
+- Touch-friendly cards
+- No hover-only required info
+
+FILES / STRUCTURE
+- Extend existing Explorer page to support assetType:
+  - "gotchi"
+  - "wearable"
+- Suggested components:
+  - ExplorerAssetToggle.tsx
+  - WearableExplorerGrid.tsx
+  - WearableExplorerCard.tsx
+  - useWearableExplorerData.ts
+- Reuse:
+  - Dress wearable renderer
+  - Existing Explorer filter/sort infrastructure
+
+NON-NEGOTIABLES
+- Gotchi Explorer behavior must remain unchanged.
+- No changes to Dress page logic.
+- No duplication of wearable rendering code.
+- Wearables must feel like a first-class Explorer asset, not a copy-paste.
+
+SUCCESS CRITERIA
+- User can switch between Gotchis and Wearables instantly.
+- Wearables can be browsed, filtered, and sorted like Gotchis.
+- Owned vs Baazaar modes work cleanly.
+- UI feels cohesive and intentional.
+- Mobile experience is solid.
+
+DELIVERABLE
+Add Wearables as a new asset type in the Explorer page, using Explorer-grade filters, sorting, and layout, while reusing Dress page wearable rendering.

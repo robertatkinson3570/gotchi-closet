@@ -46,6 +46,24 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-29: Added Wearables Explorer to Explorer page (multi-asset browsing)
+  - Asset toggle (Gotchis/Wearables) in top bar for instant switching
+  - Wearable cards show: image, name, rarity, slot, trait modifiers, BRS
+  - Rarity-colored backgrounds (Godlike=cyan, Mythical=pink, etc.)
+  - Wearable filters: Slot, Rarity tier, Sets, Trait modifiers (NRG/AGG/SPK/BRN min/max)
+  - Filter options: positive mods only, negative mods only, has set bonus, stat-modifying only, visual-only
+  - Wearable sorts: Name, ID, Rarity, Slot, Total Stats, Quantity (Owned mode), Price (Baazaar mode)
+  - Supports All/Owned/Baazaar modes like Gotchi Explorer
+  - Owned mode shows quantity badges, Baazaar mode shows GHST prices
+  - Dense responsive grid (3-10 columns based on viewport)
+  - Infinite scroll with lazy loading
+  - Located in src/components/explorer/WearableExplorerCard.tsx, WearableExplorerGrid.tsx, WearableExplorerFilters.tsx
+  - Data hook: src/hooks/useWearableExplorerData.ts
+  - Types: src/lib/explorer/wearableTypes.ts
+- 2026-01-29: Improved GotchiInfoOverlay with vertical stacking
+  - Labels (Collateral, Owner, Age, XP) on separate lines from values
+  - Prevents horizontal scrolling in info area
+  - Purple accent labels for better readability
 - 2026-01-29: Added "Take a Picture" feature for Family Photo view
   - Button appears only in Mine mode + Family Photo view
   - Playful countdown: "Say Cheese! 🧀" → 3…2…1 → flash → PNG download

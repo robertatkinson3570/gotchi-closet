@@ -5,9 +5,11 @@ import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Search, X, ArrowUpDown, Shirt, FlaskConical, LayoutGrid, Users, ChevronDown, Check } from "lucide-react";
 import type { DataMode, ExplorerSort } from "@/lib/explorer/types";
+import type { AssetType, WearableSort, WearableSortField } from "@/lib/explorer/wearableTypes";
 import { sortOptions, getSortLabel } from "@/lib/explorer/sorts";
 import { shortenAddress } from "@/lib/address";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
+import { ExplorerAssetToggle } from "./ExplorerAssetToggle";
 import type { ViewMode } from "@/pages/ExplorerPage";
 
 type Props = {
@@ -22,7 +24,32 @@ type Props = {
   isConnected?: boolean;
   viewMode: ViewMode;
   onViewModeChange: (v: ViewMode) => void;
+  assetType?: AssetType;
+  onAssetTypeChange?: (type: AssetType) => void;
+  wearableSort?: WearableSort;
+  onWearableSortChange?: (s: WearableSort) => void;
 };
+
+type WearableSortOption = {
+  label: string;
+  value: { field: WearableSortField; direction: "asc" | "desc" };
+  category: "core" | "owned" | "market";
+};
+
+const wearableSortOptions: WearableSortOption[] = [
+  { label: "Name A–Z", value: { field: "name", direction: "asc" }, category: "core" },
+  { label: "Name Z–A", value: { field: "name", direction: "desc" }, category: "core" },
+  { label: "ID ↑", value: { field: "id", direction: "asc" }, category: "core" },
+  { label: "ID ↓", value: { field: "id", direction: "desc" }, category: "core" },
+  { label: "Rarity ↓", value: { field: "rarity", direction: "desc" }, category: "core" },
+  { label: "Rarity ↑", value: { field: "rarity", direction: "asc" }, category: "core" },
+  { label: "Slot", value: { field: "slot", direction: "asc" }, category: "core" },
+  { label: "Total Stats ↓", value: { field: "totalStats", direction: "desc" }, category: "core" },
+  { label: "Quantity ↓", value: { field: "quantity", direction: "desc" }, category: "owned" },
+  { label: "Quantity ↑", value: { field: "quantity", direction: "asc" }, category: "owned" },
+  { label: "Price ↑ (Cheapest)", value: { field: "price", direction: "asc" }, category: "market" },
+  { label: "Price ↓", value: { field: "price", direction: "desc" }, category: "market" },
+];
 
 const modes: { value: DataMode; label: string }[] = [
   { value: "all", label: "All" },
@@ -42,6 +69,10 @@ export function ExplorerTopBar({
   isConnected,
   viewMode,
   onViewModeChange,
+  assetType = "gotchi",
+  onAssetTypeChange,
+  wearableSort,
+  onWearableSortChange,
 }: Props) {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -103,6 +134,10 @@ export function ExplorerTopBar({
       </div>
       <div className="flex flex-col gap-2 p-2 md:p-3">
         <div className="flex items-center gap-2 overflow-x-auto md:overflow-visible pb-1 md:pb-0 scrollbar-none">
+          {onAssetTypeChange && (
+            <ExplorerAssetToggle value={assetType} onChange={onAssetTypeChange} />
+          )}
+
           <div className="flex border rounded-lg overflow-hidden shrink-0">
             {modes.map((m) => (
               <button
@@ -146,11 +181,15 @@ export function ExplorerTopBar({
                 onClick={() => setSortOpen(!sortOpen)}
                 className="h-8 px-3 text-xs bg-background border rounded-lg flex items-center gap-2 hover:bg-muted/50 transition-colors min-w-[140px] justify-between"
               >
-                <span className="truncate">{sortLabel}</span>
+                <span className="truncate">
+                  {assetType === "wearable" && wearableSort
+                    ? wearableSortOptions.find((o) => o.value.field === wearableSort.field && o.value.direction === wearableSort.direction)?.label || "Sort"
+                    : sortLabel}
+                </span>
                 <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${sortOpen ? "rotate-180" : ""}`} />
               </button>
               
-              {sortOpen && (
+              {sortOpen && assetType === "gotchi" && (
                 <div className="absolute top-full mt-1 right-0 w-56 bg-background/95 backdrop-blur-lg border rounded-xl shadow-xl z-50 py-1 max-h-[70vh] overflow-y-auto">
                   <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Stats</div>
                   {statsOptions.map((opt) => {
@@ -199,6 +238,66 @@ export function ExplorerTopBar({
                       </button>
                     );
                   })}
+                </div>
+              )}
+
+              {sortOpen && assetType === "wearable" && wearableSort && onWearableSortChange && (
+                <div className="absolute top-full mt-1 right-0 w-56 bg-background/95 backdrop-blur-lg border rounded-xl shadow-xl z-50 py-1 max-h-[70vh] overflow-y-auto">
+                  <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Core</div>
+                  {wearableSortOptions.filter((o) => o.category === "core").map((opt) => {
+                    const key = `${opt.value.field}:${opt.value.direction}`;
+                    const isActive = wearableSort.field === opt.value.field && wearableSort.direction === opt.value.direction;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => { onWearableSortChange(opt.value); setSortOpen(false); }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${isActive ? "bg-primary/10 text-primary" : ""}`}
+                      >
+                        <span>{opt.label}</span>
+                        {isActive && <Check className="h-3.5 w-3.5" />}
+                      </button>
+                    );
+                  })}
+                  
+                  {mode === "mine" && (
+                    <>
+                      <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium border-t mt-1 pt-2">Owned</div>
+                      {wearableSortOptions.filter((o) => o.category === "owned").map((opt) => {
+                        const key = `${opt.value.field}:${opt.value.direction}`;
+                        const isActive = wearableSort.field === opt.value.field && wearableSort.direction === opt.value.direction;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => { onWearableSortChange(opt.value); setSortOpen(false); }}
+                            className={`w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${isActive ? "bg-primary/10 text-primary" : ""}`}
+                          >
+                            <span>{opt.label}</span>
+                            {isActive && <Check className="h-3.5 w-3.5" />}
+                          </button>
+                        );
+                      })}
+                    </>
+                  )}
+
+                  {mode === "baazaar" && (
+                    <>
+                      <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium border-t mt-1 pt-2">Market</div>
+                      {wearableSortOptions.filter((o) => o.category === "market").map((opt) => {
+                        const key = `${opt.value.field}:${opt.value.direction}`;
+                        const isActive = wearableSort.field === opt.value.field && wearableSort.direction === opt.value.direction;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => { onWearableSortChange(opt.value); setSortOpen(false); }}
+                            className={`w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${isActive ? "bg-primary/10 text-primary" : ""}`}
+                          >
+                            <span>{opt.label}</span>
+                            {isActive && <Check className="h-3.5 w-3.5" />}
+                          </button>
+                        );
+                      })}
+                    </>
+                  )}
                 </div>
               )}
             </div>
