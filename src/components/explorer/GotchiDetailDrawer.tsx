@@ -1,15 +1,24 @@
 import { useState } from "react";
 import { Button } from "@/ui/button";
-import { X, ChevronDown, Copy, Check } from "lucide-react";
+import { X, Copy, Check, ChevronDown } from "lucide-react";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { getRarityTier } from "@/lib/explorer/filters";
 import { extractEyeData, getEyeShapeName, getEyeColorName } from "@/lib/explorer/traitFrequency";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
+import wearablesData from "../../../data/wearables.json";
 
 const NAKED_WEARABLES = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 function getWearableImageUrl(id: number): string {
   return `https://app.aavegotchi.com/images/items/${id}.svg`;
+}
+
+const wearableNameMap = new Map<number, string>(
+  (wearablesData as { id: number; name: string }[]).map((w) => [w.id, w.name])
+);
+
+function getWearableName(id: number): string {
+  return wearableNameMap.get(id) || `#${id}`;
 }
 
 const COLLATERAL_NAMES: Record<string, string> = {
@@ -42,57 +51,21 @@ type Props = {
 };
 
 const TRAIT_NAMES = ["NRG", "AGG", "SPK", "BRN"];
-const TRAIT_LABELS = ["Energy", "Aggression", "Spookiness", "Brain Size"];
 
-const ENERGY_NAMES: Record<string, string> = {
-  low: "Zen", mid: "Calm", high: "Energetic", extreme_low: "Serene", extreme_high: "Hyper"
-};
-const AGG_NAMES: Record<string, string> = {
-  low: "Peaceful", mid: "Neutral", high: "Aggressive", extreme_low: "Tranquil", extreme_high: "Hostile"  
-};
-const SPK_NAMES: Record<string, string> = {
-  low: "Cuddly", mid: "Spooky", high: "Ghastly", extreme_low: "Adorable", extreme_high: "Terrifying"
-};
-const BRN_NAMES: Record<string, string> = {
-  low: "Smooth", mid: "Average", high: "Galaxy", extreme_low: "Simple", extreme_high: "Genius"
-};
-
-function getTraitPersonality(value: number, traitIndex: number): string {
-  const names = [ENERGY_NAMES, AGG_NAMES, SPK_NAMES, BRN_NAMES][traitIndex];
-  if (!names) return "";
-  if (value <= 10) return names.extreme_low;
-  if (value >= 90) return names.extreme_high;
-  if (value < 40) return names.low;
-  if (value > 60) return names.high;
-  return names.mid;
-}
-
-function getXpToNextLevel(level: number, currentXp: number): number {
-  const xpRequired = level * level * 50;
-  return Math.max(0, xpRequired - currentXp);
-}
-
-function formatAge(createdAtBlock: number | undefined): { age: string; bonus: number } {
-  if (!createdAtBlock) return { age: "Unknown", bonus: 0 };
+function formatAge(createdAtBlock: number | undefined): { age: string } {
+  if (!createdAtBlock) return { age: "Unknown" };
   const now = Math.floor(Date.now() / 1000);
   const ageSeconds = now - createdAtBlock;
   const ageDays = Math.floor(ageSeconds / 86400);
   
   let ageLabel = "";
-  let bonus = 0;
+  if (ageDays >= 730) ageLabel = "AANCIENT";
+  else if (ageDays >= 365) ageLabel = "ANCIENT";
+  else if (ageDays >= 180) ageLabel = "OLDE";
+  else if (ageDays >= 90) ageLabel = "YOUNG";
+  else ageLabel = "NEWBORN";
   
-  if (ageDays >= 730) { ageLabel = "AANCIENT"; bonus = 9; }
-  else if (ageDays >= 365) { ageLabel = "ANCIENT"; bonus = 6; }
-  else if (ageDays >= 180) { ageLabel = "OLDE"; bonus = 3; }
-  else if (ageDays >= 90) { ageLabel = "YOUNG"; bonus = 1; }
-  else { ageLabel = "NEWBORN"; bonus = 0; }
-  
-  return { age: `${ageLabel} (~${ageDays}d)`, bonus };
-}
-
-function formatGhstBalance(escrow: string | undefined): string {
-  if (!escrow) return "0.00";
-  return "0.00";
+  return { age: `${ageLabel} (~${ageDays}d)` };
 }
 
 function Section({
@@ -123,15 +96,6 @@ function Section({
       <div className={`overflow-hidden transition-all duration-200 ${open ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
         <div className="px-5 pb-4">{children}</div>
       </div>
-    </div>
-  );
-}
-
-function StatRow({ label, value, highlight }: { label: string; value: string | number; highlight?: boolean }) {
-  return (
-    <div className="flex items-center justify-between py-1.5 border-b border-border/20 last:border-0">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={`text-sm font-medium ${highlight ? "text-primary" : "text-foreground"}`}>{value}</span>
     </div>
   );
 }
@@ -192,31 +156,37 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
     common: "from-gray-500/30 to-gray-500/5 border-gray-500/30",
   };
 
+  const copyOwner = () => {
+    navigator.clipboard.writeText(gotchi.owner);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 md:inset-auto md:right-0 md:top-0 md:bottom-0 md:w-[420px] bg-background/95 backdrop-blur-xl border-l border-border/50 shadow-2xl flex flex-col">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border/30 bg-gradient-to-r from-muted/50 to-transparent">
-        <div className="flex items-center gap-3 min-w-0">
-          <h2 className="text-xl font-bold truncate">{gotchi.name || "Unnamed"}</h2>
+    <div className="fixed inset-0 z-50 md:inset-auto md:right-0 md:top-0 md:bottom-0 md:w-[360px] bg-background/95 backdrop-blur-xl border-l border-border/50 shadow-2xl flex flex-col">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
+        <div className="flex items-center gap-2">
           <button 
             onClick={copyTokenId}
-            className="flex items-center gap-1 text-xs text-muted-foreground font-mono px-2 py-1 rounded-md hover:bg-muted transition-colors"
+            className="flex items-center gap-1 text-sm font-mono px-2 py-1 rounded hover:bg-muted transition-colors"
           >
             #{gotchi.tokenId}
-            {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+            {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
           </button>
+          <span className="text-xs px-1.5 py-0.5 bg-muted rounded">H{gotchi.hauntId}</span>
         </div>
-        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-destructive/10" onClick={onClose}>
-          <X className="h-5 w-5" />
+        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={onClose}>
+          <X className="h-4 w-4" />
         </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         <div 
-          className={`p-6 bg-gradient-to-b ${tierStyles[tier] || tierStyles.common} border-b border-border/30`}
+          className={`p-4 bg-gradient-to-b ${tierStyles[tier] || tierStyles.common} border-b border-border/30`}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <div className="relative aspect-square max-w-56 mx-auto">
+          <div className="relative aspect-square max-w-40 mx-auto">
             {wearableCount > 0 && (
               <div className={`absolute inset-0 transition-opacity duration-300 ${isHovered ? "opacity-0" : "opacity-100"}`}>
                 <GotchiSvg
@@ -225,7 +195,7 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
                   collateral={gotchi.collateral}
                   numericTraits={gotchi.numericTraits}
                   equippedWearables={gotchi.equippedWearables}
-                  className="w-full h-full drop-shadow-lg"
+                  className="w-full h-full"
                 />
               </div>
             )}
@@ -236,97 +206,102 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
                 collateral={gotchi.collateral}
                 numericTraits={gotchi.numericTraits}
                 equippedWearables={wearableCount > 0 ? NAKED_WEARABLES : gotchi.equippedWearables}
-                className="w-full h-full drop-shadow-lg"
+                className="w-full h-full"
               />
             </div>
           </div>
-          <div className="flex items-center justify-center gap-3 mt-4">
-            <span className={`text-sm px-3 py-1 rounded-full capitalize font-medium ${
-              tier === "godlike" ? "bg-pink-500/20 text-pink-400 border border-pink-500/30" :
-              tier === "mythical" ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" :
-              tier === "legendary" ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" :
-              tier === "rare" ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" :
-              tier === "uncommon" ? "bg-green-500/20 text-green-400 border border-green-500/30" :
-              "bg-gray-500/20 text-gray-400 border border-gray-500/30"
-            }`}>
-              {tier}
-            </span>
-            <span className="text-2xl font-bold">{gotchi.withSetsRarityScore} <span className="text-sm font-normal text-muted-foreground">BRS</span></span>
+          <div className="text-center mt-3">
+            <div className="text-sm text-muted-foreground">{gotchi.name || "Unnamed"}</div>
+            <div className="text-lg font-bold mt-1">
+              Rarity Score {gotchi.withSetsRarityScore} 
+              <span className="text-muted-foreground font-normal ml-1">({gotchi.baseRarityScore})</span>
+            </div>
           </div>
         </div>
 
-        <Section title="Stats">
-          <StatRow label="Rarity Score" value={`${gotchi.withSetsRarityScore} (${gotchi.baseRarityScore})`} highlight />
-          <StatRow label="Kinship" value={gotchi.kinship ?? "—"} />
-          <StatRow label="Haunt" value={gotchi.hauntId} />
-          <StatRow label="Level" value={`${gotchi.level} (${gotchi.experience ?? 0} XP)`} />
-          {gotchi.experience !== undefined && gotchi.level && (
-            <StatRow label="XP to Next Level" value={getXpToNextLevel(gotchi.level, gotchi.experience)} />
+        <div className="px-4 py-3 space-y-2 border-b border-border/30">
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="bg-muted/30 rounded-lg py-2">
+              <div className="text-xs text-muted-foreground">Level</div>
+              <div className="font-semibold">{gotchi.level}</div>
+            </div>
+            <div className="bg-muted/30 rounded-lg py-2">
+              <div className="text-xs text-muted-foreground">Kinship</div>
+              <div className="font-semibold">{gotchi.kinship ?? "—"}</div>
+            </div>
+            <div className="bg-muted/30 rounded-lg py-2">
+              <div className="text-xs text-muted-foreground">XP</div>
+              <div className="font-semibold">{gotchi.experience ?? 0}</div>
+            </div>
+          </div>
+          {gotchi.equippedSetName && (
+            <div className="text-xs text-center text-purple-400">Set: {gotchi.equippedSetName}</div>
           )}
-          <StatRow label="Spirit Points" value={gotchi.usedSkillPoints ?? 0} />
-          {gotchi.equippedSetName && <StatRow label="Equipped Set" value={gotchi.equippedSetName} highlight />}
-          {gotchi.createdAt && (
-            <StatRow label="Age" value={`${formatAge(gotchi.createdAt).age} (+${formatAge(gotchi.createdAt).bonus} pts)`} />
+          {gotchi.listing && (
+            <div className="text-sm text-center text-green-500 font-medium">
+              {(parseFloat(gotchi.listing.priceInWei) / 1e18).toFixed(2)} GHST
+            </div>
           )}
-          <StatRow label="GHST Balance" value={formatGhstBalance(gotchi.escrow)} />
-          <StatRow label="Collateral" value={getCollateralName(gotchi.collateral)} />
-          <StatRow label="Owner" value={`${gotchi.owner.slice(0, 6)}...${gotchi.owner.slice(-4)}`} />
-        </Section>
-
-        {gotchi.listing && (
-          <Section title="Market">
-            <StatRow
-              label="Listed Price"
-              value={`${(parseFloat(gotchi.listing.priceInWei) / 1e18).toFixed(2)} GHST`}
-              highlight
-            />
-          </Section>
-        )}
+        </div>
 
         <Section title="Traits">
           {traits.slice(0, 4).map((val, i) => (
-            <TraitBar
-              key={i}
-              label={`${TRAIT_NAMES[i]} (${TRAIT_LABELS[i]}) — ${getTraitPersonality(val, i).toUpperCase()}`}
-              value={val}
-            />
+            <TraitBar key={i} label={TRAIT_NAMES[i]} value={val} />
           ))}
+          <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-border/20">
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Eye Shape</span>
+              <span>{getEyeShapeName(eyeData.shape)}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Eye Color</span>
+              <span>{getEyeColorName(eyeData.color)}</span>
+            </div>
+          </div>
         </Section>
 
-        <Section title="Eye Traits">
-          <StatRow label="Eye Shape" value={getEyeShapeName(eyeData.shape)} />
-          <StatRow label="Eye Color" value={getEyeColorName(eyeData.color)} />
-          <StatRow label="Shape Rarity" value={eyeData.shapeRarity} />
-          <StatRow label="Color Rarity" value={eyeData.colorRarity} />
-          <StatRow label="Combo Rarity" value={eyeData.comboRarity} highlight />
-        </Section>
-
-        <Section title={`Wearables (${wearableCount})`} defaultOpen={false}>
+        <Section title={`Wearables (${wearableCount})`} defaultOpen={wearableCount > 0}>
           {equippedWearableIds.length > 0 ? (
-            <div className="grid grid-cols-4 gap-3 mt-1">
+            <div className="space-y-1">
               {equippedWearableIds.map((id, i) => (
-                <div key={i} className="flex flex-col items-center gap-1 p-2 rounded-lg bg-muted/30 border border-border/30 hover:bg-muted/50 transition-colors">
+                <div key={i} className="flex items-center gap-2 py-1">
                   <img
                     src={getWearableImageUrl(id)}
-                    alt={`Wearable #${id}`}
-                    className="w-12 h-12 object-contain"
+                    alt={getWearableName(id)}
+                    className="w-8 h-8 object-contain"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = `https://wiki.aavegotchi.com/wearables/${id}.svg`;
                     }}
                   />
-                  <span className="text-[10px] text-muted-foreground font-mono">#{id}</span>
+                  <span className="text-sm">{getWearableName(id)}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground py-4 text-center bg-muted/20 rounded-lg">No wearables equipped</div>
+            <div className="text-xs text-muted-foreground text-center py-2">No wearables equipped</div>
           )}
+        </Section>
+
+        <Section title="Info" defaultOpen={false}>
+          <div className="space-y-1 text-xs">
+            <div className="flex justify-between"><span className="text-muted-foreground">Collateral</span><span>{getCollateralName(gotchi.collateral)}</span></div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Owner</span>
+              <button onClick={copyOwner} className="flex items-center gap-1 hover:text-primary transition-colors">
+                {gotchi.owner.slice(0, 6)}...{gotchi.owner.slice(-4)}
+                <Copy className="h-3 w-3" />
+              </button>
+            </div>
+            {gotchi.createdAt && (
+              <div className="flex justify-between"><span className="text-muted-foreground">Age</span><span>{formatAge(gotchi.createdAt).age}</span></div>
+            )}
+          </div>
         </Section>
       </div>
 
-      <div className="flex items-center gap-3 p-4 border-t border-border/30 bg-gradient-to-t from-muted/30 to-transparent">
+      <div className="p-3 border-t border-border/30">
         {onAddToDress && (
-          <Button variant="default" className="flex-1 h-11 text-sm font-medium" onClick={() => onAddToDress(gotchi)}>
+          <Button variant="default" className="w-full h-10 text-sm" onClick={() => onAddToDress(gotchi)}>
             Add to Dress
           </Button>
         )}

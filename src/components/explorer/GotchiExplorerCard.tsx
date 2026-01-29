@@ -174,7 +174,10 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
       <div className="px-2 py-1.5 bg-background/70 border-t border-border/30">
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs font-medium truncate flex-1 mr-1">{gotchi.name || "Unnamed"}</span>
-          <span className="text-[10px] font-bold text-primary">{gotchi.withSetsRarityScore}</span>
+          <span className="text-[10px] font-bold text-primary">
+            {gotchi.withSetsRarityScore}
+            <span className="text-muted-foreground font-normal ml-0.5">({gotchi.baseRarityScore})</span>
+          </span>
         </div>
 
         <div className="flex items-center gap-2 text-[9px] text-muted-foreground mb-1">
