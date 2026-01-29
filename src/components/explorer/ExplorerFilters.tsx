@@ -35,15 +35,17 @@ function FilterSection({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="border-b border-border/50 last:border-0">
+    <div className="border-b border-border/20">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted/50"
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-primary/5 transition-colors"
       >
-        {title}
-        {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        <span className="text-foreground">{title}</span>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
-      {open && <div className="px-3 pb-3 space-y-2">{children}</div>}
+      <div className={`overflow-hidden transition-all duration-200 ${open ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"}`}>
+        <div className="px-4 pb-4 space-y-3">{children}</div>
+      </div>
     </div>
   );
 }
@@ -64,22 +66,22 @@ function RangeInputs({
 }) {
   return (
     <div>
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <div className="flex gap-1 mt-1">
+      <Label className="text-xs text-muted-foreground mb-1.5 block">{label}</Label>
+      <div className="flex items-center gap-2">
         <Input
           type="number"
           placeholder="Min"
           value={minValue}
           onChange={(e) => onMinChange(e.target.value)}
-          className="h-7 text-xs"
+          className="h-9 text-sm bg-muted/30 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
         />
-        <span className="text-muted-foreground self-center">-</span>
+        <span className="text-muted-foreground text-sm">to</span>
         <Input
           type="number"
           placeholder="Max"
           value={maxValue}
           onChange={(e) => onMaxChange(e.target.value)}
-          className="h-7 text-xs"
+          className="h-9 text-sm bg-muted/30 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
         />
       </div>
     </div>
@@ -128,11 +130,11 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile }:
   };
 
   return (
-    <div className={`flex flex-col h-full ${isMobile ? "bg-background" : ""}`}>
+    <div className={`flex flex-col h-full ${isMobile ? "bg-background/95 backdrop-blur-xl" : "bg-background/95 backdrop-blur-xl"}`}>
       {isMobile && (
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h2 className="text-lg font-semibold">Filters</h2>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/30 bg-gradient-to-r from-primary/10 to-transparent">
+          <h2 className="text-xl font-bold">Filters</h2>
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-destructive/10" onClick={onClose}>
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -141,13 +143,13 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile }:
       <div className="flex-1 overflow-y-auto">
         <FilterSection title="Token ID" defaultOpen>
           <div>
-            <Label className="text-xs text-muted-foreground">Exact ID</Label>
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Exact ID</Label>
             <Input
               type="text"
               placeholder="e.g. 12345"
               value={localFilters.tokenId}
               onChange={(e) => updateFilter("tokenId", e.target.value)}
-              className="h-7 text-xs mt-1"
+              className="h-9 text-sm bg-muted/30 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
             />
           </div>
           <RangeInputs
@@ -165,7 +167,7 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile }:
             placeholder="Search name..."
             value={localFilters.nameContains}
             onChange={(e) => updateFilter("nameContains", e.target.value)}
-            className="h-7 text-xs"
+            className="h-9 text-sm bg-muted/30 border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
           />
         </FilterSection>
 
@@ -178,16 +180,16 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile }:
             onMaxChange={(v) => updateFilter("rarityMax", v)}
           />
           <div>
-            <Label className="text-xs text-muted-foreground">Tiers</Label>
-            <div className="flex flex-wrap gap-1 mt-1">
+            <Label className="text-xs text-muted-foreground mb-2 block">Tiers</Label>
+            <div className="flex flex-wrap gap-2">
               {rarityTiers.map((tier) => (
                 <button
                   key={tier.value}
                   onClick={() => toggleRarityTier(tier.value)}
-                  className={`px-2 py-0.5 text-xs rounded-full border transition-colors ${
+                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 ${
                     localFilters.rarityTiers.includes(tier.value)
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "border-border hover:bg-muted"
+                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
+                      : "bg-muted/50 border border-border/50 hover:bg-muted hover:border-primary/30"
                   }`}
                 >
                   {tier.label}
@@ -226,18 +228,20 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile }:
             onMinChange={(v) => updateFilter("brnMin", v)}
             onMaxChange={(v) => updateFilter("brnMax", v)}
           />
-          <div className="flex items-center gap-4 mt-2">
-            <label className="flex items-center gap-2 text-xs">
+          <div className="flex flex-wrap gap-3 pt-2">
+            <label className="flex items-center gap-2.5 text-sm cursor-pointer hover:text-primary transition-colors">
               <Checkbox
                 checked={localFilters.extremeTraits}
                 onCheckedChange={(c) => updateFilter("extremeTraits", !!c)}
+                className="h-4 w-4"
               />
               Extreme (≤10 or ≥90)
             </label>
-            <label className="flex items-center gap-2 text-xs">
+            <label className="flex items-center gap-2.5 text-sm cursor-pointer hover:text-primary transition-colors">
               <Checkbox
                 checked={localFilters.balancedTraits}
                 onCheckedChange={(c) => updateFilter("balancedTraits", !!c)}
+                className="h-4 w-4"
               />
               Balanced (40-60)
             </label>
@@ -281,18 +285,20 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile }:
         </FilterSection>
 
         <FilterSection title="Haunt">
-          <div className="flex gap-3">
-            <label className="flex items-center gap-2 text-xs">
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2.5 text-sm cursor-pointer hover:text-primary transition-colors">
               <Checkbox
                 checked={localFilters.haunts.includes("1")}
                 onCheckedChange={() => toggleHaunt("1")}
+                className="h-4 w-4"
               />
               Haunt 1
             </label>
-            <label className="flex items-center gap-2 text-xs">
+            <label className="flex items-center gap-2.5 text-sm cursor-pointer hover:text-primary transition-colors">
               <Checkbox
                 checked={localFilters.haunts.includes("2")}
                 onCheckedChange={() => toggleHaunt("2")}
+                className="h-4 w-4"
               />
               Haunt 2
             </label>
@@ -365,12 +371,12 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile }:
         </FilterSection>
       </div>
 
-      <div className="flex items-center gap-2 p-3 border-t bg-background">
-        <Button variant="outline" onClick={handleClear} className="flex-1">
+      <div className="flex items-center gap-3 p-4 border-t border-border/30 bg-gradient-to-t from-muted/30 to-transparent">
+        <Button variant="outline" onClick={handleClear} className="flex-1 h-11">
           Clear All
         </Button>
         {isMobile && (
-          <Button onClick={handleApply} className="flex-1">
+          <Button onClick={handleApply} className="flex-1 h-11 font-medium">
             Apply Filters
           </Button>
         )}

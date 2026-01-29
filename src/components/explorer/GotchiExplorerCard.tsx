@@ -16,6 +16,8 @@ type Props = {
   frequencyLoading?: boolean;
 };
 
+const NAKED_WEARABLES = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
 const rarityColors: Record<string, string> = {
   common: "bg-gray-500/10",
   uncommon: "bg-green-500/10",
@@ -75,6 +77,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   const traits = gotchi.withSetsNumericTraits || gotchi.modifiedNumericTraits || gotchi.numericTraits;
   const wearableCount = gotchi.equippedWearables.filter((w) => w > 0).length;
   const [showPopover, setShowPopover] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const eyeShape = traits.length > 4 ? traits[4] : 0;
   const eyeColor = traits.length > 5 ? traits[5] : 0;
@@ -93,7 +96,9 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   return (
     <div
       onClick={onClick}
-      className={`cursor-pointer rounded-lg border ${rarityBorders[tier]} ${rarityColors[tier]} hover:ring-2 hover:ring-primary/50 transition-all overflow-hidden active:scale-[0.98]`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`cursor-pointer rounded-xl border ${rarityBorders[tier]} ${rarityColors[tier]} hover:ring-2 hover:ring-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-200 overflow-hidden active:scale-[0.98] backdrop-blur-sm`}
     >
       <div className="flex items-center justify-between px-2 py-1 bg-background/50 border-b border-border/30">
         <span className="text-[10px] text-muted-foreground font-mono">#{gotchi.tokenId}</span>
@@ -105,15 +110,20 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
         </div>
       </div>
 
-      <div className="relative aspect-square p-1 flex items-center justify-center">
+      <div className="relative aspect-square p-2 flex items-center justify-center bg-gradient-to-b from-transparent to-background/30">
         <GotchiSvg
           gotchiId={gotchi.tokenId}
           hauntId={gotchi.hauntId}
           collateral={gotchi.collateral}
           numericTraits={gotchi.numericTraits as number[]}
-          equippedWearables={gotchi.equippedWearables as number[]}
-          className="w-full h-full"
+          equippedWearables={isHovered && wearableCount > 0 ? NAKED_WEARABLES : gotchi.equippedWearables as number[]}
+          className="w-full h-full transition-transform duration-200"
         />
+        {isHovered && wearableCount > 0 && (
+          <div className="absolute top-2 left-2 text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/90 text-white font-medium">
+            Naked
+          </div>
+        )}
         
         <button
           onClick={handlePopoverToggle}
