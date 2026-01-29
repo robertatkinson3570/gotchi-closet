@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { Search, X, SlidersHorizontal, ArrowUpDown } from "lucide-react";
+import { Search, X, SlidersHorizontal, ArrowUpDown, Shirt } from "lucide-react";
 import type { DataMode, ExplorerSort } from "@/lib/explorer/types";
 import { sortOptions } from "@/lib/explorer/sorts";
 
@@ -52,8 +52,14 @@ export function ExplorerTopBar({
             Gotchi<span className="font-normal text-muted-foreground">Explorer</span>
           </span>
         </Link>
-        <div className="flex items-center gap-2">
-          <Link to="/dress" className="text-xs text-muted-foreground hover:text-foreground">Dress</Link>
+        <div className="flex items-center gap-1">
+          <Link
+            to="/dress"
+            className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            title="Dress"
+          >
+            <Shirt className="h-5 w-5" />
+          </Link>
           <ThemeToggle />
         </div>
       </div>

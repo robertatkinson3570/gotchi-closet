@@ -7,7 +7,7 @@ import { switchToBaseChain } from "@/lib/chains";
 import { useToast } from "@/ui/use-toast";
 import { ConnectButton } from "./ConnectButton";
 import { NetworkBanner } from "./NetworkBanner";
-import { Home, FlaskConical, X, Wallet } from "lucide-react";
+import { FlaskConical, X, Wallet, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
@@ -49,11 +49,13 @@ export function WalletHeader({
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="px-4 flex h-12 items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0 shrink-0">
-          <img
-            src="/logo.png"
-            alt="GotchiCloset"
-            className="h-12 w-12 object-contain -my-2"
-          />
+          <Link to="/" className="hover:opacity-80 transition-opacity">
+            <img
+              src="/logo.png"
+              alt="GotchiCloset"
+              className="h-12 w-12 object-contain -my-2"
+            />
+          </Link>
           <div className="text-lg font-semibold tracking-tight hidden sm:block">
             Gotchi<span className="font-normal text-muted-foreground">Closet</span>
           </div>
@@ -92,9 +94,9 @@ export function WalletHeader({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          <Link to="/">
-            <Button size="sm" variant="ghost" className="h-8 px-2" title="Home">
-              <Home className="h-4 w-4" />
+          <Link to="/explorer">
+            <Button size="sm" variant="ghost" className="h-8 px-2" title="Explorer">
+              <Search className="h-4 w-4" />
             </Button>
           </Link>
           <Link to="/wardrobe-lab">
