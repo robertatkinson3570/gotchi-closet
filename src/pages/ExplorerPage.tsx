@@ -1,7 +1,8 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { ExplorerTopBar } from "@/components/explorer/ExplorerTopBar";
 import { ExplorerFilters } from "@/components/explorer/ExplorerFilters";
 import { ExplorerGrid } from "@/components/explorer/ExplorerGrid";
+import { FamilyPhotoGrid } from "@/components/explorer/FamilyPhotoGrid";
 import { GotchiDetailDrawer } from "@/components/explorer/GotchiDetailDrawer";
 import { SortSheet } from "@/components/explorer/SortSheet";
 import { useExplorerData } from "@/hooks/useExplorerData";
@@ -12,6 +13,9 @@ import { getActiveFilterCount } from "@/lib/explorer/filters";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import setsData from "../../data/setsByTraitDirection.json";
 
+export type ViewMode = "cards" | "family";
+const VIEW_MODE_KEY = "gc_explorer_viewMode";
+
 export default function ExplorerPage() {
   const { connectedAddress, isConnected } = useAddressState();
   const [mode, setMode] = useState<DataMode>("all");
@@ -19,6 +23,23 @@ export default function ExplorerPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSort, setShowSort] = useState(false);
   const [selectedGotchi, setSelectedGotchi] = useState<ExplorerGotchi | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(VIEW_MODE_KEY);
+      return (saved === "family" ? "family" : "cards") as ViewMode;
+    }
+    return "cards";
+  });
+
+  useEffect(() => {
+    localStorage.setItem(VIEW_MODE_KEY, viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
+    if (mode !== "mine" && viewMode === "family") {
+      setViewMode("cards");
+    }
+  }, [mode, viewMode]);
 
   const {
     gotchis,
@@ -66,6 +87,8 @@ export default function ExplorerPage() {
         onOpenSort={() => setShowSort(true)}
         connectedAddress={connectedAddress}
         isConnected={isConnected}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
 
       <div className="flex-1 flex">
@@ -112,14 +135,25 @@ export default function ExplorerPage() {
             </div>
           )}
 
-          <ExplorerGrid
-            gotchis={filteredBySearch}
-            loading={loading}
-            hasMore={hasMore}
-            error={error}
-            onLoadMore={loadMore}
-            onSelectGotchi={setSelectedGotchi}
-          />
+          {viewMode === "family" ? (
+            <FamilyPhotoGrid
+              gotchis={filteredBySearch}
+              loading={loading}
+              hasMore={hasMore}
+              error={error}
+              onLoadMore={loadMore}
+              onSelectGotchi={setSelectedGotchi}
+            />
+          ) : (
+            <ExplorerGrid
+              gotchis={filteredBySearch}
+              loading={loading}
+              hasMore={hasMore}
+              error={error}
+              onLoadMore={loadMore}
+              onSelectGotchi={setSelectedGotchi}
+            />
+          )}
         </main>
       </div>
 

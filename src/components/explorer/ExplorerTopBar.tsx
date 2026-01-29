@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { Search, X, ArrowUpDown, Shirt, FlaskConical } from "lucide-react";
+import { Search, X, ArrowUpDown, Shirt, FlaskConical, LayoutGrid, Users } from "lucide-react";
 import type { DataMode, ExplorerSort } from "@/lib/explorer/types";
 import { sortOptions } from "@/lib/explorer/sorts";
 import { shortenAddress } from "@/lib/address";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
+import type { ViewMode } from "@/pages/ExplorerPage";
 
 type Props = {
   mode: DataMode;
@@ -19,6 +20,8 @@ type Props = {
   onOpenSort: () => void;
   connectedAddress?: string | null;
   isConnected?: boolean;
+  viewMode: ViewMode;
+  onViewModeChange: (v: ViewMode) => void;
 };
 
 const modes: { value: DataMode; label: string }[] = [
@@ -37,6 +40,8 @@ export function ExplorerTopBar({
   onOpenSort,
   connectedAddress,
   isConnected,
+  viewMode,
+  onViewModeChange,
 }: Props) {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
@@ -131,9 +136,46 @@ export function ExplorerTopBar({
                 </option>
               ))}
             </select>
+
+            {mode === "mine" && (
+              <div className="flex items-center border rounded overflow-hidden">
+                <button
+                  onClick={() => onViewModeChange("cards")}
+                  className={`p-1.5 transition-colors ${viewMode === "cards" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+                  title="Cards view"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => onViewModeChange("family")}
+                  className={`p-1.5 transition-colors ${viewMode === "family" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+                  title="Family Photo"
+                >
+                  <Users className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex md:hidden items-center gap-1 ml-auto shrink-0">
+            {mode === "mine" && (
+              <div className="flex items-center border rounded overflow-hidden">
+                <button
+                  onClick={() => onViewModeChange("cards")}
+                  className={`p-1.5 transition-colors ${viewMode === "cards" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+                  title="Cards"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => onViewModeChange("family")}
+                  className={`p-1.5 transition-colors ${viewMode === "family" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"}`}
+                  title="Family Photo"
+                >
+                  <Users className="h-4 w-4" />
+                </button>
+              </div>
+            )}
             <Button
               variant="outline"
               size="icon"

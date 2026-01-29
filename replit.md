@@ -46,6 +46,17 @@ See `.env.example` for required environment variables:
 - `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
 
 ## Recent Changes
+- 2026-01-29: Added "Family Photo" view mode for Owned gotchis
+  - Dense roster-style overview showing tiny thumbnails + name + rarity score
+  - Only available when Explorer mode is "Owned" (hidden in All/Baazaar modes)
+  - Auto-reverts to Cards view when switching away from Owned mode
+  - View toggle near Sort dropdown (Cards/Family Photo icons)
+  - Text-only toggle within Family Photo for maximum density (hides images)
+  - Desktop: 8-12 items per row; Mobile: 3-5 items per row
+  - Micro-icons for listing status and equipped set
+  - Click/tap opens Gotchi Detail Drawer
+  - Preferences saved to localStorage (gc_explorer_viewMode, gc_familyPhoto_textOnly)
+  - Located in src/components/explorer/FamilyPhotoGrid.tsx, FamilyPhotoItem.tsx
 - 2026-01-29: Explorer page UAT - comprehensive filter/sort verification and cleanup
   - Added rarity tier filter checkboxes (Godlike, Mythical, Legendary, Rare, Uncommon, Common) with color coding
   - Added XP sort option to sortOptions (was defined but not exposed)
