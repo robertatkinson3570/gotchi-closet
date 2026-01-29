@@ -2,13 +2,14 @@ import { useRef, useEffect, useCallback } from "react";
 import { WearableExplorerCard } from "./WearableExplorerCard";
 import { Loader2 } from "lucide-react";
 import type { ExplorerWearable } from "@/lib/explorer/wearableTypes";
+import type { DataMode } from "@/lib/explorer/types";
 
 interface WearableExplorerGridProps {
   wearables: ExplorerWearable[];
   loading: boolean;
   hasMore: boolean;
   loadMore: () => void;
-  mode: "all" | "mine" | "baazaar";
+  mode: DataMode;
   quantities?: Record<number, number>;
   prices?: Record<number, string>;
   onCardClick?: (wearable: ExplorerWearable) => void;

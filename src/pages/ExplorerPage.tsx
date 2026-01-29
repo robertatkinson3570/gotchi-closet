@@ -8,10 +8,12 @@ import { SortSheet } from "@/components/explorer/SortSheet";
 import { WearableExplorerGrid } from "@/components/explorer/WearableExplorerGrid";
 import { WearableExplorerFilters } from "@/components/explorer/WearableExplorerFilters";
 import { WearableSortSheet } from "@/components/explorer/WearableSortSheet";
-import { ExplorerAssetToggle } from "@/components/explorer/ExplorerAssetToggle";
 import { useExplorerData } from "@/hooks/useExplorerData";
 import { useWearableExplorerData } from "@/hooks/useWearableExplorerData";
 import { useAddressState } from "@/lib/addressState";
+import { useAppStore } from "@/state/useAppStore";
+import { fetchAllWearables, fetchAllWearableSets } from "@/graphql/fetchers";
+import { cacheGet, cacheSet, cacheIsStale, CACHE_KEYS } from "@/lib/cache";
 import type { DataMode, ExplorerFilters as FiltersType } from "@/lib/explorer/types";
 import { defaultFilters } from "@/lib/explorer/types";
 import { getActiveFilterCount } from "@/lib/explorer/filters";
@@ -26,6 +28,9 @@ const ASSET_TYPE_KEY = "gc_explorer_assetType";
 
 export default function ExplorerPage() {
   const { connectedAddress, isConnected } = useAddressState();
+  const setWearables = useAppStore((s) => s.setWearables);
+  const setSets = useAppStore((s) => s.setSets);
+  const storeWearables = useAppStore((s) => s.wearables);
   const [assetType, setAssetType] = useState<AssetType>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(ASSET_TYPE_KEY);
@@ -58,6 +63,41 @@ export default function ExplorerPage() {
       setViewMode("cards");
     }
   }, [mode, viewMode]);
+
+  useEffect(() => {
+    if (assetType !== "wearable") return;
+    if (storeWearables.length > 0) return;
+
+    type WearablesState = ReturnType<typeof useAppStore.getState>["wearables"];
+    const cachedWearables = cacheGet<WearablesState>(CACHE_KEYS.WEARABLES);
+    if (cachedWearables && cachedWearables.length > 0) {
+      setWearables(cachedWearables);
+    }
+
+    if (!cachedWearables || cacheIsStale(CACHE_KEYS.WEARABLES)) {
+      fetchAllWearables()
+        .then((wearables) => {
+          setWearables(wearables);
+          cacheSet(CACHE_KEYS.WEARABLES, wearables);
+        })
+        .catch((err) => console.error("Failed to load wearables:", err));
+    }
+
+    type SetsState = ReturnType<typeof useAppStore.getState>["sets"];
+    const cachedSets = cacheGet<SetsState>(CACHE_KEYS.SETS);
+    if (cachedSets) {
+      setSets(cachedSets);
+    }
+
+    if (!cachedSets || cacheIsStale(CACHE_KEYS.SETS)) {
+      fetchAllWearableSets()
+        .then((sets) => {
+          setSets(sets);
+          cacheSet(CACHE_KEYS.SETS, sets);
+        })
+        .catch((err) => console.error("Failed to load sets:", err));
+    }
+  }, [assetType, storeWearables.length, setWearables, setSets]);
 
   const {
     gotchis,
