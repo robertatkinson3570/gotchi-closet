@@ -31,6 +31,11 @@ const GOTCHIS_PAGINATED = gql`
       owner { id }
       kinship
       experience
+      escrow
+      equippedSetID
+      equippedSetName
+      usedSkillPoints
+      createdAt
     }
   }
 `;
@@ -55,6 +60,11 @@ const GOTCHIS_BY_OWNER_EXPLORER = gql`
         owner { id }
         kinship
         experience
+        escrow
+        equippedSetID
+        equippedSetName
+        usedSkillPoints
+        createdAt
       }
     }
   }
@@ -97,6 +107,9 @@ const BAAZAAR_GOTCHI_LISTINGS_QUERY = `
         collateral
         kinship
         experience
+        escrow
+        equippedSetID
+        equippedSetName
       }
     }
   }
@@ -132,6 +145,11 @@ function transformGotchi(raw: any): ExplorerGotchi {
     kinship: raw.kinship,
     experience: raw.experience,
     listing: raw.listing,
+    escrow: raw.escrow,
+    createdAt: raw.createdAt ? parseInt(raw.createdAt, 10) : undefined,
+    usedSkillPoints: raw.usedSkillPoints,
+    equippedSetID: raw.equippedSetID ? parseInt(raw.equippedSetID, 10) : undefined,
+    equippedSetName: raw.equippedSetName,
   };
   
   gotchiCache.set(tokenId, gotchi);

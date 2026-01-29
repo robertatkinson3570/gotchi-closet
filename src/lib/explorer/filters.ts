@@ -85,9 +85,8 @@ export function applyFilters(
       if (!isNaN(max) && count > max) return false;
     }
 
-    if (filters.hauntId) {
-      const haunt = parseInt(filters.hauntId, 10);
-      if (!isNaN(haunt) && g.hauntId !== haunt) return false;
+    if (filters.haunts && filters.haunts.length > 0) {
+      if (!filters.haunts.includes(String(g.hauntId))) return false;
     }
 
     if (filters.priceMin && g.listing) {
@@ -99,6 +98,46 @@ export function applyFilters(
       const max = parseFloat(filters.priceMax);
       const price = parseFloat(g.listing.priceInWei) / 1e18;
       if (!isNaN(max) && price > max) return false;
+    }
+
+    if (filters.hasGhstPocket === true) {
+      const escrowBalance = parseFloat(g.escrow || "0");
+      if (escrowBalance <= 0) return false;
+    }
+    if (filters.hasGhstPocket === false) {
+      const escrowBalance = parseFloat(g.escrow || "0");
+      if (escrowBalance > 0) return false;
+    }
+
+    if (filters.ghstBalanceMin) {
+      const min = parseFloat(filters.ghstBalanceMin);
+      const balance = parseFloat(g.escrow || "0") / 1e18;
+      if (!isNaN(min) && balance < min) return false;
+    }
+    if (filters.ghstBalanceMax) {
+      const max = parseFloat(filters.ghstBalanceMax);
+      const balance = parseFloat(g.escrow || "0") / 1e18;
+      if (!isNaN(max) && balance > max) return false;
+    }
+
+    if (filters.hasEquippedSet === true) {
+      if (!g.equippedSetID || g.equippedSetID === 0) return false;
+    }
+    if (filters.hasEquippedSet === false) {
+      if (g.equippedSetID && g.equippedSetID > 0) return false;
+    }
+
+    if (filters.doubleMythEyes) {
+      const traits = g.withSetsNumericTraits || g.modifiedNumericTraits || g.numericTraits;
+      if (traits.length >= 6) {
+        const eyeShape = traits[4];
+        const eyeColor = traits[5];
+        const isMythShape = eyeShape <= 1 || eyeShape >= 98;
+        const isMythColor = eyeColor <= 1 || eyeColor >= 98;
+        if (!isMythShape || !isMythColor) return false;
+      } else {
+        return false;
+      }
     }
 
     return true;
@@ -133,7 +172,11 @@ export function getActiveFilterCount(filters: ExplorerFilters): number {
   if (filters.hasWearables !== null) count++;
   if (filters.wearableCountMin || filters.wearableCountMax) count++;
   if (filters.hasSet !== null) count++;
-  if (filters.hauntId) count++;
+  if (filters.haunts && filters.haunts.length > 0) count++;
   if (filters.priceMin || filters.priceMax) count++;
+  if (filters.hasGhstPocket !== null) count++;
+  if (filters.ghstBalanceMin || filters.ghstBalanceMax) count++;
+  if (filters.hasEquippedSet !== null) count++;
+  if (filters.doubleMythEyes) count++;
   return count;
 }

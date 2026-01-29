@@ -1,0 +1,93 @@
+TASK: Add “Trait Frequency Rarity” (1/N like 1/1, 1/20) to every Gotchi card in the Explorer grid, and show the breakdown (Eye Shape 1/N, Eye Color 1/N, Eye Combo 1/N) in the card (and tooltip / tap detail). This was missing and is now REQUIRED.
+
+CONTEXT
+- App: GotchiCloset
+- New page: /explorer (Gotchi Explorer)
+- Gotchi cards are dense and must show tons of info while still fitting many per page.
+- We already have Eye Shape + Eye Color traits available on the gotchi (EYS, EYC or equivalent).
+- This must work for: Mine / All / Baazaar / Auction modes.
+- Mobile-friendly is mandatory: no hover-only UX.
+
+NON-NEGOTIABLES
+1) Do NOT touch Dress page/editor logic/calcs.
+2) Trait Frequency Rarity must appear on the Gotchi card itself (not only in the drawer).
+3) Default population scope: SAME HAUNT (do not mix haunts by default).
+4) Compute counts efficiently (no per-card subgraph calls).
+5) Must be deterministic + cached.
+6) Works on mobile: show as badge + tap/long-press reveals more detail.
+
+WHAT “1/N” MEANS (LOCKED)
+- Trait Frequency Rarity:
+  - For a given trait value (or combo), N = count of gotchis in the population sharing it.
+  - Display as “1 / N”.
+- Implement for:
+  A) Eye Shape rarity: count by eyeShape value/bucket
+  B) Eye Color rarity: count by eyeColor value/bucket
+  C) Eye Combo rarity: count by (eyeShape + eyeColor) exact pair
+- If N === 1, show “1 / 1” (optionally also label “Unique” in tooltip).
+
+UI REQUIREMENTS (GOTCHI CARD)
+- Add a compact badge overlay on the gotchi image area:
+  - Label: “👁 1 / N” where N is Eye Combo rarity (primary, most valuable)
+  - Keep it small, readable, and not ugly.
+  - Tooltip (desktop) / tap info (mobile) must show:
+    - Eye Combo: 1 / N
+    - Eye Shape: 1 / N
+    - Eye Color: 1 / N
+    - Include a one-line explanation:
+      “Trait Frequency Rarity: 1 of N Gotchis in this Haunt share this trait (or combo).”
+- Do NOT require opening the detail drawer to see at least the Eye Combo rarity.
+
+MOBILE UX
+- Badge is always visible.
+- On tap-and-hold (or a small “i” icon on card), open a tiny popover/bottom mini-sheet showing the breakdown:
+  - Eye Combo 1/N
+  - Eye Shape 1/N
+  - Eye Color 1/N
+  - Close on tap outside.
+
+DATA / COMPUTATION (PERFORMANCE)
+- Build a cached frequency map keyed by haunt:
+  - eyeShapeCount[hauntId][eyeShapeKey] = count
+  - eyeColorCount[hauntId][eyeColorKey] = count
+  - eyeComboCount[hauntId][eyeShapeKey + "|" + eyeColorKey] = count
+- IMPORTANT: do NOT compute by scanning only the currently loaded page; counts must reflect the population scope (same haunt), not just the page.
+- Implementation options:
+  Option 1 (preferred if feasible): one-time background fetch per haunt to build counts (chunked paging) and cache in memory (and optionally localStorage with versioning).
+  Option 2: if subgraph supports aggregation/grouping, use that to fetch counts (best). If not, fall back to Option 1.
+- Counts must be reused across modes (Mine/All/Baazaar/Auction) because the population is “same haunt”.
+- Add safeguards:
+  - While counts are building, show badge “👁 …” (loading) and fill in once ready.
+  - Never block rendering of the grid while counts compute.
+
+TRAIT KEYS / NORMALIZATION
+- Use stable keys:
+  - If you already map eye shape to named buckets (e.g., “Calm”, “Happy”), use that bucket key for counting.
+  - If not, use the raw numeric trait value as key.
+- Eye combo key = `${eyeShapeKey}|${eyeColorKey}`
+
+FILES / ORGANIZATION
+- Add module: src/lib/explorer/traitFrequency.ts
+  - buildFrequencyMaps(gotchis: Gotchi[], scope: "haunt") => maps
+  - getEyeShapeRarity(gotchi) => N
+  - getEyeColorRarity(gotchi) => N
+  - getEyeComboRarity(gotchi) => N
+  - caching + memoization
+- Add hook: src/hooks/useTraitFrequency.ts
+  - ensures maps are available
+  - exposes loading state + getters
+- Update GotchiExplorerCard to render:
+  - Eye Combo “1 / N” badge overlay
+  - info popover content for breakdown
+- Update GotchiDetailDrawer (optional) to reuse same data (do not duplicate logic).
+
+ACCEPTANCE CRITERIA
+- Every gotchi card shows Eye Combo rarity as “1 / N”.
+- Hover/tap reveals Eye Combo, Eye Shape, Eye Color rarities.
+- Counts are for SAME HAUNT population, not just the loaded page.
+- No per-card network calls.
+- Mobile UX works (no hover dependency).
+- Does not impact Dress page/editor.
+
+DELIVERABLE
+- Implement trait frequency rarity across the Explorer grid cards with caching and mobile-friendly breakdown UI.

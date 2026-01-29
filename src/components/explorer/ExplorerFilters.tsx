@@ -119,6 +119,14 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile }:
     updateFilter("rarityTiers", updated);
   };
 
+  const toggleHaunt = (haunt: string) => {
+    const current = localFilters.haunts;
+    const updated = current.includes(haunt)
+      ? current.filter((h) => h !== haunt)
+      : [...current, haunt];
+    updateFilter("haunts", updated);
+  };
+
   return (
     <div className={`flex flex-col h-full ${isMobile ? "bg-background" : ""}`}>
       {isMobile && (
@@ -273,13 +281,77 @@ export function ExplorerFilters({ filters, onFiltersChange, onClose, isMobile }:
         </FilterSection>
 
         <FilterSection title="Haunt">
-          <Input
-            type="number"
-            placeholder="Haunt ID (1, 2, etc.)"
-            value={localFilters.hauntId}
-            onChange={(e) => updateFilter("hauntId", e.target.value)}
-            className="h-7 text-xs"
+          <div className="flex gap-3">
+            <label className="flex items-center gap-2 text-xs">
+              <Checkbox
+                checked={localFilters.haunts.includes("1")}
+                onCheckedChange={() => toggleHaunt("1")}
+              />
+              Haunt 1
+            </label>
+            <label className="flex items-center gap-2 text-xs">
+              <Checkbox
+                checked={localFilters.haunts.includes("2")}
+                onCheckedChange={() => toggleHaunt("2")}
+              />
+              Haunt 2
+            </label>
+          </div>
+        </FilterSection>
+
+        <FilterSection title="GHST Pocket">
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-xs">
+              <Checkbox
+                checked={localFilters.hasGhstPocket === true}
+                onCheckedChange={(c) => updateFilter("hasGhstPocket", c ? true : null)}
+              />
+              Has GHST in Pocket
+            </label>
+            <label className="flex items-center gap-2 text-xs">
+              <Checkbox
+                checked={localFilters.hasGhstPocket === false}
+                onCheckedChange={(c) => updateFilter("hasGhstPocket", c ? false : null)}
+              />
+              No GHST in Pocket
+            </label>
+          </div>
+          <RangeInputs
+            label="GHST Balance"
+            minValue={localFilters.ghstBalanceMin}
+            maxValue={localFilters.ghstBalanceMax}
+            onMinChange={(v) => updateFilter("ghstBalanceMin", v)}
+            onMaxChange={(v) => updateFilter("ghstBalanceMax", v)}
           />
+        </FilterSection>
+
+        <FilterSection title="Equipped Set">
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-xs">
+              <Checkbox
+                checked={localFilters.hasEquippedSet === true}
+                onCheckedChange={(c) => updateFilter("hasEquippedSet", c ? true : null)}
+              />
+              Has Complete Set
+            </label>
+            <label className="flex items-center gap-2 text-xs">
+              <Checkbox
+                checked={localFilters.hasEquippedSet === false}
+                onCheckedChange={(c) => updateFilter("hasEquippedSet", c ? false : null)}
+              />
+              No Complete Set
+            </label>
+          </div>
+        </FilterSection>
+
+        <FilterSection title="Eye Traits">
+          <label className="flex items-center gap-2 text-xs">
+            <Checkbox
+              checked={localFilters.doubleMythEyes}
+              onCheckedChange={(c) => updateFilter("doubleMythEyes", !!c)}
+            />
+            Double Mythical Eyes
+          </label>
         </FilterSection>
 
         <FilterSection title="Price (Baazaar)">

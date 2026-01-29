@@ -47,9 +47,14 @@ export type ExplorerFilters = {
   wearableCountMin: string;
   wearableCountMax: string;
   hasSet: boolean | null;
-  hauntId: string;
+  haunts: string[];
   priceMin: string;
   priceMax: string;
+  hasGhstPocket: boolean | null;
+  ghstBalanceMin: string;
+  ghstBalanceMax: string;
+  hasEquippedSet: boolean | null;
+  doubleMythEyes: boolean;
 };
 
 export const defaultFilters: ExplorerFilters = {
@@ -79,9 +84,14 @@ export const defaultFilters: ExplorerFilters = {
   wearableCountMin: "",
   wearableCountMax: "",
   hasSet: null,
-  hauntId: "",
+  haunts: [],
   priceMin: "",
   priceMax: "",
+  hasGhstPocket: null,
+  ghstBalanceMin: "",
+  ghstBalanceMax: "",
+  hasEquippedSet: null,
+  doubleMythEyes: false,
 };
 
 export type ExplorerGotchi = {
@@ -107,4 +117,9 @@ export type ExplorerGotchi = {
     timeCreated?: string;
     seller?: string;
   };
+  escrow?: string;
+  createdAt?: number;
+  usedSkillPoints?: number;
+  equippedSetID?: number;
+  equippedSetName?: string;
 };
