@@ -15,7 +15,6 @@ export default function ExplorerPage() {
   const { connectedAddress, isConnected } = useAddressState();
   const [mode, setMode] = useState<DataMode>("all");
   const [search, setSearch] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSort, setShowSort] = useState(false);
   const [selectedGotchi, setSelectedGotchi] = useState<ExplorerGotchi | null>(null);
@@ -67,8 +66,6 @@ export default function ExplorerPage() {
         onSearchChange={setSearch}
         sort={sort}
         onSortChange={setSort}
-        filterCount={filterCount}
-        onOpenFilters={() => setShowFilters(true)}
         onOpenSort={() => setShowSort(true)}
         connectedAddress={connectedAddress}
         isConnected={isConnected}
@@ -128,24 +125,6 @@ export default function ExplorerPage() {
           />
         </main>
       </div>
-
-      {showFilters && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setShowFilters(false)}
-          />
-          <div className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-background shadow-xl overflow-hidden animate-in slide-in-from-left duration-200">
-            <ExplorerFilters
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              onClose={() => setShowFilters(false)}
-              isMobile
-              availableSets={availableSets}
-            />
-          </div>
-        </div>
-      )}
 
       {showSort && (
         <div className="lg:hidden">

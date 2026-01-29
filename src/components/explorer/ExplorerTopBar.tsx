@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { Search, X, SlidersHorizontal, ArrowUpDown, Shirt, FlaskConical } from "lucide-react";
+import { Search, X, ArrowUpDown, Shirt, FlaskConical } from "lucide-react";
 import type { DataMode, ExplorerSort } from "@/lib/explorer/types";
 import { sortOptions } from "@/lib/explorer/sorts";
 import { shortenAddress } from "@/lib/address";
@@ -16,8 +16,6 @@ type Props = {
   onSearchChange: (s: string) => void;
   sort: ExplorerSort;
   onSortChange: (s: ExplorerSort) => void;
-  filterCount: number;
-  onOpenFilters: () => void;
   onOpenSort: () => void;
   connectedAddress?: string | null;
   isConnected?: boolean;
@@ -36,8 +34,6 @@ export function ExplorerTopBar({
   onSearchChange,
   sort,
   onSortChange,
-  filterCount,
-  onOpenFilters,
   onOpenSort,
   connectedAddress,
   isConnected,
@@ -154,35 +150,7 @@ export function ExplorerTopBar({
             >
               <ArrowUpDown className="h-4 w-4" />
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 relative"
-              onClick={onOpenFilters}
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              {filterCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
-                  {filterCount}
-                </span>
-              )}
-            </Button>
           </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="hidden md:flex gap-1 relative shrink-0"
-            onClick={onOpenFilters}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            Filters
-            {filterCount > 0 && (
-              <span className="bg-primary text-primary-foreground text-[10px] rounded-full h-4 w-4 flex items-center justify-center ml-1">
-                {filterCount}
-              </span>
-            )}
-          </Button>
         </div>
 
         {mobileSearchOpen && (
