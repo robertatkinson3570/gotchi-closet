@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, X } from "lucide-react";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 import wearablesData from "../../../data/wearables.json";
-import setsByTraitDirectionData from "../../../data/setsByTraitDirection.json";
 
 function getWearableImageUrl(id: number): string {
   return `https://app.aavegotchi.com/images/items/${id}.svg`;
@@ -15,10 +14,6 @@ const wearableNameMap = new Map<number, string>(
 function getWearableName(id: number): string {
   return wearableNameMap.get(id) || `#${id}`;
 }
-
-const setNameMap = new Map<string, string>(
-  (setsByTraitDirectionData as { sets: { name: string }[] }).sets.map((s, i) => [String(i), s.name])
-);
 
 const COLLATERAL_NAMES: Record<string, string> = {
   "0x20d3922b4a1a8560e1ac99fba4fade0c849e2142": "maWETH",
@@ -66,10 +61,10 @@ function shortenAddress(addr: string): string {
 
 type Props = {
   gotchi: ExplorerGotchi;
-  position?: "above" | "below";
+  onClose?: () => void;
 };
 
-export function GotchiInfoOverlay({ gotchi, position = "above" }: Props) {
+export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
   const [copied, setCopied] = useState(false);
   const [hoveredWearable, setHoveredWearable] = useState<number | null>(null);
 
@@ -77,8 +72,6 @@ export function GotchiInfoOverlay({ gotchi, position = "above" }: Props) {
   const collateralName = getCollateralName(gotchi.collateral);
   const owner = gotchi.owner || "";
   const age = formatAge(gotchi.createdAt);
-  const setId = gotchi.equippedSetID;
-  const setName = setId ? setNameMap.get(String(setId)) : null;
 
   const copyOwner = async () => {
     if (owner) {
@@ -88,81 +81,93 @@ export function GotchiInfoOverlay({ gotchi, position = "above" }: Props) {
     }
   };
 
-  const positionClass = position === "above" 
-    ? "bottom-full mb-1" 
-    : "top-full mt-1";
-
   return (
     <div 
-      className={`absolute left-0 right-0 ${positionClass} z-50 bg-background/95 backdrop-blur-md border border-border/50 rounded-lg shadow-xl p-2 space-y-2 animate-in fade-in-0 zoom-in-95 duration-150`}
+      className="absolute inset-0 z-50 bg-background/98 backdrop-blur-sm rounded-lg flex flex-col animate-in fade-in-0 duration-100"
       onClick={(e) => e.stopPropagation()}
     >
-      {equippedWearables.length > 0 && (
-        <div>
-          <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">
-            Wearables ({equippedWearables.length})
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {equippedWearables.map((id, idx) => (
-              <div 
-                key={idx}
-                className="relative group"
-                onMouseEnter={() => setHoveredWearable(id)}
-                onMouseLeave={() => setHoveredWearable(null)}
-              >
-                <img
-                  src={getWearableImageUrl(id)}
-                  alt={getWearableName(id)}
-                  className="w-7 h-7 rounded bg-muted/30 p-0.5"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-                {hoveredWearable === id && (
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-foreground text-background text-[9px] rounded whitespace-nowrap z-10">
-                    {getWearableName(id)}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+      {onClose && (
+        <button 
+          onClick={onClose}
+          className="absolute top-1 right-1 p-0.5 rounded hover:bg-muted/50 transition-colors z-10"
+        >
+          <X className="w-3 h-3 text-muted-foreground" />
+        </button>
       )}
 
-      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Collateral</span>
-          <span className="font-medium">{collateralName}</span>
+      <div className="flex-1 p-2 overflow-y-auto space-y-2">
+        <div className="text-[10px] font-medium text-center text-muted-foreground border-b border-border/30 pb-1">
+          {gotchi.name || "Unnamed"} Details
         </div>
-        {owner && (
-          <div className="flex items-center justify-between gap-1">
-            <span className="text-muted-foreground">Owner</span>
-            <button 
-              onClick={copyOwner}
-              className="flex items-center gap-0.5 hover:text-primary transition-colors"
-            >
-              <span className="font-mono text-[9px]">{shortenAddress(owner)}</span>
-              {copied ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
-            </button>
+
+        {equippedWearables.length > 0 && (
+          <div>
+            <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">
+              Wearables ({equippedWearables.length})
+            </div>
+            <div className="flex flex-wrap gap-1 justify-center">
+              {equippedWearables.map((id, idx) => (
+                <div 
+                  key={idx}
+                  className="relative"
+                  onMouseEnter={() => setHoveredWearable(id)}
+                  onMouseLeave={() => setHoveredWearable(null)}
+                >
+                  <img
+                    src={getWearableImageUrl(id)}
+                    alt={getWearableName(id)}
+                    className="w-8 h-8 rounded bg-muted/30 p-0.5 hover:bg-muted/50 transition-colors"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                  {hoveredWearable === id && (
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-foreground text-background text-[8px] rounded whitespace-nowrap z-10 shadow-lg">
+                      {getWearableName(id)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Age</span>
-          <span className="font-medium">{age}</span>
+
+        <div className="space-y-1 text-[10px]">
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Collateral</span>
+            <span className="font-medium text-primary">{collateralName}</span>
+          </div>
+          
+          {owner && (
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Owner</span>
+              <button 
+                onClick={copyOwner}
+                className="flex items-center gap-1 hover:text-primary transition-colors font-mono text-[9px]"
+              >
+                {shortenAddress(owner)}
+                {copied ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
+              </button>
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Age</span>
+            <span className="font-medium">{age}</span>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">XP</span>
+            <span className="font-medium">{gotchi.experience || 0}</span>
+          </div>
         </div>
-        {setName && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Set</span>
-            <span className="font-medium text-purple-400 truncate max-w-[80px]">{setName}</span>
+
+        {equippedWearables.length === 0 && (
+          <div className="text-[9px] text-muted-foreground text-center py-2 bg-muted/20 rounded">
+            No wearables equipped
           </div>
         )}
       </div>
-
-      {equippedWearables.length === 0 && (
-        <div className="text-[10px] text-muted-foreground text-center py-1">
-          No wearables equipped
-        </div>
-      )}
     </div>
   );
 }

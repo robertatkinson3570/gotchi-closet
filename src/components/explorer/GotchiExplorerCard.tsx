@@ -39,11 +39,10 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   const colors = tierColors[tier] || tierColors.common;
   const wearableCount = gotchi.equippedWearables.filter((w) => w > 0).length;
   const [imageHovered, setImageHovered] = useState(false);
-  const [infoHovered, setInfoHovered] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [eyeBadgeHovered, setEyeBadgeHovered] = useState(false);
-  const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const infoRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const traits = gotchi.withSetsNumericTraits || gotchi.modifiedNumericTraits || gotchi.numericTraits;
   const baseRarity = gotchi.baseRarityScore || null;
 
@@ -55,15 +54,15 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   }, []);
 
   useEffect(() => {
-    if (!mobileInfoOpen) return;
+    if (!showDetails || isMobile) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (infoRef.current && !infoRef.current.contains(e.target as Node)) {
-        setMobileInfoOpen(false);
+      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        setShowDetails(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [mobileInfoOpen]);
+  }, [showDetails, isMobile]);
 
   const comboRarityText = eyeRarities?.combo 
     ? `1/${eyeRarities.combo}` 
@@ -75,13 +74,9 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
     ? parseFloat(gotchi.listing.priceInWei) / 1e18 
     : null;
 
-  const showOverlay = isMobile ? mobileInfoOpen : infoHovered;
-
   const handleInfoClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isMobile) {
-      setMobileInfoOpen(!mobileInfoOpen);
-    }
+    setShowDetails(!showDetails);
   };
 
   const eyeExplainText = eyeRarities?.combo 
@@ -92,10 +87,11 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
 
   return (
     <div
-      className={`rounded-lg border ${colors.border} ${colors.bg} hover:ring-1 hover:ring-primary/40 transition-all duration-150 active:scale-[0.98] relative`}
+      ref={cardRef}
+      className={`rounded-lg border ${colors.border} ${colors.bg} hover:ring-1 hover:ring-primary/40 transition-all duration-150 active:scale-[0.98] relative overflow-hidden`}
     >
       <div 
-        className="relative aspect-square flex items-center justify-center bg-gradient-to-b from-transparent to-background/20 overflow-hidden rounded-t-lg"
+        className="relative aspect-square flex items-center justify-center bg-gradient-to-b from-transparent to-background/20"
         onMouseEnter={() => setImageHovered(true)}
         onMouseLeave={() => setImageHovered(false)}
       >
@@ -135,7 +131,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
             <span className="opacity-70">👁</span>
             <span>{comboRarityText}</span>
             {eyeBadgeHovered && eyeExplainText && (
-              <div className="absolute bottom-full right-0 mb-1 px-2 py-1 bg-foreground text-background text-[9px] rounded whitespace-nowrap z-20 shadow-lg">
+              <div className="absolute bottom-full right-0 mb-1 px-2 py-1 bg-foreground text-background text-[9px] rounded whitespace-nowrap z-20 shadow-lg pointer-events-none">
                 {eyeExplainText}
               </div>
             )}
@@ -143,22 +139,17 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
         )}
       </div>
 
-      <div 
-        ref={infoRef}
-        className="px-2 py-1.5 space-y-1 relative"
-        onMouseEnter={() => !isMobile && setInfoHovered(true)}
-        onMouseLeave={() => !isMobile && setInfoHovered(false)}
-      >
+      <div className="px-2 py-1.5 space-y-1">
         <div className="flex items-center justify-between gap-1">
           <span className="text-xs font-semibold truncate flex-1">{gotchi.name || "Unnamed"}</span>
           <div className="flex items-center gap-1">
             <span className="text-[9px] text-muted-foreground font-mono shrink-0">#{gotchi.tokenId}</span>
             <button
               onClick={handleInfoClick}
-              className="md:hidden p-0.5 rounded hover:bg-muted/50 transition-colors"
+              className={`p-0.5 rounded transition-colors ${showDetails ? 'bg-primary/20 text-primary' : 'hover:bg-muted/50 text-muted-foreground'}`}
               title="Show details"
             >
-              <Info className="w-3 h-3 text-muted-foreground" />
+              <Info className="w-3 h-3" />
             </button>
           </div>
         </div>
@@ -175,7 +166,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
                 {eyeRarities.combo === 1 ? "UNIQUE" : `${eyeRarities.combo}X`} 👁
               </span>
               {eyeBadgeHovered && eyeExplainText && (
-                <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-foreground text-background text-[9px] rounded whitespace-nowrap z-20 shadow-lg">
+                <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-foreground text-background text-[9px] rounded whitespace-nowrap z-20 shadow-lg pointer-events-none">
                   {eyeExplainText}
                 </div>
               )}
@@ -219,11 +210,11 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
             </span>
           </div>
         )}
-
-        {showOverlay && (
-          <GotchiInfoOverlay gotchi={gotchi} position="below" />
-        )}
       </div>
+
+      {showDetails && (
+        <GotchiInfoOverlay gotchi={gotchi} onClose={() => setShowDetails(false)} />
+      )}
     </div>
   );
 });
