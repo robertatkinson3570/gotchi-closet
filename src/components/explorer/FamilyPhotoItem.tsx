@@ -1,6 +1,5 @@
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
-import { Store, Sparkles } from "lucide-react";
 
 type Props = {
   gotchi: ExplorerGotchi;
@@ -9,9 +8,6 @@ type Props = {
 };
 
 export function FamilyPhotoItem({ gotchi, onClick, textOnly }: Props) {
-  const hasListing = !!gotchi.listing;
-  const hasSet = !!gotchi.equippedSetName;
-
   if (textOnly) {
     return (
       <button
@@ -23,10 +19,6 @@ export function FamilyPhotoItem({ gotchi, onClick, textOnly }: Props) {
         </span>
         <span className="text-[10px] text-muted-foreground">#{gotchi.tokenId}</span>
         <span className="text-[10px] text-purple-500 font-medium">{gotchi.withSetsRarityScore}</span>
-        <div className="flex items-center gap-0.5 mt-0.5">
-          {hasListing && <Store className="h-2.5 w-2.5 text-green-500" />}
-          {hasSet && <Sparkles className="h-2.5 w-2.5 text-purple-400" />}
-        </div>
       </button>
     );
   }
@@ -52,10 +44,6 @@ export function FamilyPhotoItem({ gotchi, onClick, textOnly }: Props) {
       <span className="text-[9px] sm:text-[10px] text-purple-500 font-medium leading-tight">
         {gotchi.withSetsRarityScore}
       </span>
-      <div className="flex items-center gap-0.5 h-3">
-        {hasListing && <Store className="h-2.5 w-2.5 text-green-500" />}
-        {hasSet && <Sparkles className="h-2.5 w-2.5 text-purple-400" />}
-      </div>
     </button>
   );
 }
