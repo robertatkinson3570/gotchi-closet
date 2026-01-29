@@ -7,6 +7,7 @@ export type SortField =
   | "xp"
   | "tokenId"
   | "price"
+  | "listingCreated"
   | "nrg"
   | "agg"
   | "spk"

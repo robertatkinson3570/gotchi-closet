@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { Search, X, ArrowUpDown, Shirt, FlaskConical, LayoutGrid, Users } from "lucide-react";
+import { Search, X, ArrowUpDown, Shirt, FlaskConical, LayoutGrid, Users, ChevronDown, Check } from "lucide-react";
 import type { DataMode, ExplorerSort } from "@/lib/explorer/types";
-import { sortOptions } from "@/lib/explorer/sorts";
+import { sortOptions, getSortLabel } from "@/lib/explorer/sorts";
 import { shortenAddress } from "@/lib/address";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import type { ViewMode } from "@/pages/ExplorerPage";
@@ -44,6 +44,25 @@ export function ExplorerTopBar({
   onViewModeChange,
 }: Props) {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setSortOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const currentKey = `${sort.field}:${sort.direction}`;
+  const sortLabel = getSortLabel(sort);
+  
+  const statsOptions = sortOptions.filter((o) => o.category === "stats");
+  const traitOptions = sortOptions.filter((o) => o.category === "traits");
+  const marketOptions = sortOptions.filter((o) => o.category === "market");
 
   return (
     <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b">
@@ -122,20 +141,67 @@ export function ExplorerTopBar({
               )}
             </div>
 
-            <select
-              value={`${sort.field}:${sort.direction}`}
-              onChange={(e) => {
-                const [field, dir] = e.target.value.split(":") as [string, "asc" | "desc"];
-                onSortChange({ field: field as any, direction: dir });
-              }}
-              className="h-8 px-2 text-xs bg-background border rounded-md"
-            >
-              {sortOptions.map((opt) => (
-                <option key={`${opt.value.field}:${opt.value.direction}`} value={`${opt.value.field}:${opt.value.direction}`}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <div ref={sortRef} className="relative">
+              <button
+                onClick={() => setSortOpen(!sortOpen)}
+                className="h-8 px-3 text-xs bg-background border rounded-lg flex items-center gap-2 hover:bg-muted/50 transition-colors min-w-[140px] justify-between"
+              >
+                <span className="truncate">{sortLabel}</span>
+                <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${sortOpen ? "rotate-180" : ""}`} />
+              </button>
+              
+              {sortOpen && (
+                <div className="absolute top-full mt-1 right-0 w-56 bg-background/95 backdrop-blur-lg border rounded-xl shadow-xl z-50 py-1 max-h-[70vh] overflow-y-auto">
+                  <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Stats</div>
+                  {statsOptions.map((opt) => {
+                    const key = `${opt.value.field}:${opt.value.direction}`;
+                    const isActive = key === currentKey;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => { onSortChange(opt.value); setSortOpen(false); }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${isActive ? "bg-primary/10 text-primary" : ""}`}
+                      >
+                        <span>{opt.label}</span>
+                        {isActive && <Check className="h-3.5 w-3.5" />}
+                      </button>
+                    );
+                  })}
+                  
+                  <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium border-t mt-1 pt-2">Traits</div>
+                  {traitOptions.map((opt) => {
+                    const key = `${opt.value.field}:${opt.value.direction}`;
+                    const isActive = key === currentKey;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => { onSortChange(opt.value); setSortOpen(false); }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${isActive ? "bg-primary/10 text-primary" : ""}`}
+                      >
+                        <span>{opt.label}</span>
+                        {isActive && <Check className="h-3.5 w-3.5" />}
+                      </button>
+                    );
+                  })}
+                  
+                  <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium border-t mt-1 pt-2">Market</div>
+                  {marketOptions.map((opt) => {
+                    const key = `${opt.value.field}:${opt.value.direction}`;
+                    const isActive = key === currentKey;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => { onSortChange(opt.value); setSortOpen(false); }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${isActive ? "bg-primary/10 text-primary" : ""}`}
+                      >
+                        <span>{opt.label}</span>
+                        {isActive && <Check className="h-3.5 w-3.5" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             {mode === "mine" && (
               <div className="flex items-center border rounded overflow-hidden">

@@ -11,6 +11,7 @@ import { useAddressState } from "@/lib/addressState";
 import type { DataMode, ExplorerGotchi, ExplorerFilters as FiltersType } from "@/lib/explorer/types";
 import { defaultFilters } from "@/lib/explorer/types";
 import { getActiveFilterCount } from "@/lib/explorer/filters";
+import { defaultBaazaarSort } from "@/lib/explorer/sorts";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import setsData from "../../data/setsByTraitDirection.json";
 
@@ -54,6 +55,13 @@ export default function ExplorerPage() {
     setSort,
   } = useExplorerData(mode, connectedAddress);
 
+  const handleModeChange = useCallback((newMode: DataMode) => {
+    setMode(newMode);
+    if (newMode === "baazaar") {
+      setSort(defaultBaazaarSort);
+    }
+  }, [setSort]);
+
   const filteredBySearch = useMemo(() => {
     if (!search.trim()) return gotchis;
     const s = search.toLowerCase().trim();
@@ -80,7 +88,7 @@ export default function ExplorerPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <ExplorerTopBar
         mode={mode}
-        onModeChange={setMode}
+        onModeChange={handleModeChange}
         search={search}
         onSearchChange={setSearch}
         sort={sort}

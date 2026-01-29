@@ -20,6 +20,8 @@ function getSubgraphOrderBy(field: SortField): string {
       return "gotchiId";
     case "price":
       return "gotchiId";
+    case "listingCreated":
+      return "gotchiId";
     default:
       return "withSetsRarityScore";
   }
@@ -99,7 +101,7 @@ const BAAZAAR_SUBGRAPH_URL =
   "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn";
 
 const BAAZAAR_GOTCHI_LISTINGS_QUERY = `
-  query BaazaarGotchiListings($first: Int!, $skip: Int!, $orderDirection: String!) {
+  query BaazaarGotchiListings($first: Int!, $skip: Int!, $orderBy: String!, $orderDirection: String!) {
     erc721Listings(
       first: $first
       skip: $skip
@@ -108,7 +110,7 @@ const BAAZAAR_GOTCHI_LISTINGS_QUERY = `
         cancelled: false
         timePurchased: "0"
       }
-      orderBy: priceInWei
+      orderBy: $orderBy
       orderDirection: $orderDirection
     ) {
       id
@@ -139,6 +141,17 @@ const BAAZAAR_GOTCHI_LISTINGS_QUERY = `
     }
   }
 `;
+
+function getBaazaarOrderBy(field: SortField): string {
+  switch (field) {
+    case "listingCreated":
+      return "timeCreated";
+    case "price":
+      return "priceInWei";
+    default:
+      return "timeCreated";
+  }
+}
 
 const gotchiCache = new Map<string, ExplorerGotchi>();
 const listingsCache = new Map<string, { id: string; priceInWei: string; seller: string }>();
@@ -292,14 +305,15 @@ export function useExplorerData(
         const gotchisWithListings = applyListingsToGotchis(rawGotchis.map(transformGotchi));
         setGotchis(gotchisWithListings);
         setHasMore(false);
-      } else if (mode === "baazaar" || sort.field === "price" || filters.priceMin || filters.priceMax) {
-        const priceDirection = sort.field === "price" ? sort.direction : "asc";
+      } else if (mode === "baazaar" || sort.field === "price" || sort.field === "listingCreated" || filters.priceMin || filters.priceMax) {
+        const baazaarOrderBy = getBaazaarOrderBy(sort.field);
+        const baazaarDirection = (sort.field === "price" || sort.field === "listingCreated") ? sort.direction : "desc";
         const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             query: BAAZAAR_GOTCHI_LISTINGS_QUERY,
-            variables: { first: batchSize, skip: 0, orderDirection: priceDirection },
+            variables: { first: batchSize, skip: 0, orderBy: baazaarOrderBy, orderDirection: baazaarDirection },
           }),
         });
 

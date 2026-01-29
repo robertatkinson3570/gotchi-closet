@@ -1,0 +1,75 @@
+ISSUE: Trait bar graph in Gotchi Detail panel is misleading, noisy, and not useful for Explorer context
+
+PROBLEM STATEMENT
+The current trait display uses horizontal bar graphs with +/- deltas (see screenshot). This visualization is NOT working for the Gotchi Explorer and actively makes the UI worse.
+
+WHY THIS IS A PROBLEM (DO NOT IGNORE)
+
+1) Bars imply a “progress toward a goal” that does not exist
+- NRG / AGG / SPK / BRN are NOT progress metrics.
+- They are static numeric traits, not values that should feel like “more filled = better”.
+- A bar graph falsely suggests optimization or completion.
+
+2) The +/- delta numbers are confusing and contextless
+- “-13”, “-17”, etc. have no obvious reference point.
+- Is this vs base traits? vs average? vs wearables? vs something else?
+- In Explorer / detail context, this forces the user to mentally decode math they did not ask for.
+
+3) Bars waste vertical space in a dense, information-heavy panel
+- Explorer detail panels must be compact and scannable.
+- Four large bars consume too much space for too little signal.
+- This reduces how much other important info (eyes, rarity, kinship, market data) can be shown without scrolling.
+
+4) Bars are visually loud but informationally weak
+- Color-heavy bars draw attention away from more important signals (rarity, eye rarity, GHST, kinship).
+- Users care more about relative strength (highest / lowest trait) than exact fill length.
+
+5) This pattern does not scale well to mobile
+- On mobile, bars become cramped, ambiguous, and require extra vertical scrolling.
+- Numeric traits should remain readable at a glance.
+
+WHAT TO DO INSTEAD (REQUIRED CHANGE)
+
+Replace the bar graph with a **compact, numeric-first trait display** that is:
+- Dense
+- Scannable
+- Honest about what the data represents
+
+RECOMMENDED TRAIT DISPLAY (EXPLORER DETAIL PANEL)
+
+For each trait:
+- Show numeric value prominently (e.g. 87)
+- Optional small delta (only if clearly labeled, otherwise remove)
+- Minimal visual indicator:
+  - small dot / tick / micro-bar OR
+  - highlight strongest trait
+  - highlight weakest trait
+
+Example layout (conceptual):
+NRG  87
+AGG  65
+SPK  92  ★ (highest)
+BRN  54  ↓ (lowest)
+
+Rules:
+- No large horizontal bars
+- No progress metaphors
+- No unlabeled deltas
+- Visual emphasis only where it adds meaning
+
+OPTIONAL (NICE BUT NOT REQUIRED)
+- Add subtle color coding for high / low extremes
+- Add tooltip explaining what traits represent (Explorer only)
+- Allow compact mode vs expanded mode (desktop only)
+
+NON-NEGOTIABLES
+- Remove the current bar graph UI from the Gotchi Explorer detail panel.
+- Do NOT reuse this pattern elsewhere in Explorer.
+- Do NOT introduce new charting libraries.
+- Keep the replacement layout tight, professional, and consistent with GotchiCloset styling.
+
+SUCCESS CRITERIA
+- Traits are readable at a glance.
+- Users understand values without explanation.
+- Detail panel feels less cluttered.
+- Mobile view improves immediately.
