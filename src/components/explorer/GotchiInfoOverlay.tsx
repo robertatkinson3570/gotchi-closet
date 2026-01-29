@@ -103,7 +103,7 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
 
   return (
     <div 
-      className="absolute inset-0 z-50 bg-background/98 backdrop-blur-sm rounded-lg flex flex-col animate-in fade-in-0 duration-100"
+      className="absolute inset-0 z-50 bg-background backdrop-blur-md rounded-lg flex flex-col animate-in fade-in-0 duration-100 border border-primary/20"
       onClick={(e) => e.stopPropagation()}
     >
       {onClose && (
@@ -116,8 +116,8 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
       )}
 
       <div className="flex-1 p-2 overflow-y-auto space-y-2">
-        <div className="text-[10px] font-medium text-center text-muted-foreground border-b border-border/30 pb-1">
-          {gotchi.name || "Unnamed"} Details
+        <div className="text-[10px] font-semibold text-center text-primary border-b border-primary/20 pb-1">
+          {gotchi.name || "Unnamed"}
         </div>
 
         {setName && (
@@ -129,7 +129,7 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
 
         {equippedWearables.length > 0 && (
           <div>
-            <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">
+            <div className="text-[9px] text-purple-400 uppercase tracking-wider mb-1 font-medium">
               Wearables ({equippedWearables.length})
             </div>
             <div className="space-y-1">
@@ -147,11 +147,11 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
                     }}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="text-[9px] font-medium truncate">{w.name}</div>
-                    <div className="text-[8px] text-muted-foreground">
+                    <div className="text-[9px] font-semibold truncate text-foreground">{w.name}</div>
+                    <div className="text-[8px] text-purple-300">
                       {formatTraitMods(w.traitModifiers)}
                       {w.rarityScoreModifier > 0 && (
-                        <span className="text-primary ml-1">+{w.rarityScoreModifier} BRS</span>
+                        <span className="text-green-400 ml-1">+{w.rarityScoreModifier} BRS</span>
                       )}
                     </div>
                   </div>
@@ -161,18 +161,18 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
           </div>
         )}
 
-        <div className="space-y-1 text-[10px]">
+        <div className="space-y-1.5 text-[10px] bg-muted/30 rounded p-1.5">
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Collateral</span>
-            <span className="font-medium text-primary">{collateralName}</span>
+            <span className="text-purple-300 font-medium">Collateral</span>
+            <span className="font-semibold text-foreground">{collateralName}</span>
           </div>
           
           {owner && (
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Owner</span>
+              <span className="text-purple-300 font-medium">Owner</span>
               <button 
                 onClick={copyOwner}
-                className="flex items-center gap-1 hover:text-primary transition-colors font-mono text-[9px]"
+                className="flex items-center gap-1 hover:text-primary transition-colors font-mono text-[9px] text-foreground"
               >
                 {shortenAddress(owner)}
                 {copied ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5" />}
@@ -181,13 +181,13 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
           )}
           
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Age</span>
-            <span className="font-medium">{age}</span>
+            <span className="text-purple-300 font-medium">Age</span>
+            <span className="font-semibold text-foreground">{age}</span>
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">XP</span>
-            <span className="font-medium">{gotchi.experience || 0}</span>
+            <span className="text-purple-300 font-medium">XP</span>
+            <span className="font-semibold text-foreground">{gotchi.experience || 0}</span>
           </div>
         </div>
 
