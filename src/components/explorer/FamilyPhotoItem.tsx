@@ -4,25 +4,9 @@ import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 type Props = {
   gotchi: ExplorerGotchi;
   onClick: () => void;
-  textOnly?: boolean;
 };
 
-export function FamilyPhotoItem({ gotchi, onClick, textOnly }: Props) {
-  if (textOnly) {
-    return (
-      <button
-        onClick={onClick}
-        className="flex flex-col items-center p-1.5 rounded hover:bg-muted/50 transition-colors text-center min-w-0 group"
-      >
-        <span className="text-xs font-medium truncate w-full group-hover:text-primary transition-colors">
-          {gotchi.name || `Gotchi #${gotchi.tokenId}`}
-        </span>
-        <span className="text-[10px] text-muted-foreground">#{gotchi.tokenId}</span>
-        <span className="text-[10px] text-purple-500 font-medium">{gotchi.withSetsRarityScore}</span>
-      </button>
-    );
-  }
-
+export function FamilyPhotoItem({ gotchi, onClick }: Props) {
   return (
     <button
       onClick={onClick}
