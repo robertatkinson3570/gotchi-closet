@@ -102,7 +102,7 @@ export function ExplorerTopBar({
         </div>
       </div>
       <div className="flex flex-col gap-2 p-2 md:p-3">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+        <div className="flex items-center gap-2 overflow-x-auto md:overflow-visible pb-1 md:pb-0 scrollbar-none">
           <div className="flex border rounded-lg overflow-hidden shrink-0">
             {modes.map((m) => (
               <button
