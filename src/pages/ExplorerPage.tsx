@@ -30,7 +30,10 @@ export default function ExplorerPage() {
   const { connectedAddress, isConnected } = useAddressState();
   const setWearables = useAppStore((s) => s.setWearables);
   const setSets = useAppStore((s) => s.setSets);
+  const setGotchis = useAppStore((s) => s.setGotchis);
+  const setFilters = useAppStore((s) => s.setFilters);
   const storeWearables = useAppStore((s) => s.wearables);
+  const storeGotchis = useAppStore((s) => s.gotchis);
   const [assetType, setAssetType] = useState<AssetType>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(ASSET_TYPE_KEY);
@@ -66,15 +69,14 @@ export default function ExplorerPage() {
 
   useEffect(() => {
     if (assetType !== "wearable") return;
-    if (storeWearables.length > 0) return;
 
     type WearablesState = ReturnType<typeof useAppStore.getState>["wearables"];
     const cachedWearables = cacheGet<WearablesState>(CACHE_KEYS.WEARABLES);
-    if (cachedWearables && cachedWearables.length > 0) {
+    if (cachedWearables && cachedWearables.length > 0 && storeWearables.length === 0) {
       setWearables(cachedWearables);
     }
 
-    if (!cachedWearables || cacheIsStale(CACHE_KEYS.WEARABLES)) {
+    if (storeWearables.length === 0 && (!cachedWearables || cacheIsStale(CACHE_KEYS.WEARABLES))) {
       fetchAllWearables()
         .then((wearables) => {
           setWearables(wearables);
@@ -99,6 +101,12 @@ export default function ExplorerPage() {
     }
   }, [assetType, storeWearables.length, setWearables, setSets]);
 
+  useEffect(() => {
+    if (assetType !== "wearable") return;
+    const wearableMode = mode === "mine" ? "owned" : mode === "baazaar" ? "baazaar" : "all";
+    setFilters({ wearableMode });
+  }, [assetType, mode, setFilters]);
+
   const {
     gotchis,
     loading: gotchiLoading,
@@ -110,6 +118,16 @@ export default function ExplorerPage() {
     sort: gotchiSort,
     setSort: setGotchiSort,
   } = useExplorerData(mode, connectedAddress);
+
+  useEffect(() => {
+    if (assetType !== "wearable" || mode !== "mine") return;
+    if (!connectedAddress) return;
+    if (storeGotchis.length > 0) return;
+
+    if (gotchis.length > 0) {
+      setGotchis(gotchis as any);
+    }
+  }, [assetType, mode, connectedAddress, gotchis, storeGotchis.length, setGotchis]);
 
   const {
     wearables,
