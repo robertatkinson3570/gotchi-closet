@@ -11,6 +11,21 @@ export function applySorts(
     let aVal: number;
     let bVal: number;
 
+    // For price sorting, handle unlisted gotchis specially
+    if (field === "price") {
+      const aHasListing = !!a.listing;
+      const bHasListing = !!b.listing;
+      
+      // Unlisted gotchis always go to the end regardless of sort direction
+      if (!aHasListing && !bHasListing) return 0;
+      if (!aHasListing) return 1;
+      if (!bHasListing) return -1;
+      
+      const aPrice = Number(BigInt(a.listing!.priceInWei) / BigInt(1e15));
+      const bPrice = Number(BigInt(b.listing!.priceInWei) / BigInt(1e15));
+      return (aPrice - bPrice) * mult;
+    }
+
     switch (field) {
       case "rarity":
         aVal = a.withSetsRarityScore || a.modifiedRarityScore || a.baseRarityScore;
@@ -28,17 +43,9 @@ export function applySorts(
         aVal = parseInt(a.tokenId, 10);
         bVal = parseInt(b.tokenId, 10);
         break;
-      case "price":
-        aVal = a.listing ? Number(BigInt(a.listing.priceInWei) / BigInt(1e15)) : Infinity;
-        bVal = b.listing ? Number(BigInt(b.listing.priceInWei) / BigInt(1e15)) : Infinity;
-        break;
       case "kinship":
         aVal = a.kinship || 0;
         bVal = b.kinship || 0;
-        break;
-      case "xp":
-        aVal = a.experience || 0;
-        bVal = b.experience || 0;
         break;
       case "nrg":
         aVal = (a.withSetsNumericTraits || a.modifiedNumericTraits || a.numericTraits)[0] || 0;
