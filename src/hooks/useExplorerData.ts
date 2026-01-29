@@ -81,7 +81,7 @@ const BAAZAAR_GOTCHI_LISTINGS_QUERY = `
       where: {
         category: 3
         cancelled: false
-        timePurchased: null
+        timePurchased: "0"
       }
       orderBy: priceInWei
       orderDirection: asc
