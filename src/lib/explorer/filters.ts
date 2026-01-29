@@ -89,15 +89,17 @@ export function applyFilters(
       if (!filters.haunts.includes(String(g.hauntId))) return false;
     }
 
-    if (filters.priceMin && g.listing) {
-      const min = parseFloat(filters.priceMin);
+    if (filters.priceMin || filters.priceMax) {
+      if (!g.listing) return false;
       const price = parseFloat(g.listing.priceInWei) / 1e18;
-      if (!isNaN(min) && price < min) return false;
-    }
-    if (filters.priceMax && g.listing) {
-      const max = parseFloat(filters.priceMax);
-      const price = parseFloat(g.listing.priceInWei) / 1e18;
-      if (!isNaN(max) && price > max) return false;
+      if (filters.priceMin) {
+        const min = parseFloat(filters.priceMin);
+        if (!isNaN(min) && price < min) return false;
+      }
+      if (filters.priceMax) {
+        const max = parseFloat(filters.priceMax);
+        if (!isNaN(max) && price > max) return false;
+      }
     }
 
     if (filters.hasGhstPocket === true) {
