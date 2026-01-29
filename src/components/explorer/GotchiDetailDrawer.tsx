@@ -44,6 +44,57 @@ type Props = {
 const TRAIT_NAMES = ["NRG", "AGG", "SPK", "BRN"];
 const TRAIT_LABELS = ["Energy", "Aggression", "Spookiness", "Brain Size"];
 
+const ENERGY_NAMES: Record<string, string> = {
+  low: "Zen", mid: "Calm", high: "Energetic", extreme_low: "Serene", extreme_high: "Hyper"
+};
+const AGG_NAMES: Record<string, string> = {
+  low: "Peaceful", mid: "Neutral", high: "Aggressive", extreme_low: "Tranquil", extreme_high: "Hostile"  
+};
+const SPK_NAMES: Record<string, string> = {
+  low: "Cuddly", mid: "Spooky", high: "Ghastly", extreme_low: "Adorable", extreme_high: "Terrifying"
+};
+const BRN_NAMES: Record<string, string> = {
+  low: "Smooth", mid: "Average", high: "Galaxy", extreme_low: "Simple", extreme_high: "Genius"
+};
+
+function getTraitPersonality(value: number, traitIndex: number): string {
+  const names = [ENERGY_NAMES, AGG_NAMES, SPK_NAMES, BRN_NAMES][traitIndex];
+  if (!names) return "";
+  if (value <= 10) return names.extreme_low;
+  if (value >= 90) return names.extreme_high;
+  if (value < 40) return names.low;
+  if (value > 60) return names.high;
+  return names.mid;
+}
+
+function getXpToNextLevel(level: number, currentXp: number): number {
+  const xpRequired = level * level * 50;
+  return Math.max(0, xpRequired - currentXp);
+}
+
+function formatAge(createdAtBlock: number | undefined): { age: string; bonus: number } {
+  if (!createdAtBlock) return { age: "Unknown", bonus: 0 };
+  const now = Math.floor(Date.now() / 1000);
+  const ageSeconds = now - createdAtBlock;
+  const ageDays = Math.floor(ageSeconds / 86400);
+  
+  let ageLabel = "";
+  let bonus = 0;
+  
+  if (ageDays >= 730) { ageLabel = "AANCIENT"; bonus = 9; }
+  else if (ageDays >= 365) { ageLabel = "ANCIENT"; bonus = 6; }
+  else if (ageDays >= 180) { ageLabel = "OLDE"; bonus = 3; }
+  else if (ageDays >= 90) { ageLabel = "YOUNG"; bonus = 1; }
+  else { ageLabel = "NEWBORN"; bonus = 0; }
+  
+  return { age: `${ageLabel} (~${ageDays}d)`, bonus };
+}
+
+function formatGhstBalance(escrow: string | undefined): string {
+  if (!escrow) return "0.00";
+  return "0.00";
+}
+
 function Section({
   title,
   children,
@@ -204,13 +255,22 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
           </div>
         </div>
 
-        <Section title="Identity">
-          <StatRow label="Token ID" value={gotchi.tokenId} />
+        <Section title="Stats">
+          <StatRow label="Rarity Score" value={`${gotchi.withSetsRarityScore} (${gotchi.baseRarityScore})`} highlight />
+          <StatRow label="Kinship" value={gotchi.kinship ?? "—"} />
           <StatRow label="Haunt" value={gotchi.hauntId} />
-          <StatRow label="Level" value={gotchi.level} />
-          {gotchi.kinship !== undefined && <StatRow label="Kinship" value={gotchi.kinship} />}
-          {gotchi.experience !== undefined && <StatRow label="XP" value={gotchi.experience} />}
+          <StatRow label="Level" value={`${gotchi.level} (${gotchi.experience ?? 0} XP)`} />
+          {gotchi.experience !== undefined && gotchi.level && (
+            <StatRow label="XP to Next Level" value={getXpToNextLevel(gotchi.level, gotchi.experience)} />
+          )}
+          <StatRow label="Spirit Points" value={gotchi.usedSkillPoints ?? 0} />
+          {gotchi.equippedSetName && <StatRow label="Equipped Set" value={gotchi.equippedSetName} highlight />}
+          {gotchi.createdAt && (
+            <StatRow label="Age" value={`${formatAge(gotchi.createdAt).age} (+${formatAge(gotchi.createdAt).bonus} pts)`} />
+          )}
+          <StatRow label="GHST Balance" value={formatGhstBalance(gotchi.escrow)} />
           <StatRow label="Collateral" value={getCollateralName(gotchi.collateral)} />
+          <StatRow label="Owner" value={`${gotchi.owner.slice(0, 6)}...${gotchi.owner.slice(-4)}`} />
         </Section>
 
         {gotchi.listing && (
@@ -227,7 +287,7 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
           {traits.slice(0, 4).map((val, i) => (
             <TraitBar
               key={i}
-              label={`${TRAIT_NAMES[i]} (${TRAIT_LABELS[i]})`}
+              label={`${TRAIT_NAMES[i]} (${TRAIT_LABELS[i]}) — ${getTraitPersonality(val, i).toUpperCase()}`}
               value={val}
             />
           ))}

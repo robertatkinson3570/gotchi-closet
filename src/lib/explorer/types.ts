@@ -122,4 +122,7 @@ export type ExplorerGotchi = {
   usedSkillPoints?: number;
   equippedSetID?: number;
   equippedSetName?: string;
+  lastInteracted?: number;
+  minimumStake?: string;
+  stakedAmount?: string;
 };

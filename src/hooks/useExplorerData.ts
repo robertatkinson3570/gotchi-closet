@@ -36,6 +36,9 @@ const GOTCHIS_PAGINATED = gql`
       equippedSetName
       usedSkillPoints
       createdAt
+      lastInteracted
+      minimumStake
+      stakedAmount
     }
   }
 `;
@@ -65,6 +68,9 @@ const GOTCHIS_BY_OWNER_EXPLORER = gql`
         equippedSetName
         usedSkillPoints
         createdAt
+        lastInteracted
+        minimumStake
+        stakedAmount
       }
     }
   }
@@ -213,9 +219,12 @@ function transformGotchi(raw: any): ExplorerGotchi {
     listing: raw.listing,
     escrow: raw.escrow,
     createdAt: raw.createdAt ? parseInt(raw.createdAt, 10) : undefined,
-    usedSkillPoints: raw.usedSkillPoints,
+    usedSkillPoints: raw.usedSkillPoints ? parseInt(raw.usedSkillPoints, 10) : undefined,
     equippedSetID: raw.equippedSetID ? parseInt(raw.equippedSetID, 10) : undefined,
     equippedSetName: raw.equippedSetName,
+    lastInteracted: raw.lastInteracted ? parseInt(raw.lastInteracted, 10) : undefined,
+    minimumStake: raw.minimumStake,
+    stakedAmount: raw.stakedAmount,
   };
   
   gotchiCache.set(tokenId, gotchi);
