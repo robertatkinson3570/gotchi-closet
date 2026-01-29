@@ -5,6 +5,7 @@ import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { getRarityTier } from "@/lib/explorer/filters";
 import { extractEyeData, getEyeShapeName, getEyeColorName } from "@/lib/explorer/traitFrequency";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
+import { useGotchiSalesHistory } from "@/hooks/useGotchiSalesHistory";
 import wearablesData from "../../../data/wearables.json";
 
 const NAKED_WEARABLES = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -124,6 +125,89 @@ function TraitBar({ label, value }: { label: string; value: number }) {
             width: isLow ? `${50 - percent}%` : `${percent - 50}%`,
           }}
         />
+      </div>
+    </div>
+  );
+}
+
+function formatTimeAgo(timestamp: number): string {
+  const now = Math.floor(Date.now() / 1000);
+  const diff = now - timestamp;
+  const days = Math.floor(diff / 86400);
+  if (days >= 365) return `${Math.floor(days / 365)} yr ago`;
+  if (days >= 30) return `${Math.floor(days / 30)} mo ago`;
+  if (days >= 1) return `${days}d ago`;
+  const hours = Math.floor(diff / 3600);
+  if (hours >= 1) return `${hours}h ago`;
+  return "just now";
+}
+
+function SalesHistorySection({ tokenId }: { tokenId: string }) {
+  const { sales, loading } = useGotchiSalesHistory(tokenId);
+  const [open, setOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="border-b border-border/30 last:border-0">
+        <button className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium">
+          <span>Recent Sales</span>
+          <span className="text-xs text-muted-foreground">Loading...</span>
+        </button>
+      </div>
+    );
+  }
+
+  if (sales.length === 0) return null;
+
+  return (
+    <div className="border-b border-border/30 last:border-0">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium hover:bg-muted/30 transition-colors"
+      >
+        <span>Recent Sales ({sales.length})</span>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      <div className={`overflow-hidden transition-all duration-200 ${open ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"}`}>
+        <div className="px-4 pb-3 space-y-3">
+          {sales.map((sale) => {
+            const wearables = sale.equippedWearables.filter((w) => w > 0);
+            const priceGhst = (parseFloat(sale.priceInWei) / 1e18).toFixed(2);
+            return (
+              <div key={sale.id} className="bg-muted/20 rounded-lg p-2.5 text-xs">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-muted-foreground">
+                    {sale.seller.slice(0, 6)}...{sale.seller.slice(-4)}
+                  </span>
+                  <span className="font-medium text-green-500">{priceGhst} GHST</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{formatTimeAgo(sale.timePurchased)}</span>
+                  <span className="text-muted-foreground">
+                    {wearables.length > 0 ? `${wearables.length} Wearable${wearables.length > 1 ? "s" : ""}` : "No Wearables"}
+                  </span>
+                </div>
+                {wearables.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-border/20">
+                    {wearables.map((id, i) => (
+                      <div key={i} className="flex items-center gap-1 bg-background/50 rounded px-1.5 py-0.5">
+                        <img
+                          src={getWearableImageUrl(id)}
+                          alt={getWearableName(id)}
+                          className="w-4 h-4 object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = `https://wiki.aavegotchi.com/wearables/${id}.svg`;
+                          }}
+                        />
+                        <span className="text-[10px]">{getWearableName(id)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -296,6 +380,8 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
             )}
           </div>
         </Section>
+
+        <SalesHistorySection tokenId={gotchi.tokenId} />
       </div>
 
       <div className="p-3 border-t border-border/30">
