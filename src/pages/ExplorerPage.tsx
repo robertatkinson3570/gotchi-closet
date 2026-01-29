@@ -1,6 +1,4 @@
 import { useState, useMemo, useCallback } from "react";
-import { Link } from "react-router-dom";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { ExplorerTopBar } from "@/components/explorer/ExplorerTopBar";
 import { ExplorerFilters } from "@/components/explorer/ExplorerFilters";
 import { ExplorerGrid } from "@/components/explorer/ExplorerGrid";
@@ -52,31 +50,6 @@ export default function ExplorerPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <header className="h-12 md:h-14 w-full border-b bg-background/95 backdrop-blur">
-        <div className="flex h-full items-center justify-between px-3 md:px-4">
-          <Link to="/" className="flex items-center gap-1.5 min-w-0 hover:opacity-80 transition-opacity">
-            <img
-              src="/logo.png"
-              alt="GotchiCloset"
-              className="h-8 md:h-10 w-8 md:w-10 object-contain"
-            />
-            <div className="text-base md:text-lg font-semibold tracking-tight truncate">
-              Gotchi
-              <span className="font-normal text-muted-foreground">Explorer</span>
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              to="/dress"
-              className="text-xs md:text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Dress
-            </Link>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
-
       <ExplorerTopBar
         mode={mode}
         onModeChange={setMode}
@@ -92,13 +65,6 @@ export default function ExplorerPage() {
       />
 
       <div className="flex-1 flex">
-        <aside className="hidden lg:block w-72 border-r bg-muted/20 overflow-y-auto sticky top-[104px] h-[calc(100vh-104px)]">
-          <ExplorerFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-          />
-        </aside>
-
         <main className="flex-1 min-w-0">
           {filterCount > 0 && (
             <div className="px-2 md:px-4 py-2 border-b bg-muted/30 flex items-center gap-2 overflow-x-auto">
@@ -124,7 +90,7 @@ export default function ExplorerPage() {
       </div>
 
       {showFilters && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50">
           <div
             className="absolute inset-0 bg-black/50"
             onClick={() => setShowFilters(false)}

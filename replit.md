@@ -47,13 +47,15 @@ See `.env.example` for required environment variables:
 
 ## Recent Changes
 - 2026-01-29: Added Gotchi Explorer page (/explorer) - mobile-first power-user browsing
+  - Single unified header with logo, Dress link, and theme toggle
   - Data modes: Mine, All, Baazaar, Auction with sticky top toggle
   - High-density responsive grid (2-8 columns based on viewport)
   - Lazy loading with IntersectionObserver for infinite scroll
-  - Filter sidebar (desktop) / bottom sheet (mobile) with collapsible sections
-  - Filters: Token ID, name, rarity range/tier, traits, level, wearables, haunt, price
-  - Sort by rarity, level, token ID, traits, price
-  - GotchiExplorerCard shows: token ID, haunt, BRS, level, kinship, trait bars, eye rarity
+  - Filter panel collapsed by default, opens on click (Filters button)
+  - Filters: Token ID, name, rarity range/tier, traits, level, wearables, haunt
+  - Sort by rarity, level, kinship, token ID, traits, price
+  - GotchiExplorerCard uses GotchiSvg component for proper image loading
+  - Shows: token ID, haunt, BRS, level, kinship, trait bars, eye rarity
   - GotchiDetailDrawer with collapsible sections (Identity, Market, Traits, Eye Traits, Wearables)
   - Mobile-optimized: bottom sheets, touch targets, sticky headers, responsive search
   - Located in src/pages/ExplorerPage.tsx, src/components/explorer/*, src/lib/explorer/*

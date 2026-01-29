@@ -2,6 +2,7 @@ import { memo, useMemo } from "react";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { getRarityTier } from "@/lib/explorer/filters";
 import { extractEyeData, getEyeShapeName } from "@/lib/explorer/traitFrequency";
+import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 
 type Props = {
   gotchi: ExplorerGotchi;
@@ -63,8 +64,6 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({ gotchi, onC
   const eyeData = useMemo(() => extractEyeData(gotchi), [gotchi]);
   const wearableCount = gotchi.equippedWearables.filter((w) => w > 0).length;
 
-  const svgUrl = `https://app.aavegotchi.com/images/aavegotchis/${gotchi.tokenId}.svg`;
-
   return (
     <div
       onClick={onClick}
@@ -80,15 +79,14 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({ gotchi, onC
         </div>
       </div>
 
-      <div className="relative aspect-square p-2 flex items-center justify-center">
-        <img
-          src={svgUrl}
-          alt={gotchi.name}
-          className="w-full h-full object-contain"
-          loading="lazy"
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = "none";
-          }}
+      <div className="relative aspect-square p-1 flex items-center justify-center">
+        <GotchiSvg
+          gotchiId={gotchi.tokenId}
+          hauntId={gotchi.hauntId}
+          collateral={gotchi.collateral}
+          numericTraits={gotchi.numericTraits as number[]}
+          equippedWearables={gotchi.equippedWearables as number[]}
+          className="w-full h-full"
         />
         <div className="absolute bottom-1 right-1 text-[8px] bg-background/80 px-1 rounded text-muted-foreground">
           {getEyeShapeName(eyeData.shape)} {eyeData.comboRarity}
