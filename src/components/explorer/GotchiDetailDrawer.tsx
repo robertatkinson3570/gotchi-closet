@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/ui/button";
-import { X, ChevronDown, ChevronUp, Copy, ExternalLink } from "lucide-react";
+import { X, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { getRarityTier } from "@/lib/explorer/filters";
 import { extractEyeData, getEyeShapeName, getEyeColorName } from "@/lib/explorer/traitFrequency";
-import { Link } from "react-router-dom";
+import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
+
+function getWearableImageUrl(id: number): string {
+  return `https://app.aavegotchi.com/images/items/${id}.svg`;
+}
 
 type Props = {
   gotchi: ExplorerGotchi | null;
@@ -84,8 +88,8 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
   const tier = getRarityTier(gotchi.withSetsRarityScore);
   const traits = gotchi.withSetsNumericTraits || gotchi.modifiedNumericTraits || gotchi.numericTraits;
   const eyeData = extractEyeData(gotchi);
-  const wearableCount = gotchi.equippedWearables.filter((w) => w > 0).length;
-  const svgUrl = `https://app.aavegotchi.com/images/aavegotchis/${gotchi.tokenId}.svg`;
+  const equippedWearableIds = gotchi.equippedWearables.filter((w) => w > 0);
+  const wearableCount = equippedWearableIds.length;
 
   const copyTokenId = () => {
     navigator.clipboard.writeText(gotchi.tokenId);
@@ -109,10 +113,13 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 bg-muted/20 border-b">
           <div className="relative aspect-square max-w-48 mx-auto">
-            <img
-              src={svgUrl}
-              alt={gotchi.name}
-              className="w-full h-full object-contain"
+            <GotchiSvg
+              gotchiId={gotchi.tokenId}
+              hauntId={gotchi.hauntId}
+              collateral={gotchi.collateral}
+              numericTraits={gotchi.numericTraits}
+              equippedWearables={gotchi.equippedWearables}
+              className="w-full h-full"
             />
           </div>
           <div className="flex items-center justify-center gap-2 mt-3">
@@ -169,12 +176,20 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
 
         <Section title="Wearables" defaultOpen={false}>
           <StatRow label="Equipped Count" value={wearableCount} />
-          {gotchi.equippedWearables.filter((w) => w > 0).length > 0 ? (
-            <div className="flex flex-wrap gap-1 mt-2">
-              {gotchi.equippedWearables.filter((w) => w > 0).map((id, i) => (
-                <span key={i} className="text-xs bg-muted px-2 py-0.5 rounded">
-                  #{id}
-                </span>
+          {equippedWearableIds.length > 0 ? (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {equippedWearableIds.map((id, i) => (
+                <div key={i} className="flex flex-col items-center gap-0.5">
+                  <img
+                    src={getWearableImageUrl(id)}
+                    alt={`Wearable #${id}`}
+                    className="w-10 h-10 object-contain bg-muted rounded p-1"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://wiki.aavegotchi.com/wearables/${id}.svg`;
+                    }}
+                  />
+                  <span className="text-[9px] text-muted-foreground">#{id}</span>
+                </div>
               ))}
             </div>
           ) : (
@@ -185,16 +200,10 @@ export function GotchiDetailDrawer({ gotchi, onClose, onAddToDress }: Props) {
 
       <div className="flex items-center gap-2 p-3 border-t bg-background">
         {onAddToDress && (
-          <Button variant="outline" className="flex-1" onClick={() => onAddToDress(gotchi)}>
+          <Button variant="default" className="flex-1" onClick={() => onAddToDress(gotchi)}>
             Add to Dress
           </Button>
         )}
-        <Link to={`/gotchi/${gotchi.tokenId}`} className="flex-1">
-          <Button variant="default" className="w-full gap-1">
-            View Details
-            <ExternalLink className="h-3 w-3" />
-          </Button>
-        </Link>
       </div>
     </div>
   );
