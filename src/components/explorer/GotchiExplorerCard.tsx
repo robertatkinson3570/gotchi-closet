@@ -93,6 +93,10 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
     setShowPopover(!showPopover);
   };
 
+  const priceGhst = gotchi.listing 
+    ? parseFloat(gotchi.listing.priceInWei) / 1e18 
+    : null;
+
   return (
     <div
       onClick={onClick}
@@ -100,11 +104,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
       onMouseLeave={() => setIsHovered(false)}
       className={`cursor-pointer rounded-xl border ${rarityBorders[tier]} ${rarityColors[tier]} hover:ring-2 hover:ring-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-200 overflow-hidden active:scale-[0.98] backdrop-blur-sm`}
     >
-      <div className="flex items-center justify-between px-2 py-1 bg-background/50 border-b border-border/30">
-        <span className="text-[10px] text-muted-foreground font-mono">#{gotchi.tokenId}</span>
-        <span className="text-[9px] bg-muted px-1 rounded">H{gotchi.hauntId}</span>
-      </div>
-
+      {/* Image only - no header */}
       <div className="relative aspect-square p-2 flex items-center justify-center bg-gradient-to-b from-transparent to-background/30">
         {wearableCount > 0 && (
           <div className={`absolute inset-2 transition-opacity duration-300 ${isHovered ? "opacity-0" : "opacity-100"}`}>
@@ -171,28 +171,37 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
         )}
       </div>
 
+      {/* All info below image */}
       <div className="px-2 py-1.5 bg-background/70 border-t border-border/30">
-        <div className="text-xs font-medium truncate mb-0.5">{gotchi.name || "Unnamed"}</div>
-        <div className="text-[10px] text-muted-foreground mb-1">
-          Rarity Score {gotchi.withSetsRarityScore} ({gotchi.baseRarityScore})
+        {/* Name and ID row */}
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <span className="text-xs font-medium truncate flex-1">{gotchi.name || "Unnamed"}</span>
+          <span className="text-[9px] text-muted-foreground font-mono">#{gotchi.tokenId}</span>
         </div>
 
-        <div className="flex items-center gap-2 text-[9px] text-muted-foreground mb-1">
-          <span>Lv.{gotchi.level}</span>
-          {gotchi.kinship !== undefined && <span>❤️{gotchi.kinship}</span>}
-          {gotchi.listing && (
-            <span className="text-green-500">
-              {(parseFloat(gotchi.listing.priceInWei) / 1e18).toFixed(0)} GHST
+        {/* Badges row: Haunt, Set badge if equipped */}
+        <div className="flex items-center gap-1 mb-1 flex-wrap">
+          <span className="text-[9px] bg-muted px-1 rounded">H{gotchi.hauntId}</span>
+          {gotchi.equippedSetName && (
+            <span className="text-[9px] bg-purple-500/20 text-purple-400 px-1 rounded truncate max-w-[80px]">
+              {gotchi.equippedSetName}
             </span>
           )}
+          {isUnique && (
+            <span className="text-[9px] bg-pink-500/20 text-pink-400 px-1 rounded">2X MYTH</span>
+          )}
         </div>
-        {gotchi.equippedSetName && (
-          <div className="text-[9px] text-purple-400 mb-1 truncate">
-            Set: {gotchi.equippedSetName}
-          </div>
-        )}
 
-        <div className="space-y-0.5">
+        {/* Stats row */}
+        <div className="text-[10px] text-muted-foreground mb-1">
+          <span className="text-foreground font-medium">RAR</span> {gotchi.withSetsRarityScore} ({gotchi.baseRarityScore})
+          {gotchi.kinship !== undefined && <> <span className="text-foreground font-medium">KIN</span> {gotchi.kinship}</>}
+          {" "}<span className="text-foreground font-medium">LVL</span> {gotchi.level}
+          {gotchi.experience !== undefined && <span className="text-muted-foreground"> ({gotchi.experience} XP)</span>}
+        </div>
+
+        {/* Traits */}
+        <div className="space-y-0.5 mb-1">
           {traits.slice(0, 4).map((val, i) => (
             <TraitBar
               key={i}
@@ -201,6 +210,18 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
             />
           ))}
         </div>
+
+        {/* Price - only show if listing exists */}
+        {priceGhst !== null && (
+          <div className="pt-1 border-t border-border/30">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] text-muted-foreground">PRICE</span>
+              <span className="text-[10px] text-green-500 font-medium">
+                {priceGhst.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} GHST
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
