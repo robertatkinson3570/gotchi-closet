@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { GotchiExplorerCard } from "./GotchiExplorerCard";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
+import { useTraitFrequency } from "@/hooks/useTraitFrequency";
 
 type Props = {
   gotchis: ExplorerGotchi[];
@@ -14,6 +15,7 @@ type Props = {
 
 export function ExplorerGrid({ gotchis, loading, hasMore, error, onLoadMore, onSelectGotchi }: Props) {
   const loaderRef = useRef<HTMLDivElement>(null);
+  const { loading: frequencyLoading, getRarities } = useTraitFrequency(gotchis);
 
   const handleIntersection = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -64,6 +66,8 @@ export function ExplorerGrid({ gotchis, loading, hasMore, error, onLoadMore, onS
             key={gotchi.id}
             gotchi={gotchi}
             onClick={() => onSelectGotchi(gotchi)}
+            eyeRarities={getRarities(gotchi)}
+            frequencyLoading={frequencyLoading}
           />
         ))}
       </div>

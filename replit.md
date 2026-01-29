@@ -48,17 +48,22 @@ See `.env.example` for required environment variables:
 ## Recent Changes
 - 2026-01-29: Added Gotchi Explorer page (/explorer) - mobile-first power-user browsing
   - Single unified header with logo, Dress link, and theme toggle
-  - Data modes: Mine, All, Baazaar, Auction with sticky top toggle
+  - Data modes: All, Owned, Baazaar with sticky top toggle
   - High-density responsive grid (2-8 columns based on viewport)
   - Lazy loading with IntersectionObserver for infinite scroll
   - Filter panel collapsed by default, opens on click (Filters button)
-  - Filters: Token ID, name, rarity range/tier, traits, level, wearables, haunt
+  - Filters: Token ID, name, rarity range/tier, traits, level, wearables, haunt (H1/H2 checkboxes)
+  - Additional filters: GHST pocket, equipped set, double mythical eyes, GHST balance range
   - Sort by rarity, level, kinship, token ID, traits, price
   - GotchiExplorerCard uses GotchiSvg component for proper image loading
-  - Shows: token ID, haunt, BRS, level, kinship, trait bars, eye rarity
+  - Shows: token ID, haunt, BRS, level, kinship, trait bars, eye rarity badge
+  - Eye trait frequency rarity system: 1/N format showing how many gotchis share that eye combo per haunt
+  - Unique (1/1) eye combos highlighted in pink, tap badge for breakdown popover (Combo, Shape, Color)
   - GotchiDetailDrawer with collapsible sections (Identity, Market, Traits, Eye Traits, Wearables)
+  - Drawer shows proper collateral names (maWETH, amDAI, etc.) instead of addresses
   - Mobile-optimized: bottom sheets, touch targets, sticky headers, responsive search
   - Located in src/pages/ExplorerPage.tsx, src/components/explorer/*, src/lib/explorer/*
+  - Eye frequency logic in src/hooks/useTraitFrequency.ts (fetches all gotchis per haunt, builds frequency maps)
 - 2026-01-28: Ghostly haunted theme for Catwalk fashion show
   - Floating ghost orbs (3 large blurred purple orbs with floatingGhost animation)
   - Portal swirl effect at top center (rotating conic gradient)

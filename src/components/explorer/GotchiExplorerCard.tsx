@@ -1,12 +1,19 @@
-import { memo, useMemo } from "react";
+import { memo, useState } from "react";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { getRarityTier } from "@/lib/explorer/filters";
-import { extractEyeData, getEyeShapeName } from "@/lib/explorer/traitFrequency";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
+
+type EyeRarities = {
+  shape: number | null;
+  color: number | null;
+  combo: number | null;
+};
 
 type Props = {
   gotchi: ExplorerGotchi;
   onClick: () => void;
+  eyeRarities?: EyeRarities;
+  frequencyLoading?: boolean;
 };
 
 const rarityColors: Record<string, string> = {
@@ -58,11 +65,30 @@ function TraitBar({ value, name }: { value: number; name: string }) {
   );
 }
 
-export const GotchiExplorerCard = memo(function GotchiExplorerCard({ gotchi, onClick }: Props) {
+export const GotchiExplorerCard = memo(function GotchiExplorerCard({ 
+  gotchi, 
+  onClick, 
+  eyeRarities,
+  frequencyLoading 
+}: Props) {
   const tier = getRarityTier(gotchi.withSetsRarityScore);
   const traits = gotchi.withSetsNumericTraits || gotchi.modifiedNumericTraits || gotchi.numericTraits;
-  const eyeData = useMemo(() => extractEyeData(gotchi), [gotchi]);
   const wearableCount = gotchi.equippedWearables.filter((w) => w > 0).length;
+  const [showPopover, setShowPopover] = useState(false);
+
+  const eyeShape = traits.length > 4 ? traits[4] : 0;
+  const eyeColor = traits.length > 5 ? traits[5] : 0;
+
+  const comboRarityText = eyeRarities?.combo 
+    ? `1/${eyeRarities.combo}` 
+    : frequencyLoading ? "..." : "?";
+
+  const isUnique = eyeRarities?.combo === 1;
+
+  const handlePopoverToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowPopover(!showPopover);
+  };
 
   return (
     <div
@@ -88,9 +114,47 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({ gotchi, onC
           equippedWearables={gotchi.equippedWearables as number[]}
           className="w-full h-full"
         />
-        <div className="absolute bottom-1 right-1 text-[8px] bg-background/80 px-1 rounded text-muted-foreground">
-          {getEyeShapeName(eyeData.shape)} {eyeData.comboRarity}
-        </div>
+        
+        <button
+          onClick={handlePopoverToggle}
+          className={`absolute bottom-1 right-1 text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 transition-colors ${
+            isUnique 
+              ? "bg-pink-500/90 text-white font-bold" 
+              : "bg-background/90 text-foreground border border-border/50 hover:bg-muted"
+          }`}
+        >
+          <span>👁</span>
+          <span>{comboRarityText}</span>
+        </button>
+
+        {showPopover && (
+          <div 
+            className="absolute bottom-8 right-0 z-20 bg-background border border-border rounded-lg shadow-lg p-2 min-w-[140px] text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="font-semibold mb-1.5 text-center border-b pb-1">Eye Trait Rarity</div>
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Combo:</span>
+                <span className={`font-mono ${isUnique ? "text-pink-500 font-bold" : ""}`}>
+                  {eyeRarities?.combo ? `1/${eyeRarities.combo}` : "..."}
+                  {isUnique && " ⭐"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Shape ({eyeShape}):</span>
+                <span className="font-mono">{eyeRarities?.shape ? `1/${eyeRarities.shape}` : "..."}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Color ({eyeColor}):</span>
+                <span className="font-mono">{eyeRarities?.color ? `1/${eyeRarities.color}` : "..."}</span>
+              </div>
+            </div>
+            <div className="text-[9px] text-muted-foreground mt-2 pt-1 border-t">
+              1 of N in Haunt {gotchi.hauntId}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="px-2 py-1.5 bg-background/70 border-t border-border/30">
