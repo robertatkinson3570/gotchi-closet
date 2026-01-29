@@ -66,22 +66,22 @@ export function applyFilters(
     }
 
     if (filters.hasWearables === true) {
-      const hasAny = g.equippedWearables.some((w) => w > 0);
+      const hasAny = g.equippedWearables.some((w) => Number(w) > 0);
       if (!hasAny) return false;
     }
     if (filters.hasWearables === false) {
-      const hasAny = g.equippedWearables.some((w) => w > 0);
+      const hasAny = g.equippedWearables.some((w) => Number(w) > 0);
       if (hasAny) return false;
     }
 
     if (filters.wearableCountMin) {
       const min = parseInt(filters.wearableCountMin, 10);
-      const count = g.equippedWearables.filter((w) => w > 0).length;
+      const count = g.equippedWearables.filter((w) => Number(w) > 0).length;
       if (!isNaN(min) && count < min) return false;
     }
     if (filters.wearableCountMax) {
       const max = parseInt(filters.wearableCountMax, 10);
-      const count = g.equippedWearables.filter((w) => w > 0).length;
+      const count = g.equippedWearables.filter((w) => Number(w) > 0).length;
       if (!isNaN(max) && count > max) return false;
     }
 
