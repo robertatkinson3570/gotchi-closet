@@ -1,0 +1,97 @@
+ISSUE: Main Gotchi card layout is poorly organized and wastes space; trait slider bars are the wrong visualization
+
+PROBLEM SUMMARY
+The current main Gotchi card layout (see screenshot) is not well organized, does not scan cleanly, and makes poor use of limited card space. The trait slider bars in particular are visually noisy, misleading, and inconsistent with how traits should be represented in an Explorer context.
+
+WHY THIS CARD IS NOT WORKING
+
+1) Information hierarchy is unclear
+- Too many elements compete for attention:
+  - image
+  - name
+  - rarity
+  - kinship
+  - level
+  - trait sliders
+  - deltas
+  - price
+- There is no clear “primary → secondary → tertiary” structure.
+- The eye is pulled to the sliders instead of the most important info (rarity, eyes, value).
+
+2) Trait slider bars are the wrong abstraction
+- NRG / AGG / SPK / BRN are NOT progress values.
+- A filled bar implies “more is better” or “closer to completion,” which is false.
+- The bars do not represent comparison, range, or progress in any meaningful way.
+
+3) The +/- delta numbers are confusing and unlabeled
+- Values like “-13”, “-17” lack context.
+- It is not obvious what they are relative to:
+  - base traits?
+  - average?
+  - wearables?
+- This forces cognitive load without payoff.
+
+4) Sliders waste vertical space on a compact card
+- Four horizontal bars consume a large portion of the card height.
+- This limits how many Gotchis can be displayed per screen.
+- Explorer cards must be dense and scannable; this layout is the opposite.
+
+5) Visual noise outweighs information value
+- Sliders are color-heavy and dominate the card.
+- They drown out more valuable signals:
+  - rarity
+  - eye rarity
+  - kinship
+  - price
+- The card feels busy, not informative.
+
+6) Inconsistent with intended Explorer design direction
+- You already decided the trait bar approach is wrong for the Gotchi Detail panel.
+- The main card should be EVEN MORE compact and scannable than the detail panel.
+- Keeping sliders here while removing them elsewhere creates inconsistency.
+
+WHAT TO DO INSTEAD (REQUIRED DIRECTION)
+
+The main Gotchi card should move toward the SAME philosophy as the updated Gotchi Detail panel, but even more compact.
+
+RECOMMENDED CARD TRAIT TREATMENT
+- Remove trait slider bars entirely from the main card.
+- Replace with a compact, numeric-first representation OR remove traits from the main card altogether.
+
+Acceptable options:
+Option A (preferred):
+- Do NOT show individual traits on the main card.
+- Reserve traits for:
+  - hover
+  - detail drawer
+- Use card space for:
+  - rarity
+  - eye combo rarity
+  - kinship
+  - price / market state
+
+Option B (if traits must remain):
+- Show traits as compact numbers only:
+  NRG 87 | AGG 65 | SPK 92 | BRN 54
+- Highlight strongest and weakest traits subtly.
+- No bars. No progress metaphors. No deltas without labels.
+
+CARD LAYOUT GOALS
+- Clear vertical hierarchy:
+  1) Identity (image, name, ID)
+  2) Rarity + eye rarity (key signal)
+  3) Market / kinship / level
+- Compact height to allow more cards per screen.
+- Visual calm, not visual drama.
+
+NON-NEGOTIABLES
+- Remove trait slider bars from the main Gotchi card.
+- Do NOT replace them with another chart type.
+- Align main card design philosophy with the updated Gotchi Detail panel.
+- Keep the card tight, scannable, and information-dense.
+
+SUCCESS CRITERIA
+- Cards scan quickly without mental decoding.
+- More Gotchis fit on screen.
+- Important signals stand out immediately.
+- Card design feels intentional and professional, not experimental.

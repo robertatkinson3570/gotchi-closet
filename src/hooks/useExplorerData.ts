@@ -335,6 +335,7 @@ export function useExplorerData(
               id: l.id,
               priceInWei: l.priceInWei,
               seller: l.seller,
+              timeCreated: l.timeCreated,
             };
             return g;
           });
@@ -375,13 +376,14 @@ export function useExplorerData(
     setLoading(true);
     try {
       if (usesBaazaarSource) {
-        const priceDirection = sort.field === "price" ? sort.direction : "asc";
+        const baazaarOrderBy = getBaazaarOrderBy(sort.field);
+        const baazaarDirection = (sort.field === "price" || sort.field === "listingCreated") ? sort.direction : "desc";
         const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             query: BAAZAAR_GOTCHI_LISTINGS_QUERY,
-            variables: { first: batchSize, skip: gotchis.length, orderDirection: priceDirection },
+            variables: { first: batchSize, skip: gotchis.length, orderBy: baazaarOrderBy, orderDirection: baazaarDirection },
           }),
         });
 
@@ -403,6 +405,7 @@ export function useExplorerData(
               id: l.id,
               priceInWei: l.priceInWei,
               seller: l.seller,
+              timeCreated: l.timeCreated,
             };
             return g;
           });

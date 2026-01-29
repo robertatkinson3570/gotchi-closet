@@ -18,54 +18,14 @@ type Props = {
 
 const NAKED_WEARABLES = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-const rarityColors: Record<string, string> = {
-  common: "bg-gray-500/10",
-  uncommon: "bg-green-500/10",
-  rare: "bg-blue-500/10",
-  legendary: "bg-yellow-500/10",
-  mythical: "bg-purple-500/10",
-  godlike: "bg-pink-500/10",
+const tierColors: Record<string, { bg: string; border: string; text: string }> = {
+  common: { bg: "bg-gray-500/5", border: "border-gray-400/20", text: "text-gray-500" },
+  uncommon: { bg: "bg-green-500/5", border: "border-green-400/20", text: "text-green-500" },
+  rare: { bg: "bg-blue-500/5", border: "border-blue-400/20", text: "text-blue-500" },
+  legendary: { bg: "bg-orange-500/5", border: "border-orange-400/20", text: "text-orange-500" },
+  mythical: { bg: "bg-purple-500/5", border: "border-purple-400/20", text: "text-purple-500" },
+  godlike: { bg: "bg-pink-500/5", border: "border-pink-400/20", text: "text-pink-500" },
 };
-
-const rarityBorders: Record<string, string> = {
-  common: "border-gray-500/30",
-  uncommon: "border-green-500/30",
-  rare: "border-blue-500/30",
-  legendary: "border-yellow-500/30",
-  mythical: "border-purple-500/30",
-  godlike: "border-pink-500/30",
-};
-
-const TRAIT_NAMES = ["NRG", "AGG", "SPK", "BRN"];
-
-function TraitBar({ value, name }: { value: number; name: string }) {
-  const isExtreme = value <= 10 || value >= 90;
-  const percent = Math.min(100, Math.max(0, value));
-  const isLow = value < 50;
-
-  return (
-    <div className="flex items-center gap-1">
-      <span className={`text-[8px] w-6 ${isExtreme ? "text-purple-400 font-bold" : "text-muted-foreground"}`}>
-        {name}
-      </span>
-      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden relative">
-        <div className="absolute inset-0 flex">
-          <div className="w-1/2 border-r border-muted-foreground/20" />
-        </div>
-        <div
-          className={`absolute h-full rounded-full ${isExtreme ? "bg-purple-500" : "bg-primary/70"}`}
-          style={{
-            left: isLow ? `${percent}%` : "50%",
-            width: isLow ? `${50 - percent}%` : `${percent - 50}%`,
-          }}
-        />
-      </div>
-      <span className={`text-[8px] w-4 text-right ${isExtreme ? "text-purple-400 font-bold" : "text-muted-foreground"}`}>
-        {value}
-      </span>
-    </div>
-  );
-}
 
 export const GotchiExplorerCard = memo(function GotchiExplorerCard({ 
   gotchi, 
@@ -74,24 +34,15 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   frequencyLoading 
 }: Props) {
   const tier = getRarityTier(gotchi.withSetsRarityScore);
-  const traits = gotchi.withSetsNumericTraits || gotchi.modifiedNumericTraits || gotchi.numericTraits;
+  const colors = tierColors[tier] || tierColors.common;
   const wearableCount = gotchi.equippedWearables.filter((w) => w > 0).length;
-  const [showPopover, setShowPopover] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-
-  const eyeShape = traits.length > 4 ? traits[4] : 0;
-  const eyeColor = traits.length > 5 ? traits[5] : 0;
 
   const comboRarityText = eyeRarities?.combo 
     ? `1/${eyeRarities.combo}` 
-    : frequencyLoading ? "..." : "?";
+    : frequencyLoading ? "..." : null;
 
   const isUnique = eyeRarities?.combo === 1;
-
-  const handlePopoverToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowPopover(!showPopover);
-  };
 
   const priceGhst = gotchi.listing 
     ? parseFloat(gotchi.listing.priceInWei) / 1e18 
@@ -102,12 +53,11 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`cursor-pointer rounded-xl border ${rarityBorders[tier]} ${rarityColors[tier]} hover:ring-2 hover:ring-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-200 overflow-hidden active:scale-[0.98] backdrop-blur-sm`}
+      className={`cursor-pointer rounded-lg border ${colors.border} ${colors.bg} hover:ring-1 hover:ring-primary/40 transition-all duration-150 overflow-hidden active:scale-[0.98]`}
     >
-      {/* Image only - no header */}
-      <div className="relative aspect-square p-2 flex items-center justify-center bg-gradient-to-b from-transparent to-background/30">
+      <div className="relative aspect-square flex items-center justify-center bg-gradient-to-b from-transparent to-background/20">
         {wearableCount > 0 && (
-          <div className={`absolute inset-2 transition-opacity duration-300 ${isHovered ? "opacity-0" : "opacity-100"}`}>
+          <div className={`absolute inset-1 transition-opacity duration-200 ${isHovered ? "opacity-0" : "opacity-100"}`}>
             <GotchiSvg
               gotchiId={gotchi.tokenId}
               hauntId={gotchi.hauntId}
@@ -118,7 +68,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
             />
           </div>
         )}
-        <div className={`${wearableCount > 0 ? "absolute inset-2" : ""} transition-opacity duration-300 ${wearableCount > 0 && !isHovered ? "opacity-0" : "opacity-100"}`}>
+        <div className={`${wearableCount > 0 ? "absolute inset-1" : ""} transition-opacity duration-200 ${wearableCount > 0 && !isHovered ? "opacity-0" : "opacity-100"}`}>
           <GotchiSvg
             gotchiId={gotchi.tokenId}
             hauntId={gotchi.hauntId}
@@ -129,97 +79,41 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
           />
         </div>
         
-        <button
-          onClick={handlePopoverToggle}
-          className={`absolute bottom-1 right-1 text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 transition-colors ${
-            isUnique 
-              ? "bg-pink-500/90 text-white font-bold" 
-              : "bg-background/90 text-foreground border border-border/50 hover:bg-muted"
-          }`}
-        >
-          <span>👁</span>
-          <span>{comboRarityText}</span>
-        </button>
-
-        {showPopover && (
-          <div 
-            className="absolute bottom-8 right-0 z-20 bg-background border border-border rounded-lg shadow-lg p-2 min-w-[140px] text-xs"
-            onClick={(e) => e.stopPropagation()}
+        {comboRarityText && (
+          <div
+            className={`absolute bottom-0.5 right-0.5 text-[9px] px-1 py-0.5 rounded flex items-center gap-0.5 ${
+              isUnique 
+                ? "bg-pink-500 text-white font-semibold" 
+                : "bg-background/80 text-muted-foreground"
+            }`}
           >
-            <div className="font-semibold mb-1.5 text-center border-b pb-1">Eye Trait Rarity</div>
-            <div className="space-y-1">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Combo:</span>
-                <span className={`font-mono ${isUnique ? "text-pink-500 font-bold" : ""}`}>
-                  {eyeRarities?.combo ? `1/${eyeRarities.combo}` : "..."}
-                  {isUnique && " ⭐"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Shape ({eyeShape}):</span>
-                <span className="font-mono">{eyeRarities?.shape ? `1/${eyeRarities.shape}` : "..."}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Color ({eyeColor}):</span>
-                <span className="font-mono">{eyeRarities?.color ? `1/${eyeRarities.color}` : "..."}</span>
-              </div>
-            </div>
-            <div className="text-[9px] text-muted-foreground mt-2 pt-1 border-t">
-              1 of N in Haunt {gotchi.hauntId}
-            </div>
+            <span className="opacity-70">👁</span>
+            <span>{comboRarityText}</span>
           </div>
         )}
       </div>
 
-      {/* All info below image */}
-      <div className="px-2 py-1.5 bg-background/70 border-t border-border/30">
-        {/* Name and ID row */}
-        <div className="flex items-center gap-1.5 mb-0.5">
+      <div className="px-2 py-1.5 space-y-1">
+        <div className="flex items-center justify-between gap-1">
           <span className="text-xs font-medium truncate flex-1">{gotchi.name || "Unnamed"}</span>
-          <span className="text-[9px] text-muted-foreground font-mono">#{gotchi.tokenId}</span>
+          <span className="text-[9px] text-muted-foreground font-mono shrink-0">#{gotchi.tokenId}</span>
         </div>
 
-        {/* Badges row: Haunt, Set badge if equipped */}
-        <div className="flex items-center gap-1 mb-1 flex-wrap">
-          <span className="text-[9px] bg-muted px-1 rounded">H{gotchi.hauntId}</span>
-          {gotchi.equippedSetName && (
-            <span className="text-[9px] bg-purple-500/20 text-purple-400 px-1 rounded truncate max-w-[80px]">
-              {gotchi.equippedSetName}
-            </span>
-          )}
-          {isUnique && (
-            <span className="text-[9px] bg-pink-500/20 text-pink-400 px-1 rounded">2X MYTH</span>
-          )}
+        <div className="flex items-center justify-between text-[10px]">
+          <span className={`font-semibold ${colors.text}`}>{gotchi.withSetsRarityScore} BRS</span>
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <span>H{gotchi.hauntId}</span>
+            <span>Lv{gotchi.level}</span>
+            {gotchi.kinship !== undefined && <span>❤️{gotchi.kinship}</span>}
+          </div>
         </div>
 
-        {/* Stats row */}
-        <div className="text-[10px] text-muted-foreground mb-1">
-          <span className="text-foreground font-medium">RAR</span> {gotchi.withSetsRarityScore} ({gotchi.baseRarityScore})
-          {gotchi.kinship !== undefined && <> <span className="text-foreground font-medium">KIN</span> {gotchi.kinship}</>}
-          {" "}<span className="text-foreground font-medium">LVL</span> {gotchi.level}
-          {gotchi.experience !== undefined && <span className="text-muted-foreground"> ({gotchi.experience} XP)</span>}
-        </div>
-
-        {/* Traits */}
-        <div className="space-y-0.5 mb-1">
-          {traits.slice(0, 4).map((val, i) => (
-            <TraitBar
-              key={i}
-              value={val}
-              name={TRAIT_NAMES[i]}
-            />
-          ))}
-        </div>
-
-        {/* Price - only show if listing exists */}
         {priceGhst !== null && (
-          <div className="pt-1 border-t border-border/30">
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] text-muted-foreground">PRICE</span>
-              <span className="text-[10px] text-green-500 font-medium">
-                {priceGhst.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} GHST
-              </span>
-            </div>
+          <div className="flex items-center justify-between pt-0.5 border-t border-border/30">
+            <span className="text-[9px] text-muted-foreground">Price</span>
+            <span className="text-[10px] text-green-500 font-medium">
+              {priceGhst.toLocaleString(undefined, { maximumFractionDigits: 0 })} GHST
+            </span>
           </div>
         )}
       </div>
