@@ -200,16 +200,23 @@ export function GotchiCard({
                 const wearableMod = wearableDelta?.[index] ?? 0;
                 const setMod = setDelta?.[index] ?? 0;
                 const hasBreakdown = wearableMod !== 0 || setMod !== 0;
+                const breakdownText = hasBreakdown ? [
+                  wearableMod !== 0 ? `Wearables: ${wearableMod >= 0 ? `+${wearableMod}` : wearableMod}` : '',
+                  setMod !== 0 ? `Sets: ${setMod >= 0 ? `+${setMod}` : setMod}` : ''
+                ].filter(Boolean).join(' | ') : '';
                 return (
                 <div
                   key={label}
-                  className="flex flex-col"
+                  className="flex items-center justify-between gap-2"
                   data-testid={`trait-row-${label}`}
                 >
-                  <div className="flex items-center justify-between gap-2">
                   <span>{label}</span>
                   <div className="flex items-center gap-2">
-                    <span data-testid={`trait-value-${label}`}>
+                    <span 
+                      data-testid={`trait-value-${label}`}
+                      title={hasBreakdown && !respec.isRespecMode ? breakdownText : undefined}
+                      className={hasBreakdown && !respec.isRespecMode ? "cursor-help border-b border-dotted border-muted-foreground/50" : ""}
+                    >
                       {safeNum(displayBaseTraits[index] ?? currentTraits[index])}
                       {(() => {
                         const modValue = showRespec && respec.isRespecMode
@@ -260,22 +267,6 @@ export function GotchiCard({
                       </div>
                     )}
                   </div>
-                  </div>
-                  {hasBreakdown && !respec.isRespecMode && (
-                    <div className="text-[9px] text-muted-foreground text-right">
-                      {wearableMod !== 0 && (
-                        <span>
-                          Wearables: {wearableMod >= 0 ? `+${wearableMod}` : wearableMod}
-                        </span>
-                      )}
-                      {wearableMod !== 0 && setMod !== 0 && <span className="mx-1">|</span>}
-                      {setMod !== 0 && (
-                        <span className="text-purple-400">
-                          Sets: {setMod >= 0 ? `+${setMod}` : setMod}
-                        </span>
-                      )}
-                    </div>
-                  )}
                 </div>
               )})}
             </div>
