@@ -263,22 +263,14 @@ function transformGotchi(raw: any): ExplorerGotchi {
   return gotchi;
 }
 
-const modeDataCache = new Map<string, { gotchis: ExplorerGotchi[]; hasMore: boolean }>();
-
 export function useExplorerData(
   mode: DataMode,
   connectedAddress: string | null
 ) {
   const client = useClient();
-  const [gotchis, setGotchis] = useState<ExplorerGotchi[]>(() => {
-    const cached = modeDataCache.get(mode);
-    return cached?.gotchis || [];
-  });
+  const [gotchis, setGotchis] = useState<ExplorerGotchi[]>([]);
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(() => {
-    const cached = modeDataCache.get(mode);
-    return cached?.hasMore ?? true;
-  });
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<ExplorerFilters>(defaultFilters);
   const [sort, setSort] = useState<ExplorerSort>({ field: "rarity", direction: "desc" });
@@ -312,7 +304,6 @@ export function useExplorerData(
         const gotchisWithListings = applyListingsToGotchis(rawGotchis.map(transformGotchi));
         setGotchis(gotchisWithListings);
         setHasMore(false);
-        modeDataCache.set("mine", { gotchis: gotchisWithListings, hasMore: false });
       } else if (mode === "baazaar" || sort.field === "price" || sort.field === "listingCreated" || filters.priceMin || filters.priceMax) {
         const baazaarOrderBy = getBaazaarOrderBy(sort.field);
         const baazaarDirection = (sort.field === "price" || sort.field === "listingCreated") ? sort.direction : "desc";
@@ -348,9 +339,7 @@ export function useExplorerData(
             return g;
           });
         setGotchis(gotchisWithListings);
-        const hasMoreListings = listings.length >= batchSize;
-        setHasMore(hasMoreListings);
-        modeDataCache.set("baazaar", { gotchis: gotchisWithListings, hasMore: hasMoreListings });
+        setHasMore(listings.length >= batchSize);
       } else if (mode === "all") {
         const result = await client.query(GOTCHIS_PAGINATED, {
           first: batchSize,
@@ -366,9 +355,7 @@ export function useExplorerData(
         const rawGotchis = result.data?.aavegotchis || [];
         const gotchisWithListings = applyListingsToGotchis(rawGotchis.map(transformGotchi));
         setGotchis(gotchisWithListings);
-        const hasMoreAll = rawGotchis.length >= batchSize;
-        setHasMore(hasMoreAll);
-        modeDataCache.set("all", { gotchis: gotchisWithListings, hasMore: hasMoreAll });
+        setHasMore(rawGotchis.length >= batchSize);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load gotchis");
@@ -445,11 +432,8 @@ export function useExplorerData(
   }, [client, loading, hasMore, mode, gotchis.length, batchSize, sort, filters.priceMin, filters.priceMax]);
 
   useEffect(() => {
-    const cached = modeDataCache.get(mode);
-    if (cached) {
-      setGotchis(cached.gotchis);
-      setHasMore(cached.hasMore);
-    }
+    setGotchis([]);
+    setHasMore(true);
     loadInitial();
   }, [loadInitial, mode]);
 
