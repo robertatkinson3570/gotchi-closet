@@ -242,12 +242,17 @@ const BAAZAAR_GOTCHI_LISTINGS_QUERY = `
         withSetsRarityScore
         hauntId
         collateral
+        owner { id }
         kinship
         experience
         escrow
         stakedAmount
         equippedSetID
         equippedSetName
+        createdAt
+        lastInteracted
+        usedSkillPoints
+        minimumStake
       }
     }
   }
@@ -338,10 +343,6 @@ function applyListingsToGotchis(gotchis: ExplorerGotchi[]): ExplorerGotchi[] {
 function transformGotchi(raw: any): ExplorerGotchi {
   const tokenId = raw.gotchiId || raw.id;
   
-  if (gotchiCache.has(tokenId)) {
-    return gotchiCache.get(tokenId)!;
-  }
-  
   const gotchi: ExplorerGotchi = {
     id: raw.id,
     tokenId,
@@ -370,7 +371,11 @@ function transformGotchi(raw: any): ExplorerGotchi {
     stakedAmount: raw.stakedAmount,
   };
   
-  gotchiCache.set(tokenId, gotchi);
+  // Only cache if we have complete essential data (prevents caching incomplete gotchis)
+  if (gotchi.withSetsRarityScore > 0 && gotchi.createdAt) {
+    gotchiCache.set(tokenId, gotchi);
+  }
+  
   return gotchi;
 }
 
