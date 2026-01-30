@@ -187,11 +187,11 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
             <div className="font-semibold text-foreground">{age}</div>
           </div>
 
-          {gotchi.stakedAmount && parseFloat(gotchi.stakedAmount) > 0 && (
+          {(gotchi.stakedAmount || gotchi.escrow) && parseFloat(gotchi.stakedAmount || gotchi.escrow || "0") > 0 && (
             <div>
               <div className="text-muted-foreground font-medium text-[9px]">GHST Pocket</div>
               <div className="font-semibold text-foreground">
-                {(parseFloat(gotchi.stakedAmount) / 1e18).toFixed(2)} GHST
+                {(parseFloat(gotchi.stakedAmount || gotchi.escrow || "0") / 1e18).toFixed(2)} GHST
               </div>
             </div>
           )}
