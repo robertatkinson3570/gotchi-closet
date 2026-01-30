@@ -118,3 +118,23 @@ export const WEARABLE_SETS = gql`
   }
 `;
 
+export const USER_WEARABLE_BALANCES = gql`
+  query UserWearableBalances($owner: ID!) {
+    user(id: $owner) {
+      id
+      gotchisOwned {
+        id
+        equippedWearables
+      }
+      itemBalances(where: { balance_gt: 0 }, first: 1000) {
+        id
+        balance
+        itemType {
+          id
+          category
+        }
+      }
+    }
+  }
+`;
+

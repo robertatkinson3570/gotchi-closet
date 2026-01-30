@@ -1,209 +1,37 @@
 # GotchiCloset
 
 ## Overview
-GotchiCloset is a React/TypeScript web application for Aavegotchi that allows users to dress their Gotchis with wearables. It uses Vite for the frontend build system and Express for a backend API server.
+GotchiCloset is a React/TypeScript web application for Aavegotchi that enables users to dress their Gotchis with wearables. It aims to provide a comprehensive and intuitive platform for Aavegotchi enthusiasts to explore, manage, and optimize their Gotchi and wearable collections. Key capabilities include a multi-asset explorer for Gotchis and Wearables, a powerful Wardrobe Lab for trait optimization, and a unique "Catwalk" feature for showcasing dressed Gotchis.
 
-## Project Architecture
-- **Frontend**: React 18 with TypeScript, built with Vite
-- **Backend**: Express.js API server (runs on port 8787)
-- **Styling**: Tailwind CSS
-- **State Management**: Zustand + React Query
-- **Web3**: Wagmi, Viem, ethers.js for blockchain interactions
+## User Preferences
+The user wants the agent to be efficient and prioritize core functionalities. The agent should focus on implementing features that enhance user interaction with their Gotchis and wearables, such as improved browsing, filtering, and optimization tools. The agent should ensure that new features are integrated seamlessly and existing functionalities are robust. When making changes, the agent should aim for clean and modular code, particularly in the `src/components/explorer/` and `src/lib/explorer/` directories for explorer-related enhancements.
 
-## Project Structure
-```
-src/           - React frontend source code
-  app/         - Application routes and layouts
-  components/  - Reusable UI components
-    explorer/  - Explorer page components (ExplorerTopBar, ExplorerGrid, etc.)
-    catwalk/   - Catwalk modal and animations
-    gotchi/    - Gotchi-related components
-    wearables/ - Wearable-related components
-  lib/         - Utility functions and helpers
-    explorer/  - Explorer-specific logic (filters, sorts, types)
-  hooks/       - Custom React hooks
-  pages/       - Page components
-  providers/   - React context providers
-  state/       - Zustand stores
-  ui/          - UI primitives (buttons, dialogs, etc.)
-server/        - Express backend API
-  routes/      - API route handlers
-  aavegotchi/  - Aavegotchi-specific logic
-api/           - Vercel serverless functions
-data/          - Static JSON data files
-public/        - Static assets
-```
+## System Architecture
+The application is built with a React 18 frontend using TypeScript and Vite, styled with Tailwind CSS. State management is handled by Zustand and React Query. Web3 interactions leverage Wagmi, Viem, and ethers.js. The backend is an Express.js API server.
 
-## Development
-- Run `npm run dev` to start both frontend (port 5000) and backend (port 8787)
-- Frontend proxies `/api` requests to the backend server
+**UI/UX Decisions:**
+- **Theming:** Features a dark, ghostly, and haunted aesthetic, particularly for the "Catwalk" modal, incorporating elements like floating orbs, portal swirls, mist, and sparkles.
+- **Responsive Design:** Utilizes responsive grids and mobile-optimized components (e.g., bottom sheets, sticky headers) for a consistent experience across devices.
+- **Asset Exploration:** Provides high-density, responsive grids for both Gotchi and Wearable explorers, featuring infinite scroll with lazy loading. Filters are collapsible, and sorting options are comprehensive.
+- **Catwalk:** Implements a 3D perspective runway with animated Gotchis, preloading assets for a smooth user experience.
+- **GotchiCards:** Displays key information like token ID, haunt, BRS, level, kinship, trait bars, and eye rarity.
+- **Modals & Drawers:** Uses full-screen modals for features like Catwalk and detail drawers for Gotchi information, with collapsible sections.
 
-## Environment Variables
-See `.env.example` for required environment variables:
-- `VITE_GOTCHI_SUBGRAPH_URL` - Goldsky subgraph endpoint
-- `VITE_BASE_RPC_URL` - Base RPC URL
-- `VITE_GOTCHI_DIAMOND_ADDRESS` - Aavegotchi diamond contract address
-- `VITE_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID (optional)
+**Technical Implementations:**
+- **Wearables Explorer:** Includes functionality for "All", "Owned", and "Baazaar" modes, displaying images, names, rarity, slot, trait modifiers, and BRS. It supports various filters (Slot, Rarity, Sets, Trait modifiers) and sorts (Name, ID, Rarity, Slot, Total Stats, Quantity, Price). "Owned" mode shows all wallet wearables with quantity badges, supporting multi-wallet addresses.
+- **Gotchi Explorer:** Offers comprehensive filtering (Token ID, name, rarity, traits, level, wearables, haunt, GHST pocket, equipped set, double mythical eyes, GHST balance) and sorting options (rarity, level, kinship, XP, token ID, traits, price). It includes a "Family Photo" view for owned Gotchis and a "Take a Picture" feature.
+- **Catwalk:** Animates Gotchis walking a runway in rarity order, each performing a deterministic "model-style" move. It includes a progress counter and respects `prefers-reduced-motion`.
+- **Wardrobe Lab:** A wizard-style optimization tool for Gotchis supporting multi-wallet, with respec simulation to optimize traits towards extremes (0 or 99) and considering wearable/set delta modifiers. Results display BRS before/after values and wearable images.
+- **Wearable Selector:** Features a 3-way toggle for "All | Owned | Baazaar". "Baazaar" mode displays GHST prices fetched from the Goldsky Base core subgraph. "Owned" mode shows only owned wearables with inventory counts, which decrement upon equipping.
+- **Multi-wallet Support:** Allows adding up to 3 additional wallet addresses, with Gotchis loaded from all active wallets.
+- **"Lock & Set" Feature:** Enables reserving wearables for a specific build, excluding them from the available pool.
+- **Best Sets Feature:** Displays all wearable sets ranked by projected BRS gain, using reference data from `aadventure.io`.
+- **Respec Simulator:** Uses `computeSimTraits()` to calculate `simBase` and `simModified` traits, fetching birth traits via contract calls.
 
-## Recent Changes
-- 2026-01-29: Added Wearables Explorer to Explorer page (multi-asset browsing)
-  - Asset toggle (Gotchis/Wearables) in top bar for instant switching
-  - Wearable cards show: image, name, rarity, slot, trait modifiers, BRS
-  - Rarity-colored backgrounds (Godlike=cyan, Mythical=pink, etc.)
-  - Wearable filters: Slot, Rarity tier, Sets, Trait modifiers (NRG/AGG/SPK/BRN min/max)
-  - Filter options: positive mods only, negative mods only, has set bonus, stat-modifying only, visual-only
-  - Wearable sorts: Name, ID, Rarity, Slot, Total Stats, Quantity (Owned mode), Price (Baazaar mode)
-  - Supports All/Owned/Baazaar modes like Gotchi Explorer
-  - Owned mode shows quantity badges, Baazaar mode shows GHST prices
-  - Dense responsive grid (3-10 columns based on viewport)
-  - Infinite scroll with lazy loading
-  - Located in src/components/explorer/WearableExplorerCard.tsx, WearableExplorerGrid.tsx, WearableExplorerFilters.tsx
-  - Data hook: src/hooks/useWearableExplorerData.ts
-  - Types: src/lib/explorer/wearableTypes.ts
-- 2026-01-29: Improved GotchiInfoOverlay with vertical stacking
-  - Labels (Collateral, Owner, Age, XP) on separate lines from values
-  - Prevents horizontal scrolling in info area
-  - Purple accent labels for better readability
-- 2026-01-29: Added "Take a Picture" feature for Family Photo view
-  - Button appears only in Mine mode + Family Photo view
-  - Playful countdown: "Say Cheese! 🧀" → 3…2…1 → flash → PNG download
-  - Captures only the gotchi grid (excludes nav, filters, overlays)
-  - Respects prefers-reduced-motion (skips flash animation)
-  - Filename: gotchi-family-photo_<shortWallet>_<YYYY-MM-DD>.png
-  - Friendly error toast if capture fails
-  - Auto-cancels if user switches mode/view during countdown
-  - Located in src/components/explorer/TakePictureButton.tsx
-- 2026-01-29: Added "Family Photo" view mode for Owned gotchis
-  - Dense roster-style overview showing tiny thumbnails + name + rarity score
-  - Only available when Explorer mode is "Owned" (hidden in All/Baazaar modes)
-  - Auto-reverts to Cards view when switching away from Owned mode
-  - View toggle near Sort dropdown (Cards/Family Photo icons)
-  - Desktop: 8-12 items per row; Mobile: 3-5 items per row
-  - Click/tap opens Gotchi Detail Drawer
-  - View preference saved to localStorage (gc_explorer_viewMode)
-  - Located in src/components/explorer/FamilyPhotoGrid.tsx, FamilyPhotoItem.tsx
-- 2026-01-29: Explorer page UAT - comprehensive filter/sort verification and cleanup
-  - Added rarity tier filter checkboxes (Godlike, Mythical, Legendary, Rare, Uncommon, Common) with color coding
-  - Added XP sort option to sortOptions (was defined but not exposed)
-  - Fixed Equipped Set filter to show all 165 wearable sets (from setsByTraitDirection.json) instead of only sets on loaded gotchis
-  - Fixed global sorting - subgraph now receives proper orderBy fields for all sort types (rarity, level, kinship, xp, tokenId)
-  - Fixed price sorting - now uses Baazaar listings subgraph for globally correct price ordering
-  - Added getSubgraphOrderBy() helper to map sort fields to subgraph field names
-  - Removed unused filter types: eyeShapes, eyeColors, hasSet, owner (cleanup)
-  - Removed unused ghst sort field from types
-  - All 18 filters verified working: tokenId, tokenIdMin/Max, nameContains, rarityMin/Max, rarityTiers, nrg/agg/spk/brnMin/Max, extremeTraits, balancedTraits, levelMin/Max, hasWearables, wearableCountMin/Max, haunts, priceMin/Max, hasGhstPocket, ghstBalanceMin/Max, hasEquippedSet, equippedSets, doubleMythEyes
-  - All 20 sort options now correctly sorted at subgraph level for global ordering
-- 2026-01-29: Added Gotchi Explorer page (/explorer) - mobile-first power-user browsing
-  - Single unified header with logo, Dress link, and theme toggle
-  - Data modes: All, Owned, Baazaar with sticky top toggle
-  - High-density responsive grid (2-8 columns based on viewport)
-  - Lazy loading with IntersectionObserver for infinite scroll
-  - Filter panel collapsed by default, opens on click (Filters button)
-  - Filters: Token ID, name, rarity range/tier, traits, level, wearables, haunt (H1/H2 checkboxes)
-  - Additional filters: GHST pocket, equipped set, double mythical eyes, GHST balance range
-  - Sort by rarity, level, kinship, xp, token ID, traits, price
-  - GotchiExplorerCard uses GotchiSvg component for proper image loading
-  - Shows: token ID, haunt, BRS, level, kinship, trait bars, eye rarity badge
-  - Eye trait frequency rarity system: 1/N format showing how many gotchis share that eye combo per haunt
-  - Unique (1/1) eye combos highlighted in pink, tap badge for breakdown popover (Combo, Shape, Color)
-  - GotchiDetailDrawer with collapsible sections (Identity, Market, Traits, Eye Traits, Wearables)
-  - Drawer shows proper collateral names (maWETH, amDAI, etc.) instead of addresses
-  - Mobile-optimized: bottom sheets, touch targets, sticky headers, responsive search
-  - Located in src/pages/ExplorerPage.tsx, src/components/explorer/*, src/lib/explorer/*
-  - Eye frequency logic in src/hooks/useTraitFrequency.ts (fetches all gotchis per haunt, builds frequency maps)
-- 2026-01-28: Ghostly haunted theme for Catwalk fashion show
-  - Floating ghost orbs (3 large blurred purple orbs with floatingGhost animation)
-  - Portal swirl effect at top center (rotating conic gradient)
-  - Drifting mist layers at bottom with ethereal feel
-  - Sparkles scattered across scene
-  - Glowing runway edges with pulsing purple light
-  - Smoother exit animations (1000ms with 4-stage progression)
-  - Approach animation with blur fade-in effect (2200ms)
-  - Purple ghostly shadow under active gotchi
-- 2026-01-28: Major Catwalk visual overhaul - real runway fashion show
-  - 3D perspective runway with CSS perspective:900px and rotateX transforms
-  - Crowd gotchis on left/right sides as fashion show audience (rotateY facing inward)
-  - Active gotchi walks from far (scale 0.3, top) to near (scale 1, center) - forced perspective
-  - Approach → Pose → Move → Exit phase flow (no more left/right entry)
-  - Removed all flash/flicker effects for stable animations
-  - Removed card borders - gotchis render with transparent backgrounds
-  - Vignette, haze, and subtle spotlight for depth
-  - Located in src/components/catwalk/CatwalkModal.tsx, catwalk.css
-- 2026-01-28: Polished Catwalk visual quality
-  - Asset preloading with progress bar before show starts
-  - Located in src/components/catwalk/usePreloadAssets.ts
-- 2026-01-28: Added Catwalk feature on Dress page
-  - "Catwalk" button opens full-screen modal overlay
-  - Animates all Gotchis in selector walking a runway in rarity order
-  - Each Gotchi performs one deterministic "model-style" move (7 move types)
-  - Dark haunted stage aesthetic with floating particles and spotlight
-  - Shows backstage queue, active Gotchi with name/BRS, progress counter
-  - End screen with Replay and Back to Dress buttons
-  - Respects prefers-reduced-motion (disables animations with note)
-  - ESC/backdrop click to close, no state mutations (visual-only)
-  - Located in src/components/catwalk/CatwalkModal.tsx, catwalk.css
-- 2026-01-27: Added individual Gotchi search on Dress page
-  - Type-ahead search bar at top of carousel (min 2 chars)
-  - Search by name (partial match) or exact token ID
-  - Results displayed as GotchiCards, click to add to carousel
-  - Manually added Gotchis shown with purple ring and X button to remove
-  - Session-only persistence (not localStorage)
-  - Located in src/lib/hooks/useGotchiSearch.ts, src/components/gotchi/GotchiSearch.tsx
-- 2026-01-27: Added multi-wallet support (up to 3 additional wallets)
-  - HomePage allows adding/removing up to 3 wallet addresses
-  - WalletHeader shows all active wallets with responsive layout
-  - DressPage loads gotchis from connected wallet + all added wallets
-  - Persists in localStorage (gc_multiWallet)
-  - Located in src/lib/multiWallet.ts
-- 2026-01-27: Added "Lock & Set" feature for reserving wearables
-  - Lock button in EditorPanel reserves current build's wearables
-  - Locked Gotchis show amber badge in carousel with override wearables
-  - Locked wearables excluded from "Owned" mode available pool
-  - Persists per wallet/chain in localStorage (gotchicloset.lockedBuilds.v1)
-  - Located in src/lib/lockedBuilds.ts, src/state/selectors.ts (computeLockedCounts, availCountsWithLocked)
-- 2026-01-27: Added "Baazaar Only" wearable selector with GHST pricing
-  - 3-way toggle: All | Owned | Baazaar (replaces previous My Items toggle)
-  - Baazaar mode shows only wearables with active listings on Base Baazaar
-  - Displays minimum GHST price for each listed wearable
-  - Queries Goldsky Base core subgraph for ERC1155 listings
-  - Prices cached per session for performance
-  - Mode persists via localStorage (gc_wearableMode)
-  - Located in src/lib/baazaar.ts, src/hooks/useBaazaar.ts
-- 2026-01-27: Added "Show Only My Wearables" feature with inventory counts
-  - Toggle "My Items" in wearable selector shows only wearables owned by loaded gotchis
-  - Displays ×N count badges showing available quantity
-  - Counts decrement as wearables are equipped in editor, increment on unequip
-  - Wearables disappear from list when all copies are in use
-  - Toggle state persists via localStorage (gc_ownedWearablesOnly)
-  - Located in src/state/selectors.ts (computeOwnedCounts, computeUsedCounts, computeAvailCounts)
-- 2026-01-27: Updated logo across all pages with consistent sizing
-- 2026-01-25: Added "Best Sets" feature to GotchiCard on Dress page
-  - Collapsible panel showing ALL wearable sets ranked by projected BRS gain
-  - Uses reference data from aadventure.io stored in data/setsByTraitDirection.json
-  - Shows set name, delta badge, and trait direction modifiers (+/-NRG, AGG, SPK, BRN)
-  - Sets with negative modifiers benefit gotchis with traits under 50
-  - Links to wiki and aadventure for more set info
-  - Located in src/lib/bestSets.ts and src/components/gotchi/BestSetsPanel.tsx
-- 2026-01-25: Enhanced Wardrobe Lab optimizer with proper respec simulation
-  - Fixed trait optimization to push traits toward extremes (0 or 99)
-  - Battler mode prioritizes highest/lowest traits for class optimization
-  - Added wearable images below each Gotchi in results
-  - Shows trait changes with before/after values (e.g., "NRG: 45 → 0 (+55 BRS)")
-  - Results sorted by highest BRS score
-  - Added "Dress" button in header for easy navigation
-- 2026-01-25: Added Wardrobe Lab page (/wardrobe-lab) with wizard-style optimization tool
-  - Multi-wallet support (connected + manual addresses from localStorage)
-  - 4-step wizard: Scope (gotchi selection), Strategy, Constraints, Run
-  - Respec simulation with BRS before/after comparison
-  - Navigation via flask icon button on Dress page
-- 2026-01-25: Fixed respec to fetch BIRTH traits via contract call getGotchiBaseNumericTraits - now correctly shows original traits without spirit points
-- 2026-01-25: Added trait bounds checking (0-99) to respec simulator
-- 2026-01-25: Enhanced respec simulator with wearable/set delta modifiers
-- 2026-01-25: Fixed Base chain wearable images (IDs 407, 418, 419, 420) by adding wiki.aavegotchi.com as fallback source
-- 2026-01-25: Initial Replit setup, configured Vite for port 5000 with allowedHosts
-
-## Key Technical Details
-- Respec simulator uses `computeSimTraits()` in `src/lib/respec.ts` to calculate both simBase and simModified traits
-- Birth traits fetched via contract call to `getGotchiBaseNumericTraits` on Base diamond contract
-- Subgraph trait fields: numericTraits = base + spirit points, modifiedNumericTraits = + wearables, withSetsNumericTraits = + sets
-- Unit tests for respec logic in `src/lib/respec.test.ts` - run with `npm run test:unit`
+## External Dependencies
+- **Goldsky Subgraph:** Used for fetching Aavegotchi data, including user item balances, wearables, and Baazaar listings.
+- **Aavegotchi Diamond Contract:** Interacted with via contract calls (e.g., `getGotchiBaseNumericTraits`).
+- **WalletConnect:** For connecting user wallets (optional, configured via `VITE_WALLETCONNECT_PROJECT_ID`).
+- **Base RPC URL:** For blockchain interactions (`VITE_BASE_RPC_URL`).
+- **aadventure.io:** Provides reference data for wearable sets (`data/setsByTraitDirection.json`).
+- **wiki.aavegotchi.com:** Used as a fallback source for specific Base chain wearable images.
