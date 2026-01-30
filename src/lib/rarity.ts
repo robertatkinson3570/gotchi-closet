@@ -2,6 +2,7 @@ import type { Wearable } from "@/types";
 import { SETS, type SetDefinition } from "@/lib/sets";
 import { ageBRSFromBlocksElapsed } from "@/lib/age";
 import { getCanonicalModifiedTraits } from "@/lib/traits";
+import { PATCHED_WEARABLE_IDS } from "@/graphql/fetchers";
 
 export type NumericTraits = [number, number, number, number, number, number];
 export type CoreTraitMods = {
@@ -228,12 +229,21 @@ export function computeBRSBreakdown(params: {
     wearableTraitMods
   );
   const localFinalTraits = applyCoreTraitMods(traitsWithWearables, setTraitMods);
-  const finalTraits = getCanonicalModifiedTraits(
-    params.baseTraits,
-    params.modifiedNumericTraits,
-    localFinalTraits,
-    params.withSetsNumericTraits
-  );
+  
+  // Check if any equipped wearable has a modifier patch - if so, we can't trust
+  // the subgraph's pre-computed traits (modifiedNumericTraits/withSetsNumericTraits)
+  // because they were computed with incorrect wearable modifiers
+  const hasPatchedWearable = params.equippedWearables.some(id => id && PATCHED_WEARABLE_IDS.has(id));
+  
+  const finalTraits = hasPatchedWearable
+    ? localFinalTraits  // Use locally computed traits (with patched wearable data)
+    : getCanonicalModifiedTraits(
+        params.baseTraits,
+        params.modifiedNumericTraits,
+        localFinalTraits,
+        params.withSetsNumericTraits
+      );
+
   const traitBase = traitsToBRS(params.baseTraits);
   const traitWithMods = traitsToBRS(finalTraits);
   let wearableFlat = 0;

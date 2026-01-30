@@ -171,7 +171,7 @@ function getRarityFromModifier(modifier: number): string {
 
 // Known-correct trait modifiers for wearables with subgraph data issues
 // Format: { [wearableId]: [NRG, AGG, SPK, BRN, EYS, EYC] }
-const WEARABLE_MODIFIER_PATCHES: Record<number, number[]> = {
+export const WEARABLE_MODIFIER_PATCHES: Record<number, number[]> = {
   // Rofl pets - NRG and BRN only, no AGG/SPK
   151: [0, 0, 0, -1, 0, 0],      // Common Rofl: BRN -1
   152: [-1, 0, 0, -1, 0, 0],     // Uncommon Rofl: NRG -1, BRN -1
@@ -180,6 +180,9 @@ const WEARABLE_MODIFIER_PATCHES: Record<number, number[]> = {
   155: [-2, 0, 0, -3, 0, 0],     // Mythical Rofl: NRG -2, BRN -3
   156: [-3, 0, 0, -3, 0, 0],     // Godlike Rofl: NRG -3, BRN -3
 };
+
+// Set of wearable IDs that have patches - used to invalidate subgraph pre-computed traits
+export const PATCHED_WEARABLE_IDS = new Set(Object.keys(WEARABLE_MODIFIER_PATCHES).map(Number));
 
 export function applyWearablePatches(wearable: Wearable): Wearable {
   const patch = WEARABLE_MODIFIER_PATCHES[wearable.id];

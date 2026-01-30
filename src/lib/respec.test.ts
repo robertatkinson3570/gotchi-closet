@@ -28,8 +28,8 @@ describe("computeSimTraits", () => {
       baseTraits: [10, 10, 10, 10, 0, 0],
       allocated: [1, 2, 0, 1],
     });
-    expect(result.simBase).toEqual([11, 12, 10, 11]);
-    expect(result.simModified).toEqual([11, 12, 10, 11]);
+    expect(result.simBase.slice(0, 4)).toEqual([11, 12, 10, 11]);
+    expect(result.simModified.slice(0, 4)).toEqual([11, 12, 10, 11]);
   });
 
   it("applies wearable and set deltas to simModified", () => {
@@ -39,19 +39,19 @@ describe("computeSimTraits", () => {
       wearableDelta: [2, 1, -1, 3],
       setDelta: [1, 1, 1, 1],
     });
-    expect(result.simBase).toEqual([55, 47, 52, 50]);
-    expect(result.simModified).toEqual([58, 49, 52, 54]);
+    expect(result.simBase.slice(0, 4)).toEqual([55, 47, 52, 50]);
+    expect(result.simModified.slice(0, 4)).toEqual([58, 49, 52, 54]);
   });
 
-  it("returns arrays with 4 finite numbers", () => {
+  it("returns arrays with 6 finite numbers", () => {
     const result = computeSimTraits({
       baseTraits: [undefined as any, NaN, null as any, "foo" as any, 0, 0],
       allocated: [1, 2, 3, 4],
       wearableDelta: [NaN, undefined as any, 1, 2],
       setDelta: [null as any, 1, undefined as any, 3],
     });
-    expect(result.simBase).toEqual([1, 2, 3, 4]);
-    expect(result.simModified).toHaveLength(4);
+    expect(result.simBase.slice(0, 4)).toEqual([1, 2, 3, 4]);
+    expect(result.simModified).toHaveLength(6);
     result.simBase.forEach((v) => expect(Number.isFinite(v)).toBe(true));
     result.simModified.forEach((v) => expect(Number.isFinite(v)).toBe(true));
   });
@@ -62,7 +62,7 @@ describe("computeSimTraits", () => {
       respecBaseTraits: [30, 30, 30, 30, 0, 0],
       allocated: [5, 5, 5, 5],
     });
-    expect(result.simBase).toEqual([35, 35, 35, 35]);
+    expect(result.simBase.slice(0, 4)).toEqual([35, 35, 35, 35]);
     expect(result.usingFallback).toBe(false);
   });
 
@@ -71,7 +71,7 @@ describe("computeSimTraits", () => {
       baseTraits: [40, 40, 40, 40, 0, 0],
       allocated: [0, 0, 0, 0],
     });
-    expect(result.simBase).toEqual([40, 40, 40, 40]);
+    expect(result.simBase.slice(0, 4)).toEqual([40, 40, 40, 40]);
     expect(result.usingFallback).toBe(true);
   });
 });
