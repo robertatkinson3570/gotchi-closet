@@ -123,15 +123,15 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
         </div>
 
         {setName && (
-          <div className="bg-purple-500/10 border border-purple-500/20 rounded px-2 py-1 text-center">
+          <div className="bg-primary/10 border border-primary/20 rounded px-2 py-1 text-center">
             <span className="text-[9px] text-muted-foreground">Set: </span>
-            <span className="text-[10px] font-medium text-purple-400">{setName}</span>
+            <span className="text-[10px] font-medium text-primary">{setName}</span>
           </div>
         )}
 
         {equippedWearables.length > 0 && (
           <div>
-            <div className="text-[9px] text-purple-400 uppercase tracking-wider mb-1 font-medium">
+            <div className="text-[9px] text-primary uppercase tracking-wider mb-1 font-medium">
               Wearables ({equippedWearables.length})
             </div>
             <div className="space-y-1">
@@ -150,10 +150,10 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
                   />
                   <div className="flex-1 min-w-0">
                     <div className="text-[9px] font-semibold truncate text-foreground">{w.name}</div>
-                    <div className="text-[8px] text-purple-300">
+                    <div className="text-[8px] text-muted-foreground">
                       {formatTraitMods(w.traitModifiers)}
                       {w.rarityScoreModifier > 0 && (
-                        <span className="text-green-400 ml-1">+{w.rarityScoreModifier} BRS</span>
+                        <span className="text-green-600 dark:text-green-400 ml-1">+{w.rarityScoreModifier} BRS</span>
                       )}
                     </div>
                   </div>
@@ -165,13 +165,13 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
 
         <div className="space-y-1 text-[10px] bg-muted/30 rounded p-1.5">
           <div>
-            <div className="text-purple-300 font-medium text-[9px]">Collateral</div>
+            <div className="text-muted-foreground font-medium text-[9px]">Collateral</div>
             <div className="font-semibold text-foreground">{collateralName}</div>
           </div>
           
           {owner && (
             <div>
-              <div className="text-purple-300 font-medium text-[9px]">Owner</div>
+              <div className="text-muted-foreground font-medium text-[9px]">Owner</div>
               <button 
                 onClick={copyOwner}
                 className="flex items-center gap-1 hover:text-primary transition-colors font-mono text-[9px] text-foreground"
@@ -183,13 +183,13 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
           )}
           
           <div>
-            <div className="text-purple-300 font-medium text-[9px]">Age</div>
+            <div className="text-muted-foreground font-medium text-[9px]">Age</div>
             <div className="font-semibold text-foreground">{age}</div>
           </div>
 
           {gotchi.escrow && (
             <div>
-              <div className="text-purple-300 font-medium text-[9px]">GHST Pocket</div>
+              <div className="text-muted-foreground font-medium text-[9px]">GHST Pocket</div>
               <div className="font-semibold text-foreground">
                 {(parseFloat(gotchi.escrow) / 1e18).toFixed(2)} GHST
               </div>
