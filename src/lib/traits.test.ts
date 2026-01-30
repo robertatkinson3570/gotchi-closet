@@ -89,3 +89,67 @@ describe("Jordan set swap regression", () => {
   });
 });
 
+describe("Uncommon Rofl pet trait modifiers regression", () => {
+  it("Uncommon Rofl (ID 152) applies exactly NRG -1 and BRN -1, nothing else", () => {
+    const wearablesPath = join(process.cwd(), "data", "wearables.json");
+    const wearablesData = JSON.parse(readFileSync(wearablesPath, "utf8")) as any[];
+    const wearablesById = new Map(wearablesData.map((w) => [Number(w.id), w]));
+    
+    const uncommonRofl = wearablesById.get(152);
+    expect(uncommonRofl).toBeDefined();
+    expect(uncommonRofl?.name).toContain("Rofl");
+    
+    const mods = uncommonRofl?.traitModifiers?.slice(0, 4) || [];
+    expect(mods).toEqual([-1, 0, 0, -1]);
+  });
+
+  it("applying Uncommon Rofl to gotchi changes only NRG and BRN", () => {
+    const wearablesById = new Map<number, any>([
+      [
+        152,
+        {
+          id: 152,
+          name: "Uncommon Rofl",
+          traitModifiers: [-1, 0, 0, -1, 0, 0],
+          rarityScoreModifier: 2,
+          rarity: "uncommon",
+          slotPositions: [false, false, false, false, false, false, true, false],
+          category: 0,
+        },
+      ],
+    ]);
+    
+    const baseTraits = [50, 50, 50, 50, 50, 50];
+    const breakdown = computeBRSBreakdown({
+      baseTraits,
+      equippedWearables: [152],
+      wearablesById,
+    });
+    
+    expect(breakdown.wearableTraitMods).toEqual({
+      nrg: -1,
+      agg: 0,
+      spk: 0,
+      brn: -1,
+    });
+    expect(breakdown.finalTraits).toEqual([49, 50, 50, 49, 50, 50]);
+  });
+
+  it("all Rofl pets have correct trait modifier pattern (NRG/BRN only)", () => {
+    const wearablesPath = join(process.cwd(), "data", "wearables.json");
+    const wearablesData = JSON.parse(readFileSync(wearablesPath, "utf8")) as any[];
+    
+    const roflPets = wearablesData.filter((w: any) => 
+      w.name?.toLowerCase().includes("rofl")
+    );
+    
+    expect(roflPets.length).toBeGreaterThan(0);
+    
+    for (const rofl of roflPets) {
+      const mods = rofl.traitModifiers?.slice(0, 4) || [];
+      expect(mods[1]).toBe(0);
+      expect(mods[2]).toBe(0);
+    }
+  });
+});
+

@@ -169,6 +169,37 @@ function getRarityFromModifier(modifier: number): string {
   return "Common";
 }
 
+// Known-correct trait modifiers for wearables with subgraph data issues
+// Format: { [wearableId]: [NRG, AGG, SPK, BRN, EYS, EYC] }
+const WEARABLE_MODIFIER_PATCHES: Record<number, number[]> = {
+  // Rofl pets - NRG and BRN only, no AGG/SPK
+  151: [0, 0, 0, -1, 0, 0],      // Common Rofl: BRN -1
+  152: [-1, 0, 0, -1, 0, 0],     // Uncommon Rofl: NRG -1, BRN -1
+  153: [-1, 0, 0, -2, 0, 0],     // Rare Rofl: NRG -1, BRN -2
+  154: [-2, 0, 0, -2, 0, 0],     // Legendary Rofl: NRG -2, BRN -2
+  155: [-2, 0, 0, -3, 0, 0],     // Mythical Rofl: NRG -2, BRN -3
+  156: [-3, 0, 0, -3, 0, 0],     // Godlike Rofl: NRG -3, BRN -3
+};
+
+function applyWearablePatches(wearable: Wearable): Wearable {
+  const patch = WEARABLE_MODIFIER_PATCHES[wearable.id];
+  if (patch) {
+    if (import.meta.env.DEV) {
+      const current = wearable.traitModifiers?.slice(0, 4) || [];
+      const expected = patch.slice(0, 4);
+      const mismatch = current.some((v, i) => v !== expected[i]);
+      if (mismatch) {
+        console.warn(
+          `[wearable-patch] ${wearable.name} (ID ${wearable.id}) modifiers corrected:`,
+          { from: current, to: expected }
+        );
+      }
+    }
+    return { ...wearable, traitModifiers: patch };
+  }
+  return wearable;
+}
+
 export async function fetchAllWearables(): Promise<Wearable[]> {
   try {
     const remote = await fetchAllWearablesFromSubgraph();
@@ -177,7 +208,7 @@ export async function fetchAllWearables(): Promise<Wearable[]> {
 
     return remote.map((item) => {
       const localItem = localById.get(Number(item.id));
-      return {
+      const merged = {
         ...localItem,
         ...item,
         traitModifiers: item.traitModifiers,
@@ -185,12 +216,17 @@ export async function fetchAllWearables(): Promise<Wearable[]> {
         rarityScoreModifier: item.rarityScoreModifier,
         rarity: getRarityFromModifier(item.rarityScoreModifier),
       } as Wearable;
+      // Apply patches for known-incorrect subgraph data
+      return applyWearablePatches(merged);
     });
   } catch {
-    return (wearablesData as Wearable[]).map((w) => ({
-      ...w,
-      rarity: getRarityFromModifier(w.rarityScoreModifier || 0),
-    }));
+    return (wearablesData as Wearable[]).map((w) => {
+      const withRarity = {
+        ...w,
+        rarity: getRarityFromModifier(w.rarityScoreModifier || 0),
+      };
+      return applyWearablePatches(withRarity);
+    });
   }
 }
 

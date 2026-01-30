@@ -1,0 +1,83 @@
+Fix Uncommon Rofl Pet trait modifiers (Dress page)
+
+Goal
+On the Dress page, equipping Pet → “Uncommon Rofl” applies the wrong trait deltas. The UI currently shows N-1, B-1 for the pet, but the resulting trait totals change as if it applied NRG +2 and AGG -1. This is incorrect.
+
+Correct behavior
+Equipping Uncommon Rofl must apply exactly:
+
+NRG -1
+
+BRN -1
+…and must NOT change AGG or SPK.
+
+Observed bug example (must match after fix)
+Gotchi: z - Typhon (ID: 14625)
+Before pet: NRG -3 (-4), AGG 96 (103), SPK 97 (103), BRN -3 (-4)
+After equipping Uncommon Rofl (correct): NRG should become -3 (-5) (or net -1 from prior), BRN should net -1 from prior, and AGG/SPK should stay the same.
+Currently it shifts like NRG (-4 → -2) and AGG changes, which indicates wrong modifiers are being applied.
+
+What to change (minimal + targeted)
+1) Verify we are resolving the correct wearable item/ID for “Uncommon Rofl”
+
+Somewhere we map a selected wearable (slot + name/rarity) to a wearable record (likely from:
+
+local wearables JSON,
+
+subgraph data,
+
+or a combined “wearables catalog” list)
+
+Fix requirement: ensure “Uncommon Rofl” resolves to the wearable record whose modifiers are [-1, 0, 0, -1] (NRG, AGG, SPK, BRN).
+
+If the record for Uncommon Rofl is wrong/mismatched (e.g., mapping to a different “Rofl” variant), fix the mapping so the selected option references the correct wearable ID.
+
+2) Verify trait modifier index order is consistent everywhere
+
+We’ve had trait-index mapping issues before. Ensure the modifier array is interpreted as:
+
+[NRG, AGG, SPK, BRN]
+
+If any code path applies modifiers in a different order (or uses a wrong trait key mapping for pets only), fix that to be consistent.
+
+3) Add a narrow regression guard for this specific case
+
+Add a tiny test or runtime assertion in dev to prevent future regressions:
+
+When wearable name includes "Rofl" and rarity includes "Uncommon" (or wearableId matches the resolved ID), assert computed modifiers are exactly:
+
+nrg: -1
+
+agg: 0
+
+spk: 0
+
+brn: -1
+
+This should be a small unit test if we have tests, otherwise a dev-only console warn.
+
+Acceptance Criteria
+
+Equipping Pet → Uncommon Rofl applies NRG -1 and BRN -1 and nothing else.
+
+The per-item modifier pills/labels (N-1, B-1) match the computed totals.
+
+No other wearables are affected.
+
+No UI changes besides corrected numbers.
+
+Implementation Notes (don’t refactor)
+
+Keep all existing Dress page UI + state structure.
+
+Only adjust the wearable lookup + modifier application logic needed to fix this one mismatch.
+
+If data source is wrong, patch the specific wearable record for Uncommon Rofl (ID + modifiers) rather than reshaping the entire wearables dataset.
+
+Deliverables
+
+Patch the lookup so “Uncommon Rofl” resolves to the correct wearable record.
+
+Ensure applied modifiers for that item are [-1, 0, 0, -1].
+
+Add a minimal regression test or dev assertion.
