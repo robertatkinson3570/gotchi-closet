@@ -1,0 +1,90 @@
+STOP: This is NOT a data/on-chain issue and NOT a cache-busting issue.
+
+OBSERVED BEHAVIOR
+On Explorer, I can briefly see the correct naked outline/spirit-force color (e.g., UNI Gotchi #1455 “Lily” shows pink for a moment), then it changes to the wrong color. That means:
+- The initial render is correct
+- Something AFTER render is overriding/replacing/mutating the SVG or its styling
+
+Therefore: DO NOT spend time on on-chain reads, subgraph fields, or cache-busting URLs.
+Focus ONLY on post-render behavior.
+
+GOAL
+Make Explorer naked Gotchi rendering match Dress page and remain stable (no color flip after initial render).
+
+LIKELY ROOT CAUSES (INVESTIGATE THESE FIRST)
+1) Explorer is swapping the SVG source after mount
+   - e.g. initial inline SVG -> later replaced with a “fallback” sprite, cached variant, or different renderer
+   - or React state updates cause a different SVG string to be set
+
+2) CSS is being applied after mount (hydration/theme) that alters SVG visuals
+   - CSS filter: hue-rotate, saturate, brightness
+   - mix-blend-mode, opacity overlays
+   - a container “tint” layer above the SVG
+   - global SVG styles (e.g. svg path { fill: ... } ) leaking in
+
+3) A “naked preview” hover state is fighting with a “card render” state
+   - the image hover (naked) and the info hover are competing
+   - or a timed effect / lazy-load swaps the element
+
+4) Virtualization / recycling DOM nodes in the grid
+   - list virtualization reuses DOM elements and updates props
+   - stale styles/classes persist between cards
+   - keying is wrong (e.g. using array index keys)
+
+5) Image rendering path differs between first paint and after effect
+   - initial SSR/hydration mismatch
+   - useEffect sets “src”/markup after hydration
+
+REQUIRED DIAGNOSIS (DO THIS, NO GUESSING)
+For Gotchi #1455 in Explorer:
+A) Verify whether the DOM node for the SVG is being replaced.
+   - Add a MutationObserver on the gotchi SVG container for that card.
+   - Log when child nodes are replaced / attributes change.
+B) Log className changes on:
+   - the SVG element
+   - its container wrappers
+C) In DevTools, check computed styles for the SVG/container BEFORE and AFTER the color flip:
+   - filter
+   - opacity
+   - mix-blend-mode
+   - background overlays
+   - any CSS variables affecting color
+
+Also inspect if the rendered node changes from:
+- inline <svg> markup
+to
+- <img src=...> or <canvas> or different SVG string
+
+FIX REQUIREMENTS
+1) Prevent post-render swapping to an alternate renderer for naked gotchis.
+   - Ensure the same SVG string/render path persists through state updates.
+   - If there is a “placeholder” then a later “resolved” SVG, make sure both are the same source.
+
+2) Remove/disable any CSS that alters the SVG colors in Explorer.
+   - No hue-rotate, saturate, brightness, or blend filters on the gotchi image container.
+   - No overlay layers that tint the gotchi.
+   - Ensure SVG paths are not being targeted by global CSS.
+
+3) Fix virtualization keying if applicable.
+   - Do NOT use array index as key.
+   - Use stable key: tokenId (and also include “naked/dressed mode” if both exist).
+   - Ensure recycled rows don’t keep stale classes/styles.
+
+4) Ensure the naked-preview hover is isolated.
+   - The gotchi IMAGE hover logic should only swap dress->naked visuals, not apply any tint/filter.
+   - Hovering “info area” must not affect image rendering.
+
+SPECIFIC ANTI-PATTERNS TO REMOVE
+- Do NOT add cache-busting query params.
+- Do NOT re-fetch SVGs repeatedly.
+- Do NOT hardcode UNI=pink as a patch.
+- Do NOT add random timeouts to “wait for render.”
+
+ACCEPTANCE CRITERIA
+- In Explorer, Gotchi #1455 (UNI) naked outline stays pink and never flips.
+- Explorer matches Dress page for naked rendering across multiple collateral types.
+- No CSS filter or overlay changes colors after mount.
+- No DOM replacement occurs after initial correct render (or if it does, the replacement is identical).
+
+DELIVERABLE
+A concrete fix to Explorer rendering/styling that stops the post-render color change. Remove debug observers/logging after confirming.

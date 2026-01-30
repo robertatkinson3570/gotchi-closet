@@ -34,6 +34,11 @@ export function GotchiSvg({
   const [loading, setLoading] = useState(false);
   const requestIdRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+  const hasSvgRef = useRef(false);
+  
+  // Track if we have SVG to prevent replacing with fallback on error
+  hasSvgRef.current = !!svg;
+  
   const fallbackSvg = (key: string) => {
     const hue = key
       .split("")
@@ -59,26 +64,36 @@ export function GotchiSvg({
     [gotchiId, hauntId, collateral, numericTraits, wearablesKey, mode]
   );
 
-  useEffect(() => {
-    if (!gotchiId) return;
-    const requestId = ++requestIdRef.current;
-    let mounted = true;
-    setLoading(true);
-    // Ensure gotchiId is treated as string for parsing
-    const gotchiIdStr = String(gotchiId);
+  // Memoize params to avoid re-creating objects on each render
+  const fetchParams = useMemo(() => {
+    const gotchiIdStr = String(gotchiId || "");
     const tokenId = Number(
       gotchiIdStr.includes("-") ? gotchiIdStr.split("-").slice(-1)[0] : gotchiIdStr
     );
-    if (!Number.isFinite(tokenId)) {
-      setLoading(false);
-      return;
-    }
     const usePreview =
       mode === "preview" &&
       Number.isFinite(tokenId) &&
       typeof hauntId === "number" &&
       !!collateral &&
       Array.isArray(numericTraits);
+    return { gotchiIdStr, tokenId, usePreview };
+  }, [gotchiId, mode, hauntId, collateral, numericTraits]);
+
+  useEffect(() => {
+    if (!gotchiId) return;
+    const { tokenId, usePreview } = fetchParams;
+    if (!Number.isFinite(tokenId)) {
+      setLoading(false);
+      return;
+    }
+    
+    const requestId = ++requestIdRef.current;
+    let mounted = true;
+    
+    // Only set loading if we don't have an SVG yet (prevents flicker on re-fetch)
+    if (!hasSvgRef.current) {
+      setLoading(true);
+    }
     
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -119,13 +134,16 @@ export function GotchiSvg({
       .then((data) => {
         if (!data) return;
         if (mounted && requestId === requestIdRef.current) {
-          setSvg(data || fallbackSvg(requestKey));
+          setSvg(data);
           setLoading(false);
         }
       })
       .catch(() => {
+        // On error, keep existing SVG if we have one (don't replace with fallback)
         if (mounted && requestId === requestIdRef.current) {
-          setSvg(fallbackSvg(requestKey));
+          if (!hasSvgRef.current) {
+            setSvg(fallbackSvg(requestKey));
+          }
           setLoading(false);
         }
       });
@@ -133,7 +151,8 @@ export function GotchiSvg({
       mounted = false;
       controller.abort();
     };
-  }, [requestKey, gotchiId, hauntId, collateral, numericTraits, equippedWearables]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestKey]); // Only depend on requestKey - it encodes all params as a stable string
 
   return (
     <div
