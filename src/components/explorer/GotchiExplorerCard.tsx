@@ -96,28 +96,31 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
         onMouseEnter={() => setImageHovered(true)}
         onMouseLeave={() => setImageHovered(false)}
       >
-        {wearableCount > 0 && (
-          <div className={`absolute inset-1 transition-opacity duration-200 ${imageHovered ? "opacity-0" : "opacity-100"}`}>
-            <GotchiSvg
-              gotchiId={gotchi.tokenId}
-              hauntId={gotchi.hauntId}
-              collateral={gotchi.collateral}
-              numericTraits={gotchi.numericTraits as number[]}
-              equippedWearables={gotchi.equippedWearables as number[]}
-              className="w-full h-full"
-            />
-          </div>
-        )}
-        <div className={`${wearableCount > 0 ? "absolute inset-1" : ""} transition-opacity duration-200 ${wearableCount > 0 && !imageHovered ? "opacity-0" : "opacity-100"}`}>
+        {wearableCount > 0 ? (
+          <>
+            <div className={`absolute inset-1 transition-opacity duration-200 ${imageHovered ? "opacity-0" : "opacity-100"}`}>
+              <GotchiSvg
+                gotchiId={gotchi.tokenId}
+                className="w-full h-full"
+              />
+            </div>
+            <div className={`absolute inset-1 transition-opacity duration-200 ${!imageHovered ? "opacity-0" : "opacity-100"}`}>
+              <GotchiSvg
+                gotchiId={gotchi.tokenId}
+                hauntId={gotchi.hauntId}
+                collateral={gotchi.collateral}
+                numericTraits={gotchi.numericTraits as number[]}
+                equippedWearables={NAKED_WEARABLES}
+                className="w-full h-full"
+              />
+            </div>
+          </>
+        ) : (
           <GotchiSvg
             gotchiId={gotchi.tokenId}
-            hauntId={gotchi.hauntId}
-            collateral={gotchi.collateral}
-            numericTraits={gotchi.numericTraits as number[]}
-            equippedWearables={wearableCount > 0 ? NAKED_WEARABLES : gotchi.equippedWearables as number[]}
             className="w-full h-full"
           />
-        </div>
+        )}
         
         {comboRarityText && (
           <div
