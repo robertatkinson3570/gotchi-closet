@@ -101,6 +101,10 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
             <div className={`absolute inset-1 transition-opacity duration-200 ${imageHovered ? "opacity-0" : "opacity-100"}`}>
               <GotchiSvg
                 gotchiId={gotchi.tokenId}
+                hauntId={gotchi.hauntId}
+                collateral={gotchi.collateral}
+                numericTraits={gotchi.numericTraits as number[]}
+                equippedWearables={gotchi.equippedWearables as number[]}
                 className="w-full h-full"
               />
             </div>
@@ -118,6 +122,10 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
         ) : (
           <GotchiSvg
             gotchiId={gotchi.tokenId}
+            hauntId={gotchi.hauntId}
+            collateral={gotchi.collateral}
+            numericTraits={gotchi.numericTraits as number[]}
+            equippedWearables={NAKED_WEARABLES}
             className="w-full h-full"
           />
         )}
