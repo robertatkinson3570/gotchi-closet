@@ -41,7 +41,6 @@ export default function ExplorerPage() {
     return "gotchi";
   });
   const [mode, setMode] = useState<DataMode>("all");
-  const [search, setSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSort, setShowSort] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -149,8 +148,9 @@ export default function ExplorerPage() {
   }, [setGotchiSort, assetType]);
 
   const filteredGotchisBySearch = useMemo(() => {
-    if (!search.trim()) return gotchis;
-    const s = search.toLowerCase().trim();
+    const searchTerm = gotchiFilters.nameContains;
+    if (!searchTerm.trim()) return gotchis;
+    const s = searchTerm.toLowerCase().trim();
     return gotchis.filter(
       (g) =>
         g.name.toLowerCase().includes(s) ||
@@ -158,17 +158,18 @@ export default function ExplorerPage() {
         g.tokenId.includes(s) ||
         (g.owner && g.owner.toLowerCase().includes(s))
     );
-  }, [gotchis, search]);
+  }, [gotchis, gotchiFilters.nameContains]);
 
   const filteredWearablesBySearch = useMemo(() => {
-    if (!search.trim()) return wearables;
-    const s = search.toLowerCase().trim();
+    const searchTerm = gotchiFilters.nameContains;
+    if (!searchTerm.trim()) return wearables;
+    const s = searchTerm.toLowerCase().trim();
     return wearables.filter(
       (w) =>
         w.name.toLowerCase().includes(s) ||
         String(w.id) === s
     );
-  }, [wearables, search]);
+  }, [wearables, gotchiFilters.nameContains]);
 
   const availableSets = useMemo(() => {
     return setsData.sets.map((s) => s.name).sort();
@@ -179,6 +180,10 @@ export default function ExplorerPage() {
   const handleGotchiFiltersChange = useCallback((newFilters: FiltersType) => {
     setGotchiFilters(newFilters);
   }, [setGotchiFilters]);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setGotchiFilters({ ...gotchiFilters, nameContains: value });
+  }, [gotchiFilters, setGotchiFilters]);
 
   const wearableFilterCount = 
     wearableFilters.slots.length +
@@ -198,8 +203,8 @@ export default function ExplorerPage() {
       <ExplorerTopBar
         mode={mode}
         onModeChange={handleModeChange}
-        search={search}
-        onSearchChange={setSearch}
+        search={gotchiFilters.nameContains}
+        onSearchChange={handleSearchChange}
         sort={gotchiSort}
         onSortChange={setGotchiSort}
         onOpenSort={() => setShowSort(true)}
