@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useClient } from "urql";
 import { gql } from "urql";
 import type { DataMode, ExplorerGotchi, ExplorerFilters, ExplorerSort, SortField } from "@/lib/explorer/types";
@@ -390,6 +390,11 @@ export function useExplorerData(
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<ExplorerFilters>(defaultFilters);
   const [sort, setSort] = useState<ExplorerSort>({ field: "rarity", direction: "desc" });
+  
+  // Track if this is initial render for filter effect (must be before other hooks)
+  const isInitialFilterRender = useRef(true);
+  const prevFiltersKey = useRef("");
+  const loadInitialRef = useRef<() => void>(() => {});
 
   const batchSize = typeof window !== "undefined" && window.innerWidth < 768
     ? BATCH_SIZE_MOBILE
@@ -618,14 +623,28 @@ export function useExplorerData(
     });
   }, [filters]);
 
+  // Keep ref updated with latest loadInitial
+  loadInitialRef.current = loadInitial;
+  
   useEffect(() => {
+    // Skip initial render - the mode useEffect handles that
+    if (isInitialFilterRender.current) {
+      isInitialFilterRender.current = false;
+      prevFiltersKey.current = filtersKey;
+      return;
+    }
+    
+    // Skip if filters haven't actually changed
+    if (filtersKey === prevFiltersKey.current) return;
+    prevFiltersKey.current = filtersKey;
+    
     // Only refetch for "all" mode when server-side filters change
     if (mode !== "all") return;
     
     const timeout = setTimeout(() => {
       setGotchis([]);
       setHasMore(true);
-      loadInitial();
+      loadInitialRef.current();
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timeout);
