@@ -434,8 +434,9 @@ export function useExplorerData(
   useEffect(() => {
     setGotchis([]);
     setHasMore(true);
+    setSort({ field: "rarity", direction: "desc" });
     loadInitial();
-  }, [loadInitial, mode]);
+  }, [mode]);
 
   const filteredGotchis = useMemo(() => {
     return applyFilters(gotchis, filters);
