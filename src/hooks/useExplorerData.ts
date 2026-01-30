@@ -3,8 +3,110 @@ import { useClient } from "urql";
 import { gql } from "urql";
 import type { DataMode, ExplorerGotchi, ExplorerFilters, ExplorerSort, SortField } from "@/lib/explorer/types";
 import { defaultFilters } from "@/lib/explorer/types";
-import { applyFilters } from "@/lib/explorer/filters";
+import { applyFilters, applyClientSideFilters } from "@/lib/explorer/filters";
 import { applySorts } from "@/lib/explorer/sorts";
+
+// Build a where clause for server-side filtering
+function buildWhereClause(filters: ExplorerFilters): Record<string, any> {
+  const where: Record<string, any> = { status: 3 };
+  
+  // Token ID filters
+  if (filters.tokenId) {
+    where.gotchiId = filters.tokenId;
+  }
+  if (filters.tokenIdMin) {
+    const min = parseInt(filters.tokenIdMin, 10);
+    if (!isNaN(min)) where.gotchiId_gte = min.toString();
+  }
+  if (filters.tokenIdMax) {
+    const max = parseInt(filters.tokenIdMax, 10);
+    if (!isNaN(max)) where.gotchiId_lte = max.toString();
+  }
+  
+  // Name filter (search)
+  if (filters.nameContains) {
+    where.name_contains_nocase = filters.nameContains;
+  }
+  
+  // Rarity score filters (use withSetsRarityScore)
+  if (filters.rarityMin) {
+    const min = parseInt(filters.rarityMin, 10);
+    if (!isNaN(min)) where.withSetsRarityScore_gte = min.toString();
+  }
+  if (filters.rarityMax) {
+    const max = parseInt(filters.rarityMax, 10);
+    if (!isNaN(max)) where.withSetsRarityScore_lte = max.toString();
+  }
+  
+  // Level filters
+  if (filters.levelMin) {
+    const min = parseInt(filters.levelMin, 10);
+    if (!isNaN(min)) where.level_gte = min.toString();
+  }
+  if (filters.levelMax) {
+    const max = parseInt(filters.levelMax, 10);
+    if (!isNaN(max)) where.level_lte = max.toString();
+  }
+  
+  // Haunt filter
+  if (filters.haunts.length > 0) {
+    // Subgraph doesn't support hauntId_in, so we'll use the first one if there's only one
+    if (filters.haunts.length === 1) {
+      where.hauntId = filters.haunts[0].toString();
+    }
+    // Multiple haunts need client-side filtering
+  }
+  
+  // GHST pocket filter
+  if (filters.hasGhstPocket === true) {
+    where.stakedAmount_gt = "0";
+  }
+  if (filters.ghstBalanceMin) {
+    const min = parseFloat(filters.ghstBalanceMin);
+    if (!isNaN(min)) {
+      const minWei = Math.floor(min * 1e18).toString();
+      where.stakedAmount_gte = minWei;
+    }
+  }
+  if (filters.ghstBalanceMax) {
+    const max = parseFloat(filters.ghstBalanceMax);
+    if (!isNaN(max)) {
+      const maxWei = Math.floor(max * 1e18).toString();
+      where.stakedAmount_lte = maxWei;
+    }
+  }
+  
+  // Equipped set filter
+  if (filters.hasEquippedSet === true) {
+    where.equippedSetID_gt = "0";
+  }
+  if (filters.equippedSets.length === 1) {
+    where.equippedSetID = filters.equippedSets[0].toString();
+  }
+  
+  return where;
+}
+
+// Check if any filters require client-side processing
+function hasClientSideFilters(filters: ExplorerFilters): boolean {
+  // Filters that can't be done server-side
+  return (
+    filters.rarityTiers.length > 0 ||
+    filters.nrgMin !== "" || filters.nrgMax !== "" ||
+    filters.aggMin !== "" || filters.aggMax !== "" ||
+    filters.spkMin !== "" || filters.spkMax !== "" ||
+    filters.brnMin !== "" || filters.brnMax !== "" ||
+    filters.extremeTraits || filters.balancedTraits ||
+    filters.hasWearables !== null ||
+    filters.wearableCountMin !== "" || filters.wearableCountMax !== "" ||
+    filters.haunts.length > 1 || // Multiple haunts need client-side
+    (filters.hasGhstPocket === false) || // "No GHST" needs client-side
+    (filters.hasEquippedSet === false) || // "No set" needs client-side
+    filters.equippedSets.length > 1 || // Multiple sets need client-side
+    filters.doubleMythEyes ||
+    (filters.priceMin !== "" || filters.priceMax !== "") // Price needs Baazaar source
+  );
+}
 
 function getSubgraphOrderBy(field: SortField): string {
   switch (field) {
@@ -27,42 +129,50 @@ function getSubgraphOrderBy(field: SortField): string {
   }
 }
 
-const GOTCHIS_PAGINATED = gql`
-  query GotchisPaginated($first: Int!, $skip: Int!, $orderBy: String!, $orderDirection: String!) {
-    aavegotchis(
-      first: $first
-      skip: $skip
-      where: { status: 3 }
-      orderBy: $orderBy
-      orderDirection: $orderDirection
-    ) {
-      id
-      gotchiId
-      name
-      level
-      numericTraits
-      modifiedNumericTraits
-      withSetsNumericTraits
-      equippedWearables
-      baseRarityScore
-      modifiedRarityScore
-      withSetsRarityScore
-      hauntId
-      collateral
-      owner { id }
-      kinship
-      experience
-      escrow
-      equippedSetID
-      equippedSetName
-      usedSkillPoints
-      createdAt
-      lastInteracted
-      minimumStake
-      stakedAmount
-    }
-  }
+const GOTCHI_FIELDS = `
+  id
+  gotchiId
+  name
+  level
+  numericTraits
+  modifiedNumericTraits
+  withSetsNumericTraits
+  equippedWearables
+  baseRarityScore
+  modifiedRarityScore
+  withSetsRarityScore
+  hauntId
+  collateral
+  owner { id }
+  kinship
+  experience
+  escrow
+  equippedSetID
+  equippedSetName
+  usedSkillPoints
+  createdAt
+  lastInteracted
+  minimumStake
+  stakedAmount
 `;
+
+// Dynamic query builder for filtered gotchis
+function buildGotchisQuery(whereClause: Record<string, any>): string {
+  const whereStr = JSON.stringify(whereClause).replace(/"([^"]+)":/g, '$1:');
+  return `
+    query GotchisPaginatedFiltered($first: Int!, $skip: Int!, $orderBy: String!, $orderDirection: String!) {
+      aavegotchis(
+        first: $first
+        skip: $skip
+        where: ${whereStr}
+        orderBy: $orderBy
+        orderDirection: $orderDirection
+      ) {
+        ${GOTCHI_FIELDS}
+      }
+    }
+  `;
+}
 
 const GOTCHIS_BY_OWNER_EXPLORER = gql`
   query GotchisByOwnerExplorer($owner: ID!) {
@@ -342,19 +452,40 @@ export function useExplorerData(
         setGotchis(gotchisWithListings);
         setHasMore(listings.length >= batchSize);
       } else if (mode === "all") {
-        const result = await client.query(GOTCHIS_PAGINATED, {
-          first: batchSize,
-          skip: 0,
-          orderBy: getSubgraphOrderBy(sort.field),
-          orderDirection: sort.direction,
-        }).toPromise();
+        // Build where clause from filters for server-side filtering
+        const whereClause = buildWhereClause(filters);
+        const queryStr = buildGotchisQuery(whereClause);
+        const response = await fetch("https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: queryStr,
+            variables: {
+              first: batchSize,
+              skip: 0,
+              orderBy: getSubgraphOrderBy(sort.field),
+              orderDirection: sort.direction,
+            },
+          }),
+        });
 
-        if (result.error) {
-          throw new Error(result.error.message);
+        if (!response.ok) {
+          throw new Error(`Subgraph request failed: ${response.status}`);
         }
 
-        const rawGotchis = result.data?.aavegotchis || [];
-        const gotchisWithListings = applyListingsToGotchis(rawGotchis.map(transformGotchi));
+        const data = await response.json();
+        if (data.errors) {
+          throw new Error(data.errors[0]?.message || "GraphQL error");
+        }
+
+        const rawGotchis = data.data?.aavegotchis || [];
+        let gotchisWithListings = applyListingsToGotchis(rawGotchis.map(transformGotchi));
+        
+        // Apply client-side filters for things server can't handle
+        if (hasClientSideFilters(filters)) {
+          gotchisWithListings = applyClientSideFilters(gotchisWithListings, filters);
+        }
+        
         setGotchis(gotchisWithListings);
         setHasMore(rawGotchis.length >= batchSize);
       }
@@ -363,7 +494,7 @@ export function useExplorerData(
     } finally {
       setLoading(false);
     }
-  }, [client, mode, effectiveOwner, batchSize, sort, filters.priceMin, filters.priceMax]);
+  }, [client, mode, effectiveOwner, batchSize, sort, filters]);
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
@@ -409,19 +540,41 @@ export function useExplorerData(
         setGotchis((prev) => [...prev, ...newGotchis]);
         setHasMore(listings.length >= batchSize);
       } else {
-        const result = await client.query(GOTCHIS_PAGINATED, {
-          first: batchSize,
-          skip: gotchis.length,
-          orderBy: getSubgraphOrderBy(sort.field),
-          orderDirection: sort.direction,
-        }).toPromise();
+        // Build where clause from filters for server-side filtering
+        const whereClause = buildWhereClause(filters);
+        const queryStr = buildGotchisQuery(whereClause);
+        
+        const response = await fetch("https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: queryStr,
+            variables: {
+              first: batchSize,
+              skip: gotchis.length,
+              orderBy: getSubgraphOrderBy(sort.field),
+              orderDirection: sort.direction,
+            },
+          }),
+        });
 
-        if (result.error) {
-          throw new Error(result.error.message);
+        if (!response.ok) {
+          throw new Error(`Subgraph request failed: ${response.status}`);
         }
 
-        const rawGotchis = result.data?.aavegotchis || [];
-        const newGotchis = applyListingsToGotchis(rawGotchis.map(transformGotchi));
+        const data = await response.json();
+        if (data.errors) {
+          throw new Error(data.errors[0]?.message || "GraphQL error");
+        }
+
+        const rawGotchis = data.data?.aavegotchis || [];
+        let newGotchis = applyListingsToGotchis(rawGotchis.map(transformGotchi));
+        
+        // Apply client-side filters for things server can't handle
+        if (hasClientSideFilters(filters)) {
+          newGotchis = applyClientSideFilters(newGotchis, filters);
+        }
+        
         setGotchis((prev) => [...prev, ...newGotchis]);
         setHasMore(rawGotchis.length >= batchSize);
       }
@@ -430,7 +583,7 @@ export function useExplorerData(
     } finally {
       setLoading(false);
     }
-  }, [client, loading, hasMore, mode, gotchis.length, batchSize, sort, filters.priceMin, filters.priceMax]);
+  }, [client, loading, hasMore, mode, gotchis.length, batchSize, sort, filters]);
 
   useEffect(() => {
     setGotchis([]);
@@ -438,6 +591,40 @@ export function useExplorerData(
     setSort({ field: "rarity", direction: "desc" });
     loadInitial();
   }, [mode]);
+
+  // Debounced refetch when filters change (only for "all" mode with server-side filters)
+  const filtersKey = useMemo(() => {
+    // Create a stable key for filters that affect server-side queries
+    return JSON.stringify({
+      tokenId: filters.tokenId,
+      tokenIdMin: filters.tokenIdMin,
+      tokenIdMax: filters.tokenIdMax,
+      nameContains: filters.nameContains,
+      rarityMin: filters.rarityMin,
+      rarityMax: filters.rarityMax,
+      levelMin: filters.levelMin,
+      levelMax: filters.levelMax,
+      haunts: filters.haunts.length === 1 ? filters.haunts[0] : "",
+      hasGhstPocket: filters.hasGhstPocket === true ? true : "",
+      ghstBalanceMin: filters.ghstBalanceMin,
+      ghstBalanceMax: filters.ghstBalanceMax,
+      hasEquippedSet: filters.hasEquippedSet === true ? true : "",
+      equippedSets: filters.equippedSets.length === 1 ? filters.equippedSets[0] : "",
+    });
+  }, [filters]);
+
+  useEffect(() => {
+    // Only refetch for "all" mode when server-side filters change
+    if (mode !== "all") return;
+    
+    const timeout = setTimeout(() => {
+      setGotchis([]);
+      setHasMore(true);
+      loadInitial();
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeout);
+  }, [filtersKey, mode]);
 
   const filteredGotchis = useMemo(() => {
     return applyFilters(gotchis, filters);

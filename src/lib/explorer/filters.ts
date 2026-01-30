@@ -184,3 +184,94 @@ export function getActiveFilterCount(filters: ExplorerFilters): number {
   if (filters.doubleMythEyes) count++;
   return count;
 }
+
+// Apply only client-side filters (filters that can't be done server-side)
+export function applyClientSideFilters(
+  gotchis: ExplorerGotchi[],
+  filters: ExplorerFilters
+): ExplorerGotchi[] {
+  return gotchis.filter((g) => {
+    // Rarity tier filter (needs mapping logic)
+    if (filters.rarityTiers.length > 0) {
+      const tier = getRarityTier(g.withSetsRarityScore);
+      if (!filters.rarityTiers.includes(tier)) return false;
+    }
+
+    // Trait filters
+    const traits = g.withSetsNumericTraits || g.modifiedNumericTraits || g.numericTraits;
+    if (traits.length >= 4) {
+      if (filters.nrgMin && traits[0] < parseInt(filters.nrgMin, 10)) return false;
+      if (filters.nrgMax && traits[0] > parseInt(filters.nrgMax, 10)) return false;
+      if (filters.aggMin && traits[1] < parseInt(filters.aggMin, 10)) return false;
+      if (filters.aggMax && traits[1] > parseInt(filters.aggMax, 10)) return false;
+      if (filters.spkMin && traits[2] < parseInt(filters.spkMin, 10)) return false;
+      if (filters.spkMax && traits[2] > parseInt(filters.spkMax, 10)) return false;
+      if (filters.brnMin && traits[3] < parseInt(filters.brnMin, 10)) return false;
+      if (filters.brnMax && traits[3] > parseInt(filters.brnMax, 10)) return false;
+
+      if (filters.extremeTraits) {
+        const hasExtreme = traits.slice(0, 4).some((t) => t <= 10 || t >= 90);
+        if (!hasExtreme) return false;
+      }
+      if (filters.balancedTraits) {
+        const isBalanced = traits.slice(0, 4).every((t) => t >= 40 && t <= 60);
+        if (!isBalanced) return false;
+      }
+    }
+
+    // Wearable filters
+    if (filters.hasWearables === true) {
+      const equipped = g.equippedWearables.filter((id) => id > 0);
+      if (equipped.length === 0) return false;
+    }
+    if (filters.hasWearables === false) {
+      const equipped = g.equippedWearables.filter((id) => id > 0);
+      if (equipped.length > 0) return false;
+    }
+    
+    // Wearable count filter
+    if (filters.wearableCountMin || filters.wearableCountMax) {
+      const equipped = g.equippedWearables.filter((id) => id > 0);
+      if (filters.wearableCountMin) {
+        const min = parseInt(filters.wearableCountMin, 10);
+        if (!isNaN(min) && equipped.length < min) return false;
+      }
+      if (filters.wearableCountMax) {
+        const max = parseInt(filters.wearableCountMax, 10);
+        if (!isNaN(max) && equipped.length > max) return false;
+      }
+    }
+
+    // Multi-haunt filter (when more than 1 haunt selected)
+    if (filters.haunts.length > 1) {
+      if (!filters.haunts.includes(g.hauntId.toString())) return false;
+    }
+
+    // "No GHST" filter (server can only do "has GHST")
+    if (filters.hasGhstPocket === false) {
+      const stakedBalance = parseFloat(g.stakedAmount || "0");
+      if (stakedBalance > 0) return false;
+    }
+
+    // "No set" filter (server can only do "has set")
+    if (filters.hasEquippedSet === false) {
+      if (g.equippedSetID && g.equippedSetID > 0) return false;
+    }
+
+    // Multiple equipped sets
+    if (filters.equippedSets.length > 1) {
+      if (!g.equippedSetID || !filters.equippedSets.includes(g.equippedSetID.toString())) return false;
+    }
+
+    // Double mythical eyes filter
+    if (filters.doubleMythEyes) {
+      const eyeColor = traits[4];
+      const eyeShape = traits[5];
+      const hasMythEyeColor = eyeColor <= 1 || eyeColor >= 98;
+      const hasMythEyeShape = eyeShape <= 1 || eyeShape >= 98;
+      if (!hasMythEyeColor || !hasMythEyeShape) return false;
+    }
+
+    return true;
+  });
+}
