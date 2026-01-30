@@ -1,5 +1,5 @@
 import { client } from "./client";
-import { GOTCHIS_BY_OWNER, GOTCHI_BY_TOKEN_ID, GOTCHIS_SEARCH, WEARABLES, USER_WEARABLE_BALANCES } from "./queries";
+import { GOTCHIS_BY_OWNER, GOTCHI_BY_TOKEN_ID, GOTCHIS_SEARCH, WEARABLES } from "./queries";
 import type { Gotchi, Wearable, WearableSet } from "@/types";
 import wearablesData from "../../data/wearables.json";
 import wearableSetsData from "../../data/wearableSets.json";
@@ -196,38 +196,5 @@ export async function fetchAllWearables(): Promise<Wearable[]> {
 
 export async function fetchAllWearableSets(): Promise<WearableSet[]> {
   return wearableSetsData as WearableSet[];
-}
-
-export type WearableBalance = {
-  wearableId: number;
-  balance: number;
-};
-
-export async function fetchUserWearableBalances(owner: string): Promise<WearableBalance[]> {
-  const result = await client
-    .query(USER_WEARABLE_BALANCES, { owner: owner.toLowerCase() })
-    .toPromise();
-
-  if (result.error) {
-    console.warn("Failed to fetch user wearable balances:", result.error.message);
-    return [];
-  }
-
-  const balances: WearableBalance[] = [];
-  const itemBalances = result.data?.user?.itemBalances || [];
-  
-  for (const item of itemBalances) {
-    const category = Number(item.itemType?.category);
-    if (category !== 0) continue;
-    
-    const wearableId = Number(item.itemType?.id);
-    const balance = Number(item.balance);
-    
-    if (wearableId > 0 && balance > 0) {
-      balances.push({ wearableId, balance });
-    }
-  }
-  
-  return balances;
 }
 

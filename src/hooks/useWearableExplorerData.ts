@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAppStore } from "@/state/useAppStore";
 import { useBaazaar } from "@/hooks/useBaazaar";
-import { fetchUserWearableBalances } from "@/graphql/fetchers";
+import { computeOwnedCounts } from "@/state/selectors";
 import type { DataMode } from "@/lib/explorer/types";
 import type {
   ExplorerWearable,
@@ -15,8 +15,6 @@ import {
   getWearableSlots,
 } from "@/lib/explorer/wearableTypes";
 import type { Wearable } from "@/types";
-import { useAccount } from "wagmi";
-import { loadMultiWallets } from "@/lib/multiWallet";
 
 const PAGE_SIZE = 100;
 
@@ -160,53 +158,15 @@ function applySort(
 
 export function useWearableExplorerData(mode: DataMode) {
   const wearables = useAppStore((s) => s.wearables);
+  const gotchis = useAppStore((s) => s.gotchis);
   const sets = useAppStore((s) => s.sets);
   const { baazaarPrices, baazaarLoading } = useBaazaar();
-  const { address } = useAccount();
 
   const [filters, setFilters] = useState<WearableExplorerFilters>(defaultWearableFilters);
   const [sort, setSort] = useState<WearableSort>(defaultWearableSort);
   const [page, setPage] = useState(1);
-  const [walletBalances, setWalletBalances] = useState<Record<number, number>>({});
-  const [balancesLoading, setBalancesLoading] = useState(false);
 
-  useEffect(() => {
-    if (mode !== "mine") {
-      setWalletBalances({});
-      return;
-    }
-
-    const allWallets: string[] = [];
-    if (address) allWallets.push(address.toLowerCase());
-    const multiWallets = loadMultiWallets();
-    for (const w of multiWallets) {
-      allWallets.push(w.toLowerCase());
-    }
-
-    if (allWallets.length === 0) {
-      setWalletBalances({});
-      return;
-    }
-
-    setBalancesLoading(true);
-    Promise.all(allWallets.map((wallet) => fetchUserWearableBalances(wallet)))
-      .then((results) => {
-        const combined: Record<number, number> = {};
-        for (const balances of results) {
-          for (const { wearableId, balance } of balances) {
-            combined[wearableId] = (combined[wearableId] || 0) + balance;
-          }
-        }
-        setWalletBalances(combined);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch wearable balances:", err);
-        setWalletBalances({});
-      })
-      .finally(() => setBalancesLoading(false));
-  }, [mode, address]);
-
-  const ownedCounts = walletBalances;
+  const ownedCounts = useMemo(() => computeOwnedCounts(gotchis), [gotchis]);
 
   const pricesMap = useMemo(() => {
     const map: Record<number, string> = {};
@@ -232,7 +192,7 @@ export function useWearableExplorerData(mode: DataMode) {
   }, [filteredWearables, page]);
 
   const hasMore = paginatedWearables.length < filteredWearables.length;
-  const loading = (baazaarLoading && mode === "baazaar") || (balancesLoading && mode === "mine");
+  const loading = baazaarLoading && mode === "baazaar";
 
   const loadMore = useCallback(() => {
     if (hasMore && !loading) {
