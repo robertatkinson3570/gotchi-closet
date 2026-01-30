@@ -33,7 +33,6 @@ export default function ExplorerPage() {
   const setGotchis = useAppStore((s) => s.setGotchis);
   const setFilters = useAppStore((s) => s.setFilters);
   const storeWearables = useAppStore((s) => s.wearables);
-  const storeGotchis = useAppStore((s) => s.gotchis);
   const [assetType, setAssetType] = useState<AssetType>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(ASSET_TYPE_KEY);
@@ -120,14 +119,13 @@ export default function ExplorerPage() {
   } = useExplorerData(mode, connectedAddress);
 
   useEffect(() => {
-    if (assetType !== "wearable" || mode !== "mine") return;
+    if (mode !== "mine") return;
     if (!connectedAddress) return;
-    if (storeGotchis.length > 0) return;
 
     if (gotchis.length > 0) {
       setGotchis(gotchis as any);
     }
-  }, [assetType, mode, connectedAddress, gotchis, storeGotchis.length, setGotchis]);
+  }, [mode, connectedAddress, gotchis, setGotchis]);
 
   const {
     wearables,
