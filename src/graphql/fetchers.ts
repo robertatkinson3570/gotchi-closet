@@ -181,7 +181,7 @@ const WEARABLE_MODIFIER_PATCHES: Record<number, number[]> = {
   156: [-3, 0, 0, -3, 0, 0],     // Godlike Rofl: NRG -3, BRN -3
 };
 
-function applyWearablePatches(wearable: Wearable): Wearable {
+export function applyWearablePatches(wearable: Wearable): Wearable {
   const patch = WEARABLE_MODIFIER_PATCHES[wearable.id];
   if (patch) {
     if (import.meta.env.DEV) {
@@ -198,6 +198,11 @@ function applyWearablePatches(wearable: Wearable): Wearable {
     return { ...wearable, traitModifiers: patch };
   }
   return wearable;
+}
+
+// Apply patches to an array of wearables (useful for cached data)
+export function applyAllWearablePatches(wearables: Wearable[]): Wearable[] {
+  return wearables.map(applyWearablePatches);
 }
 
 export async function fetchAllWearables(): Promise<Wearable[]> {
