@@ -213,6 +213,19 @@ export function EditorPanel() {
                         blocksElapsed: instance.baseGotchi.blocksElapsed,
                       });
                       const activeSetNames = activeSets.map((set) => set.name);
+                      // DEBUG: Log trait calculation results
+                      const hasRofl = instance.equippedBySlot.some((id: number) => id >= 151 && id <= 156);
+                      if (hasRofl) {
+                        console.debug("[EditorPanel-traits]", {
+                          gotchiId: instance.baseGotchi.id,
+                          equippedBySlot: instance.equippedBySlot.filter((id: number) => id !== 0),
+                          baseTraits: instance.baseGotchi.numericTraits.slice(0, 4),
+                          finalTraits: finalTraits.slice(0, 4),
+                          wearableDelta,
+                          setDelta: setTraitModsDelta,
+                          isBaseEquipment,
+                        });
+                      }
                       return (
                         <GotchiCard
                           gotchi={instance.baseGotchi}

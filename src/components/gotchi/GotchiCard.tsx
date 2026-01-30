@@ -87,6 +87,18 @@ export function GotchiCard({
     : committedSim
       ? safeTraits(committedSim.simModified)
       : safeTraits(traits) || safeTraits(baseTraitSource) || currentTraits;
+  // DEBUG: Trace trait display source
+  if (wearableDelta && wearableDelta.some((v: number) => v !== 0)) {
+    console.debug("[GotchiCard-display]", {
+      gotchiId: gotchi.id,
+      hasCommittedSim: !!committedSim,
+      isRespecMode: respec.isRespecMode,
+      traitsReceived: safeTraits(traits),
+      displayModifiedTraits,
+      wearableDelta,
+      source: committedSim ? "committedSim.simModified" : "traits prop",
+    });
+  }
   const birthTraitsArr = respec.simBase ? respec.simBase.map((v, i) => v - (respec.allocated[i] ?? 0)) : [];
   const birthBrs = birthTraitsArr.length ? sumTraitBrs(birthTraitsArr) : 0;
   const simBrs = sumTraitBrs(respec.simBase);
