@@ -1,0 +1,99 @@
+ISSUE: Explorer page renders incorrect Gotchi outline / spirit force colors (naked Gotchis do NOT match on-chain)
+
+SUMMARY
+The Explorer page is rendering naked Gotchis with the WRONG outline / spirit force colors. These colors do not match what is on-chain and do not match the Dress page rendering. This is incorrect and visually misleading.
+
+Example:
+- Gotchi: Lily
+- Token ID: 1455
+- Collateral: UNI
+- Spirit Force / Outline Color: PINK (on-chain, correct on Dress page)
+- Explorer page: outline color is incorrect
+
+This is NOT a cosmetic issue. Spirit force color is a core Gotchi identity trait and must be consistent everywhere.
+
+WHY THIS IS BAD (AND CONFUSING)
+1) Spirit force color is deterministic and on-chain
+- UNI gotchis ALWAYS have a pink outline when naked.
+- This is not optional styling — it’s identity data.
+
+2) Dress page proves the correct implementation already exists
+- Dress page renders naked Gotchis with the correct outline color.
+- Explorer page does NOT.
+- This means Explorer is using a different (wrong) rendering path.
+
+3) This breaks user trust
+- Users will assume the Explorer is wrong or buggy (because it is).
+- Visual inconsistency makes people doubt trait accuracy, rarity, and identity.
+
+4) This causes visual chaos when browsing
+- Two naked Gotchis with the same collateral appear different.
+- Explorer grid looks inconsistent and unprofessional.
+
+ROOT CAUSE (LIKELY)
+The Explorer page is NOT using the same Gotchi SVG rendering logic as the Dress page.
+
+Possible causes:
+- Explorer uses a static image or cached SVG without spirit force applied
+- Explorer omits collateral-based outline logic
+- Explorer bypasses the canonical on-chain SVG generation path
+- Explorer applies default / fallback colors instead of on-chain values
+
+REQUIRED FIX (NON-NEGOTIABLE)
+
+The Explorer page MUST render naked Gotchis using the EXACT SAME logic as the Dress page.
+
+Specifically:
+- Use the SAME SVG generation function / helper used on the Dress page
+- Use the SAME on-chain data inputs:
+  - collateral type
+  - haunt
+  - base traits
+- Do NOT reimplement or approximate spirit force coloring
+- Do NOT hardcode colors
+- Do NOT guess based on rarity or haunt
+
+If the Dress page uses:
+- a shared SVG helper
+- a contract call
+- a canonical subgraph field
+
+THEN the Explorer MUST reuse that exact path.
+
+IMPLEMENTATION REQUIREMENTS
+
+1) Identify the canonical Gotchi SVG render function used on the Dress page
+2) Extract or reuse it for Explorer rendering
+3) Ensure naked Gotchi rendering:
+   - applies spirit force outline color correctly
+   - matches Dress page output pixel-for-pixel
+4) Remove any Explorer-specific SVG shortcuts, fallbacks, or overrides
+
+VERIFICATION STEPS (DO THESE)
+- Load Gotchi #1455 (Lily) naked on:
+  - Dress page
+  - Explorer page
+- Compare outline color
+- They MUST match exactly
+- Repeat with:
+  - UNI collateral
+  - AAVE collateral
+  - other collateral types
+
+SCOPE RULES
+- This fix applies ONLY to Explorer Gotchi rendering.
+- Do NOT change Dress page behavior.
+- Do NOT change wearable rendering.
+- Do NOT change trait logic.
+
+SUCCESS CRITERIA
+- Naked Gotchis render with correct on-chain spirit force colors in Explorer.
+- Explorer and Dress page visuals are consistent.
+- No collateral renders with an incorrect outline color.
+- Example Gotchi #1455 (Lily) shows pink outline everywhere.
+
+FINAL NOTE
+This is not a “style tweak”.
+This is a correctness bug.
+
+Fix it by reusing the canonical Dress page rendering path — nothing else.

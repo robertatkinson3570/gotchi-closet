@@ -105,6 +105,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
                 collateral={gotchi.collateral}
                 numericTraits={gotchi.numericTraits as number[]}
                 equippedWearables={gotchi.equippedWearables as number[]}
+                mode="preview"
                 className="w-full h-full"
               />
             </div>
@@ -115,6 +116,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
                 collateral={gotchi.collateral}
                 numericTraits={gotchi.numericTraits as number[]}
                 equippedWearables={NAKED_WEARABLES}
+                mode="preview"
                 className="w-full h-full"
               />
             </div>
@@ -126,6 +128,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
             collateral={gotchi.collateral}
             numericTraits={gotchi.numericTraits as number[]}
             equippedWearables={NAKED_WEARABLES}
+            mode="preview"
             className="w-full h-full"
           />
         )}
