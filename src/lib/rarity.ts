@@ -187,10 +187,11 @@ function sumWearableCoreMods(
     if (!id) continue;
     const wearable = wearablesById.get(id);
     if (!wearable || !Array.isArray(wearable.traitModifiers)) continue;
-    nrg += Number(wearable.traitModifiers[0]) || 0;
-    agg += Number(wearable.traitModifiers[1]) || 0;
-    spk += Number(wearable.traitModifiers[2]) || 0;
-    brn += Number(wearable.traitModifiers[3]) || 0;
+    const mods = wearable.traitModifiers.slice(0, 4).map(n => Number(n) || 0);
+    nrg += mods[0];
+    agg += mods[1];
+    spk += mods[2];
+    brn += mods[3];
   }
   return { nrg, agg, spk, brn };
 }

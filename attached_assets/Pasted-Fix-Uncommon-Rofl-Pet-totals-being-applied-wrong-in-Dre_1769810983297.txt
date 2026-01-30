@@ -1,0 +1,186 @@
+Fix “Uncommon Rofl” Pet totals being applied wrong in Dress → Edit Gotchi
+Problem (confirmed with exact example)
+
+On the Dress page (Edit Gotchi panel), equipping Pet → Uncommon Rofl displays the correct item modifiers N-1 / B-1, but the computed trait totals (“with wearables”) change incorrectly.
+
+Example gotchi: z - Typhon (ID: 14625)
+
+Before equipping Pet (no pet)
+
+NRG: -3 (-4)
+
+AGG: 96 (103)
+
+SPK: 97 (103)
+
+BRN: -3 (-4)
+
+Pet slot: empty
+
+After equipping Pet → Uncommon Rofl (what app currently shows)
+
+Wearable row shows:
+
+Uncommon Rofl
+
+modifiers: N-1, B-1 (this part looks correct)
+
+But totals change to:
+
+NRG: -3 (-2) ⟵ WRONG (NRG shifted +2)
+
+AGG: 96 (102) ⟵ WRONG (AGG shifted -1)
+
+SPK: 97 (103) ⟵ OK
+
+BRN: -3 (-4) ⟵ WRONG (BRN did not shift -1)
+
+Correct expected total changes after equipping Uncommon Rofl:
+Since the pet is N-1 / B-1, the “with wearables” totals must move:
+
+NRG: -1
+
+BRN: -1
+
+AGG: 0
+
+SPK: 0
+
+So from the pre-pet totals, only NRG and BRN should decrease by 1. AGG/SPK must not change.
+
+My suspicion (match this fix)
+
+The wearable catalog / trait modifiers are correct, but the bug is in how the modifiers are applied inside the Dress → Edit Gotchi calculation, specifically when aggregating equipped wearables into the gotchi’s computed traits.
+
+This is almost certainly one of these issues:
+
+Pet slot is being applied from the wrong source (e.g., using a fallback wearableId, using “best sets” wearables instead of the editor’s equipped state, or using a stale equipped list).
+
+Slot indexing bug (pet slot index mismatch, causing the wrong item’s modifiers to be applied when pet changes).
+
+Trait index mapping bug in one codepath (e.g., one apply path interprets modifiers as [AGG, NRG, SPK, BRN] or similar).
+
+Double-apply / overwrite bug: pet display uses editor state, but totals are computed from a different “equippedWearables” object, and then merged/overwritten.
+
+Required Fix (no refactor, minimal changes, focus on correctness)
+Step 1 — Identify the ONE canonical “equipped wearables” source for the Edit Gotchi panel
+
+Find where the Edit Gotchi panel gets its equipped wearables for each slot (including Pet). There should be a single source of truth, something like:
+
+editorEquippedWearables
+
+selectedGotchiWearables
+
+equippedBySlot
+
+wearablesBySlot
+
+equippedWearables[] (array of wearable IDs indexed by slot)
+
+Requirement: The trait totals calculation must use that same source, not:
+
+gotchi’s original on-chain equipped wearables
+
+best-set computed wearables
+
+a cached “active set” wearable list
+
+a separate “preview” state
+
+If you find multiple sources, pick the one used for rendering the slot UI (the one that correctly shows “Uncommon Rofl” selected) and make trait math use it.
+
+Step 2 — Ensure Pet slot uses the correct slot key/index and wearable ID
+
+Wherever we reduce/aggregate wearables, verify:
+
+the Pet slot is included in the aggregation
+
+the Pet slot is reading the correct value from the equipped structure
+
+the Pet slot wearableId is not being replaced by background or “empty” slot logic
+
+Common failure: pet slot uses wrong index (e.g., PET=6 but code treats it as BACKGROUND=6), causing wrong wearable modifiers to get applied.
+
+Action:
+
+confirm the slot order constants match the UI slot order
+
+ensure Pet and Background are not swapped anywhere (especially if both are optional slots)
+
+Step 3 — Apply modifiers ONLY from wearableId → wearableCatalog[id].traitModifiers
+
+Locate the function that computes the gotchi’s “with wearables” traits. It likely does something like:
+
+start from baseNumericTraits (or numericTraits)
+
+add wearable traitModifiers for each equipped wearable
+
+add set bonuses if applicable
+
+produce modifiedNumericTraits / “with wearables” array
+
+Requirement: For each equipped wearableId:
+
+fetch traitModifiers from the wearable catalog by ID
+
+add them using the correct trait index order:
+[NRG, AGG, SPK, BRN]
+
+Do NOT use any name-based mapping here.
+
+Step 4 — Fix the mismatch: display modifiers vs applied modifiers
+
+Right now the UI can show N-1, B-1 but the totals change as if NRG +2, AGG -1.
+
+That means the totals path is applying modifiers from a different wearableId than the displayed one.
+
+Concrete fix requirement:
+
+When Pet slot is “Uncommon Rofl” in the UI, the totals calculation must use that exact same wearableId.
+
+If you discover the totals path is using a different “pet wearable id” (e.g., common rofl, rare rofl, or another wearable), replace it with the editor-equipped wearableId.
+
+Step 5 — Add a temporary dev log to confirm IDs and modifiers (remove after fix)
+
+Add a temporary console log (dev only) at the point where modifiers are aggregated:
+
+Log:
+
+equipped Pet wearableId
+
+resolved wearable name
+
+resolved traitModifiers
+
+resulting delta applied to traits
+
+Example log:
+[DEBUG] pet wearableId=XXXX name=Uncommon Rofl modifiers=[-1,0,0,-1]
+
+This is not a test, just a temporary sanity check. Remove it after confirming fix.
+
+Definition of Done (must verify with this exact gotchi)
+
+Using z - Typhon (ID 14625):
+
+Equip Pet → Uncommon Rofl
+
+Confirm wearable row shows N-1, B-1
+
+Confirm totals change ONLY by:
+
+NRG “with wearables”: -1
+
+BRN “with wearables”: -1
+
+AGG/SPK: no change
+
+Rarity Score/Total BRS may change accordingly, but trait direction must be correct.
+
+Constraints
+
+Do not change UI layout.
+
+Do not refactor the entire traits system.
+
+Fix only the Dress → Edit Gotchi trait aggregation source-of-truth bug (likely pet slot indexing or wrong equipped state used).

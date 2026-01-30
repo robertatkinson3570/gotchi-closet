@@ -59,7 +59,7 @@ export function cacheIsStale(key: string): boolean {
 }
 
 export const CACHE_KEYS = {
-  WEARABLES: "gc_wearables_v2", // v2: includes Rofl pet modifier patches
+  WEARABLES: "gc_wearables_v3", // v3: patched Rofl modifiers + bypass for pre-computed traits
   SETS: "gc_sets_v1",
   ADDRESSES: "gc_addresses_v1",
 } as const;
