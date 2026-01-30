@@ -286,7 +286,6 @@ export function useExplorerData(
   const loadInitial = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setGotchis([]);
     setHasMore(true);
 
     try {
@@ -357,7 +356,7 @@ export function useExplorerData(
         const gotchisWithListings = applyListingsToGotchis(rawGotchis.map(transformGotchi));
         setGotchis(gotchisWithListings);
         setHasMore(rawGotchis.length >= batchSize);
-      } else {
+      } else if (mode === "mine" && !effectiveOwner) {
         setGotchis([]);
         setHasMore(false);
       }
