@@ -302,7 +302,7 @@ export function ExplorerTopBar({
               )}
             </div>
 
-            {mode === "mine" && (
+            {mode === "mine" && assetType === "gotchi" && (
               <div className="flex items-center border rounded overflow-hidden">
                 <button
                   onClick={() => onViewModeChange("cards")}
@@ -323,7 +323,7 @@ export function ExplorerTopBar({
           </div>
 
           <div className="flex md:hidden items-center gap-1 ml-auto shrink-0">
-            {mode === "mine" && (
+            {mode === "mine" && assetType === "gotchi" && (
               <div className="flex items-center border rounded overflow-hidden">
                 <button
                   onClick={() => onViewModeChange("cards")}
