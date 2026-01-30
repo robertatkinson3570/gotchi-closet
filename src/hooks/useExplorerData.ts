@@ -135,6 +135,7 @@ const BAAZAAR_GOTCHI_LISTINGS_QUERY = `
         kinship
         experience
         escrow
+        stakedAmount
         equippedSetID
         equippedSetName
       }

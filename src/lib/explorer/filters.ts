@@ -103,22 +103,22 @@ export function applyFilters(
     }
 
     if (filters.hasGhstPocket === true) {
-      const stakedBalance = parseFloat(g.stakedAmount || g.escrow || "0");
+      const stakedBalance = parseFloat(g.escrow || g.stakedAmount || "0");
       if (stakedBalance <= 0) return false;
     }
     if (filters.hasGhstPocket === false) {
-      const stakedBalance = parseFloat(g.stakedAmount || g.escrow || "0");
+      const stakedBalance = parseFloat(g.escrow || g.stakedAmount || "0");
       if (stakedBalance > 0) return false;
     }
 
     if (filters.ghstBalanceMin) {
       const min = parseFloat(filters.ghstBalanceMin);
-      const balance = parseFloat(g.stakedAmount || g.escrow || "0") / 1e18;
+      const balance = parseFloat(g.escrow || g.stakedAmount || "0") / 1e18;
       if (!isNaN(min) && balance < min) return false;
     }
     if (filters.ghstBalanceMax) {
       const max = parseFloat(filters.ghstBalanceMax);
-      const balance = parseFloat(g.stakedAmount || g.escrow || "0") / 1e18;
+      const balance = parseFloat(g.escrow || g.stakedAmount || "0") / 1e18;
       if (!isNaN(max) && balance > max) return false;
     }
 
