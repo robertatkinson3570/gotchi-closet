@@ -87,18 +87,6 @@ export function GotchiCard({
     : committedSim
       ? safeTraits(committedSim.simModified)
       : safeTraits(traits) || safeTraits(baseTraitSource) || currentTraits;
-  // DEBUG: Trace trait display source
-  if (wearableDelta && wearableDelta.some((v: number) => v !== 0)) {
-    console.debug("[GotchiCard-display]", {
-      gotchiId: gotchi.id,
-      hasCommittedSim: !!committedSim,
-      isRespecMode: respec.isRespecMode,
-      traitsReceived: safeTraits(traits),
-      displayModifiedTraits,
-      wearableDelta,
-      source: committedSim ? "committedSim.simModified" : "traits prop",
-    });
-  }
   const birthTraitsArr = respec.simBase ? respec.simBase.map((v, i) => v - (respec.allocated[i] ?? 0)) : [];
   const birthBrs = birthTraitsArr.length ? sumTraitBrs(birthTraitsArr) : 0;
   const simBrs = sumTraitBrs(respec.simBase);
@@ -208,12 +196,17 @@ export function GotchiCard({
                   </div>
                 </div>
               )}
-              {["NRG", "AGG", "SPK", "BRN"].map((label, index) => (
+              {["NRG", "AGG", "SPK", "BRN"].map((label, index) => {
+                const wearableMod = wearableDelta?.[index] ?? 0;
+                const setMod = setDelta?.[index] ?? 0;
+                const hasBreakdown = wearableMod !== 0 || setMod !== 0;
+                return (
                 <div
                   key={label}
-                  className="flex items-center justify-between gap-2"
+                  className="flex flex-col"
                   data-testid={`trait-row-${label}`}
                 >
+                  <div className="flex items-center justify-between gap-2">
                   <span>{label}</span>
                   <div className="flex items-center gap-2">
                     <span data-testid={`trait-value-${label}`}>
@@ -267,8 +260,24 @@ export function GotchiCard({
                       </div>
                     )}
                   </div>
+                  </div>
+                  {hasBreakdown && !respec.isRespecMode && (
+                    <div className="text-[9px] text-muted-foreground text-right">
+                      {wearableMod !== 0 && (
+                        <span>
+                          Wearables: {wearableMod >= 0 ? `+${wearableMod}` : wearableMod}
+                        </span>
+                      )}
+                      {wearableMod !== 0 && setMod !== 0 && <span className="mx-1">|</span>}
+                      {setMod !== 0 && (
+                        <span className="text-purple-400">
+                          Sets: {setMod >= 0 ? `+${setMod}` : setMod}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </div>

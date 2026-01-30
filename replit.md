@@ -14,7 +14,7 @@ The application is built with a React 18 frontend using TypeScript and Vite, sty
 - **Responsive Design:** Utilizes responsive grids and mobile-optimized components (e.g., bottom sheets, sticky headers) for a consistent experience across devices.
 - **Asset Exploration:** Provides high-density, responsive grids for both Gotchi and Wearable explorers, featuring infinite scroll with lazy loading. Filters are collapsible, and sorting options are comprehensive.
 - **Catwalk:** Implements a 3D perspective runway with animated Gotchis, preloading assets for a smooth user experience.
-- **GotchiCards:** Displays key information like token ID, haunt, BRS, level, kinship, trait bars, and eye rarity.
+- **GotchiCards:** Displays key information like token ID, haunt, BRS, level, kinship, trait bars, and eye rarity. **Trait rows now show breakdown sublabels** (e.g., "Wearables: -2 | Sets: +3") when wearables or sets are contributing modifiers, making it clear why final trait values differ from base.
 - **Modals & Drawers:** Uses full-screen modals for features like Catwalk and detail drawers for Gotchi information, with collapsible sections.
 
 **Technical Implementations:**

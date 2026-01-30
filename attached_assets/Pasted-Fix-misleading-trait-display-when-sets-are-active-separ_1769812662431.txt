@@ -1,0 +1,82 @@
+Fix misleading trait display when sets are active (separate wearables vs sets)
+
+Goal
+In the Dress page “Traits” panel, when sets are active (ex: Quickswap Dragon), equipping a wearable (ex: Pet → Uncommon Rofl) appears to change traits in the wrong direction because the UI shows only base and final, while wearable rows show wearable-only modifiers.
+
+We need to make the Traits display unambiguous by separating:
+
+base traits
+
+wearables contribution
+
+set bonus contribution
+
+final traits
+
+Concrete example (must look correct in UI)
+Gotchi: z - Typhon (ID: 14625)
+Base traits: [-3, 96, 97, -3] shown as left numbers
+
+With current loadout:
+
+wearableDelta total = [-2, 6, 5, -2]
+
+setDelta (Dragon set) = [3, 0, 1, 1]
+
+final = [-2, 102, 103, -4]
+
+When equipping Pet → Uncommon Rofl (modifiers [-1, 0, 0, -1]), the wearableDelta changes appropriately, but the final NRG can still increase because setDelta includes +3 NRG.
+
+Required UI behavior
+Keep the existing trait row layout, but add one of these minimal clarity options:
+
+Option A (preferred): show breakdown on each trait row
+
+For each trait (NRG/AGG/SPK/BRN), display:
+
+the existing base (final) format
+
+plus a small sublabel or tooltip:
+Wearables: X, Sets: Y
+Example for NRG on Typhon after equipping pet:
+NRG -3 (-2)
+Wearables: -2 Sets: +3
+
+Option B: add a compact “Set bonuses” mini-block above/below Traits
+
+If any active sets exist:
+
+show a small line: Set bonuses: NRG +3, SPK +1, BRN +1 (only non-zero)
+
+keep trait numbers as-is
+
+Implementation details
+
+We already compute:
+
+baseTraits
+
+wearableDelta
+
+setDelta
+
+finalTraits
+Use these exact values in the UI (do not recompute a second way).
+
+Update the Traits component to accept (or derive) wearableDelta and setDelta and render them.
+
+Only render breakdown UI when there is any non-zero setDelta OR when sets are active.
+
+Do not change any calculation logic; only change display/labeling.
+
+No layout overhaul — keep current trait rows and spacing. Add subtext in smaller font, muted color.
+
+Acceptance criteria
+
+With Typhon (14625) and Quickswap Dragon active, equipping Uncommon Rofl no longer looks like it applied +2 NRG.
+
+Trait panel clearly communicates that +3 NRG is coming from the Dragon set.
+
+Wearable row still shows N-1, B-1 for Uncommon Rofl.
+
+No changes to Dress page behavior besides clearer display.
