@@ -615,6 +615,7 @@ export function useExplorerData(
       tokenIdMin: filters.tokenIdMin,
       tokenIdMax: filters.tokenIdMax,
       nameContains: filters.nameContains,
+      ownerAddress: filters.ownerAddress,
       rarityMin: filters.rarityMin,
       rarityMax: filters.rarityMax,
       levelMin: filters.levelMin,
