@@ -4,6 +4,7 @@ import { getGotchiSvg, getGotchiSvgs, previewGotchiSvg, getPlaceholderSvg, getGo
 const router = Router();
 
 router.get("/:id/svg", async (req, res) => {
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   try {
     const { id } = req.params;
     if (!/^\d+$/.test(id)) {
@@ -45,10 +46,12 @@ router.post("/svgs", async (req, res) => {
 });
 
 router.post("/preview", async (req, res) => {
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   try {
-    const { hauntId, collateral, numericTraits, wearableIds } = req.body || {};
+    const { tokenId, hauntId, collateral, numericTraits, wearableIds } = req.body || {};
     const collateralStr = String(collateral || "");
     if (!Number.isFinite(Number(hauntId)) || !/^0x[a-fA-F0-9]{40}$/.test(collateralStr)) {
+      console.log(`[PREVIEW] Invalid params: hauntId=${hauntId} collateral=${collateralStr}`);
       res.json({ svg: getPlaceholderSvg("preview:invalid") });
       return;
     }
