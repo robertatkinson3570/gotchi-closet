@@ -40,7 +40,8 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   const wearableCount = gotchi.equippedWearables.filter((w) => w > 0).length;
   const [imageHovered, setImageHovered] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [eyeBadgeHovered, setEyeBadgeHovered] = useState(false);
+  const [imageBadgeHovered, setImageBadgeHovered] = useState(false);
+  const [infoBadgeHovered, setInfoBadgeHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const traits = gotchi.withSetsNumericTraits || gotchi.modifiedNumericTraits || gotchi.numericTraits;
@@ -125,13 +126,13 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
                 ? "bg-pink-500 text-white font-semibold" 
                 : "bg-background/80 text-muted-foreground"
             }`}
-            onMouseEnter={() => setEyeBadgeHovered(true)}
-            onMouseLeave={() => setEyeBadgeHovered(false)}
+            onMouseEnter={() => setImageBadgeHovered(true)}
+            onMouseLeave={() => setImageBadgeHovered(false)}
           >
             <span className="opacity-70">👁</span>
             <span>{comboRarityText}</span>
-            {eyeBadgeHovered && eyeExplainText && (
-              <div className="absolute bottom-full right-0 mb-1 px-2 py-1 bg-foreground text-background text-[9px] rounded whitespace-nowrap z-20 shadow-lg pointer-events-none">
+            {imageBadgeHovered && eyeExplainText && (
+              <div className="absolute bottom-full right-0 mb-1 px-2 py-1 bg-foreground text-background text-[9px] rounded max-w-[140px] text-center leading-tight z-20 shadow-lg pointer-events-none">
                 {eyeExplainText}
               </div>
             )}
@@ -159,14 +160,14 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
           {eyeRarities?.combo && eyeRarities.combo <= 10 && (
             <div 
               className="relative"
-              onMouseEnter={() => setEyeBadgeHovered(true)}
-              onMouseLeave={() => setEyeBadgeHovered(false)}
+              onMouseEnter={() => setInfoBadgeHovered(true)}
+              onMouseLeave={() => setInfoBadgeHovered(false)}
             >
               <span className="bg-purple-500/20 text-purple-400 px-1 rounded font-medium cursor-help">
                 {eyeRarities.combo === 1 ? "UNIQUE" : `${eyeRarities.combo}X`} 👁
               </span>
-              {eyeBadgeHovered && eyeExplainText && (
-                <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-foreground text-background text-[9px] rounded whitespace-nowrap z-20 shadow-lg pointer-events-none">
+              {infoBadgeHovered && eyeExplainText && (
+                <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-foreground text-background text-[9px] rounded max-w-[140px] text-center leading-tight z-20 shadow-lg pointer-events-none">
                   {eyeExplainText}
                 </div>
               )}
