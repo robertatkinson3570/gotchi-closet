@@ -1,1 +1,2750 @@
-[{"id":"APY Visionary","name":"APY Visionary","wearableIds":[246,247,248],"traitBonuses":[2,1,0,0,0,0],"setBonusBRS":2},{"id":"Aagent","name":"Aagent","wearableIds":[55,56,57,58],"traitBonuses":[3,-1,0,2,0,0],"setBonusBRS":3},{"id":"Aair Gotchi","name":"Aair Gotchi","wearableIds":[225,226,227],"traitBonuses":[3,2,0,0,0,0],"setBonusBRS":3},{"id":"Aarcher","name":"Aarcher","wearableIds":[292,293,294],"traitBonuses":[1,0,-1,0,0,0],"setBonusBRS":1},{"id":"Aastronaut","name":"Aastronaut","wearableIds":[252,253,254],"traitBonuses":[1,0,0,1,0,0],"setBonusBRS":1},{"id":"Aave Hero","name":"Aave Hero","wearableIds":[18,19,20],"traitBonuses":[1,0,0,1,0,0],"setBonusBRS":1},{"id":"Apex Sergey","name":"Apex Sergey","wearableIds":[13,14,16,17],"traitBonuses":[6,-4,0,0,0,0],"setBonusBRS":6},{"id":"Apex Stani","name":"Apex Stani","wearableIds":[32,33,34,35],"traitBonuses":[6,1,-3,0,0,0],"setBonusBRS":6},{"id":"Apex Vitalik Visionary","name":"Apex Vitalik Visionary","wearableIds":[51,52,53,54],"traitBonuses":[7,-3,0,0,0,0],"setBonusBRS":7},{"id":"Baarbarian","name":"Baarbarian","wearableIds":[295,296,297,298],"traitBonuses":[2,0,1,0,0,0],"setBonusBRS":2},{"id":"Battle Santa","name":"Battle Santa","wearableIds":[5,13,71,106],"traitBonuses":[5,0,3,0,0,0],"setBonusBRS":5},{"id":"Blue Vacationer","name":"Blue Vacationer","wearableIds":[115,116,117],"traitBonuses":[4,-2,0,0,0,0],"setBonusBRS":4},{"id":"Bushidogotchi","name":"Bushidogotchi","wearableIds":[313,314,315],"traitBonuses":[6,0,1,2,0,0],"setBonusBRS":6},{"id":"Captain Aave","name":"Captain Aave","wearableIds":[21,22,23],"traitBonuses":[2,0,0,1,0,0],"setBonusBRS":2},{"id":"Carpentooor","name":"Carpentooor","wearableIds":[354,355,356,357],"traitBonuses":[3,1,1,0,0,0],"setBonusBRS":3},{"id":"Carpentor","name":"Carpentor","wearableIds":[354,355,357],"traitBonuses":[3,1,1,0,0,0],"setBonusBRS":3},{"id":"Casual Gamer","name":"Casual Gamer","wearableIds":[117,203,204],"traitBonuses":[3,1,1,0,0,0],"setBonusBRS":3},{"id":"Citaadel Knight","name":"Citaadel Knight","wearableIds":[309,310,311,312],"traitBonuses":[5,1,-2,0,0,0],"setBonusBRS":5},{"id":"Crypto OG","name":"Crypto OG","wearableIds":[12,19,36,40,77],"traitBonuses":[4,0,0,0,0,0],"setBonusBRS":4},{"id":"Curve Surfer","name":"Curve Surfer","wearableIds":[66,76,115],"traitBonuses":[4,0,0,0,0,0],"setBonusBRS":4},{"id":"Cyberpunk","name":"Cyberpunk","wearableIds":[43,48,202],"traitBonuses":[5,3,0,0,0,0],"setBonusBRS":5},{"id":"Cyborg ","name":"Cyborg","wearableIds":[215,216,217],"traitBonuses":[5,0,3,0,0,0],"setBonusBRS":5},{"id":"DAO Summoner","name":"DAO Summoner","wearableIds":[48,49,50,51],"traitBonuses":[5,0,0,0,0,0],"setBonusBRS":5},{"id":"Daimyogotchi","name":"Daimyogotchi","wearableIds":[155,313,314,315],"traitBonuses":[7,0,1,2,0,0],"setBonusBRS":7},{"id":"DeFi Degen","name":"DeFi Degen","wearableIds":[45,46,47],"traitBonuses":[4,0,0,0,0,0],"setBonusBRS":4},{"id":"Degen Gamblooor","name":"Degen Gamblooor","wearableIds":[260,53,17,52],"traitBonuses":[8,-2,0,0,0,0],"setBonusBRS":8},{"id":"ETH Maxi","name":"ETH Maxi","wearableIds":[36,37,38],"traitBonuses":[1,0,0,0,0,0],"setBonusBRS":1},{"id":"Elven Aarcher","name":"Elven Aarcher","wearableIds":[140,292,293,294],"traitBonuses":[1,0,-1,0,0,0],"setBonusBRS":1},{"id":"Elven Raanger","name":"Elven Raanger","wearableIds":[140,141,293,299,300],"traitBonuses":[2,0,0,-1,0,0],"setBonusBRS":2},{"id":"Engagement Farmer","name":"Engagement Farmer","wearableIds":[373,374,375],"traitBonuses":[3,0,0,-2,0,0],"setBonusBRS":3},{"id":"FAKE Artist","name":"FAKE Artist","wearableIds":[364,363,362],"traitBonuses":[5,-1,0,-1,0,0],"setBonusBRS":5},{"id":"FU Money","name":"FU Money","wearableIds":[35,114,117,120],"traitBonuses":[6,0,-3,0,0,0],"setBonusBRS":6},{"id":"Fairy","name":"Fairy","wearableIds":[306,307,308],"traitBonuses":[4,-1,0,-1,0,0],"setBonusBRS":4},{"id":"Farmer","name":"Farmer","wearableIds":[67,68,69],"traitBonuses":[1,-1,0,0,0,0],"setBonusBRS":1},{"id":"Farmer Alf","name":"Farmer Alf","wearableIds":[13,67,68,69],"traitBonuses":[5,-3,0,0,0,0],"setBonusBRS":5},{"id":"Foxy Meta","name":"Foxy Meta","wearableIds":[39,40,41],"traitBonuses":[2,0,-1,0,0,0],"setBonusBRS":2},{"id":"Full Pajamas","name":"Full Pajamas","wearableIds":[90,91,92,93],"traitBonuses":[4,0,0,-3,0,0],"setBonusBRS":4},{"id":"Geckogotchi","name":"Geckogotchi","wearableIds":[249,250,251],"traitBonuses":[2,1,0,0,0,0],"setBonusBRS":2},{"id":"Geisha","name":"Geisha","wearableIds":[301,302,303,304],"traitBonuses":[3,0,-2,0,0,0],"setBonusBRS":3},{"id":"Gentleman","name":"Gentleman","wearableIds":[84,85,86],"traitBonuses":[4,0,-2,0,0,0],"setBonusBRS":4},{"id":"Gentleman Farmer","name":"Gentleman Farmer","wearableIds":[69,146,200],"traitBonuses":[2,0,0,1,0,0],"setBonusBRS":2},{"id":"Godli Locks","name":"Godli Locks","wearableIds":[140,141,145,143],"traitBonuses":[6,0,0,-2,0,0],"setBonusBRS":6},{"id":"Godlike Sergey","name":"Godlike Sergey","wearableIds":[13,14,16],"traitBonuses":[6,-3,0,0,0,0],"setBonusBRS":6},{"id":"Godlike Stani","name":"Godlike Stani","wearableIds":[33,34,35],"traitBonuses":[6,0,-3,0,0,0],"setBonusBRS":6},{"id":"Godlike Wizard","name":"Godlike Wizard","wearableIds":[63,65,66],"traitBonuses":[6,1,0,0,0,0],"setBonusBRS":6},{"id":"Gotchi Baron","name":"Gotchi Baron","wearableIds":[146,147,148],"traitBonuses":[3,-1,0,0,0,0],"setBonusBRS":3},{"id":"Gotchi Elf","name":"Gotchi Elf","wearableIds":[140,141,142],"traitBonuses":[3,0,0,-1,0,0],"setBonusBRS":3},{"id":"Gotchi Emperor","name":"Gotchi Emperor","wearableIds":[146,149,148,150,156],"traitBonuses":[6,-2,0,0,0,0],"setBonusBRS":6},{"id":"Gotchi King","name":"Gotchi King","wearableIds":[146,149,148,150],"traitBonuses":[5,-2,0,0,0,0],"setBonusBRS":5},{"id":"Gotchi Lord","name":"Gotchi Lord","wearableIds":[146,147,148,150],"traitBonuses":[5,-1,0,0,0,0],"setBonusBRS":5},{"id":"Gotchi Princess","name":"Gotchi Princess","wearableIds":[140,141,142,143],"traitBonuses":[4,1,1,0,0,0],"setBonusBRS":4},{"id":"Gotchi Queen","name":"Gotchi Queen","wearableIds":[140,141,144,143],"traitBonuses":[5,0,0,-2,0,0],"setBonusBRS":5},{"id":"Gotchidator","name":"Gotchidator","wearableIds":[376,377,379],"traitBonuses":[3,0,1,-1,0,0],"setBonusBRS":3},{"id":"Gunslinger","name":"Gunslinger","wearableIds":[231,228,58,58],"traitBonuses":[3,0,2,0,0,0],"setBonusBRS":3},{"id":"Hacker Aanon","name":"Hacker Aanon","wearableIds":[211,212,213],"traitBonuses":[5,-2,0,0,0,0],"setBonusBRS":5},{"id":"Infantry","name":"Infantry","wearableIds":[1,2,3],"traitBonuses":[1,0,1,0,0,0],"setBonusBRS":1},{"id":"Jacob Maarley","name":"Jacob Maarley","wearableIds":[366,113,385,387],"traitBonuses":[8,1,0,3,0,0],"setBonusBRS":8},{"id":"Jordan","name":"Jordan","wearableIds":[30,31,32],"traitBonuses":[0,0,3,0,0,0],"setBonusBRS":5},{"id":"Knight","name":"Knight","wearableIds":[309,310,311],"traitBonuses":[5,2,-1,0,0,0],"setBonusBRS":5},{"id":"Lady","name":"Lady","wearableIds":[97,98,99],"traitBonuses":[4,0,0,-2,0,0],"setBonusBRS":4},{"id":"Laozigotchi","name":"Laozigotchi","wearableIds":[258,259,260],"traitBonuses":[6,-2,0,0,0,0],"setBonusBRS":6},{"id":"Legendary Wizard","name":"Legendary Wizard","wearableIds":[61,65,66],"traitBonuses":[4,1,0,0,0,0],"setBonusBRS":4},{"id":"Lil Bubble","name":"Lil Bubble","wearableIds":[255,256,257],"traitBonuses":[4,2,-1,0,0,0],"setBonusBRS":4},{"id":"Lil Pumpagotchi","name":"Lil Pumpagotchi","wearableIds":[157,158,159,160,161],"traitBonuses":[6,2,2,0,0,0],"setBonusBRS":6},{"id":"Link Marine","name":"Link Marine","wearableIds":[10,11,12],"traitBonuses":[4,0,2,0,0,0],"setBonusBRS":4},{"id":"Long Distance Runner","name":"Long Distance Runner","wearableIds":[94,125,118],"traitBonuses":[4,2,0,0,0,0],"setBonusBRS":4},{"id":"Man of Culture","name":"Man of Culture","wearableIds":[47,59,74],"traitBonuses":[4,0,0,0,0,0],"setBonusBRS":4},{"id":"Marc","name":"Marc","wearableIds":[27,28,29],"traitBonuses":[4,2,0,0,0,0],"setBonusBRS":4},{"id":"Master Creatooor","name":"Master Creatooor","wearableIds":[369,367,368,366],"traitBonuses":[8,1,0,-2,0,0],"setBonusBRS":8},{"id":"Master Creator","name":"Master Creator","wearableIds":[366,367,369],"traitBonuses":[6,0,0,-2,0,0],"setBonusBRS":6},{"id":"Master Shaaman","name":"Master Shaaman","wearableIds":[234,235,238],"traitBonuses":[6,-3,0,0,0,0],"setBonusBRS":6},{"id":"Master Sushi Chef","name":"Master Sushi Chef","wearableIds":[80,81,82,83],"traitBonuses":[4,0,2,-1,0,0],"setBonusBRS":4},{"id":"Miner","name":"Miner","wearableIds":[87,88,89],"traitBonuses":[2,1,0,0,0,0],"setBonusBRS":2},{"id":"Mythical Farmer","name":"Mythical Farmer","wearableIds":[67,68,70],"traitBonuses":[5,-2,0,0,0,0],"setBonusBRS":5},{"id":"Mythical Sergey","name":"Mythical Sergey","wearableIds":[13,14,15],"traitBonuses":[5,0,3,0,0,0],"setBonusBRS":5},{"id":"Mythical Wizard","name":"Mythical Wizard","wearableIds":[62,65,66],"traitBonuses":[5,1,0,0,0,0],"setBonusBRS":5},{"id":"Noble Savage","name":"Noble Savage","wearableIds":[146,296,297,298],"traitBonuses":[2,0,1,0,0,0],"setBonusBRS":2},{"id":"Nogara the Eagle","name":"Nogara the Eagle","wearableIds":[42,43,44],"traitBonuses":[3,2,0,0,0,0],"setBonusBRS":3},{"id":"Novice Shaaman","name":"Novice Shaaman","wearableIds":[233,234,235],"traitBonuses":[5,-3,0,0,0,0],"setBonusBRS":5},{"id":"Nure-onna","name":"Nure-onna","wearableIds":[249,302,303,304],"traitBonuses":[3,0,-2,0,0,0],"setBonusBRS":3},{"id":"OKex Jaay","name":"OKex Jaay","wearableIds":[72,73,74],"traitBonuses":[5,-1,0,0,0,0],"setBonusBRS":5},{"id":"OKex Jaay Hao","name":"OKex Jaay Hao","wearableIds":[72,73,74,75],"traitBonuses":[5,-1,0,0,0,0],"setBonusBRS":5},{"id":"Off Duty Hazmat","name":"Off Duty Hazmat","wearableIds":[111,112,123],"traitBonuses":[4,2,0,2,0,0],"setBonusBRS":4},{"id":"Off Duty Knight","name":"Off Duty Knight","wearableIds":[99,122,144,310],"traitBonuses":[5,1,0,-2,0,0],"setBonusBRS":5},{"id":"On Duty Hazmat","name":"On Duty Hazmat","wearableIds":[111,112,113],"traitBonuses":[6,3,0,0,0,0],"setBonusBRS":6},{"id":"Pajamas","name":"Pajamas","wearableIds":[90,91,93],"traitBonuses":[3,0,0,-2,0,0],"setBonusBRS":3},{"id":"Party Animal","name":"Party Animal","wearableIds":[109,40,124],"traitBonuses":[5,0,0,0,0,0],"setBonusBRS":5},{"id":"Piraate","name":"Piraate","wearableIds":[221,222,223,224],"traitBonuses":[3,0,0,0,0,0],"setBonusBRS":3},{"id":"Pixelcraftooor","name":"Pixelcraftooor","wearableIds":[350,351,352,353],"traitBonuses":[1,0,0,-1,0,0],"setBonusBRS":1},{"id":"Pixelcraftor","name":"Pixelcraftor","wearableIds":[350,352,353],"traitBonuses":[1,0,0,-1,0,0],"setBonusBRS":1},{"id":"PoW Miner","name":"PoW Miner","wearableIds":[25,77,89],"traitBonuses":[3,0,2,0,0,0],"setBonusBRS":3},{"id":"Polygonist","name":"Polygonist","wearableIds":[134,135,136],"traitBonuses":[3,0,-1,0,0,0],"setBonusBRS":3},{"id":"Portal Mage","name":"Portal Mage","wearableIds":[104,105,106],"traitBonuses":[4,0,2,0,0,0],"setBonusBRS":4},{"id":"Psychonaut","name":"Psychonaut","wearableIds":[234,235,238,53],"traitBonuses":[7,-3,0,0,0,0],"setBonusBRS":7},{"id":"Punk Rocker","name":"Punk Rocker","wearableIds":[218,219,220],"traitBonuses":[4,0,2,0,0,0],"setBonusBRS":4},{"id":"Quickswap Dragon","name":"Quickswap Dragon","wearableIds":[130,131,132],"traitBonuses":[3,0,1,1,0,0],"setBonusBRS":3},{"id":"REALM Tycoon","name":"REALM Tycoon","wearableIds":[84,85,86,146],"traitBonuses":[4,-1,-1,0,0,0],"setBonusBRS":4},{"id":"ROFL Tamer","name":"ROFL Tamer","wearableIds":[53,156,387,386],"traitBonuses":[8,-3,0,0,0,0],"setBonusBRS":8},{"id":"Raanger","name":"Raanger","wearableIds":[293,299,300],"traitBonuses":[2,-1,0,0,0,0],"setBonusBRS":2},{"id":"Radar","name":"Radar","wearableIds":[261,262,263],"traitBonuses":[5,0,-1,0,0,0],"setBonusBRS":5},{"id":"Ranchero","name":"Ranchero","wearableIds":[231,232,238],"traitBonuses":[2,-1,0,0,0,0],"setBonusBRS":2},{"id":"Rastafarian","name":"Rastafarian","wearableIds":[108,109,110],"traitBonuses":[3,0,-2,0,0,0],"setBonusBRS":3},{"id":"Rave Gurl","name":"Rave Gurl","wearableIds":[216,120,49,235,307],"traitBonuses":[5,-1,1,-1,0,0],"setBonusBRS":5},{"id":"Red Vacationer","name":"Red Vacationer","wearableIds":[114,116,117],"traitBonuses":[5,-2,0,-1,0,0],"setBonusBRS":5},{"id":"Rektboi","name":"Rektboi","wearableIds":[29,45,46],"traitBonuses":[4,0,0,0,0,0],"setBonusBRS":4},{"id":"Robin Hood","name":"Robin Hood","wearableIds":[18,293,294,300],"traitBonuses":[2,-1,0,0,0,0],"setBonusBRS":2},{"id":"Runner","name":"Runner","wearableIds":[94,125,96],"traitBonuses":[2,1,0,0,0,0],"setBonusBRS":2},{"id":"Sandbox Seb","name":"Sandbox Seb","wearableIds":[380,381,382,383],"traitBonuses":[4,1,-1,0,0,0],"setBonusBRS":4},{"id":"Sergeant","name":"Sergeant","wearableIds":[7,8,9],"traitBonuses":[3,0,2,0,0,0],"setBonusBRS":3},{"id":"Shaaman Mystic","name":"Shaaman Mystic","wearableIds":[234,235,237],"traitBonuses":[5,-3,0,0,0,0],"setBonusBRS":5},{"id":"Shaaman Priest","name":"Shaaman Priest","wearableIds":[234,235,236],"traitBonuses":[5,-3,0,0,0,0],"setBonusBRS":5},{"id":"Shadowy Supercoder","name":"Shadowy Supercoder","wearableIds":[212,213,214],"traitBonuses":[6,-2,0,0,0,0],"setBonusBRS":6},{"id":"Shogungotchi","name":"Shogungotchi","wearableIds":[156,313,314,315],"traitBonuses":[8,-1,1,2,0,0],"setBonusBRS":8},{"id":"Skater","name":"Skater","wearableIds":[77,78,79],"traitBonuses":[2,0,0,0,0,0],"setBonusBRS":2},{"id":"Smithooor","name":"Smithooor","wearableIds":[358,359,360,361],"traitBonuses":[4,-1,-1,0,0,0],"setBonusBRS":4},{"id":"Smithor","name":"Smithor","wearableIds":[358,359,360],"traitBonuses":[4,-1,-1,0,0,0],"setBonusBRS":4},{"id":"Snapshot Voter","name":"Snapshot Voter","wearableIds":[137,138,139],"traitBonuses":[3,0,-2,0,0,0],"setBonusBRS":3},{"id":"Socialite","name":"Socialite","wearableIds":[97,98,99,100],"traitBonuses":[5,2,0,-1,0,0],"setBonusBRS":5},{"id":"Soundcloud Rapper","name":"Soundcloud Rapper","wearableIds":[108,157,158,159,160],"traitBonuses":[5,1,2,0,0,0],"setBonusBRS":5},{"id":"Starlet","name":"Starlet","wearableIds":[370,371,372],"traitBonuses":[1,1,0,0,0,0],"setBonusBRS":1},{"id":"Steampunk","name":"Steampunk","wearableIds":[199,200,201],"traitBonuses":[4,0,0,2,0,0],"setBonusBRS":4},{"id":"Steampunk Grenadier","name":"Steampunk Grenadier","wearableIds":[1,2,6,199],"traitBonuses":[3,0,0,2,0,0],"setBonusBRS":3},{"id":"Super Aagent","name":"Super Aagent","wearableIds":[55,56,57,58,59],"traitBonuses":[4,-1,0,2,0,0],"setBonusBRS":4},{"id":"Super Geckogotchi","name":"Super Geckogotchi","wearableIds":[245,249,250,251],"traitBonuses":[3,0,0,-1,0,0],"setBonusBRS":3},{"id":"Supreme Portal Mage","name":"Supreme Portal Mage","wearableIds":[104,105,107],"traitBonuses":[6,0,3,0,0,0],"setBonusBRS":6},{"id":"Sus Fairy","name":"Sus Fairy","wearableIds":[305,306,307,308],"traitBonuses":[4,-1,0,-1,0,0],"setBonusBRS":4},{"id":"Sushi Chef","name":"Sushi Chef","wearableIds":[80,81,83],"traitBonuses":[3,0,2,0,0,0],"setBonusBRS":3},{"id":"Swappy the Dragon","name":"Swappy the Dragon","wearableIds":[130,132,133],"traitBonuses":[4,0,1,1,0,0],"setBonusBRS":4},{"id":"Tech Bro","name":"Tech Bro","wearableIds":[242,243,244,212],"traitBonuses":[5,-2,0,0,0,0],"setBonusBRS":5},{"id":"Thaave","name":"Thaave","wearableIds":[24,25,26],"traitBonuses":[3,2,0,0,0,0],"setBonusBRS":3},{"id":"Tinkerbell","name":"Tinkerbell","wearableIds":[148,306,307,308],"traitBonuses":[4,-1,0,-1,0,0],"setBonusBRS":4},{"id":"Toddler","name":"Toddler","wearableIds":[90,91,119],"traitBonuses":[4,0,-2,0,0,0],"setBonusBRS":4},{"id":"Tooth Fairy","name":"Tooth Fairy","wearableIds":[306,307,308,93],"traitBonuses":[4,0,0,-2,0,0],"setBonusBRS":4},{"id":"Trooper","name":"Trooper","wearableIds":[4,5,6],"traitBonuses":[2,0,1,0,0,0],"setBonusBRS":2},{"id":"VR Gamer","name":"VR Gamer","wearableIds":[202,203,204],"traitBonuses":[5,2,1,0,0,0],"setBonusBRS":5},{"id":"VRF Lord","name":"VRF Lord","wearableIds":[52,17,113,385],"traitBonuses":[8,3,0,0,0,0],"setBonusBRS":8},{"id":"Vacation Geisha","name":"Vacation Geisha","wearableIds":[115,304,243,302],"traitBonuses":[4,0,-2,0,0,0],"setBonusBRS":4},{"id":"Vacation Santa","name":"Vacation Santa","wearableIds":[71,114,120,117],"traitBonuses":[5,-1,-1,-1,0,0],"setBonusBRS":5},{"id":"Venly Biker","name":"Venly Biker","wearableIds":[206,207,208,209],"traitBonuses":[4,-1,1,0,0,0],"setBonusBRS":4},{"id":"Vitalik Visionary","name":"Vitalik Visionary","wearableIds":[52,53,54],"traitBonuses":[6,-3,0,0,0,0],"setBonusBRS":6},{"id":"WGMI Wagie ","name":"WGMI Wagie","wearableIds":[239,240,241],"traitBonuses":[3,0,-2,0,0,0],"setBonusBRS":3},{"id":"Wandering Sage","name":"Wandering Sage","wearableIds":[65,258,259,260],"traitBonuses":[7,-2,0,0,0,0],"setBonusBRS":7},{"id":"We Are Legion","name":"We Are Legion","wearableIds":[85,211,212],"traitBonuses":[5,0,0,3,0,0],"setBonusBRS":5},{"id":"Witchy","name":"Witchy","wearableIds":[101,102,103],"traitBonuses":[5,0,0,3,0,0],"setBonusBRS":5},{"id":"Wizard","name":"Wizard","wearableIds":[60,65,66],"traitBonuses":[1,1,0,0,0,0],"setBonusBRS":1},{"id":"Woodland Critter","name":"Woodland Critter","wearableIds":[293,300,140,40],"traitBonuses":[2,0,0,-1,0,0],"setBonusBRS":2},{"id":"Wraangler","name":"Wraangler","wearableIds":[228,229,230],"traitBonuses":[2,0,1,0,0,0],"setBonusBRS":2},{"id":"YOLO Guy","name":"YOLO Guy","wearableIds":[242,243,244],"traitBonuses":[4,-1,-1,0,0,0],"setBonusBRS":4},{"id":"Yegres the Dragon","name":"Yegres the Dragon","wearableIds":[14,131,132,44],"traitBonuses":[5,0,0,1,0,0],"setBonusBRS":5}]
+[
+  {
+    "id": "APY Visionary",
+    "name": "APY Visionary",
+    "wearableIds": [
+      246,
+      247,
+      248
+    ],
+    "traitBonuses": [
+      2,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Aagent",
+    "name": "Aagent",
+    "wearableIds": [
+      55,
+      56,
+      57,
+      58
+    ],
+    "traitBonuses": [
+      3,
+      -1,
+      0,
+      2,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Aair Gotchi",
+    "name": "Aair Gotchi",
+    "wearableIds": [
+      225,
+      226,
+      227
+    ],
+    "traitBonuses": [
+      3,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Aarcher",
+    "name": "Aarcher",
+    "wearableIds": [
+      292,
+      293,
+      294
+    ],
+    "traitBonuses": [
+      1,
+      0,
+      -1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 1
+  },
+  {
+    "id": "Aastronaut",
+    "name": "Aastronaut",
+    "wearableIds": [
+      252,
+      253,
+      254
+    ],
+    "traitBonuses": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "setBonusBRS": 1
+  },
+  {
+    "id": "Aave Hero",
+    "name": "Aave Hero",
+    "wearableIds": [
+      18,
+      19,
+      20
+    ],
+    "traitBonuses": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "setBonusBRS": 1
+  },
+  {
+    "id": "Apex Sergey",
+    "name": "Apex Sergey",
+    "wearableIds": [
+      13,
+      14,
+      16,
+      17
+    ],
+    "traitBonuses": [
+      6,
+      -4,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Apex Stani",
+    "name": "Apex Stani",
+    "wearableIds": [
+      32,
+      33,
+      34,
+      35
+    ],
+    "traitBonuses": [
+      6,
+      1,
+      -3,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Apex Vitalik Visionary",
+    "name": "Apex Vitalik Visionary",
+    "wearableIds": [
+      51,
+      52,
+      53,
+      54
+    ],
+    "traitBonuses": [
+      7,
+      -3,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 7
+  },
+  {
+    "id": "Baarbarian",
+    "name": "Baarbarian",
+    "wearableIds": [
+      295,
+      296,
+      297,
+      298
+    ],
+    "traitBonuses": [
+      2,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Battle Santa",
+    "name": "Battle Santa",
+    "wearableIds": [
+      5,
+      13,
+      71,
+      106
+    ],
+    "traitBonuses": [
+      5,
+      0,
+      3,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Blue Vacationer",
+    "name": "Blue Vacationer",
+    "wearableIds": [
+      115,
+      116,
+      117
+    ],
+    "traitBonuses": [
+      4,
+      -2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Bushidogotchi",
+    "name": "Bushidogotchi",
+    "wearableIds": [
+      313,
+      314,
+      315
+    ],
+    "traitBonuses": [
+      6,
+      0,
+      1,
+      2,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Captain Aave",
+    "name": "Captain Aave",
+    "wearableIds": [
+      21,
+      22,
+      23
+    ],
+    "traitBonuses": [
+      2,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Carpentooor",
+    "name": "Carpentooor",
+    "wearableIds": [
+      354,
+      355,
+      356,
+      357
+    ],
+    "traitBonuses": [
+      3,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Carpentor",
+    "name": "Carpentor",
+    "wearableIds": [
+      354,
+      355,
+      357
+    ],
+    "traitBonuses": [
+      3,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Casual Gamer",
+    "name": "Casual Gamer",
+    "wearableIds": [
+      117,
+      203,
+      204
+    ],
+    "traitBonuses": [
+      3,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Citaadel Knight",
+    "name": "Citaadel Knight",
+    "wearableIds": [
+      309,
+      310,
+      311,
+      312
+    ],
+    "traitBonuses": [
+      5,
+      1,
+      -2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Crypto OG",
+    "name": "Crypto OG",
+    "wearableIds": [
+      12,
+      19,
+      36,
+      40,
+      77
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Curve Surfer",
+    "name": "Curve Surfer",
+    "wearableIds": [
+      66,
+      76,
+      115
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Cyberpunk",
+    "name": "Cyberpunk",
+    "wearableIds": [
+      43,
+      48,
+      202
+    ],
+    "traitBonuses": [
+      5,
+      3,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Cyborg ",
+    "name": "Cyborg",
+    "wearableIds": [
+      215,
+      216,
+      217
+    ],
+    "traitBonuses": [
+      5,
+      0,
+      3,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "DAO Summoner",
+    "name": "DAO Summoner",
+    "wearableIds": [
+      48,
+      49,
+      50,
+      51
+    ],
+    "traitBonuses": [
+      5,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Daimyogotchi",
+    "name": "Daimyogotchi",
+    "wearableIds": [
+      155,
+      313,
+      314,
+      315
+    ],
+    "traitBonuses": [
+      7,
+      0,
+      1,
+      2,
+      0,
+      0
+    ],
+    "setBonusBRS": 7
+  },
+  {
+    "id": "DeFi Degen",
+    "name": "DeFi Degen",
+    "wearableIds": [
+      45,
+      46,
+      47
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Degen Gamblooor",
+    "name": "Degen Gamblooor",
+    "wearableIds": [
+      260,
+      53,
+      17,
+      52
+    ],
+    "traitBonuses": [
+      8,
+      -2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 8
+  },
+  {
+    "id": "ETH Maxi",
+    "name": "ETH Maxi",
+    "wearableIds": [
+      36,
+      37,
+      38
+    ],
+    "traitBonuses": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 1
+  },
+  {
+    "id": "Elven Aarcher",
+    "name": "Elven Aarcher",
+    "wearableIds": [
+      140,
+      292,
+      293,
+      294
+    ],
+    "traitBonuses": [
+      1,
+      0,
+      -1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 1
+  },
+  {
+    "id": "Elven Raanger",
+    "name": "Elven Raanger",
+    "wearableIds": [
+      140,
+      141,
+      293,
+      299,
+      300
+    ],
+    "traitBonuses": [
+      2,
+      0,
+      0,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Engagement Farmer",
+    "name": "Engagement Farmer",
+    "wearableIds": [
+      373,
+      374,
+      375
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      0,
+      -2,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "FAKE Artist",
+    "name": "FAKE Artist",
+    "wearableIds": [
+      364,
+      363,
+      362
+    ],
+    "traitBonuses": [
+      5,
+      -1,
+      0,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "FU Money",
+    "name": "FU Money",
+    "wearableIds": [
+      35,
+      114,
+      117,
+      120
+    ],
+    "traitBonuses": [
+      6,
+      0,
+      -3,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Fairy",
+    "name": "Fairy",
+    "wearableIds": [
+      306,
+      307,
+      308
+    ],
+    "traitBonuses": [
+      4,
+      -1,
+      0,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Farmer",
+    "name": "Farmer",
+    "wearableIds": [
+      67,
+      68,
+      69
+    ],
+    "traitBonuses": [
+      1,
+      -1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 1
+  },
+  {
+    "id": "Farmer Alf",
+    "name": "Farmer Alf",
+    "wearableIds": [
+      13,
+      67,
+      68,
+      69
+    ],
+    "traitBonuses": [
+      5,
+      -3,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Foxy Meta",
+    "name": "Foxy Meta",
+    "wearableIds": [
+      39,
+      40,
+      41
+    ],
+    "traitBonuses": [
+      2,
+      0,
+      -1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Full Pajamas",
+    "name": "Full Pajamas",
+    "wearableIds": [
+      90,
+      91,
+      92,
+      93
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      0,
+      -3,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Geckogotchi",
+    "name": "Geckogotchi",
+    "wearableIds": [
+      249,
+      250,
+      251
+    ],
+    "traitBonuses": [
+      2,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Geisha",
+    "name": "Geisha",
+    "wearableIds": [
+      301,
+      302,
+      303,
+      304
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      -2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Gentleman",
+    "name": "Gentleman",
+    "wearableIds": [
+      84,
+      85,
+      86
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      -2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Gentleman Farmer",
+    "name": "Gentleman Farmer",
+    "wearableIds": [
+      69,
+      146,
+      200
+    ],
+    "traitBonuses": [
+      2,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Godli Locks",
+    "name": "Godli Locks",
+    "wearableIds": [
+      140,
+      141,
+      145,
+      143
+    ],
+    "traitBonuses": [
+      6,
+      0,
+      0,
+      -2,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Godlike Sergey",
+    "name": "Godlike Sergey",
+    "wearableIds": [
+      13,
+      14,
+      16
+    ],
+    "traitBonuses": [
+      6,
+      -3,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Godlike Stani",
+    "name": "Godlike Stani",
+    "wearableIds": [
+      33,
+      34,
+      35
+    ],
+    "traitBonuses": [
+      6,
+      0,
+      -3,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Godlike Wizard",
+    "name": "Godlike Wizard",
+    "wearableIds": [
+      63,
+      65,
+      66
+    ],
+    "traitBonuses": [
+      6,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Gotchi Baron",
+    "name": "Gotchi Baron",
+    "wearableIds": [
+      146,
+      147,
+      148
+    ],
+    "traitBonuses": [
+      3,
+      -1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Gotchi Elf",
+    "name": "Gotchi Elf",
+    "wearableIds": [
+      140,
+      141,
+      142
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      0,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Gotchi Emperor",
+    "name": "Gotchi Emperor",
+    "wearableIds": [
+      146,
+      149,
+      148,
+      150,
+      156
+    ],
+    "traitBonuses": [
+      6,
+      -2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Gotchi King",
+    "name": "Gotchi King",
+    "wearableIds": [
+      146,
+      149,
+      148,
+      150
+    ],
+    "traitBonuses": [
+      5,
+      -2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Gotchi Lord",
+    "name": "Gotchi Lord",
+    "wearableIds": [
+      146,
+      147,
+      148,
+      150
+    ],
+    "traitBonuses": [
+      5,
+      -1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Gotchi Princess",
+    "name": "Gotchi Princess",
+    "wearableIds": [
+      140,
+      141,
+      142,
+      143
+    ],
+    "traitBonuses": [
+      4,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Gotchi Queen",
+    "name": "Gotchi Queen",
+    "wearableIds": [
+      140,
+      141,
+      144,
+      143
+    ],
+    "traitBonuses": [
+      5,
+      0,
+      0,
+      -2,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Gotchidator",
+    "name": "Gotchidator",
+    "wearableIds": [
+      376,
+      377,
+      379
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      1,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Gunslinger",
+    "name": "Gunslinger",
+    "wearableIds": [
+      231,
+      228,
+      58,
+      58
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Hacker Aanon",
+    "name": "Hacker Aanon",
+    "wearableIds": [
+      211,
+      212,
+      213
+    ],
+    "traitBonuses": [
+      5,
+      -2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Infantry",
+    "name": "Infantry",
+    "wearableIds": [
+      1,
+      2,
+      3
+    ],
+    "traitBonuses": [
+      1,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 1
+  },
+  {
+    "id": "Jacob Maarley",
+    "name": "Jacob Maarley",
+    "wearableIds": [
+      366,
+      113,
+      385,
+      387
+    ],
+    "traitBonuses": [
+      8,
+      1,
+      0,
+      3,
+      0,
+      0
+    ],
+    "setBonusBRS": 8
+  },
+  {
+    "id": "Jordan",
+    "name": "Jordan",
+    "wearableIds": [
+      30,
+      31,
+      32
+    ],
+    "traitBonuses": [
+      0,
+      0,
+      3,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Knight",
+    "name": "Knight",
+    "wearableIds": [
+      309,
+      310,
+      311
+    ],
+    "traitBonuses": [
+      5,
+      2,
+      -1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Lady",
+    "name": "Lady",
+    "wearableIds": [
+      97,
+      98,
+      99
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      0,
+      -2,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Laozigotchi",
+    "name": "Laozigotchi",
+    "wearableIds": [
+      258,
+      259,
+      260
+    ],
+    "traitBonuses": [
+      6,
+      -2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Legendary Wizard",
+    "name": "Legendary Wizard",
+    "wearableIds": [
+      61,
+      65,
+      66
+    ],
+    "traitBonuses": [
+      4,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Lil Bubble",
+    "name": "Lil Bubble",
+    "wearableIds": [
+      255,
+      256,
+      257
+    ],
+    "traitBonuses": [
+      4,
+      2,
+      -1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Lil Pumpagotchi",
+    "name": "Lil Pumpagotchi",
+    "wearableIds": [
+      157,
+      158,
+      159,
+      160,
+      161
+    ],
+    "traitBonuses": [
+      6,
+      2,
+      2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Link Marine",
+    "name": "Link Marine",
+    "wearableIds": [
+      10,
+      11,
+      12
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Long Distance Runner",
+    "name": "Long Distance Runner",
+    "wearableIds": [
+      94,
+      125,
+      118
+    ],
+    "traitBonuses": [
+      4,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Man of Culture",
+    "name": "Man of Culture",
+    "wearableIds": [
+      47,
+      59,
+      74
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Marc",
+    "name": "Marc",
+    "wearableIds": [
+      27,
+      28,
+      29
+    ],
+    "traitBonuses": [
+      4,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Master Creatooor",
+    "name": "Master Creatooor",
+    "wearableIds": [
+      369,
+      367,
+      368,
+      366
+    ],
+    "traitBonuses": [
+      8,
+      1,
+      0,
+      -2,
+      0,
+      0
+    ],
+    "setBonusBRS": 8
+  },
+  {
+    "id": "Master Creator",
+    "name": "Master Creator",
+    "wearableIds": [
+      366,
+      367,
+      369
+    ],
+    "traitBonuses": [
+      6,
+      0,
+      0,
+      -2,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Master Shaaman",
+    "name": "Master Shaaman",
+    "wearableIds": [
+      234,
+      235,
+      238
+    ],
+    "traitBonuses": [
+      6,
+      -3,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Master Sushi Chef",
+    "name": "Master Sushi Chef",
+    "wearableIds": [
+      80,
+      81,
+      82,
+      83
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      2,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Miner",
+    "name": "Miner",
+    "wearableIds": [
+      87,
+      88,
+      89
+    ],
+    "traitBonuses": [
+      2,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Mythical Farmer",
+    "name": "Mythical Farmer",
+    "wearableIds": [
+      67,
+      68,
+      70
+    ],
+    "traitBonuses": [
+      5,
+      -2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Mythical Sergey",
+    "name": "Mythical Sergey",
+    "wearableIds": [
+      13,
+      14,
+      15
+    ],
+    "traitBonuses": [
+      5,
+      0,
+      3,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Mythical Wizard",
+    "name": "Mythical Wizard",
+    "wearableIds": [
+      62,
+      65,
+      66
+    ],
+    "traitBonuses": [
+      5,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Noble Savage",
+    "name": "Noble Savage",
+    "wearableIds": [
+      146,
+      296,
+      297,
+      298
+    ],
+    "traitBonuses": [
+      2,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Nogara the Eagle",
+    "name": "Nogara the Eagle",
+    "wearableIds": [
+      42,
+      43,
+      44
+    ],
+    "traitBonuses": [
+      3,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Novice Shaaman",
+    "name": "Novice Shaaman",
+    "wearableIds": [
+      233,
+      234,
+      235
+    ],
+    "traitBonuses": [
+      5,
+      -3,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Nure-onna",
+    "name": "Nure-onna",
+    "wearableIds": [
+      249,
+      302,
+      303,
+      304
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      -2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "OKex Jaay",
+    "name": "OKex Jaay",
+    "wearableIds": [
+      72,
+      73,
+      74
+    ],
+    "traitBonuses": [
+      5,
+      -1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "OKex Jaay Hao",
+    "name": "OKex Jaay Hao",
+    "wearableIds": [
+      72,
+      73,
+      74,
+      75
+    ],
+    "traitBonuses": [
+      5,
+      -1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Off Duty Hazmat",
+    "name": "Off Duty Hazmat",
+    "wearableIds": [
+      111,
+      112,
+      123
+    ],
+    "traitBonuses": [
+      4,
+      2,
+      0,
+      2,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Off Duty Knight",
+    "name": "Off Duty Knight",
+    "wearableIds": [
+      99,
+      122,
+      144,
+      310
+    ],
+    "traitBonuses": [
+      5,
+      1,
+      0,
+      -2,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "On Duty Hazmat",
+    "name": "On Duty Hazmat",
+    "wearableIds": [
+      111,
+      112,
+      113
+    ],
+    "traitBonuses": [
+      6,
+      3,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Pajamas",
+    "name": "Pajamas",
+    "wearableIds": [
+      90,
+      91,
+      93
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      0,
+      -2,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Party Animal",
+    "name": "Party Animal",
+    "wearableIds": [
+      109,
+      40,
+      124
+    ],
+    "traitBonuses": [
+      5,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Piraate",
+    "name": "Piraate",
+    "wearableIds": [
+      221,
+      222,
+      223,
+      224
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Pixelcraftooor",
+    "name": "Pixelcraftooor",
+    "wearableIds": [
+      350,
+      351,
+      352,
+      353
+    ],
+    "traitBonuses": [
+      1,
+      0,
+      0,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 1
+  },
+  {
+    "id": "Pixelcraftor",
+    "name": "Pixelcraftor",
+    "wearableIds": [
+      350,
+      352,
+      353
+    ],
+    "traitBonuses": [
+      1,
+      0,
+      0,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 1
+  },
+  {
+    "id": "PoW Miner",
+    "name": "PoW Miner",
+    "wearableIds": [
+      25,
+      77,
+      89
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Polygonist",
+    "name": "Polygonist",
+    "wearableIds": [
+      134,
+      135,
+      136
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      -1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Portal Mage",
+    "name": "Portal Mage",
+    "wearableIds": [
+      104,
+      105,
+      106
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Psychonaut",
+    "name": "Psychonaut",
+    "wearableIds": [
+      234,
+      235,
+      238,
+      53
+    ],
+    "traitBonuses": [
+      7,
+      -3,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 7
+  },
+  {
+    "id": "Punk Rocker",
+    "name": "Punk Rocker",
+    "wearableIds": [
+      218,
+      219,
+      220
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Quickswap Dragon",
+    "name": "Quickswap Dragon",
+    "wearableIds": [
+      130,
+      131,
+      132
+    ],
+    "traitBonuses": [
+      0,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "REALM Tycoon",
+    "name": "REALM Tycoon",
+    "wearableIds": [
+      84,
+      85,
+      86,
+      146
+    ],
+    "traitBonuses": [
+      4,
+      -1,
+      -1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "ROFL Tamer",
+    "name": "ROFL Tamer",
+    "wearableIds": [
+      53,
+      156,
+      387,
+      386
+    ],
+    "traitBonuses": [
+      8,
+      -3,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 8
+  },
+  {
+    "id": "Raanger",
+    "name": "Raanger",
+    "wearableIds": [
+      293,
+      299,
+      300
+    ],
+    "traitBonuses": [
+      2,
+      -1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Radar",
+    "name": "Radar",
+    "wearableIds": [
+      261,
+      262,
+      263
+    ],
+    "traitBonuses": [
+      5,
+      0,
+      -1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Ranchero",
+    "name": "Ranchero",
+    "wearableIds": [
+      231,
+      232,
+      238
+    ],
+    "traitBonuses": [
+      2,
+      -1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Rastafarian",
+    "name": "Rastafarian",
+    "wearableIds": [
+      108,
+      109,
+      110
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      -2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Rave Gurl",
+    "name": "Rave Gurl",
+    "wearableIds": [
+      216,
+      120,
+      49,
+      235,
+      307
+    ],
+    "traitBonuses": [
+      5,
+      -1,
+      1,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Red Vacationer",
+    "name": "Red Vacationer",
+    "wearableIds": [
+      114,
+      116,
+      117
+    ],
+    "traitBonuses": [
+      5,
+      -2,
+      0,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Rektboi",
+    "name": "Rektboi",
+    "wearableIds": [
+      29,
+      45,
+      46
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Robin Hood",
+    "name": "Robin Hood",
+    "wearableIds": [
+      18,
+      293,
+      294,
+      300
+    ],
+    "traitBonuses": [
+      2,
+      -1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Runner",
+    "name": "Runner",
+    "wearableIds": [
+      94,
+      125,
+      96
+    ],
+    "traitBonuses": [
+      2,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Sandbox Seb",
+    "name": "Sandbox Seb",
+    "wearableIds": [
+      380,
+      381,
+      382,
+      383
+    ],
+    "traitBonuses": [
+      4,
+      1,
+      -1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Sergeant",
+    "name": "Sergeant",
+    "wearableIds": [
+      7,
+      8,
+      9
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Shaaman Mystic",
+    "name": "Shaaman Mystic",
+    "wearableIds": [
+      234,
+      235,
+      237
+    ],
+    "traitBonuses": [
+      5,
+      -3,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Shaaman Priest",
+    "name": "Shaaman Priest",
+    "wearableIds": [
+      234,
+      235,
+      236
+    ],
+    "traitBonuses": [
+      5,
+      -3,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Shadowy Supercoder",
+    "name": "Shadowy Supercoder",
+    "wearableIds": [
+      212,
+      213,
+      214
+    ],
+    "traitBonuses": [
+      6,
+      -2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Shogungotchi",
+    "name": "Shogungotchi",
+    "wearableIds": [
+      156,
+      313,
+      314,
+      315
+    ],
+    "traitBonuses": [
+      8,
+      -1,
+      1,
+      2,
+      0,
+      0
+    ],
+    "setBonusBRS": 8
+  },
+  {
+    "id": "Skater",
+    "name": "Skater",
+    "wearableIds": [
+      77,
+      78,
+      79
+    ],
+    "traitBonuses": [
+      2,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Smithooor",
+    "name": "Smithooor",
+    "wearableIds": [
+      358,
+      359,
+      360,
+      361
+    ],
+    "traitBonuses": [
+      4,
+      -1,
+      -1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Smithor",
+    "name": "Smithor",
+    "wearableIds": [
+      358,
+      359,
+      360
+    ],
+    "traitBonuses": [
+      4,
+      -1,
+      -1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Snapshot Voter",
+    "name": "Snapshot Voter",
+    "wearableIds": [
+      137,
+      138,
+      139
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      -2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Socialite",
+    "name": "Socialite",
+    "wearableIds": [
+      97,
+      98,
+      99,
+      100
+    ],
+    "traitBonuses": [
+      5,
+      2,
+      0,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Soundcloud Rapper",
+    "name": "Soundcloud Rapper",
+    "wearableIds": [
+      108,
+      157,
+      158,
+      159,
+      160
+    ],
+    "traitBonuses": [
+      5,
+      1,
+      2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Starlet",
+    "name": "Starlet",
+    "wearableIds": [
+      370,
+      371,
+      372
+    ],
+    "traitBonuses": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 1
+  },
+  {
+    "id": "Steampunk",
+    "name": "Steampunk",
+    "wearableIds": [
+      199,
+      200,
+      201
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      0,
+      2,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Steampunk Grenadier",
+    "name": "Steampunk Grenadier",
+    "wearableIds": [
+      1,
+      2,
+      6,
+      199
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      0,
+      2,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Super Aagent",
+    "name": "Super Aagent",
+    "wearableIds": [
+      55,
+      56,
+      57,
+      58,
+      59
+    ],
+    "traitBonuses": [
+      4,
+      -1,
+      0,
+      2,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Super Geckogotchi",
+    "name": "Super Geckogotchi",
+    "wearableIds": [
+      245,
+      249,
+      250,
+      251
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      0,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Supreme Portal Mage",
+    "name": "Supreme Portal Mage",
+    "wearableIds": [
+      104,
+      105,
+      107
+    ],
+    "traitBonuses": [
+      6,
+      0,
+      3,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "Sus Fairy",
+    "name": "Sus Fairy",
+    "wearableIds": [
+      305,
+      306,
+      307,
+      308
+    ],
+    "traitBonuses": [
+      4,
+      -1,
+      0,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Sushi Chef",
+    "name": "Sushi Chef",
+    "wearableIds": [
+      80,
+      81,
+      83
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Swappy the Dragon",
+    "name": "Swappy the Dragon",
+    "wearableIds": [
+      130,
+      132,
+      133
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      1,
+      1,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Tech Bro",
+    "name": "Tech Bro",
+    "wearableIds": [
+      242,
+      243,
+      244,
+      212
+    ],
+    "traitBonuses": [
+      5,
+      -2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Thaave",
+    "name": "Thaave",
+    "wearableIds": [
+      24,
+      25,
+      26
+    ],
+    "traitBonuses": [
+      3,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Tinkerbell",
+    "name": "Tinkerbell",
+    "wearableIds": [
+      148,
+      306,
+      307,
+      308
+    ],
+    "traitBonuses": [
+      4,
+      -1,
+      0,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Toddler",
+    "name": "Toddler",
+    "wearableIds": [
+      90,
+      91,
+      119
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      -2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Tooth Fairy",
+    "name": "Tooth Fairy",
+    "wearableIds": [
+      306,
+      307,
+      308,
+      93
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      0,
+      -2,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Trooper",
+    "name": "Trooper",
+    "wearableIds": [
+      4,
+      5,
+      6
+    ],
+    "traitBonuses": [
+      2,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "VR Gamer",
+    "name": "VR Gamer",
+    "wearableIds": [
+      202,
+      203,
+      204
+    ],
+    "traitBonuses": [
+      5,
+      2,
+      1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "VRF Lord",
+    "name": "VRF Lord",
+    "wearableIds": [
+      52,
+      17,
+      113,
+      385
+    ],
+    "traitBonuses": [
+      8,
+      3,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 8
+  },
+  {
+    "id": "Vacation Geisha",
+    "name": "Vacation Geisha",
+    "wearableIds": [
+      115,
+      304,
+      243,
+      302
+    ],
+    "traitBonuses": [
+      4,
+      0,
+      -2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Vacation Santa",
+    "name": "Vacation Santa",
+    "wearableIds": [
+      71,
+      114,
+      120,
+      117
+    ],
+    "traitBonuses": [
+      5,
+      -1,
+      -1,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Venly Biker",
+    "name": "Venly Biker",
+    "wearableIds": [
+      206,
+      207,
+      208,
+      209
+    ],
+    "traitBonuses": [
+      4,
+      -1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Vitalik Visionary",
+    "name": "Vitalik Visionary",
+    "wearableIds": [
+      52,
+      53,
+      54
+    ],
+    "traitBonuses": [
+      6,
+      -3,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 6
+  },
+  {
+    "id": "WGMI Wagie ",
+    "name": "WGMI Wagie",
+    "wearableIds": [
+      239,
+      240,
+      241
+    ],
+    "traitBonuses": [
+      3,
+      0,
+      -2,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 3
+  },
+  {
+    "id": "Wandering Sage",
+    "name": "Wandering Sage",
+    "wearableIds": [
+      65,
+      258,
+      259,
+      260
+    ],
+    "traitBonuses": [
+      7,
+      -2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 7
+  },
+  {
+    "id": "We Are Legion",
+    "name": "We Are Legion",
+    "wearableIds": [
+      85,
+      211,
+      212
+    ],
+    "traitBonuses": [
+      5,
+      0,
+      0,
+      3,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Witchy",
+    "name": "Witchy",
+    "wearableIds": [
+      101,
+      102,
+      103
+    ],
+    "traitBonuses": [
+      5,
+      0,
+      0,
+      3,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  },
+  {
+    "id": "Wizard",
+    "name": "Wizard",
+    "wearableIds": [
+      60,
+      65,
+      66
+    ],
+    "traitBonuses": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 1
+  },
+  {
+    "id": "Woodland Critter",
+    "name": "Woodland Critter",
+    "wearableIds": [
+      293,
+      300,
+      140,
+      40
+    ],
+    "traitBonuses": [
+      2,
+      0,
+      0,
+      -1,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "Wraangler",
+    "name": "Wraangler",
+    "wearableIds": [
+      228,
+      229,
+      230
+    ],
+    "traitBonuses": [
+      2,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 2
+  },
+  {
+    "id": "YOLO Guy",
+    "name": "YOLO Guy",
+    "wearableIds": [
+      242,
+      243,
+      244
+    ],
+    "traitBonuses": [
+      4,
+      -1,
+      -1,
+      0,
+      0,
+      0
+    ],
+    "setBonusBRS": 4
+  },
+  {
+    "id": "Yegres the Dragon",
+    "name": "Yegres the Dragon",
+    "wearableIds": [
+      14,
+      131,
+      132,
+      44
+    ],
+    "traitBonuses": [
+      5,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "setBonusBRS": 5
+  }
+]
