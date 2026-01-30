@@ -1,0 +1,111 @@
+BUG STILL PRESENT: Explorer naked Gotchi outline/spirit-force color still wrong (e.g., UNI Gotchi #1455 “Lily” not pink)
+
+We already attempted “reuse Dress logic” and the output did not change. That means one of these is true:
+1) Explorer is NOT actually using the Dress SVG path (still using a different renderer)
+2) Explorer is using the same helper but with different inputs (collateral/haunt/traits missing or wrong)
+3) Explorer is rendering an image that is not the on-chain SVG (sprite, cached PNG, precomputed svg, etc.)
+4) CSS / filters / blending / backgrounds are altering colors after render
+5) Caching is causing stale SVGs to persist (not invalidating when data changes)
+
+YOUR JOB: Stop guessing. Prove which render path Explorer uses, diff it against Dress, then make Explorer match Dress pixel-for-pixel.
+
+NON-NEGOTIABLE
+- Explorer naked render MUST match Dress naked render for the same gotchiId.
+- Fix must be deterministic and not rely on hardcoded color rules.
+- Do NOT change Dress page.
+- Do NOT change wearable logic.
+- Fix Explorer rendering pipeline only.
+
+STEP 1 — IDENTIFY THE ACTUAL RENDER PIPELINES (NO ASSUMPTIONS)
+Find and list the exact code path for:
+A) Dress page naked gotchi render (component + helper + data inputs)
+B) Explorer page naked gotchi render (component + helper + data inputs)
+
+For each, log/confirm:
+- What function returns the SVG/string?
+- Is it coming from:
+  - on-chain SVG contract call?
+  - subgraph svg field?
+  - local generator?
+  - cached asset?
+  - sprite sheet / image URL?
+- What inputs are provided?
+  - gotchiId
+  - collateral
+  - hauntId
+  - baseNumericTraits
+  - modifiedNumericTraits
+  - anything else
+
+STEP 2 — ADD TEMP DEBUG DIAGNOSTICS (REMOVE AFTER FIX)
+For gotchiId=1455 (Lily), in BOTH Dress and Explorer:
+- Log a “render fingerprint” object to console:
+  {
+    source: "dress|explorer",
+    gotchiId,
+    hauntId,
+    collateral,
+    eyeShape,
+    eyeColor,
+    baseNumericTraits,
+    hasSvgFromSubgraph: boolean,
+    hasSvgFromContract: boolean,
+    svgLength: number,
+    svgHash: shortHash(svgString),
+    svgContainsPink: boolean (string contains "#ff" patterns etc.),
+  }
+
+Also:
+- Print out the first ~200 chars of the SVG string (enough to see style definitions) for both.
+Goal: confirm whether the SVG strings are identical or not.
+
+STEP 3 — DIFF THE SVG OUTPUTS
+If svgHash differs between Dress and Explorer:
+- You are not using the same SVG generator or you’re passing different inputs.
+- Fix by making Explorer call the SAME function with SAME inputs.
+
+If svgHash is the SAME but the visual differs:
+- Something is altering visuals post-render (CSS, opacity, filters, background layers, image rendering).
+- Investigate:
+  - CSS filters on the svg container (filter, mix-blend-mode)
+  - opacity overlays
+  - background colors affecting perceived outline
+  - any canvas draw step that changes colors
+
+STEP 4 — ENSURE EXPLORER USES THE CANONICAL SVG SOURCE
+Make Explorer use the EXACT same “naked svg” source as Dress.
+Do NOT fallback silently.
+
+Implement a single shared function (if not already shared):
+- getNakedGotchiSvg(gotchi) -> svgString
+and ensure BOTH pages call it (Dress already does — Explorer must too).
+
+If Dress uses on-chain contract SVG:
+- Explorer must call that same contract helper.
+If Dress uses a subgraph svg field:
+- Explorer must read that same field.
+
+No half measures.
+
+STEP 5 — FIX CACHING / STALE SVG
+If Explorer caches SVG by gotchiId only:
+- include collateral/haunt/version in the cache key
+- ensure cache invalidates when switching from dressed to naked or when data updates
+
+Also ensure that “naked preview” in Explorer is not accidentally reusing “dressed svg” cached entry.
+
+STEP 6 — VERIFY WITH MULTIPLE COLLATERALS
+After fix, verify naked outline/spirit-force color matches Dress for:
+- UNI gotchi (pink outline) — use #1455 Lily
+- at least one AAVE gotchi
+- at least one other collateral
+Take screenshots or log svgHash matching for each.
+
+SUCCESS CRITERIA
+- For gotchiId 1455, Explorer svgHash matches Dress svgHash for naked render.
+- The on-screen outline color matches on both pages.
+- No CSS/filter differences remain between pages.
+
+DELIVERABLE
+- A concrete fix that makes Explorer naked rendering identical to Dress.
+- Remove debug logs after confirming.

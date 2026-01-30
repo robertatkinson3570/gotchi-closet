@@ -346,7 +346,7 @@ function applyListingsToGotchis(gotchis: ExplorerGotchi[]): ExplorerGotchi[] {
 }
 
 function transformGotchi(raw: any): ExplorerGotchi {
-  const tokenId = raw.gotchiId || raw.id;
+  const tokenId = String(raw.gotchiId || raw.id);
   
   const gotchi: ExplorerGotchi = {
     id: raw.id,

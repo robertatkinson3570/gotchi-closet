@@ -64,8 +64,10 @@ export function GotchiSvg({
     const requestId = ++requestIdRef.current;
     let mounted = true;
     setLoading(true);
+    // Ensure gotchiId is treated as string for parsing
+    const gotchiIdStr = String(gotchiId);
     const tokenId = Number(
-      gotchiId.includes("-") ? gotchiId.split("-").slice(-1)[0] : gotchiId
+      gotchiIdStr.includes("-") ? gotchiIdStr.split("-").slice(-1)[0] : gotchiIdStr
     );
     if (!Number.isFinite(tokenId)) {
       setLoading(false);
@@ -77,7 +79,7 @@ export function GotchiSvg({
       typeof hauntId === "number" &&
       !!collateral &&
       Array.isArray(numericTraits);
-
+    
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
