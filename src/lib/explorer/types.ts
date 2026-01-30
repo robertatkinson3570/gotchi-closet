@@ -25,6 +25,7 @@ export type ExplorerFilters = {
   tokenIdMin: string;
   tokenIdMax: string;
   nameContains: string;
+  ownerAddress: string;
   rarityMin: string;
   rarityMax: string;
   rarityTiers: string[];
@@ -59,6 +60,7 @@ export const defaultFilters: ExplorerFilters = {
   tokenIdMin: "",
   tokenIdMax: "",
   nameContains: "",
+  ownerAddress: "",
   rarityMin: "",
   rarityMax: "",
   rarityTiers: [],

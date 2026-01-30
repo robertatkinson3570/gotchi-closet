@@ -28,6 +28,11 @@ function buildWhereClause(filters: ExplorerFilters): Record<string, any> {
     where.name_contains_nocase = filters.nameContains;
   }
   
+  // Owner address filter
+  if (filters.ownerAddress) {
+    where.owner = filters.ownerAddress.toLowerCase();
+  }
+  
   // Rarity score filters (use withSetsRarityScore)
   if (filters.rarityMin) {
     const min = parseInt(filters.rarityMin, 10);

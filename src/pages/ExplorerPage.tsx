@@ -148,8 +148,12 @@ export default function ExplorerPage() {
   }, [setGotchiSort, assetType]);
 
   const filteredGotchisBySearch = useMemo(() => {
+    // If searching by owner address, server-side filtering handles it
+    if (gotchiFilters.ownerAddress) return gotchis;
     const searchTerm = gotchiFilters.nameContains;
     if (!searchTerm.trim()) return gotchis;
+    // For "all" mode, server-side filtering handles name search
+    if (mode === "all") return gotchis;
     const s = searchTerm.toLowerCase().trim();
     return gotchis.filter(
       (g) =>
@@ -158,7 +162,7 @@ export default function ExplorerPage() {
         g.tokenId.includes(s) ||
         (g.owner && g.owner.toLowerCase().includes(s))
     );
-  }, [gotchis, gotchiFilters.nameContains]);
+  }, [gotchis, gotchiFilters.nameContains, gotchiFilters.ownerAddress, mode]);
 
   const filteredWearablesBySearch = useMemo(() => {
     const searchTerm = gotchiFilters.nameContains;
@@ -182,7 +186,13 @@ export default function ExplorerPage() {
   }, [setGotchiFilters]);
 
   const handleSearchChange = useCallback((value: string) => {
-    setGotchiFilters({ ...gotchiFilters, nameContains: value });
+    // Detect if this is a wallet address (0x followed by 40 hex chars)
+    const isAddress = /^0x[a-fA-F0-9]{40}$/.test(value.trim());
+    if (isAddress) {
+      setGotchiFilters({ ...gotchiFilters, nameContains: "", ownerAddress: value.trim() });
+    } else {
+      setGotchiFilters({ ...gotchiFilters, nameContains: value, ownerAddress: "" });
+    }
   }, [gotchiFilters, setGotchiFilters]);
 
   const wearableFilterCount = 
@@ -203,7 +213,7 @@ export default function ExplorerPage() {
       <ExplorerTopBar
         mode={mode}
         onModeChange={handleModeChange}
-        search={gotchiFilters.nameContains}
+        search={gotchiFilters.ownerAddress || gotchiFilters.nameContains}
         onSearchChange={handleSearchChange}
         sort={gotchiSort}
         onSortChange={setGotchiSort}
