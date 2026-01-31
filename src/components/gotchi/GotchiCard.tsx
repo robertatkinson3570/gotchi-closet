@@ -210,6 +210,13 @@ export function GotchiCard({
                   <span>{label}</span>
                   <div className="flex items-center gap-2">
                     <span data-testid={`trait-value-${label}`} className="flex items-center gap-1.5">
+                      {hasBreakdown && !respec.isRespecMode && (
+                        <span className="text-[9px] text-muted-foreground">
+                          {wearableMod !== 0 && <span>W:{wearableMod >= 0 ? `+${wearableMod}` : wearableMod}</span>}
+                          {wearableMod !== 0 && setMod !== 0 && <span>|</span>}
+                          {setMod !== 0 && <span className="text-purple-400">S:{setMod >= 0 ? `+${setMod}` : setMod}</span>}
+                        </span>
+                      )}
                       <span>
                         {safeNum(displayBaseTraits[index] ?? currentTraits[index])}
                         {(() => {
@@ -231,13 +238,6 @@ export function GotchiCard({
                           );
                         })()}
                       </span>
-                      {hasBreakdown && !respec.isRespecMode && (
-                        <span className="text-[9px] text-muted-foreground">
-                          {wearableMod !== 0 && <span>W:{wearableMod >= 0 ? `+${wearableMod}` : wearableMod}</span>}
-                          {wearableMod !== 0 && setMod !== 0 && <span>|</span>}
-                          {setMod !== 0 && <span className="text-purple-400">S:{setMod >= 0 ? `+${setMod}` : setMod}</span>}
-                        </span>
-                      )}
                     </span>
                     {showRespec && respec.isRespecMode && (
                       <div className="flex items-center gap-1">
