@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { Search, X, ArrowUpDown, Shirt, FlaskConical, LayoutGrid, Users, ChevronDown, Check } from "lucide-react";
+import { Search, X, ArrowUpDown, Shirt, LayoutGrid, Users, ChevronDown, Check } from "lucide-react";
 import type { DataMode, ExplorerSort } from "@/lib/explorer/types";
 import type { AssetType, WearableSort, WearableSortField } from "@/lib/explorer/wearableTypes";
 import { sortOptions, getSortLabel } from "@/lib/explorer/sorts";
@@ -121,11 +121,6 @@ export function ExplorerTopBar({
           <Link to="/dress">
             <Button size="sm" variant="ghost" className="h-8 px-2" title="Dress">
               <Shirt className="h-4 w-4" />
-            </Button>
-          </Link>
-          <Link to="/wardrobe-lab">
-            <Button size="sm" variant="ghost" className="h-8 px-2" title="Wardrobe Lab">
-              <FlaskConical className="h-4 w-4" />
             </Button>
           </Link>
           {!isConnected && <ConnectButton />}

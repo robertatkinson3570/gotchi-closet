@@ -7,7 +7,7 @@ import { switchToBaseChain } from "@/lib/chains";
 import { useToast } from "@/ui/use-toast";
 import { ConnectButton } from "./ConnectButton";
 import { NetworkBanner } from "./NetworkBanner";
-import { FlaskConical, X, Wallet, Search } from "lucide-react";
+import { X, Wallet, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
@@ -97,11 +97,6 @@ export function WalletHeader({
           <Link to="/explorer">
             <Button size="sm" variant="ghost" className="h-8 px-2" title="Explorer">
               <Search className="h-4 w-4" />
-            </Button>
-          </Link>
-          <Link to="/wardrobe-lab">
-            <Button size="sm" variant="ghost" className="h-8 px-2" title="Wardrobe Lab">
-              <FlaskConical className="h-4 w-4" />
             </Button>
           </Link>
           <ThemeToggle />

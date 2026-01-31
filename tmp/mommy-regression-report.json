@@ -1,0 +1,4285 @@
+{
+  "timestamp": "2026-01-31T03:46:51.745Z",
+  "wallets": [
+    "0xc4Cb6cB969e8b4e309Ab98E4Da51b77887aFaD96"
+  ],
+  "summary": {
+    "total": 39,
+    "passed": 39,
+    "failed": 0
+  },
+  "results": [
+    {
+      "gotchiId": "10208",
+      "gotchiName": "Mayhem Maker",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 626,
+          "finalBRS": 716,
+          "brsDelta": 90,
+          "originalVariance": 2431.6875,
+          "finalVariance": 2519.1875,
+          "originalTraits": [
+            109,
+            -11,
+            -11,
+            42
+          ],
+          "finalTraits": [
+            112,
+            -10,
+            -10,
+            45
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 626,
+          "finalBRS": 667,
+          "brsDelta": 41,
+          "originalVariance": 2431.6875,
+          "finalVariance": 2625.25,
+          "originalTraits": [
+            109,
+            -11,
+            -11,
+            42
+          ],
+          "finalTraits": [
+            123,
+            -3,
+            -2,
+            40
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 626,
+          "finalBRS": 677,
+          "brsDelta": 51,
+          "originalVariance": 2431.6875,
+          "finalVariance": 1998,
+          "originalTraits": [
+            109,
+            -11,
+            -11,
+            42
+          ],
+          "finalTraits": [
+            99,
+            -7,
+            -1,
+            65
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 626,
+          "finalBRS": 626,
+          "brsDelta": 0,
+          "originalVariance": 2431.6875,
+          "finalVariance": 2431.6875,
+          "originalTraits": [
+            109,
+            -11,
+            -11,
+            42
+          ],
+          "finalTraits": [
+            109,
+            -11,
+            -11,
+            42
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "10567",
+      "gotchiName": "TotoGotchi",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 566,
+          "finalBRS": 697,
+          "brsDelta": 131,
+          "originalVariance": 1214.1875,
+          "finalVariance": 1323.5,
+          "originalTraits": [
+            22,
+            -25,
+            73,
+            15
+          ],
+          "finalTraits": [
+            22,
+            -19,
+            82,
+            15
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 566,
+          "finalBRS": 655,
+          "brsDelta": 89,
+          "originalVariance": 1214.1875,
+          "finalVariance": 1572.75,
+          "originalTraits": [
+            22,
+            -25,
+            73,
+            15
+          ],
+          "finalTraits": [
+            21,
+            -15,
+            93,
+            15
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 566,
+          "finalBRS": 581,
+          "brsDelta": 15,
+          "originalVariance": 1214.1875,
+          "finalVariance": 940.25,
+          "originalTraits": [
+            22,
+            -25,
+            73,
+            15
+          ],
+          "finalTraits": [
+            47,
+            -9,
+            72,
+            16
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 566,
+          "finalBRS": 566,
+          "brsDelta": 0,
+          "originalVariance": 1214.1875,
+          "finalVariance": 1214.1875,
+          "originalTraits": [
+            22,
+            -25,
+            73,
+            15
+          ],
+          "finalTraits": [
+            22,
+            -25,
+            73,
+            15
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "10745",
+      "gotchiName": "Nurgle Splurt",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 617,
+          "finalBRS": 709,
+          "brsDelta": 92,
+          "originalVariance": 308.75,
+          "finalVariance": 206.1875,
+          "originalTraits": [
+            9,
+            23,
+            -25,
+            7
+          ],
+          "finalTraits": [
+            7,
+            21,
+            -18,
+            11
+          ],
+          "respecMoved": 0,
+          "setDelta": -2,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 617,
+          "finalBRS": 631,
+          "brsDelta": 14,
+          "originalVariance": 308.75,
+          "finalVariance": 410.1875,
+          "originalTraits": [
+            9,
+            23,
+            -25,
+            7
+          ],
+          "finalTraits": [
+            11,
+            47,
+            -9,
+            10
+          ],
+          "respecMoved": 0,
+          "setDelta": -2,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 617,
+          "finalBRS": 615,
+          "brsDelta": -2,
+          "originalVariance": 308.75,
+          "finalVariance": 193.5,
+          "originalTraits": [
+            9,
+            23,
+            -25,
+            7
+          ],
+          "finalTraits": [
+            9,
+            28,
+            -5,
+            28
+          ],
+          "respecMoved": 0,
+          "setDelta": -2,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 617,
+          "finalBRS": 617,
+          "brsDelta": 0,
+          "originalVariance": 308.75,
+          "finalVariance": 308.75,
+          "originalTraits": [
+            9,
+            23,
+            -25,
+            7
+          ],
+          "finalTraits": [
+            9,
+            23,
+            -25,
+            7
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "12325",
+      "gotchiName": "Lil' Drip",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 635,
+          "finalBRS": 727,
+          "brsDelta": 92,
+          "originalVariance": 108,
+          "finalVariance": 83.6875,
+          "originalTraits": [
+            84,
+            108,
+            108,
+            108
+          ],
+          "finalTraits": [
+            88,
+            104,
+            106,
+            113
+          ],
+          "respecMoved": 0,
+          "setDelta": 1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 635,
+          "finalBRS": 691,
+          "brsDelta": 56,
+          "originalVariance": 108,
+          "finalVariance": 222.1875,
+          "originalTraits": [
+            84,
+            108,
+            108,
+            108
+          ],
+          "finalTraits": [
+            81,
+            99,
+            102,
+            123
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 635,
+          "finalBRS": 651,
+          "brsDelta": 16,
+          "originalVariance": 108,
+          "finalVariance": 143.6875,
+          "originalTraits": [
+            84,
+            108,
+            108,
+            108
+          ],
+          "finalTraits": [
+            83,
+            112,
+            112,
+            98
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 635,
+          "finalBRS": 635,
+          "brsDelta": 0,
+          "originalVariance": 108,
+          "finalVariance": 108,
+          "originalTraits": [
+            84,
+            108,
+            108,
+            108
+          ],
+          "finalTraits": [
+            84,
+            108,
+            108,
+            108
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "12474",
+      "gotchiName": "Betty White",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 588,
+          "finalBRS": 690,
+          "brsDelta": 102,
+          "originalVariance": 75,
+          "finalVariance": 64.6875,
+          "originalTraits": [
+            -5,
+            15,
+            -5,
+            -5
+          ],
+          "finalTraits": [
+            1,
+            14,
+            -8,
+            -2
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 588,
+          "finalBRS": 612,
+          "brsDelta": 24,
+          "originalVariance": 75,
+          "finalVariance": 328.6875,
+          "originalTraits": [
+            -5,
+            15,
+            -5,
+            -5
+          ],
+          "finalTraits": [
+            3,
+            42,
+            0,
+            -2
+          ],
+          "respecAllocated": [
+            -2,
+            2,
+            -1,
+            1
+          ],
+          "respecMoved": 6,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 588,
+          "finalBRS": 629,
+          "brsDelta": 41,
+          "originalVariance": 75,
+          "finalVariance": 169,
+          "originalTraits": [
+            -5,
+            15,
+            -5,
+            -5
+          ],
+          "finalTraits": [
+            22,
+            22,
+            -4,
+            -4
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 588,
+          "finalBRS": 588,
+          "brsDelta": 0,
+          "originalVariance": 75,
+          "finalVariance": 75,
+          "originalTraits": [
+            -5,
+            15,
+            -5,
+            -5
+          ],
+          "finalTraits": [
+            -5,
+            15,
+            -5,
+            -5
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "12515",
+      "gotchiName": "Mistakes Were Made",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 656,
+          "finalBRS": 730,
+          "brsDelta": 74,
+          "originalVariance": 2452.25,
+          "finalVariance": 2029.6875,
+          "originalTraits": [
+            111,
+            98,
+            87,
+            -14
+          ],
+          "finalTraits": [
+            114,
+            102,
+            91,
+            0
+          ],
+          "respecMoved": 0,
+          "setDelta": -2,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 656,
+          "finalBRS": 683,
+          "brsDelta": 27,
+          "originalVariance": 2452.25,
+          "finalVariance": 2234.25,
+          "originalTraits": [
+            111,
+            98,
+            87,
+            -14
+          ],
+          "finalTraits": [
+            131,
+            95,
+            86,
+            2
+          ],
+          "respecMoved": 0,
+          "setDelta": -2,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 656,
+          "finalBRS": 694,
+          "brsDelta": 38,
+          "originalVariance": 2452.25,
+          "finalVariance": 2188.6875,
+          "originalTraits": [
+            111,
+            98,
+            87,
+            -14
+          ],
+          "finalTraits": [
+            112,
+            112,
+            85,
+            -2
+          ],
+          "respecMoved": 0,
+          "setDelta": -2,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 656,
+          "finalBRS": 656,
+          "brsDelta": 0,
+          "originalVariance": 2452.25,
+          "finalVariance": 2452.25,
+          "originalTraits": [
+            111,
+            98,
+            87,
+            -14
+          ],
+          "finalTraits": [
+            111,
+            98,
+            87,
+            -14
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "1264",
+      "gotchiName": "Cosmic Cochise",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 677,
+          "finalBRS": 737,
+          "brsDelta": 60,
+          "originalVariance": 2379.5,
+          "finalVariance": 2340.5,
+          "originalTraits": [
+            87,
+            -13,
+            94,
+            112
+          ],
+          "finalTraits": [
+            81,
+            -9,
+            100,
+            116
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 677,
+          "finalBRS": 709,
+          "brsDelta": 32,
+          "originalVariance": 2379.5,
+          "finalVariance": 2367.1875,
+          "originalTraits": [
+            87,
+            -13,
+            94,
+            112
+          ],
+          "finalTraits": [
+            79,
+            -5,
+            91,
+            128
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 677,
+          "finalBRS": 683,
+          "brsDelta": 6,
+          "originalVariance": 2379.5,
+          "finalVariance": 2256.75,
+          "originalTraits": [
+            87,
+            -13,
+            94,
+            112
+          ],
+          "finalTraits": [
+            78,
+            -8,
+            108,
+            108
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 677,
+          "finalBRS": 677,
+          "brsDelta": 0,
+          "originalVariance": 2379.5,
+          "finalVariance": 2379.5,
+          "originalTraits": [
+            87,
+            -13,
+            94,
+            112
+          ],
+          "finalTraits": [
+            87,
+            -13,
+            94,
+            112
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "12656",
+      "gotchiName": "Gaslit",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 607,
+          "finalBRS": 721,
+          "brsDelta": 114,
+          "originalVariance": 2632.5,
+          "finalVariance": 2742.75,
+          "originalTraits": [
+            12,
+            -12,
+            89,
+            111
+          ],
+          "finalTraits": [
+            14,
+            -6,
+            98,
+            116
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 607,
+          "finalBRS": 689,
+          "brsDelta": 82,
+          "originalVariance": 2632.5,
+          "finalVariance": 2839.25,
+          "originalTraits": [
+            12,
+            -12,
+            89,
+            111
+          ],
+          "finalTraits": [
+            15,
+            0,
+            89,
+            130
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 607,
+          "finalBRS": 665,
+          "brsDelta": 58,
+          "originalVariance": 2632.5,
+          "finalVariance": 2671.6875,
+          "originalTraits": [
+            12,
+            -12,
+            89,
+            111
+          ],
+          "finalTraits": [
+            15,
+            -4,
+            108,
+            108
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 607,
+          "finalBRS": 607,
+          "brsDelta": 0,
+          "originalVariance": 2632.5,
+          "finalVariance": 2632.5,
+          "originalTraits": [
+            12,
+            -12,
+            89,
+            111
+          ],
+          "finalTraits": [
+            12,
+            -12,
+            89,
+            111
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "12886",
+      "gotchiName": "DUKE OF SALTINESS",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 609,
+          "finalBRS": 720,
+          "brsDelta": 111,
+          "originalVariance": 1414.1875,
+          "finalVariance": 1515.6875,
+          "originalTraits": [
+            20,
+            112,
+            77,
+            112
+          ],
+          "finalTraits": [
+            18,
+            103,
+            77,
+            121
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 609,
+          "finalBRS": 696,
+          "brsDelta": 87,
+          "originalVariance": 1414.1875,
+          "finalVariance": 1642.25,
+          "originalTraits": [
+            20,
+            112,
+            77,
+            112
+          ],
+          "finalTraits": [
+            19,
+            98,
+            75,
+            130
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 609,
+          "finalBRS": 652,
+          "brsDelta": 43,
+          "originalVariance": 1414.1875,
+          "finalVariance": 1391.1875,
+          "originalTraits": [
+            20,
+            112,
+            77,
+            112
+          ],
+          "finalTraits": [
+            23,
+            114,
+            76,
+            114
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 609,
+          "finalBRS": 609,
+          "brsDelta": 0,
+          "originalVariance": 1414.1875,
+          "finalVariance": 1414.1875,
+          "originalTraits": [
+            20,
+            112,
+            77,
+            112
+          ],
+          "finalTraits": [
+            20,
+            112,
+            77,
+            112
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "13053",
+      "gotchiName": "DUUNA",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 523,
+          "finalBRS": 681,
+          "brsDelta": 158,
+          "originalVariance": 1265.1875,
+          "finalVariance": 1516.75,
+          "originalTraits": [
+            -3,
+            86,
+            75,
+            31
+          ],
+          "finalTraits": [
+            -1,
+            93,
+            83,
+            27
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 523,
+          "finalBRS": 649,
+          "brsDelta": 126,
+          "originalVariance": 1265.1875,
+          "finalVariance": 1786.5,
+          "originalTraits": [
+            -3,
+            86,
+            75,
+            31
+          ],
+          "finalTraits": [
+            3,
+            111,
+            74,
+            24
+          ],
+          "respecAllocated": [
+            3,
+            3,
+            -3,
+            -3
+          ],
+          "respecMoved": 12,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 523,
+          "finalBRS": 634,
+          "brsDelta": 111,
+          "originalVariance": 1265.1875,
+          "finalVariance": 1722.25,
+          "originalTraits": [
+            -3,
+            86,
+            75,
+            31
+          ],
+          "finalTraits": [
+            -5,
+            92,
+            92,
+            31
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 523,
+          "finalBRS": 566,
+          "brsDelta": 43,
+          "originalVariance": 1265.1875,
+          "finalVariance": 551.25,
+          "originalTraits": [
+            -3,
+            86,
+            75,
+            31
+          ],
+          "finalTraits": [
+            16,
+            73,
+            67,
+            34
+          ],
+          "respecAllocated": [
+            3,
+            -3,
+            -3,
+            3
+          ],
+          "respecMoved": 12,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "13107",
+      "gotchiName": "Cool Runnings",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 606,
+          "finalBRS": 710,
+          "brsDelta": 104,
+          "originalVariance": 1761,
+          "finalVariance": 1913.6875,
+          "originalTraits": [
+            -12,
+            -12,
+            90,
+            10
+          ],
+          "finalTraits": [
+            -6,
+            -7,
+            99,
+            11
+          ],
+          "respecMoved": 0,
+          "setDelta": 1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 606,
+          "finalBRS": 668,
+          "brsDelta": 62,
+          "originalVariance": 1761,
+          "finalVariance": 2299.6875,
+          "originalTraits": [
+            -12,
+            -12,
+            90,
+            10
+          ],
+          "finalTraits": [
+            -7,
+            -3,
+            110,
+            11
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 606,
+          "finalBRS": 642,
+          "brsDelta": 36,
+          "originalVariance": 1761,
+          "finalVariance": 1480.6875,
+          "originalTraits": [
+            -12,
+            -12,
+            90,
+            10
+          ],
+          "finalTraits": [
+            -5,
+            -1,
+            91,
+            34
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 606,
+          "finalBRS": 606,
+          "brsDelta": 0,
+          "originalVariance": 1761,
+          "finalVariance": 1761,
+          "originalTraits": [
+            -12,
+            -12,
+            90,
+            10
+          ],
+          "finalTraits": [
+            -12,
+            -12,
+            90,
+            10
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "13969",
+      "gotchiName": "Hamburglar",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 658,
+          "finalBRS": 722,
+          "brsDelta": 64,
+          "originalVariance": 1635.6875,
+          "finalVariance": 1478.25,
+          "originalTraits": [
+            11,
+            109,
+            109,
+            90
+          ],
+          "finalTraits": [
+            12,
+            99,
+            99,
+            104
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 658,
+          "finalBRS": 684,
+          "brsDelta": 26,
+          "originalVariance": 1635.6875,
+          "finalVariance": 1622.25,
+          "originalTraits": [
+            11,
+            109,
+            109,
+            90
+          ],
+          "finalTraits": [
+            13,
+            121,
+            96,
+            88
+          ],
+          "respecAllocated": [
+            -3,
+            3,
+            0,
+            0
+          ],
+          "respecMoved": 6,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 658,
+          "finalBRS": 660,
+          "brsDelta": 2,
+          "originalVariance": 1635.6875,
+          "finalVariance": 1611.6875,
+          "originalTraits": [
+            11,
+            109,
+            109,
+            90
+          ],
+          "finalTraits": [
+            12,
+            110,
+            110,
+            85
+          ],
+          "respecAllocated": [
+            -3,
+            3,
+            3,
+            -3
+          ],
+          "respecMoved": 12,
+          "setDelta": 0,
+          "wearableChanges": 4,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 658,
+          "finalBRS": 658,
+          "brsDelta": 0,
+          "originalVariance": 1635.6875,
+          "finalVariance": 1635.6875,
+          "originalTraits": [
+            11,
+            109,
+            109,
+            90
+          ],
+          "finalTraits": [
+            11,
+            109,
+            109,
+            90
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "14505",
+      "gotchiName": "404Spirit",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 559,
+          "finalBRS": 672,
+          "brsDelta": 113,
+          "originalVariance": 456.6875,
+          "finalVariance": 225.25,
+          "originalTraits": [
+            -6,
+            -6,
+            46,
+            17
+          ],
+          "finalTraits": [
+            -1,
+            2,
+            37,
+            16
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 559,
+          "finalBRS": 637,
+          "brsDelta": 78,
+          "originalVariance": 456.6875,
+          "finalVariance": 833.1875,
+          "originalTraits": [
+            -6,
+            -6,
+            46,
+            17
+          ],
+          "finalTraits": [
+            -2,
+            -1,
+            69,
+            17
+          ],
+          "respecAllocated": [
+            0,
+            -3,
+            3,
+            0
+          ],
+          "respecMoved": 6,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 559,
+          "finalBRS": 610,
+          "brsDelta": 51,
+          "originalVariance": 456.6875,
+          "finalVariance": 432.6875,
+          "originalTraits": [
+            -6,
+            -6,
+            46,
+            17
+          ],
+          "finalTraits": [
+            0,
+            4,
+            44,
+            43
+          ],
+          "respecAllocated": [
+            0,
+            0,
+            -3,
+            3
+          ],
+          "respecMoved": 6,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 559,
+          "finalBRS": 559,
+          "brsDelta": 0,
+          "originalVariance": 456.6875,
+          "finalVariance": 456.6875,
+          "originalTraits": [
+            -6,
+            -6,
+            46,
+            17
+          ],
+          "finalTraits": [
+            -6,
+            -6,
+            46,
+            17
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "1589",
+      "gotchiName": "Morphaeus",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 574,
+          "finalBRS": 699,
+          "brsDelta": 125,
+          "originalVariance": 2005.6875,
+          "finalVariance": 2025.5,
+          "originalTraits": [
+            -11,
+            76,
+            76,
+            110
+          ],
+          "finalTraits": [
+            -2,
+            78,
+            77,
+            123
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 574,
+          "finalBRS": 675,
+          "brsDelta": 101,
+          "originalVariance": 2005.6875,
+          "finalVariance": 2229.6875,
+          "originalTraits": [
+            -11,
+            76,
+            76,
+            110
+          ],
+          "finalTraits": [
+            -1,
+            73,
+            75,
+            132
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 574,
+          "finalBRS": 655,
+          "brsDelta": 81,
+          "originalVariance": 2005.6875,
+          "finalVariance": 1653.5,
+          "originalTraits": [
+            -11,
+            76,
+            76,
+            110
+          ],
+          "finalTraits": [
+            2,
+            97,
+            76,
+            105
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 574,
+          "finalBRS": 574,
+          "brsDelta": 0,
+          "originalVariance": 2005.6875,
+          "finalVariance": 2005.6875,
+          "originalTraits": [
+            -11,
+            76,
+            76,
+            110
+          ],
+          "finalTraits": [
+            -11,
+            76,
+            76,
+            110
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "16451",
+      "gotchiName": "Hazard Pay",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 627,
+          "finalBRS": 714,
+          "brsDelta": 87,
+          "originalVariance": 2890.6875,
+          "finalVariance": 2602,
+          "originalTraits": [
+            108,
+            -9,
+            87,
+            -9
+          ],
+          "finalTraits": [
+            96,
+            -8,
+            94,
+            -6
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 627,
+          "finalBRS": 667,
+          "brsDelta": 40,
+          "originalVariance": 2890.6875,
+          "finalVariance": 2983.5,
+          "originalTraits": [
+            108,
+            -9,
+            87,
+            -9
+          ],
+          "finalTraits": [
+            121,
+            2,
+            85,
+            -8
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 627,
+          "finalBRS": 669,
+          "brsDelta": 42,
+          "originalVariance": 2890.6875,
+          "finalVariance": 2481.1875,
+          "originalTraits": [
+            108,
+            -9,
+            87,
+            -9
+          ],
+          "finalTraits": [
+            98,
+            2,
+            98,
+            -5
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 627,
+          "finalBRS": 627,
+          "brsDelta": 0,
+          "originalVariance": 2890.6875,
+          "finalVariance": 2890.6875,
+          "originalTraits": [
+            108,
+            -9,
+            87,
+            -9
+          ],
+          "finalTraits": [
+            108,
+            -9,
+            87,
+            -9
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "18873",
+      "gotchiName": "Boo-Dacious",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 630,
+          "finalBRS": 722,
+          "brsDelta": 92,
+          "originalVariance": 2308.5,
+          "finalVariance": 2310.6875,
+          "originalTraits": [
+            15,
+            114,
+            21,
+            114
+          ],
+          "finalTraits": [
+            13,
+            105,
+            20,
+            119
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 630,
+          "finalBRS": 698,
+          "brsDelta": 68,
+          "originalVariance": 2308.5,
+          "finalVariance": 2419.25,
+          "originalTraits": [
+            15,
+            114,
+            21,
+            114
+          ],
+          "finalTraits": [
+            14,
+            100,
+            23,
+            129
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 630,
+          "finalBRS": 630,
+          "brsDelta": 0,
+          "originalVariance": 2308.5,
+          "finalVariance": 2308.5,
+          "originalTraits": [
+            15,
+            114,
+            21,
+            114
+          ],
+          "finalTraits": [
+            15,
+            114,
+            21,
+            114
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 630,
+          "finalBRS": 630,
+          "brsDelta": 0,
+          "originalVariance": 2308.5,
+          "finalVariance": 2308.5,
+          "originalTraits": [
+            15,
+            114,
+            21,
+            114
+          ],
+          "finalTraits": [
+            15,
+            114,
+            21,
+            114
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "19634",
+      "gotchiName": "Michael Saylor",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 595,
+          "finalBRS": 717,
+          "brsDelta": 122,
+          "originalVariance": 1499.6875,
+          "finalVariance": 1759.25,
+          "originalTraits": [
+            81,
+            8,
+            114,
+            80
+          ],
+          "finalTraits": [
+            74,
+            3,
+            117,
+            88
+          ],
+          "respecMoved": 0,
+          "setDelta": 1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 595,
+          "finalBRS": 667,
+          "brsDelta": 72,
+          "originalVariance": 1499.6875,
+          "finalVariance": 1898.75,
+          "originalTraits": [
+            81,
+            8,
+            114,
+            80
+          ],
+          "finalTraits": [
+            73,
+            5,
+            127,
+            81
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 595,
+          "finalBRS": 687,
+          "brsDelta": 92,
+          "originalVariance": 1499.6875,
+          "finalVariance": 1541.25,
+          "originalTraits": [
+            81,
+            8,
+            114,
+            80
+          ],
+          "finalTraits": [
+            75,
+            9,
+            108,
+            102
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 595,
+          "finalBRS": 595,
+          "brsDelta": 0,
+          "originalVariance": 1499.6875,
+          "finalVariance": 1499.6875,
+          "originalTraits": [
+            81,
+            8,
+            114,
+            80
+          ],
+          "finalTraits": [
+            81,
+            8,
+            114,
+            80
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "21403",
+      "gotchiName": "Son of a WAIFU",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 742,
+          "finalBRS": 744,
+          "brsDelta": 2,
+          "originalVariance": 3192.75,
+          "finalVariance": 2943.6875,
+          "originalTraits": [
+            7,
+            5,
+            119,
+            119
+          ],
+          "finalTraits": [
+            9,
+            7,
+            117,
+            116
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 2,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 742,
+          "finalBRS": 712,
+          "brsDelta": -30,
+          "originalVariance": 3192.75,
+          "finalVariance": 2961.1875,
+          "originalTraits": [
+            7,
+            5,
+            119,
+            119
+          ],
+          "finalTraits": [
+            12,
+            13,
+            108,
+            132
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 742,
+          "finalBRS": 713,
+          "brsDelta": -29,
+          "originalVariance": 3192.75,
+          "finalVariance": 3053.6875,
+          "originalTraits": [
+            7,
+            5,
+            119,
+            119
+          ],
+          "finalTraits": [
+            8,
+            11,
+            120,
+            120
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 5,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 742,
+          "finalBRS": 742,
+          "brsDelta": 0,
+          "originalVariance": 3192.75,
+          "finalVariance": 3192.75,
+          "originalTraits": [
+            7,
+            5,
+            119,
+            119
+          ],
+          "finalTraits": [
+            7,
+            5,
+            119,
+            119
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "21422",
+      "gotchiName": "SisiGotchi",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 582,
+          "finalBRS": 701,
+          "brsDelta": 119,
+          "originalVariance": 1728,
+          "finalVariance": 1840.1875,
+          "originalTraits": [
+            104,
+            104,
+            8,
+            104
+          ],
+          "finalTraits": [
+            112,
+            98,
+            8,
+            109
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 582,
+          "finalBRS": 650,
+          "brsDelta": 68,
+          "originalVariance": 1728,
+          "finalVariance": 1922.25,
+          "originalTraits": [
+            104,
+            104,
+            8,
+            104
+          ],
+          "finalTraits": [
+            124,
+            97,
+            8,
+            97
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 582,
+          "finalBRS": 629,
+          "brsDelta": 47,
+          "originalVariance": 1728,
+          "finalVariance": 1860.75,
+          "originalTraits": [
+            104,
+            104,
+            8,
+            104
+          ],
+          "finalTraits": [
+            109,
+            101,
+            7,
+            109
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 582,
+          "finalBRS": 582,
+          "brsDelta": 0,
+          "originalVariance": 1728,
+          "finalVariance": 1728,
+          "originalTraits": [
+            104,
+            104,
+            8,
+            104
+          ],
+          "finalTraits": [
+            104,
+            104,
+            8,
+            104
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "21950",
+      "gotchiName": "FifiGotchi",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 593,
+          "finalBRS": 699,
+          "brsDelta": 106,
+          "originalVariance": 2188.6875,
+          "finalVariance": 2308.5,
+          "originalTraits": [
+            98,
+            33,
+            -16,
+            -16
+          ],
+          "finalTraits": [
+            109,
+            28,
+            -12,
+            -5
+          ],
+          "respecMoved": 0,
+          "setDelta": -2,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 593,
+          "finalBRS": 650,
+          "brsDelta": 57,
+          "originalVariance": 2188.6875,
+          "finalVariance": 2692.6875,
+          "originalTraits": [
+            98,
+            33,
+            -16,
+            -16
+          ],
+          "finalTraits": [
+            120,
+            35,
+            -4,
+            -10
+          ],
+          "respecMoved": 0,
+          "setDelta": -2,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 593,
+          "finalBRS": 630,
+          "brsDelta": 37,
+          "originalVariance": 2188.6875,
+          "finalVariance": 2010.5,
+          "originalTraits": [
+            98,
+            33,
+            -16,
+            -16
+          ],
+          "finalTraits": [
+            99,
+            55,
+            -4,
+            -10
+          ],
+          "respecMoved": 0,
+          "setDelta": -2,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 593,
+          "finalBRS": 593,
+          "brsDelta": 0,
+          "originalVariance": 2188.6875,
+          "finalVariance": 2188.6875,
+          "originalTraits": [
+            98,
+            33,
+            -16,
+            -16
+          ],
+          "finalTraits": [
+            98,
+            33,
+            -16,
+            -16
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "22018",
+      "gotchiName": "DUUES",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 606,
+          "finalBRS": 706,
+          "brsDelta": 100,
+          "originalVariance": 2215.5,
+          "finalVariance": 1950.1875,
+          "originalTraits": [
+            -20,
+            95,
+            89,
+            80
+          ],
+          "finalTraits": [
+            -12,
+            93,
+            84,
+            92
+          ],
+          "respecMoved": 0,
+          "setDelta": -2,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 606,
+          "finalBRS": 662,
+          "brsDelta": 56,
+          "originalVariance": 2215.5,
+          "finalVariance": 1978.6875,
+          "originalTraits": [
+            -20,
+            95,
+            89,
+            80
+          ],
+          "finalTraits": [
+            -8,
+            112,
+            81,
+            76
+          ],
+          "respecMoved": 0,
+          "setDelta": -2,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 606,
+          "finalBRS": 644,
+          "brsDelta": 38,
+          "originalVariance": 2215.5,
+          "finalVariance": 2098.1875,
+          "originalTraits": [
+            -20,
+            95,
+            89,
+            80
+          ],
+          "finalTraits": [
+            -13,
+            98,
+            97,
+            79
+          ],
+          "respecMoved": 0,
+          "setDelta": -2,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 606,
+          "finalBRS": 606,
+          "brsDelta": 0,
+          "originalVariance": 2215.5,
+          "finalVariance": 2215.5,
+          "originalTraits": [
+            -20,
+            95,
+            89,
+            80
+          ],
+          "finalTraits": [
+            -20,
+            95,
+            89,
+            80
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "22977",
+      "gotchiName": "Puff Daddy",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 606,
+          "finalBRS": 706,
+          "brsDelta": 100,
+          "originalVariance": 2626.6875,
+          "finalVariance": 2543.1875,
+          "originalTraits": [
+            -11,
+            91,
+            92,
+            -11
+          ],
+          "finalTraits": [
+            3,
+            97,
+            98,
+            -9
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 606,
+          "finalBRS": 674,
+          "brsDelta": 68,
+          "originalVariance": 2626.6875,
+          "finalVariance": 2801.1875,
+          "originalTraits": [
+            -11,
+            91,
+            92,
+            -11
+          ],
+          "finalTraits": [
+            4,
+            112,
+            92,
+            -9
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 606,
+          "finalBRS": 646,
+          "brsDelta": 40,
+          "originalVariance": 2626.6875,
+          "finalVariance": 2664.75,
+          "originalTraits": [
+            -11,
+            91,
+            92,
+            -11
+          ],
+          "finalTraits": [
+            3,
+            101,
+            101,
+            -7
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 606,
+          "finalBRS": 606,
+          "brsDelta": 0,
+          "originalVariance": 2626.6875,
+          "finalVariance": 2626.6875,
+          "originalTraits": [
+            -11,
+            91,
+            92,
+            -11
+          ],
+          "finalTraits": [
+            -11,
+            91,
+            92,
+            -11
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "23192",
+      "gotchiName": "Kornholio",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 630,
+          "finalBRS": 722,
+          "brsDelta": 92,
+          "originalVariance": 2784.1875,
+          "finalVariance": 2878.5,
+          "originalTraits": [
+            92,
+            -13,
+            -11,
+            95
+          ],
+          "finalTraits": [
+            100,
+            -8,
+            1,
+            107
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 630,
+          "finalBRS": 692,
+          "brsDelta": 62,
+          "originalVariance": 2784.1875,
+          "finalVariance": 2843.1875,
+          "originalTraits": [
+            92,
+            -13,
+            -11,
+            95
+          ],
+          "finalTraits": [
+            88,
+            -6,
+            2,
+            117
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 630,
+          "finalBRS": 642,
+          "brsDelta": 12,
+          "originalVariance": 2784.1875,
+          "finalVariance": 2681.1875,
+          "originalTraits": [
+            92,
+            -13,
+            -11,
+            95
+          ],
+          "finalTraits": [
+            99,
+            -7,
+            -2,
+            99
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 630,
+          "finalBRS": 630,
+          "brsDelta": 0,
+          "originalVariance": 2784.1875,
+          "finalVariance": 2784.1875,
+          "originalTraits": [
+            92,
+            -13,
+            -11,
+            95
+          ],
+          "finalTraits": [
+            92,
+            -13,
+            -11,
+            95
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "23249",
+      "gotchiName": "Need Gas for Lambo",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 589,
+          "finalBRS": 724,
+          "brsDelta": 135,
+          "originalVariance": 1989.6875,
+          "finalVariance": 2187.6875,
+          "originalTraits": [
+            15,
+            28,
+            94,
+            122
+          ],
+          "finalTraits": [
+            14,
+            24,
+            103,
+            120
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 589,
+          "finalBRS": 692,
+          "brsDelta": 103,
+          "originalVariance": 1989.6875,
+          "finalVariance": 2321.1875,
+          "originalTraits": [
+            15,
+            28,
+            94,
+            122
+          ],
+          "finalTraits": [
+            15,
+            30,
+            94,
+            134
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 589,
+          "finalBRS": 676,
+          "brsDelta": 87,
+          "originalVariance": 1989.6875,
+          "finalVariance": 2206.6875,
+          "originalTraits": [
+            15,
+            28,
+            94,
+            122
+          ],
+          "finalTraits": [
+            13,
+            26,
+            113,
+            113
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 589,
+          "finalBRS": 589,
+          "brsDelta": 0,
+          "originalVariance": 1989.6875,
+          "finalVariance": 1989.6875,
+          "originalTraits": [
+            15,
+            28,
+            94,
+            122
+          ],
+          "finalTraits": [
+            15,
+            28,
+            94,
+            122
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "2720",
+      "gotchiName": "Treasury Sniper",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 675,
+          "finalBRS": 718,
+          "brsDelta": 43,
+          "originalVariance": 1314.75,
+          "finalVariance": 1334.25,
+          "originalTraits": [
+            3,
+            73,
+            -15,
+            -15
+          ],
+          "finalTraits": [
+            11,
+            79,
+            -10,
+            -10
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 5,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 675,
+          "finalBRS": 682,
+          "brsDelta": 7,
+          "originalVariance": 1314.75,
+          "finalVariance": 1730.25,
+          "originalTraits": [
+            3,
+            73,
+            -15,
+            -15
+          ],
+          "finalTraits": [
+            15,
+            95,
+            -6,
+            -6
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 675,
+          "finalBRS": 631,
+          "brsDelta": -44,
+          "originalVariance": 1314.75,
+          "finalVariance": 1135.6875,
+          "originalTraits": [
+            3,
+            73,
+            -15,
+            -15
+          ],
+          "finalTraits": [
+            36,
+            75,
+            -6,
+            -6
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 675,
+          "finalBRS": 675,
+          "brsDelta": 0,
+          "originalVariance": 1314.75,
+          "finalVariance": 1314.75,
+          "originalTraits": [
+            3,
+            73,
+            -15,
+            -15
+          ],
+          "finalTraits": [
+            3,
+            73,
+            -15,
+            -15
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "282",
+      "gotchiName": "Dropt it like its Hot",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 654,
+          "finalBRS": 717,
+          "brsDelta": 63,
+          "originalVariance": 3029.5,
+          "finalVariance": 2740.5,
+          "originalTraits": [
+            100,
+            -7,
+            106,
+            -7
+          ],
+          "finalTraits": [
+            94,
+            -5,
+            110,
+            1
+          ],
+          "respecMoved": 0,
+          "setDelta": 1,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 654,
+          "finalBRS": 673,
+          "brsDelta": 19,
+          "originalVariance": 3029.5,
+          "finalVariance": 2960.75,
+          "originalTraits": [
+            100,
+            -7,
+            106,
+            -7
+          ],
+          "finalTraits": [
+            93,
+            -1,
+            121,
+            1
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 654,
+          "finalBRS": 677,
+          "brsDelta": 23,
+          "originalVariance": 3029.5,
+          "finalVariance": 2331.1875,
+          "originalTraits": [
+            100,
+            -7,
+            106,
+            -7
+          ],
+          "finalTraits": [
+            102,
+            8,
+            102,
+            3
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 654,
+          "finalBRS": 654,
+          "brsDelta": 0,
+          "originalVariance": 3029.5,
+          "finalVariance": 3029.5,
+          "originalTraits": [
+            100,
+            -7,
+            106,
+            -7
+          ],
+          "finalTraits": [
+            100,
+            -7,
+            106,
+            -7
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "3560",
+      "gotchiName": "Sgt. TwinkleVision",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 523,
+          "finalBRS": 664,
+          "brsDelta": 141,
+          "originalVariance": 362.1875,
+          "finalVariance": 330.1875,
+          "originalTraits": [
+            68,
+            75,
+            112,
+            64
+          ],
+          "finalTraits": [
+            70,
+            76,
+            115,
+            74
+          ],
+          "respecMoved": 0,
+          "setDelta": 1,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 523,
+          "finalBRS": 600,
+          "brsDelta": 77,
+          "originalVariance": 362.1875,
+          "finalVariance": 835.6875,
+          "originalTraits": [
+            68,
+            75,
+            112,
+            64
+          ],
+          "finalTraits": [
+            61,
+            69,
+            130,
+            61
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 523,
+          "finalBRS": 614,
+          "brsDelta": 91,
+          "originalVariance": 362.1875,
+          "finalVariance": 434.25,
+          "originalTraits": [
+            68,
+            75,
+            112,
+            64
+          ],
+          "finalTraits": [
+            66,
+            95,
+            110,
+            59
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 523,
+          "finalBRS": 523,
+          "brsDelta": 0,
+          "originalVariance": 362.1875,
+          "finalVariance": 362.1875,
+          "originalTraits": [
+            68,
+            75,
+            112,
+            64
+          ],
+          "finalTraits": [
+            68,
+            75,
+            112,
+            64
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "3849",
+      "gotchiName": "West Coast Hustle",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 620,
+          "finalBRS": 720,
+          "brsDelta": 100,
+          "originalVariance": 2353.25,
+          "finalVariance": 2031.1875,
+          "originalTraits": [
+            112,
+            89,
+            -13,
+            90
+          ],
+          "finalTraits": [
+            120,
+            90,
+            2,
+            99
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 620,
+          "finalBRS": 669,
+          "brsDelta": 49,
+          "originalVariance": 2353.25,
+          "finalVariance": 2223.25,
+          "originalTraits": [
+            112,
+            89,
+            -13,
+            90
+          ],
+          "finalTraits": [
+            132,
+            89,
+            2,
+            87
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 620,
+          "finalBRS": 697,
+          "brsDelta": 77,
+          "originalVariance": 2353.25,
+          "finalVariance": 1660.5,
+          "originalTraits": [
+            112,
+            89,
+            -13,
+            90
+          ],
+          "finalTraits": [
+            108,
+            87,
+            9,
+            108
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 620,
+          "finalBRS": 620,
+          "brsDelta": 0,
+          "originalVariance": 2353.25,
+          "finalVariance": 2353.25,
+          "originalTraits": [
+            112,
+            89,
+            -13,
+            90
+          ],
+          "finalTraits": [
+            112,
+            89,
+            -13,
+            90
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "4405",
+      "gotchiName": "Lil' Al",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 685,
+          "finalBRS": 729,
+          "brsDelta": 44,
+          "originalVariance": 2304,
+          "finalVariance": 2281.1875,
+          "originalTraits": [
+            83,
+            -13,
+            -13,
+            83
+          ],
+          "finalTraits": [
+            87,
+            -10,
+            -10,
+            84
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 4,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 685,
+          "finalBRS": 699,
+          "brsDelta": 14,
+          "originalVariance": 2304,
+          "finalVariance": 2262.25,
+          "originalTraits": [
+            83,
+            -13,
+            -13,
+            83
+          ],
+          "finalTraits": [
+            76,
+            -5,
+            -1,
+            104
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 685,
+          "finalBRS": 654,
+          "brsDelta": -31,
+          "originalVariance": 2304,
+          "finalVariance": 2008.6875,
+          "originalTraits": [
+            83,
+            -13,
+            -13,
+            83
+          ],
+          "finalTraits": [
+            86,
+            -7,
+            0,
+            86
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 685,
+          "finalBRS": 685,
+          "brsDelta": 0,
+          "originalVariance": 2304,
+          "finalVariance": 2304,
+          "originalTraits": [
+            83,
+            -13,
+            -13,
+            83
+          ],
+          "finalTraits": [
+            83,
+            -13,
+            -13,
+            83
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "4419",
+      "gotchiName": "lil goat cheez",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 611,
+          "finalBRS": 714,
+          "brsDelta": 103,
+          "originalVariance": 1550.1875,
+          "finalVariance": 1508.6875,
+          "originalTraits": [
+            15,
+            110,
+            110,
+            94
+          ],
+          "finalTraits": [
+            15,
+            103,
+            105,
+            106
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 611,
+          "finalBRS": 666,
+          "brsDelta": 55,
+          "originalVariance": 1550.1875,
+          "finalVariance": 1629,
+          "originalTraits": [
+            15,
+            110,
+            110,
+            94
+          ],
+          "finalTraits": [
+            14,
+            96,
+            122,
+            92
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 611,
+          "finalBRS": 673,
+          "brsDelta": 62,
+          "originalVariance": 1550.1875,
+          "finalVariance": 1721.5,
+          "originalTraits": [
+            15,
+            110,
+            110,
+            94
+          ],
+          "finalTraits": [
+            14,
+            115,
+            115,
+            92
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 611,
+          "finalBRS": 611,
+          "brsDelta": 0,
+          "originalVariance": 1550.1875,
+          "finalVariance": 1550.1875,
+          "originalTraits": [
+            15,
+            110,
+            110,
+            94
+          ],
+          "finalTraits": [
+            15,
+            110,
+            110,
+            94
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "524",
+      "gotchiName": "No Ghost, No Cry",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 539,
+          "finalBRS": 664,
+          "brsDelta": 125,
+          "originalVariance": 1441.5,
+          "finalVariance": 1523.1875,
+          "originalTraits": [
+            -8,
+            21,
+            96,
+            39
+          ],
+          "finalTraits": [
+            -3,
+            20,
+            102,
+            40
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 539,
+          "finalBRS": 628,
+          "brsDelta": 89,
+          "originalVariance": 1441.5,
+          "finalVariance": 1965.6875,
+          "originalTraits": [
+            -8,
+            21,
+            96,
+            39
+          ],
+          "finalTraits": [
+            -2,
+            21,
+            116,
+            38
+          ],
+          "respecAllocated": [
+            2,
+            -3,
+            3,
+            -2
+          ],
+          "respecMoved": 10,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 539,
+          "finalBRS": 623,
+          "brsDelta": 84,
+          "originalVariance": 1441.5,
+          "finalVariance": 1255.6875,
+          "originalTraits": [
+            -8,
+            21,
+            96,
+            39
+          ],
+          "finalTraits": [
+            0,
+            24,
+            91,
+            66
+          ],
+          "respecAllocated": [
+            2,
+            -2,
+            -3,
+            3
+          ],
+          "respecMoved": 10,
+          "setDelta": -1,
+          "wearableChanges": 8,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 539,
+          "finalBRS": 539,
+          "brsDelta": 0,
+          "originalVariance": 1441.5,
+          "finalVariance": 1441.5,
+          "originalTraits": [
+            -8,
+            21,
+            96,
+            39
+          ],
+          "finalTraits": [
+            -8,
+            21,
+            96,
+            39
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "584",
+      "gotchiName": "Need TP for my Gotchihole",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 587,
+          "finalBRS": 698,
+          "brsDelta": 111,
+          "originalVariance": 1291.6875,
+          "finalVariance": 1423.5,
+          "originalTraits": [
+            104,
+            104,
+            104,
+            21
+          ],
+          "finalTraits": [
+            101,
+            111,
+            102,
+            18
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 587,
+          "finalBRS": 664,
+          "brsDelta": 77,
+          "originalVariance": 1291.6875,
+          "finalVariance": 1587.25,
+          "originalTraits": [
+            104,
+            104,
+            104,
+            21
+          ],
+          "finalTraits": [
+            99,
+            124,
+            97,
+            18
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 587,
+          "finalBRS": 645,
+          "brsDelta": 58,
+          "originalVariance": 1291.6875,
+          "finalVariance": 1424.25,
+          "originalTraits": [
+            104,
+            104,
+            104,
+            21
+          ],
+          "finalTraits": [
+            96,
+            111,
+            111,
+            20
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 587,
+          "finalBRS": 587,
+          "brsDelta": 0,
+          "originalVariance": 1291.6875,
+          "finalVariance": 1291.6875,
+          "originalTraits": [
+            104,
+            104,
+            104,
+            21
+          ],
+          "finalTraits": [
+            104,
+            104,
+            104,
+            21
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "7060",
+      "gotchiName": "Friggin Riggin",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 625,
+          "finalBRS": 716,
+          "brsDelta": 91,
+          "originalVariance": 2250.6875,
+          "finalVariance": 2102,
+          "originalTraits": [
+            112,
+            84,
+            84,
+            -13
+          ],
+          "finalTraits": [
+            109,
+            89,
+            87,
+            -9
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 625,
+          "finalBRS": 669,
+          "brsDelta": 44,
+          "originalVariance": 2250.6875,
+          "finalVariance": 2337.6875,
+          "originalTraits": [
+            112,
+            84,
+            84,
+            -13
+          ],
+          "finalTraits": [
+            126,
+            82,
+            82,
+            -7
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 625,
+          "finalBRS": 671,
+          "brsDelta": 46,
+          "originalVariance": 2250.6875,
+          "finalVariance": 1938.25,
+          "originalTraits": [
+            112,
+            84,
+            84,
+            -13
+          ],
+          "finalTraits": [
+            100,
+            77,
+            100,
+            -7
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 625,
+          "finalBRS": 625,
+          "brsDelta": 0,
+          "originalVariance": 2250.6875,
+          "finalVariance": 2250.6875,
+          "originalTraits": [
+            112,
+            84,
+            84,
+            -13
+          ],
+          "finalTraits": [
+            112,
+            84,
+            84,
+            -13
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "7457",
+      "gotchiName": "Nice Jugs",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 635,
+          "finalBRS": 724,
+          "brsDelta": 89,
+          "originalVariance": 1489.5,
+          "finalVariance": 1412.6875,
+          "originalTraits": [
+            106,
+            106,
+            13,
+            91
+          ],
+          "finalTraits": [
+            106,
+            105,
+            16,
+            96
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 635,
+          "finalBRS": 682,
+          "brsDelta": 47,
+          "originalVariance": 1489.5,
+          "finalVariance": 1584.1875,
+          "originalTraits": [
+            106,
+            106,
+            13,
+            91
+          ],
+          "finalTraits": [
+            97,
+            124,
+            16,
+            84
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 635,
+          "finalBRS": 680,
+          "brsDelta": 45,
+          "originalVariance": 1489.5,
+          "finalVariance": 1424.25,
+          "originalTraits": [
+            106,
+            106,
+            13,
+            91
+          ],
+          "finalTraits": [
+            108,
+            108,
+            17,
+            93
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 635,
+          "finalBRS": 635,
+          "brsDelta": 0,
+          "originalVariance": 1489.5,
+          "finalVariance": 1489.5,
+          "originalTraits": [
+            106,
+            106,
+            13,
+            91
+          ],
+          "finalTraits": [
+            106,
+            106,
+            13,
+            91
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "7615",
+      "gotchiName": "Bubba Scrimp",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 659,
+          "finalBRS": 732,
+          "brsDelta": 73,
+          "originalVariance": 1656.75,
+          "finalVariance": 1605.6875,
+          "originalTraits": [
+            109,
+            109,
+            15,
+            109
+          ],
+          "finalTraits": [
+            110,
+            104,
+            16,
+            111
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 659,
+          "finalBRS": 702,
+          "brsDelta": 43,
+          "originalVariance": 1656.75,
+          "finalVariance": 1627.25,
+          "originalTraits": [
+            109,
+            109,
+            15,
+            109
+          ],
+          "finalTraits": [
+            98,
+            99,
+            17,
+            124
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 659,
+          "finalBRS": 659,
+          "brsDelta": 0,
+          "originalVariance": 1656.75,
+          "finalVariance": 1656.75,
+          "originalTraits": [
+            109,
+            109,
+            15,
+            109
+          ],
+          "finalTraits": [
+            109,
+            109,
+            15,
+            109
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 659,
+          "finalBRS": 659,
+          "brsDelta": 0,
+          "originalVariance": 1656.75,
+          "finalVariance": 1656.75,
+          "originalTraits": [
+            109,
+            109,
+            15,
+            109
+          ],
+          "finalTraits": [
+            109,
+            109,
+            15,
+            109
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "8012",
+      "gotchiName": "MacNugintosh",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 618,
+          "finalBRS": 721,
+          "brsDelta": 103,
+          "originalVariance": 336.1875,
+          "finalVariance": 175.5,
+          "originalTraits": [
+            112,
+            112,
+            78,
+            73
+          ],
+          "finalTraits": [
+            110,
+            106,
+            79,
+            85
+          ],
+          "respecMoved": 0,
+          "setDelta": 1,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 618,
+          "finalBRS": 662,
+          "brsDelta": 44,
+          "originalVariance": 336.1875,
+          "finalVariance": 546.5,
+          "originalTraits": [
+            112,
+            112,
+            78,
+            73
+          ],
+          "finalTraits": [
+            127,
+            105,
+            74,
+            70
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 618,
+          "finalBRS": 618,
+          "brsDelta": 0,
+          "originalVariance": 336.1875,
+          "finalVariance": 336.1875,
+          "originalTraits": [
+            112,
+            112,
+            78,
+            73
+          ],
+          "finalTraits": [
+            112,
+            112,
+            78,
+            73
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 618,
+          "finalBRS": 618,
+          "brsDelta": 0,
+          "originalVariance": 336.1875,
+          "finalVariance": 336.1875,
+          "originalTraits": [
+            112,
+            112,
+            78,
+            73
+          ],
+          "finalTraits": [
+            112,
+            112,
+            78,
+            73
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "9373",
+      "gotchiName": "Big Ice Energy",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 733,
+          "finalBRS": 745,
+          "brsDelta": 12,
+          "originalVariance": 36.1875,
+          "finalVariance": 25.1875,
+          "originalTraits": [
+            114,
+            114,
+            100,
+            105
+          ],
+          "finalTraits": [
+            114,
+            106,
+            100,
+            105
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 2,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 733,
+          "finalBRS": 686,
+          "brsDelta": -47,
+          "originalVariance": 36.1875,
+          "finalVariance": 250.1875,
+          "originalTraits": [
+            114,
+            114,
+            100,
+            105
+          ],
+          "finalTraits": [
+            131,
+            105,
+            95,
+            90
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 6,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 733,
+          "finalBRS": 692,
+          "brsDelta": -41,
+          "originalVariance": 36.1875,
+          "finalVariance": 74.1875,
+          "originalTraits": [
+            114,
+            114,
+            100,
+            105
+          ],
+          "finalTraits": [
+            115,
+            115,
+            95,
+            102
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 3,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 733,
+          "finalBRS": 733,
+          "brsDelta": 0,
+          "originalVariance": 36.1875,
+          "finalVariance": 36.1875,
+          "originalTraits": [
+            114,
+            114,
+            100,
+            105
+          ],
+          "finalTraits": [
+            114,
+            114,
+            100,
+            105
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "9376",
+      "gotchiName": "Fren$ki Da Ghost",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 720,
+          "finalBRS": 736,
+          "brsDelta": 16,
+          "originalVariance": 2744.5,
+          "finalVariance": 2651.5,
+          "originalTraits": [
+            106,
+            106,
+            11,
+            -7
+          ],
+          "finalTraits": [
+            107,
+            105,
+            14,
+            -6
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 3,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 720,
+          "finalBRS": 691,
+          "brsDelta": -29,
+          "originalVariance": 2744.5,
+          "finalVariance": 2835.6875,
+          "originalTraits": [
+            106,
+            106,
+            11,
+            -7
+          ],
+          "finalTraits": [
+            122,
+            96,
+            11,
+            -2
+          ],
+          "respecAllocated": [
+            3,
+            -2,
+            -3,
+            2
+          ],
+          "respecMoved": 10,
+          "setDelta": 0,
+          "wearableChanges": 4,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 720,
+          "finalBRS": 720,
+          "brsDelta": 0,
+          "originalVariance": 2744.5,
+          "finalVariance": 2744.5,
+          "originalTraits": [
+            106,
+            106,
+            11,
+            -7
+          ],
+          "finalTraits": [
+            106,
+            106,
+            11,
+            -7
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 720,
+          "finalBRS": 720,
+          "brsDelta": 0,
+          "originalVariance": 2744.5,
+          "finalVariance": 2744.5,
+          "originalTraits": [
+            106,
+            106,
+            11,
+            -7
+          ],
+          "finalTraits": [
+            106,
+            106,
+            11,
+            -7
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    },
+    {
+      "gotchiId": "9395",
+      "gotchiName": "Proof of Face",
+      "passed": true,
+      "goalResults": [
+        {
+          "goal": "maximizeBRS",
+          "passed": true,
+          "originalBRS": 577,
+          "finalBRS": 699,
+          "brsDelta": 122,
+          "originalVariance": 153.1875,
+          "finalVariance": 191.6875,
+          "originalTraits": [
+            108,
+            90,
+            79,
+            108
+          ],
+          "finalTraits": [
+            107,
+            92,
+            79,
+            115
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-oneDominant",
+          "passed": true,
+          "originalBRS": 577,
+          "finalBRS": 663,
+          "brsDelta": 86,
+          "originalVariance": 153.1875,
+          "finalVariance": 344.1875,
+          "originalTraits": [
+            108,
+            90,
+            79,
+            108
+          ],
+          "finalTraits": [
+            100,
+            87,
+            75,
+            125
+          ],
+          "respecMoved": 0,
+          "setDelta": -1,
+          "wearableChanges": 7,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-twoEqual",
+          "passed": true,
+          "originalBRS": 577,
+          "finalBRS": 577,
+          "brsDelta": 0,
+          "originalVariance": 153.1875,
+          "finalVariance": 153.1875,
+          "originalTraits": [
+            108,
+            90,
+            79,
+            108
+          ],
+          "finalTraits": [
+            108,
+            90,
+            79,
+            108
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        },
+        {
+          "goal": "traitShape-balanced",
+          "passed": true,
+          "originalBRS": 577,
+          "finalBRS": 577,
+          "brsDelta": 0,
+          "originalVariance": 153.1875,
+          "finalVariance": 153.1875,
+          "originalTraits": [
+            108,
+            90,
+            79,
+            108
+          ],
+          "finalTraits": [
+            108,
+            90,
+            79,
+            108
+          ],
+          "respecMoved": 0,
+          "setDelta": 0,
+          "wearableChanges": 0,
+          "failures": []
+        }
+      ],
+      "overallFailures": []
+    }
+  ]
+}
