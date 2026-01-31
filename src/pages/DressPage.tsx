@@ -38,9 +38,11 @@ export default function DressPage() {
   const [activeWearable, setActiveWearable] = useState<Wearable | null>(null);
   const { connectedAddress, isConnected, isOnBase } = useAddressState();
   const [multiWallets, setMultiWallets] = useState<string[]>(() => loadMultiWallets());
-  const [manualGotchis, setManualGotchis] = useState<Gotchi[]>([]);
   const [showCatwalk, setShowCatwalk] = useState(false);
   const storeGotchis = useSortedGotchis();
+  const manualGotchis = useAppStore((state) => state.manualGotchis);
+  const addManualGotchi = useAppStore((state) => state.addManualGotchi);
+  const removeManualGotchi = useAppStore((state) => state.removeManualGotchi);
 
   const allSelectorGotchis = useMemo(() => {
     const storeIds = new Set(storeGotchis.map((g) => g.id));
@@ -78,19 +80,16 @@ export default function DressPage() {
   };
 
   const handleAddManualGotchi = useCallback((gotchi: Gotchi) => {
-    setManualGotchis((prev) => {
-      if (prev.some((g) => g.id === gotchi.id)) return prev;
-      return [...prev, gotchi];
-    });
+    addManualGotchi(gotchi);
     toast({
       title: "Gotchi Added",
       description: `${gotchi.name} added to selector`,
     });
-  }, [toast]);
+  }, [toast, addManualGotchi]);
 
   const handleRemoveManualGotchi = useCallback((gotchiId: string) => {
-    setManualGotchis((prev) => prev.filter((g) => g.id !== gotchiId));
-  }, []);
+    removeManualGotchi(gotchiId);
+  }, [removeManualGotchi]);
 
   const connectedOwner =
     isConnected && isOnBase && connectedAddress

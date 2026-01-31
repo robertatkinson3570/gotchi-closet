@@ -14,6 +14,7 @@ interface AppState {
   // Address & Gotchis
   loadedAddress: string | null;
   gotchis: Gotchi[];
+  manualGotchis: Gotchi[]; // Manual gotchis (added via search/Baazaar)
   // Editor
   editorInstances: EditorInstance[];
 
@@ -43,6 +44,9 @@ interface AppState {
   // Actions
   setLoadedAddress: (address: string | null) => void;
   setGotchis: (gotchis: Gotchi[]) => void;
+  addManualGotchi: (gotchi: Gotchi) => void;
+  removeManualGotchi: (gotchiId: string) => void;
+  clearManualGotchis: () => void;
   addEditorInstance: (gotchi: Gotchi) => void;
   removeEditorInstance: (instanceId: string) => void;
   updateEditorInstance: (instanceId: string, equippedBySlot: number[]) => void;
@@ -105,6 +109,7 @@ let lastAddId = "";
 export const useAppStore = create<AppState>((set, get) => ({
   loadedAddress: null,
   gotchis: [],
+  manualGotchis: [],
   editorInstances: [],
   wearables: [],
   sets: [],
@@ -142,6 +147,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, cleaned);
     }
   },
+  addManualGotchi: (gotchi) =>
+    set((state) => {
+      if (state.manualGotchis.some((g) => g.id === gotchi.id)) {
+        return state;
+      }
+      return { manualGotchis: [...state.manualGotchis, gotchi] };
+    }),
+  removeManualGotchi: (gotchiId) =>
+    set((state) => ({
+      manualGotchis: state.manualGotchis.filter((g) => g.id !== gotchiId),
+    })),
+  clearManualGotchis: () => set({ manualGotchis: [] }),
   addEditorInstance: (gotchi) =>
     set((state) => {
       const now = Date.now();
@@ -345,14 +362,31 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setLockSetEnabled: (gotchiId: string, enabled: boolean, override?: LockedOverride) => {
     if (enabled) {
-      // If override not provided, try to get from existing override or create minimal one
+      // If override not provided, try to get from existing override or get from gotchi
       const state = get();
       const existingOverride = state.overridesById[gotchiId];
-      const finalOverride = override || existingOverride || {
-        wearablesBySlot: [],
-        respecAllocated: null,
-        timestamp: Date.now(),
-      };
+      let finalOverride = override || existingOverride;
+      
+      // If still no override, try to get equipped wearables from gotchi
+      if (!finalOverride) {
+        const gotchi = state.gotchis.find(g => g.id === gotchiId) 
+          || state.manualGotchis.find(g => g.id === gotchiId);
+        if (gotchi) {
+          finalOverride = {
+            wearablesBySlot: [...gotchi.equippedWearables],
+            respecAllocated: null,
+            timestamp: Date.now(),
+          };
+        } else {
+          // Fallback to empty override if gotchi not found
+          finalOverride = {
+            wearablesBySlot: [],
+            respecAllocated: null,
+            timestamp: Date.now(),
+          };
+        }
+      }
+      
       get().lockGotchi(gotchiId, finalOverride);
     } else {
       get().unlockGotchi(gotchiId);
@@ -365,13 +399,29 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (isCurrentlyLocked) {
       get().unlockGotchi(gotchiId);
     } else {
-      // If override not provided, try to get from existing override or create minimal one
-      const existingOverride = state.overridesById[gotchiId];
-      const finalOverride = override || existingOverride || {
-        wearablesBySlot: [],
-        respecAllocated: null,
-        timestamp: Date.now(),
-      };
+      // If override not provided, try to get from existing override or get from gotchi
+      let finalOverride = override || state.overridesById[gotchiId];
+      
+      // If still no override, try to get equipped wearables from gotchi
+      if (!finalOverride) {
+        const gotchi = state.gotchis.find(g => g.id === gotchiId) 
+          || state.manualGotchis.find(g => g.id === gotchiId);
+        if (gotchi) {
+          finalOverride = {
+            wearablesBySlot: [...gotchi.equippedWearables],
+            respecAllocated: null,
+            timestamp: Date.now(),
+          };
+        } else {
+          // Fallback to empty override if gotchi not found
+          finalOverride = {
+            wearablesBySlot: [],
+            respecAllocated: null,
+            timestamp: Date.now(),
+          };
+        }
+      }
+      
       get().lockGotchi(gotchiId, finalOverride);
     }
   },
@@ -386,8 +436,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       for (const gotchiId of gotchiIds) {
         if (!newLockedById[gotchiId]) {
           newLockedById[gotchiId] = true;
-          // Try to get equipped wearables from gotchis array
-          const gotchi = state.gotchis.find(g => g.id === gotchiId);
+          // Try to get equipped wearables from both gotchis and manualGotchis arrays
+          // (Baazaar gotchis are in manualGotchis)
+          const gotchi = state.gotchis.find(g => g.id === gotchiId) 
+            || state.manualGotchis.find(g => g.id === gotchiId);
           if (gotchi && !newOverridesById[gotchiId]) {
             newOverridesById[gotchiId] = {
               wearablesBySlot: [...gotchi.equippedWearables],

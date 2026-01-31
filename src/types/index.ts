@@ -14,6 +14,14 @@ export type Gotchi = {
   collateral?: string;
   createdAt?: number;
   blocksElapsed?: number;
+  // Optional Baazaar metadata (only present for Baazaar-sourced gotchis)
+  market?: {
+    source: "baazaar";
+    listingId: string;
+    price: string;
+    currency: string;
+    seller: string;
+  };
 };
 
 export type Wearable = {
