@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { Search, ChevronDown, ChevronUp, X, Loader2 } from "lucide-react";
@@ -24,6 +24,7 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
   const [isExpanded, setIsExpanded] = useState(false);
   const [loadingGotchiId, setLoadingGotchiId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const baazaarScrollRef = useRef<HTMLDivElement>(null);
   const wearablesById = useWearablesById();
 
   // Name/ID search (existing behavior)
@@ -40,6 +41,20 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
     error: baazaarError,
     loadMore: baazaarLoadMore,
   } = useBaazaarListings(mode === "baazaar" && isExpanded, search);
+
+  // Infinite scroll for Baazaar - trigger load when scrolled near right edge
+  const handleBaazaarScroll = useCallback(() => {
+    const container = baazaarScrollRef.current;
+    if (!container || baazaarLoading || !baazaarHasMore) return;
+    
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    const scrollRight = scrollWidth - scrollLeft - clientWidth;
+    
+    // Load more when within 200px of right edge
+    if (scrollRight < 200) {
+      baazaarLoadMore();
+    }
+  }, [baazaarLoading, baazaarHasMore, baazaarLoadMore]);
 
   // Transform Baazaar listings to Gotchi format
   const baazaarGotchis = useMemo(() => {
@@ -298,7 +313,11 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
               )}
               {baazaarGotchis.length > 0 && (
                 <div className="p-2">
-                  <div className="flex gap-3 overflow-x-auto scrollbar-thin pb-2">
+                  <div 
+                    ref={baazaarScrollRef}
+                    onScroll={handleBaazaarScroll}
+                    className="flex gap-3 overflow-x-auto scrollbar-thin pb-2"
+                  >
                     {baazaarGotchis.map((gotchi) => {
                       const {
                         finalTraits,
@@ -347,6 +366,16 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
                         </div>
                       );
                     })}
+                    {/* Loading indicator at end */}
+                    {baazaarHasMore && (
+                      <div className="flex-shrink-0 flex items-center justify-center w-20">
+                        {baazaarLoading ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-fuchsia-500" />
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">Scroll for more</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   
                   {/* Load more & filter notice */}
