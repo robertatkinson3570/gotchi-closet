@@ -19,6 +19,8 @@ export type AutoDressOptions = {
   traitShapeType?: "oneDominant" | "twoEqual" | "balanced";
   // Advanced
   aggressiveRespectChanges?: boolean;
+  // Rarity ceiling
+  highestAllowedRarity?: "all" | "godlike" | "mythical" | "legendary" | "rare" | "uncommon" | "common";
 };
 
 export type AutoDressResult = {
@@ -72,6 +74,44 @@ const MAX_OPTIONS_PER_SLOT = 20; // Includes empty option (0)
 const EPS = 1e-6; // Epsilon for floating point comparison
 
 /**
+ * Canonical rarity ordering (higher number = higher rarity)
+ */
+const RARITY_ORDER = {
+  common: 1,
+  uncommon: 2,
+  rare: 3,
+  legendary: 4,
+  mythical: 5,
+  godlike: 6,
+} as const;
+
+type RarityTier = keyof typeof RARITY_ORDER;
+
+/**
+ * Get rarity order for a wearable (defaults to common if rarity is missing/invalid)
+ */
+function getRarityOrder(rarity: string | undefined | null): number {
+  if (!rarity) return RARITY_ORDER.common;
+  const normalized = rarity.toLowerCase() as RarityTier;
+  return RARITY_ORDER[normalized] || RARITY_ORDER.common;
+}
+
+/**
+ * Check if a wearable meets the rarity ceiling requirement
+ */
+function meetsRarityCeiling(
+  wearable: Wearable,
+  highestAllowedRarity: string | undefined
+): boolean {
+  if (!highestAllowedRarity || highestAllowedRarity === "all") {
+    return true;
+  }
+  const wearableRarity = getRarityOrder(wearable.rarity);
+  const maxRarity = RARITY_ORDER[highestAllowedRarity.toLowerCase() as RarityTier] || RARITY_ORDER.godlike;
+  return wearableRarity <= maxRarity;
+}
+
+/**
  * Main entry point for auto-dress engine
  */
 export function autoDress(
@@ -84,6 +124,19 @@ export function autoDress(
 ): AutoDressResult {
   // Initialize context
   const currentEquipped = normalizeEquipped(instance.equippedBySlot);
+  
+  // Filter sets by rarity ceiling: only include sets where ALL wearables meet the requirement
+  const filteredSets = options.highestAllowedRarity && options.highestAllowedRarity !== "all"
+    ? SETS.filter(set => {
+        // Check if all wearables in the set meet the rarity requirement
+        return set.requiredWearableIds.every(wearableId => {
+          const wearable = wearablesById.get(wearableId);
+          if (!wearable) return false; // If wearable not found, exclude set
+          return meetsRarityCeiling(wearable, options.highestAllowedRarity);
+        });
+      })
+    : SETS;
+  
   const context: AutoDressContext = {
     instance,
     baseTraits: instance.baseGotchi.numericTraits,
@@ -92,7 +145,7 @@ export function autoDress(
     ownedWearables,
     availCounts,
     wearablesById,
-    sets: SETS,
+    sets: filteredSets,
     blocksElapsed: instance.baseGotchi.blocksElapsed,
     options,
     maxUsableCounts: new Map(),
@@ -124,11 +177,28 @@ export function autoDress(
   context.baselineBrs = currentEval.totalBrs;
 
   // Build "nakey baseline" start state: all unlocked slots are 0, locked slots keep current equipped
+  // Also enforce rarity cap: strip illegal wearables from unlocked slots
   const startEquipped = [...currentEquipped];
+  let hadIllegalWearables = false;
+  
   for (let slot = 0; slot < SLOT_COUNT; slot++) {
-    if (!lockedSlots.has(slot)) {
-      startEquipped[slot] = 0;
+    if (lockedSlots.has(slot)) {
+      // Locked slots are always respected, even if above rarity cap
+      continue;
     }
+    
+    // Unlocked slots: set to 0 (nakey baseline)
+    // Also check if we're removing an illegal rarity wearable
+    const currentWearableId = currentEquipped[slot] || 0;
+    if (currentWearableId !== 0) {
+      const wearable = wearablesById.get(currentWearableId);
+      if (wearable && options.highestAllowedRarity && options.highestAllowedRarity !== "all") {
+        if (!meetsRarityCeiling(wearable, options.highestAllowedRarity)) {
+          hadIllegalWearables = true;
+        }
+      }
+    }
+    startEquipped[slot] = 0;
   }
 
   // Dev-only check: ensure locked slots are preserved in start state
@@ -226,7 +296,7 @@ export function autoDress(
     : 0;
 
   // Generate explanation
-  const explanation = generateExplanation(context, currentEval, finalEval, finalState);
+  const explanation = generateExplanation(context, currentEval, finalEval, finalState, hadIllegalWearables);
 
   // Sanity check (dev only)
   if (process.env.NODE_ENV === "development") {
@@ -311,6 +381,11 @@ function precomputeUsableWearables(context: AutoDressContext): void {
     
     const wearable = context.wearablesById.get(id);
     if (!wearable) continue;
+    
+    // Apply rarity ceiling filter
+    if (!meetsRarityCeiling(wearable, context.options.highestAllowedRarity)) {
+      continue;
+    }
 
     // Find valid slots for this wearable
     const validSlots: number[] = [];
@@ -903,7 +978,8 @@ function generateExplanation(
   context: AutoDressContext,
   currentEval: Evaluation,
   finalEval: Evaluation,
-  finalState: BuildState
+  finalState: BuildState,
+  hadIllegalWearables: boolean = false
 ): string {
   const parts: string[] = [];
   const brsDelta = finalEval.totalBrs - currentEval.totalBrs;
@@ -969,6 +1045,17 @@ function generateExplanation(
     parts.push(`respec applied (${items.join(", ")} • moved ${moved})`);
   }
 
+  // Add rarity cap info if active
+  if (context.options.highestAllowedRarity && context.options.highestAllowedRarity !== "all") {
+    const rarityLabel = context.options.highestAllowedRarity.charAt(0).toUpperCase() + context.options.highestAllowedRarity.slice(1);
+    parts.push(`Rarity cap applied: ≤ ${rarityLabel}`);
+  }
+
+  // Add note if illegal wearables were removed
+  if (hadIllegalWearables) {
+    parts.push("Higher-rarity wearables were removed to meet the selected rarity cap");
+  }
+
   if (parts.length === 0) {
     return "Mommy applied an optimized build";
   }
@@ -1006,6 +1093,24 @@ function validateState(context: AutoDressContext, state: BuildState): void {
         throw new Error(
           `[autoDressEngine] Wearable ${wearableId} is reserved by locked gotchis and must not be used`
         );
+      }
+    }
+  }
+
+  // DEV-only: Check rarity ceiling violation in final build
+  if (import.meta.env.DEV && context.options.highestAllowedRarity && context.options.highestAllowedRarity !== "all") {
+    for (const wearableId of state.equipped) {
+      if (wearableId && wearableId !== 0) {
+        const wearable = context.wearablesById.get(wearableId);
+        if (wearable) {
+          const wearableRarity = getRarityOrder(wearable.rarity);
+          const maxRarity = RARITY_ORDER[context.options.highestAllowedRarity.toLowerCase() as RarityTier] || RARITY_ORDER.godlike;
+          if (wearableRarity > maxRarity) {
+            throw new Error(
+              `[autoDressEngine] Mommy violated rarity cap in final build: wearable ${wearableId} (${wearable.rarity || "unknown"}, order ${wearableRarity}) exceeds ${context.options.highestAllowedRarity} (order ${maxRarity})`
+            );
+          }
+        }
       }
     }
   }

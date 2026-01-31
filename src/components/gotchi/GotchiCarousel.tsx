@@ -3,7 +3,7 @@ import { useAppStore } from "@/state/useAppStore";
 import { computeInstanceTraits, useSortedGotchis, useWearablesById } from "@/state/selectors";
 import { GotchiCard } from "./GotchiCard";
 import { Button } from "@/ui/button";
-import { ChevronLeft, ChevronRight, Lock, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, Unlock, X } from "lucide-react";
 import { GotchiSearch } from "./GotchiSearch";
 import type { Gotchi } from "@/types";
 
@@ -22,8 +22,10 @@ export function GotchiCarousel({
 }: GotchiCarouselProps) {
   const walletGotchis = useSortedGotchis();
   const addEditorInstance = useAppStore((state) => state.addEditorInstance);
-  const lockedById = useAppStore((state) => state.lockedById);
   const overridesById = useAppStore((state) => state.overridesById);
+  const isLockSetEnabled = useAppStore((state) => state.isLockSetEnabled);
+  const toggleLockSet = useAppStore((state) => state.toggleLockSet);
+  const setLockSetEnabledBulk = useAppStore((state) => state.setLockSetEnabledBulk);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -63,6 +65,29 @@ export function GotchiCarousel({
 
   const isManualGotchi = (id: string) => !walletGotchiIds.has(id) && manualGotchis.some((g) => g.id === id);
 
+  const handleToggleLock = (gotchi: Gotchi, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const override = {
+      wearablesBySlot: [...gotchi.equippedWearables],
+      respecAllocated: null,
+      timestamp: Date.now(),
+    };
+    toggleLockSet(gotchi.id, override);
+  };
+
+  const handleLockAll = () => {
+    const gotchiIds = gotchis.map(g => g.id);
+    setLockSetEnabledBulk(gotchiIds, true);
+  };
+
+  const handleUnlockAll = () => {
+    const gotchiIds = gotchis.map(g => g.id);
+    setLockSetEnabledBulk(gotchiIds, false);
+  };
+
+  const allLocked = gotchis.length > 0 && gotchis.every(g => isLockSetEnabled(g.id));
+  const anyLocked = gotchis.some(g => isLockSetEnabled(g.id));
+
   return (
     <div className="border-b bg-muted/50">
       {onAddManualGotchi && (
@@ -73,7 +98,31 @@ export function GotchiCarousel({
           No gotchis found
         </div>
       ) : (
-        <div className="flex items-center gap-2 p-2">
+        <>
+          {/* Lock All / Unlock All controls */}
+          <div className="flex items-center justify-end gap-2 px-2 py-1 border-b">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto py-1 px-2 text-[10px]"
+              onClick={handleLockAll}
+              disabled={allLocked}
+            >
+              <Lock className="h-3 w-3 mr-1" />
+              Lock All
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto py-1 px-2 text-[10px]"
+              onClick={handleUnlockAll}
+              disabled={!anyLocked}
+            >
+              <Unlock className="h-3 w-3 mr-1" />
+              Unlock All
+            </Button>
+          </div>
+          <div className="flex items-center gap-2 p-2">
           <Button
             variant="ghost"
             size="icon"
@@ -114,7 +163,7 @@ export function GotchiCarousel({
             }}
           >
             {gotchis.map((gotchi) => {
-              const isLocked = !!lockedById[gotchi.id];
+              const isLocked = isLockSetEnabled(gotchi.id);
               const isManual = isManualGotchi(gotchi.id);
               const override = isLocked ? overridesById[gotchi.id] : null;
               const displayEquipped = override?.wearablesBySlot || gotchi.equippedWearables;
@@ -145,11 +194,18 @@ export function GotchiCarousel({
                   className={`snap-start flex-shrink-0 relative ${isManual ? "ring-2 ring-purple-500 rounded-lg" : ""}`}
                   data-testid="gotchi-card"
                 >
-                  {isLocked && (
-                    <div className="absolute top-1 right-1 z-10 bg-amber-500 text-white rounded-full p-0.5" title="Locked build - wearables reserved">
-                      <Lock className="h-3 w-3" />
-                    </div>
-                  )}
+                  {/* Lock/Unlock toggle icon */}
+                  <button
+                    className={`absolute top-1 right-1 z-10 rounded-full p-0.5 transition-colors ${
+                      isLocked
+                        ? "bg-amber-500 text-white hover:bg-amber-600"
+                        : "bg-muted/80 text-muted-foreground hover:bg-muted"
+                    }`}
+                    title={isLocked ? "Lock Set (exclude equipped wearables)" : "Unlock Set (allow equipped wearables)"}
+                    onClick={(e) => handleToggleLock(gotchi, e)}
+                  >
+                    {isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+                  </button>
                   {isManual && onRemoveManualGotchi && (
                     <button
                       className="absolute top-1 left-1 z-10 bg-destructive text-white rounded-full p-0.5 hover:bg-destructive/80"
@@ -187,6 +243,7 @@ export function GotchiCarousel({
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
+        </>
       )}
     </div>
   );

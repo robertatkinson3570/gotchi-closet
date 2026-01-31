@@ -36,8 +36,8 @@ export function EditorPanel() {
   const stripAllWearables = useAppStore((state) => state.stripAllWearables);
   const restoreOriginalWearables = useAppStore((state) => state.restoreOriginalWearables);
   const lockedById = useAppStore((state) => state.lockedById);
-  const lockGotchi = useAppStore((state) => state.lockGotchi);
-  const unlockGotchi = useAppStore((state) => state.unlockGotchi);
+  const isLockSetEnabled = useAppStore((state) => state.isLockSetEnabled);
+  const toggleLockSet = useAppStore((state) => state.toggleLockSet);
   const updateEditorInstance = useAppStore((state) => state.updateEditorInstance);
   const { availCountsWithLocked } = useWearableInventory();
   const [mommyModalInstanceId, setMommyModalInstanceId] = useState<string | null>(null);
@@ -241,12 +241,19 @@ export function EditorPanel() {
                           </div>
                         )}
                       </div>
-                      {lockedById[instance.baseGotchi.id] ? (
+                      {isLockSetEnabled(instance.baseGotchi.id) ? (
                         <Button
                           variant="outline"
                           size="sm"
                           className="h-auto py-1 px-1.5 text-[9px] flex-col leading-tight border-amber-500/50 bg-amber-500/10"
-                          onClick={() => unlockGotchi(instance.baseGotchi.id)}
+                          onClick={() => {
+                            const override: LockedOverride = {
+                              wearablesBySlot: [...instance.equippedBySlot],
+                              respecAllocated: null,
+                              timestamp: Date.now(),
+                            };
+                            toggleLockSet(instance.baseGotchi.id, override);
+                          }}
                         >
                           <span className="flex items-center gap-0.5">
                             <Unlock className="h-3 w-3" />
@@ -265,7 +272,7 @@ export function EditorPanel() {
                               respecAllocated: null,
                               timestamp: Date.now(),
                             };
-                            lockGotchi(instance.baseGotchi.id, override);
+                            toggleLockSet(instance.baseGotchi.id, override);
                           }}
                         >
                           <span className="flex items-center gap-0.5">

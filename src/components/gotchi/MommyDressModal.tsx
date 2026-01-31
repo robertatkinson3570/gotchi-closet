@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { X, Sparkles, Shapes, Zap } from "lucide-react";
 import { Button } from "@/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { autoDress, type AutoDressGoal, type AutoDressOptions, type AutoDressResult } from "@/lib/autoDressEngine";
 import type { EditorInstance, Wearable } from "@/types";
 import type { WearableCounts } from "@/state/selectors";
@@ -30,21 +31,21 @@ export function MommyDressModal({
 }: MommyDressModalProps) {
   const [goal, setGoal] = useState<AutoDressGoal>("maximizeBRS");
   const [traitShapeType, setTraitShapeType] = useState<"oneDominant" | "twoEqual" | "balanced">("balanced");
+  const [highestAllowedRarity, setHighestAllowedRarity] = useState<"all" | "godlike" | "mythical" | "legendary" | "rare" | "uncommon" | "common">("all");
   const [isRunning, setIsRunning] = useState(false);
   const { toast } = useToast();
 
   const options: AutoDressOptions = useMemo(() => {
-    if (goal === "traitShape") {
-      return {
-        goal: "traitShape",
-        traitShapeType,
-        aggressiveRespectChanges: true,
-      };
-    }
-    return {
-      goal: "maximizeBRS",
+    const baseOptions: AutoDressOptions = {
+      goal: goal === "traitShape" ? "traitShape" : "maximizeBRS",
+      highestAllowedRarity: highestAllowedRarity !== "all" ? highestAllowedRarity : undefined,
     };
-  }, [goal, traitShapeType]);
+    if (goal === "traitShape") {
+      baseOptions.traitShapeType = traitShapeType;
+      baseOptions.aggressiveRespectChanges = true;
+    }
+    return baseOptions;
+  }, [goal, traitShapeType, highestAllowedRarity]);
 
   const handleApply = async () => {
     setIsRunning(true);
@@ -231,6 +232,33 @@ export function MommyDressModal({
               </div>
             </div>
           )}
+
+          {/* Highest Allowed Wearable Rarity */}
+          <div className="mb-6">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">
+              Highest Allowed Wearable Rarity
+            </label>
+            <Select
+              value={highestAllowedRarity}
+              onValueChange={(value) => setHighestAllowedRarity(value as typeof highestAllowedRarity)}
+            >
+              <SelectTrigger className="w-full rounded-xl border-border/50 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="godlike">Godlike</SelectItem>
+                <SelectItem value="mythical">Mythical</SelectItem>
+                <SelectItem value="legendary">Legendary</SelectItem>
+                <SelectItem value="rare">Rare</SelectItem>
+                <SelectItem value="uncommon">Uncommon</SelectItem>
+                <SelectItem value="common">Common</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-[10px] text-muted-foreground mt-1.5">
+              Limits Mommy to using wearables and sets at or below the selected rarity.
+            </p>
+          </div>
 
           {/* Action Buttons */}
           <div className="flex gap-3">

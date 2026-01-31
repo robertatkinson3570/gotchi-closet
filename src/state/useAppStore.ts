@@ -69,6 +69,11 @@ interface AppState {
   lockGotchi: (gotchiId: string, override: LockedOverride) => void;
   unlockGotchi: (gotchiId: string) => void;
   loadLockedBuildsFromStorage: () => void;
+  // Lock Set helpers (shared API for editor and selector)
+  isLockSetEnabled: (gotchiId: string) => boolean;
+  setLockSetEnabled: (gotchiId: string, enabled: boolean, override?: LockedOverride) => void;
+  toggleLockSet: (gotchiId: string, override?: LockedOverride) => void;
+  setLockSetEnabledBulk: (gotchiIds: string[], enabled: boolean) => void;
 }
 
 const getInitialWearableMode = (): WearableMode => {
@@ -331,6 +336,83 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!state.loadedAddress) return;
     const data = loadLockedBuilds(BASE_CHAIN_ID, state.loadedAddress);
     set({ lockedById: data.lockedById, overridesById: data.overridesById });
+  },
+
+  // Lock Set helpers (shared API for editor and selector)
+  isLockSetEnabled: (gotchiId: string) => {
+    return !!get().lockedById[gotchiId];
+  },
+
+  setLockSetEnabled: (gotchiId: string, enabled: boolean, override?: LockedOverride) => {
+    if (enabled) {
+      // If override not provided, try to get from existing override or create minimal one
+      const state = get();
+      const existingOverride = state.overridesById[gotchiId];
+      const finalOverride = override || existingOverride || {
+        wearablesBySlot: [],
+        respecAllocated: null,
+        timestamp: Date.now(),
+      };
+      get().lockGotchi(gotchiId, finalOverride);
+    } else {
+      get().unlockGotchi(gotchiId);
+    }
+  },
+
+  toggleLockSet: (gotchiId: string, override?: LockedOverride) => {
+    const state = get();
+    const isCurrentlyLocked = !!state.lockedById[gotchiId];
+    if (isCurrentlyLocked) {
+      get().unlockGotchi(gotchiId);
+    } else {
+      // If override not provided, try to get from existing override or create minimal one
+      const existingOverride = state.overridesById[gotchiId];
+      const finalOverride = override || existingOverride || {
+        wearablesBySlot: [],
+        respecAllocated: null,
+        timestamp: Date.now(),
+      };
+      get().lockGotchi(gotchiId, finalOverride);
+    }
+  },
+
+  setLockSetEnabledBulk: (gotchiIds: string[], enabled: boolean) => {
+    const state = get();
+    const newLockedById = { ...state.lockedById };
+    const newOverridesById = { ...state.overridesById };
+    
+    if (enabled) {
+      // Lock all: create overrides for gotchis that don't have them
+      for (const gotchiId of gotchiIds) {
+        if (!newLockedById[gotchiId]) {
+          newLockedById[gotchiId] = true;
+          // Try to get equipped wearables from gotchis array
+          const gotchi = state.gotchis.find(g => g.id === gotchiId);
+          if (gotchi && !newOverridesById[gotchiId]) {
+            newOverridesById[gotchiId] = {
+              wearablesBySlot: [...gotchi.equippedWearables],
+              respecAllocated: null,
+              timestamp: Date.now(),
+            };
+          }
+        }
+      }
+    } else {
+      // Unlock all
+      for (const gotchiId of gotchiIds) {
+        delete newLockedById[gotchiId];
+        delete newOverridesById[gotchiId];
+      }
+    }
+    
+    set({ lockedById: newLockedById, overridesById: newOverridesById });
+    if (state.loadedAddress) {
+      saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, {
+        version: 1,
+        lockedById: newLockedById,
+        overridesById: newOverridesById,
+      });
+    }
   },
 }));
 
