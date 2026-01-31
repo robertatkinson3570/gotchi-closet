@@ -21,28 +21,6 @@ function normalizeEquipped(equipped: number[]): number[] {
   return normalized;
 }
 
-// Helper functions for computing trait metrics
-function computeVariance(traits: number[]): number {
-  if (traits.length === 0) return 0;
-  const mean = traits.reduce((sum, v) => sum + v, 0) / traits.length;
-  const variance = traits.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / traits.length;
-  return variance;
-}
-
-function getTopTwoTraits(traits: number[]): { t1: number; t2: number; diff: number } {
-  const sorted = [...traits].sort((a, b) => b - a);
-  const t1 = sorted[0] || 0;
-  const t2 = sorted[1] || 0;
-  return { t1, t2, diff: Math.abs(t1 - t2) };
-}
-
-function getDominanceGap(traits: number[]): { max: number; gap: number } {
-  const max = Math.max(...traits);
-  const sorted = [...traits].sort((a, b) => b - a);
-  const others = sorted.slice(1);
-  const avgOthers = others.length > 0 ? others.reduce((sum, v) => sum + v, 0) / others.length : 0;
-  return { max, gap: max - avgOthers };
-}
 
 
 export function EditorPanel() {
@@ -315,159 +293,113 @@ export function EditorPanel() {
                         wearablesById,
                         blocksElapsed: instance.baseGotchi.blocksElapsed,
                       });
-                      const currentTraits = currentTraitsEval.finalTraits.slice(0, 4); // NRG, AGG, SPK, BRN
                       const currentActiveSets = currentTraitsEval.activeSets;
                       
                       return (
                         <>
                           {mommyResultForInstance && (
-                            <div className="mb-2 p-2 bg-purple-500/10 border border-purple-500/30 rounded-md text-sm">
-                              {/* Header */}
-                              <div className="font-medium mb-2">🍼 Mommy applied a build</div>
-                              
-                              {/* Strategy block - two lines */}
-                              {mommyOptionsForInstance && (
-                                <div className="mb-2">
-                                  {mommyOptionsForInstance.goal === "maximizeBRS" ? (
-                                    <>
-                                      <div className="text-xs font-semibold">Maximize BRS</div>
-                                      <div className="text-xs text-muted-foreground">Rarity Score</div>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <div className="text-xs font-semibold">Trait Sculptor ✨</div>
-                                      <div className="text-xs text-muted-foreground">
-                                        {mommyOptionsForInstance.traitShapeType === "oneDominant" ? "One Dominant" :
-                                         mommyOptionsForInstance.traitShapeType === "twoEqual" ? "Two Equal" :
-                                         "Balanced"}
+                            <div className="mb-3 rounded-xl overflow-hidden">
+                              {/* Gradient border wrapper */}
+                              <div className="p-[1px] bg-gradient-to-br from-purple-500/40 via-fuchsia-500/30 to-violet-600/40 rounded-xl">
+                                <div className="bg-gradient-to-br from-background via-background to-purple-950/20 rounded-xl p-3">
+                                  {/* Header with icon */}
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-fuchsia-600 shadow-md shadow-purple-500/20">
+                                      <span className="text-xs">👶</span>
+                                    </div>
+                                    <span className="text-sm font-semibold bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
+                                      Build Applied
+                                    </span>
+                                  </div>
+                                  
+                                  {/* Strategy & Results Grid */}
+                                  <div className="grid grid-cols-2 gap-2 mb-3">
+                                    {/* Strategy Card */}
+                                    {mommyOptionsForInstance && (
+                                      <div className="p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Strategy</div>
+                                        <div className="text-xs font-medium text-purple-400">
+                                          {mommyOptionsForInstance.goal === "maximizeBRS" ? "Max BRS" : "Trait Sculptor"}
+                                        </div>
+                                        <div className="text-[10px] text-muted-foreground">
+                                          {mommyOptionsForInstance.goal === "maximizeBRS" 
+                                            ? "Rarity optimized"
+                                            : mommyOptionsForInstance.traitShapeType === "oneDominant" ? "Dominant" 
+                                            : mommyOptionsForInstance.traitShapeType === "twoEqual" ? "Dual traits" 
+                                            : "Balanced"}
+                                        </div>
                                       </div>
-                                    </>
+                                    )}
+                                    
+                                    {/* Results Card */}
+                                    <div className="p-2.5 rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/20">
+                                      {(() => {
+                                        let finalBaseTraits = instance.baseGotchi.numericTraits;
+                                        if (mommyResultForInstance.respecAllocated) {
+                                          finalBaseTraits = [...instance.baseGotchi.numericTraits];
+                                          for (let i = 0; i < 4; i++) {
+                                            finalBaseTraits[i] = Math.max(0, Math.min(99, finalBaseTraits[i] + (mommyResultForInstance.respecAllocated[i] || 0)));
+                                          }
+                                        }
+                                        
+                                        const finalTraitsEval = computeInstanceTraits({
+                                          baseTraits: finalBaseTraits,
+                                          modifiedNumericTraits: isBaseEquipment && !mommyResultForInstance.respecAllocated
+                                            ? instance.baseGotchi.modifiedNumericTraits
+                                            : undefined,
+                                          withSetsNumericTraits: isBaseEquipment && !mommyResultForInstance.respecAllocated
+                                            ? instance.baseGotchi.withSetsNumericTraits
+                                            : undefined,
+                                          equippedBySlot: mommyResultForInstance.equippedWearables,
+                                          wearablesById,
+                                          blocksElapsed: instance.baseGotchi.blocksElapsed,
+                                        });
+                                        const finalActiveSets = finalTraitsEval.activeSets;
+                                        const brsDelta = mommyResultForInstance.brsDelta || 0;
+                                        const setDelta = finalActiveSets.length - currentActiveSets.length;
+                                        
+                                        return (
+                                          <>
+                                            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Result</div>
+                                            <div className="text-xs font-medium text-fuchsia-400">
+                                              +{brsDelta.toFixed(1)} BRS
+                                            </div>
+                                            <div className="text-[10px] text-muted-foreground">
+                                              {setDelta > 0 ? `${setDelta} set${setDelta > 1 ? 's' : ''} active` : "Optimized"}
+                                            </div>
+                                          </>
+                                        );
+                                      })()}
+                                    </div>
+                                  </div>
+                              
+                                  {/* Trait Changes */}
+                                  {mommyResultForInstance.traitDeltas && mommyResultForInstance.traitDeltas.slice(0, 4).some(d => Math.abs(d) >= 0.1) && (
+                                    <div className="pt-2 border-t border-purple-500/15">
+                                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Trait Changes</div>
+                                      <div className="flex gap-1.5 flex-wrap">
+                                        {mommyResultForInstance.traitDeltas.slice(0, 4).map((delta, i) => {
+                                          if (Math.abs(delta) < 0.1) return null;
+                                          const traitNames = ["NRG", "AGG", "SPK", "BRN"];
+                                          const isPositive = delta > 0;
+                                          return (
+                                            <span
+                                              key={i}
+                                              className={`px-2 py-1 rounded-md text-[11px] font-medium ${
+                                                isPositive 
+                                                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25" 
+                                                  : "bg-rose-500/15 text-rose-400 border border-rose-500/25"
+                                              }`}
+                                            >
+                                              {isPositive ? "+" : ""}{delta.toFixed(0)} {traitNames[i]}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
                                   )}
                                 </div>
-                              )}
-                              
-                              {/* Result summary - two lines */}
-                              <div className="mb-2">
-                                {(() => {
-                                  // Compute final traits from Mommy result, accounting for respec if applied
-                                  // Use the engine's result equippedWearables (not instance.equippedBySlot which may have changed)
-                                  let finalBaseTraits = instance.baseGotchi.numericTraits;
-                                  if (mommyResultForInstance.respecAllocated) {
-                                    finalBaseTraits = [...instance.baseGotchi.numericTraits];
-                                    for (let i = 0; i < 4; i++) {
-                                      finalBaseTraits[i] = Math.max(0, Math.min(99, finalBaseTraits[i] + (mommyResultForInstance.respecAllocated[i] || 0)));
-                                    }
-                                  }
-                                  
-                                  const finalTraitsEval = computeInstanceTraits({
-                                    baseTraits: finalBaseTraits,
-                                    modifiedNumericTraits: isBaseEquipment && !mommyResultForInstance.respecAllocated
-                                      ? instance.baseGotchi.modifiedNumericTraits
-                                      : undefined,
-                                    withSetsNumericTraits: isBaseEquipment && !mommyResultForInstance.respecAllocated
-                                      ? instance.baseGotchi.withSetsNumericTraits
-                                      : undefined,
-                                    equippedBySlot: mommyResultForInstance.equippedWearables,
-                                    wearablesById,
-                                    blocksElapsed: instance.baseGotchi.blocksElapsed,
-                                  });
-                                  const editableTraits = finalTraitsEval.finalTraits.slice(0, 4);
-                                  const finalActiveSets = finalTraitsEval.activeSets;
-                                  const brsDelta = mommyResultForInstance.brsDelta || 0;
-                                  
-                                  if (!mommyOptionsForInstance) {
-                                    return (
-                                      <>
-                                        <div className="text-xs font-medium mb-0.5">{mommyResultForInstance.explanation}</div>
-                                      </>
-                                    );
-                                  }
-                                  
-                                  if (mommyOptionsForInstance.goal === "maximizeBRS") {
-                                    const setDelta = finalActiveSets.length - currentActiveSets.length;
-                                    return (
-                                      <>
-                                        <div className="text-xs font-medium mb-0.5">
-                                          {setDelta > 0 ? `BRS optimized · ${setDelta} set${setDelta > 1 ? 's' : ''} activated` : "BRS optimized"}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                          BRS +{brsDelta.toFixed(1)}
-                                        </div>
-                                      </>
-                                    );
-                                  }
-                                  
-                                  if (mommyOptionsForInstance.goal === "traitShape") {
-                                    const shapeType = mommyOptionsForInstance.traitShapeType || "balanced";
-                                    
-                                    if (shapeType === "balanced") {
-                                      const varBefore = computeVariance(currentTraits);
-                                      const varAfter = computeVariance(editableTraits);
-                                      return (
-                                        <>
-                                          <div className="text-xs font-medium mb-0.5">Balanced traits achieved</div>
-                                          <div className="text-xs text-muted-foreground">
-                                            Variance {varBefore.toFixed(2)} → {varAfter.toFixed(2)}   •   BRS +{brsDelta.toFixed(1)}
-                                          </div>
-                                        </>
-                                      );
-                                    }
-                                    
-                                    if (shapeType === "twoEqual") {
-                                      const before = getTopTwoTraits(currentTraits);
-                                      const after = getTopTwoTraits(editableTraits);
-                                      return (
-                                        <>
-                                          <div className="text-xs font-medium mb-0.5">Top two traits aligned</div>
-                                          <div className="text-xs text-muted-foreground">
-                                            Top two {before.t2} → {after.t2}   •   Gap {before.diff} → {after.diff}   •   BRS +{brsDelta.toFixed(1)}
-                                          </div>
-                                        </>
-                                      );
-                                    }
-                                    
-                                    if (shapeType === "oneDominant") {
-                                      const before = getDominanceGap(currentTraits);
-                                      const after = getDominanceGap(editableTraits);
-                                      return (
-                                        <>
-                                          <div className="text-xs font-medium mb-0.5">Dominant trait maximized</div>
-                                          <div className="text-xs text-muted-foreground">
-                                            Dominant {before.max} → {after.max}   •   Gap {before.gap.toFixed(1)} → {after.gap.toFixed(1)}   •   BRS +{brsDelta.toFixed(1)}
-                                          </div>
-                                        </>
-                                      );
-                                    }
-                                  }
-                                  
-                                  return (
-                                    <>
-                                      <div className="text-xs font-medium mb-0.5">{mommyResultForInstance.explanation}</div>
-                                    </>
-                                  );
-                                })()}
                               </div>
-                              
-                              {/* Changes section */}
-                              {mommyResultForInstance.traitDeltas && mommyResultForInstance.traitDeltas.slice(0, 4).some(d => Math.abs(d) >= 0.1) && (
-                                <div className="mt-2 pt-2 border-t border-purple-500/20">
-                                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Changes</div>
-                                  <div className="flex gap-2 text-xs flex-wrap">
-                                    {mommyResultForInstance.traitDeltas.slice(0, 4).map((delta, i) => {
-                                      if (Math.abs(delta) < 0.1) return null;
-                                      const traitNames = ["NRG", "AGG", "SPK", "BRN"];
-                                      return (
-                                        <span
-                                          key={i}
-                                          className={delta > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}
-                                        >
-                                          {delta > 0 ? "+" : ""}{delta.toFixed(0)} {traitNames[i]}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
                             </div>
                           )}
                           <GotchiCard

@@ -1,9 +1,7 @@
 import { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { X, Baby, Sparkles, Shapes } from "lucide-react";
+import { X, Sparkles, Shapes, Zap } from "lucide-react";
 import { Button } from "@/ui/button";
-import { Label } from "@/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/ui/radio-group";
 import { autoDress, type AutoDressGoal, type AutoDressOptions, type AutoDressResult } from "@/lib/autoDressEngine";
 import type { EditorInstance, Wearable } from "@/types";
 import type { WearableCounts } from "@/state/selectors";
@@ -40,7 +38,7 @@ export function MommyDressModal({
       return {
         goal: "traitShape",
         traitShapeType,
-        aggressiveRespectChanges: true, // Always use aggressive respect for Trait Shape
+        aggressiveRespectChanges: true,
       };
     }
     return {
@@ -64,7 +62,6 @@ export function MommyDressModal({
         onApply(result, options);
         onClose();
       } else {
-        // Close modal and notify parent to show inline message
         onClose();
         onNoImprovement?.();
       }
@@ -80,85 +77,189 @@ export function MommyDressModal({
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop with blur */}
       <div
-        className="fixed inset-0 bg-background/80 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/60 backdrop-blur-md"
         onClick={onClose}
       />
-      <div className="relative z-50 w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-background border rounded-lg shadow-lg p-6 m-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Baby className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">🍼 Mommy Dress Me™</h2>
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+      
+      {/* Modal Container */}
+      <div className="relative z-50 w-full max-w-md overflow-hidden">
+        {/* Gradient border effect */}
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/30 via-fuchsia-500/20 to-violet-600/30 p-[1px]">
+          <div className="h-full w-full rounded-2xl bg-background" />
         </div>
-
-        <p className="text-sm text-muted-foreground mb-6">
-          Auto-dress using your owned wearables. No on-chain changes.
-        </p>
-
-        {/* Section 1: Select Goal */}
-        <div className="mb-6">
-          <Label className="text-base font-medium mb-3 block">Select Goal</Label>
-          <RadioGroup value={goal} onValueChange={(value) => setGoal(value as AutoDressGoal)}>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted/50">
-                <RadioGroupItem value="maximizeBRS" id="goal-brs" />
-                <Label htmlFor="goal-brs" className="flex-1 cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    <span>Maximize BRS (Rarity Score)</span>
-                  </div>
-                </Label>
+        
+        {/* Content */}
+        <div className="relative rounded-2xl bg-gradient-to-br from-background via-background to-purple-950/10 p-6 shadow-2xl shadow-purple-900/20">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 shadow-lg shadow-purple-500/30">
+                <span className="text-lg">👶</span>
               </div>
-              <div className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted/50">
-                <RadioGroupItem value="traitShape" id="goal-shape" />
-                <Label htmlFor="goal-shape" className="flex-1 cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <Shapes className="h-4 w-4" />
-                    <span>Trait Sculptor ✨</span>
-                  </div>
-                </Label>
+              <div>
+                <h2 className="text-lg font-semibold bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
+                  Mommy Dress Me
+                </h2>
+                <p className="text-xs text-muted-foreground">Auto-optimize your Gotchi</p>
               </div>
             </div>
-          </RadioGroup>
-        </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onClose}
+              className="h-8 w-8 rounded-lg hover:bg-purple-500/10"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
 
-        {/* Section 2: Goal Options */}
-        <div className="mb-6 space-y-4">
-          {goal === "traitShape" && (
-            <>
-              <RadioGroup value={traitShapeType} onValueChange={(value) => setTraitShapeType(value as "oneDominant" | "twoEqual" | "balanced")}>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2 p-2 border rounded-md">
-                    <RadioGroupItem value="oneDominant" id="shape-dominant" />
-                    <Label htmlFor="shape-dominant" className="cursor-pointer">One Dominant Trait</Label>
+          {/* Goal Selection */}
+          <div className="space-y-3 mb-6">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Select Strategy
+            </div>
+            
+            {/* Maximize BRS Option */}
+            <button
+              onClick={() => setGoal("maximizeBRS")}
+              className={`w-full p-4 rounded-xl border transition-all duration-200 text-left group ${
+                goal === "maximizeBRS"
+                  ? "border-purple-500/50 bg-purple-500/10 shadow-lg shadow-purple-500/10"
+                  : "border-border hover:border-purple-500/30 hover:bg-purple-500/5"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all ${
+                  goal === "maximizeBRS"
+                    ? "bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white shadow-md"
+                    : "bg-muted/50 text-muted-foreground group-hover:bg-purple-500/20"
+                }`}>
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <div className="flex-1">
+                  <div className={`font-medium ${goal === "maximizeBRS" ? "text-purple-400" : ""}`}>
+                    Maximize BRS
                   </div>
-                  <div className="flex items-center space-x-2 p-2 border rounded-md">
-                    <RadioGroupItem value="twoEqual" id="shape-two" />
-                    <Label htmlFor="shape-two" className="cursor-pointer">Two Equal Traits</Label>
-                  </div>
-                  <div className="flex items-center space-x-2 p-2 border rounded-md">
-                    <RadioGroupItem value="balanced" id="shape-balanced" />
-                    <Label htmlFor="shape-balanced" className="cursor-pointer">Balanced</Label>
+                  <div className="text-xs text-muted-foreground">
+                    Optimize for highest rarity score
                   </div>
                 </div>
-              </RadioGroup>
-            </>
-          )}
-        </div>
+                <div className={`h-4 w-4 rounded-full border-2 transition-all ${
+                  goal === "maximizeBRS"
+                    ? "border-purple-500 bg-purple-500"
+                    : "border-muted-foreground/30"
+                }`}>
+                  {goal === "maximizeBRS" && (
+                    <div className="h-full w-full rounded-full bg-white scale-50" />
+                  )}
+                </div>
+              </div>
+            </button>
 
-        {/* Actions */}
-        <div className="flex gap-2 justify-end pt-4 border-t">
-          <Button variant="outline" onClick={onClose} disabled={isRunning}>
-            Cancel
-          </Button>
-          <Button onClick={handleApply} disabled={isRunning}>
-            {isRunning ? "Dressing..." : "Apply Mommy's Build"}
-          </Button>
+            {/* Trait Sculptor Option */}
+            <button
+              onClick={() => setGoal("traitShape")}
+              className={`w-full p-4 rounded-xl border transition-all duration-200 text-left group ${
+                goal === "traitShape"
+                  ? "border-fuchsia-500/50 bg-fuchsia-500/10 shadow-lg shadow-fuchsia-500/10"
+                  : "border-border hover:border-fuchsia-500/30 hover:bg-fuchsia-500/5"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all ${
+                  goal === "traitShape"
+                    ? "bg-gradient-to-br from-fuchsia-500 to-violet-600 text-white shadow-md"
+                    : "bg-muted/50 text-muted-foreground group-hover:bg-fuchsia-500/20"
+                }`}>
+                  <Shapes className="h-4 w-4" />
+                </div>
+                <div className="flex-1">
+                  <div className={`font-medium ${goal === "traitShape" ? "text-fuchsia-400" : ""}`}>
+                    Trait Sculptor
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Shape traits for specific builds
+                  </div>
+                </div>
+                <div className={`h-4 w-4 rounded-full border-2 transition-all ${
+                  goal === "traitShape"
+                    ? "border-fuchsia-500 bg-fuchsia-500"
+                    : "border-muted-foreground/30"
+                }`}>
+                  {goal === "traitShape" && (
+                    <div className="h-full w-full rounded-full bg-white scale-50" />
+                  )}
+                </div>
+              </div>
+            </button>
+          </div>
+
+          {/* Shape Type Options (conditional) */}
+          {goal === "traitShape" && (
+            <div className="mb-6 p-4 rounded-xl bg-fuchsia-500/5 border border-fuchsia-500/20">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                Shape Type
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: "oneDominant", label: "Dominant", desc: "1 max trait" },
+                  { value: "twoEqual", label: "Dual", desc: "2 high traits" },
+                  { value: "balanced", label: "Balanced", desc: "Even spread" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setTraitShapeType(option.value as typeof traitShapeType)}
+                    className={`p-3 rounded-lg border text-center transition-all ${
+                      traitShapeType === option.value
+                        ? "border-fuchsia-500/50 bg-fuchsia-500/15 shadow-md"
+                        : "border-border/50 hover:border-fuchsia-500/30 hover:bg-fuchsia-500/5"
+                    }`}
+                  >
+                    <div className={`text-sm font-medium ${
+                      traitShapeType === option.value ? "text-fuchsia-400" : ""
+                    }`}>
+                      {option.label}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                      {option.desc}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              onClick={onClose} 
+              disabled={isRunning}
+              className="flex-1 h-11 rounded-xl border-border/50 hover:bg-muted/50"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleApply} 
+              disabled={isRunning}
+              className="flex-1 h-11 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 shadow-lg shadow-purple-500/25 border-0"
+            >
+              {isRunning ? (
+                <span className="flex items-center gap-2">
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Optimizing...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  Apply Build
+                </span>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
