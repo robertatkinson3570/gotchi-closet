@@ -140,12 +140,6 @@ export default function DressPage() {
     }
     if (!isLoadingGotchis) {
       setGotchis(combinedGotchis);
-      if (combinedGotchis.length === 0 && (connectedOwner || multiWallets.length > 0)) {
-        toast({
-          title: "No Gotchis Found",
-          description: "These addresses don't own any gotchis",
-        });
-      }
     }
   }, [
     combinedGotchis,

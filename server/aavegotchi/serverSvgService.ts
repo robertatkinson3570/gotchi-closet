@@ -309,6 +309,7 @@ async function fetchAllSvgsParallel(
 }
 
 export async function previewGotchiSvg(input: {
+  tokenId?: number | string; // Add tokenId to make cache keys unique per gotchi
   hauntId: number;
   collateral: string;
   numericTraits: number[];
@@ -316,12 +317,17 @@ export async function previewGotchiSvg(input: {
 }): Promise<string> {
   const normalizedTraits = normalizeTraits(input.numericTraits);
   const normalizedWearables = normalizeWearables(input.wearableIds);
-  const cacheKey = `preview:${hashInputs([
+  
+  // CRITICAL: Include tokenId in cache key to prevent collisions between different gotchis
+  // Even if they have the same traits/wearables, they should have unique SVGs
+  const tokenIdStr = input.tokenId ? String(input.tokenId) : "";
+  const cacheKey = `preview:${tokenIdStr ? `${tokenIdStr}:` : ""}${hashInputs([
     input.hauntId,
     input.collateral,
     normalizedTraits,
     normalizedWearables,
   ])}`;
+  
   const cached = cacheGet(svgCache, cacheKey);
   if (cached) {
     stats.cacheHits += 1;
@@ -343,11 +349,32 @@ export async function previewGotchiSvg(input: {
       cacheSet(svgCache, cacheKey, decoded);
       return decoded;
     }
-  } catch {
-    // fall through
+  } catch (error) {
+    // Log RPC failures to debug why placeholders are being returned
+    console.error(`[previewGotchiSvg] RPC call failed for tokenId=${tokenIdStr}`, {
+      hauntId: input.hauntId,
+      collateral: input.collateral.substring(0, 20) + "...",
+      cacheKey: cacheKey.substring(0, 80) + "...",
+      error: (error as Error).message,
+    });
+    // fall through to placeholder
   }
 
-  const fallback = getPlaceholderSvg(cacheKey);
+  // CRITICAL: Use tokenId directly in placeholder seed to ensure unique placeholders per gotchi
+  // This prevents all gotchis from getting the same placeholder when RPC fails
+  // Use tokenId as the primary seed, not the cacheKey (which might hash to same value)
+  const placeholderSeed = tokenIdStr ? `preview:tokenId:${tokenIdStr}` : cacheKey;
+  const fallback = getPlaceholderSvg(placeholderSeed);
+  
+  // Log when returning placeholder to debug
+  if (process.env.NODE_ENV === "development" || true) {
+    console.log(`[previewGotchiSvg] Returning placeholder for tokenId=${tokenIdStr}`, {
+      cacheKey: cacheKey.substring(0, 80) + "...",
+      placeholderSeed: placeholderSeed.substring(0, 80) + "...",
+      svgLength: fallback.length,
+    });
+  }
+  
   cacheSet(svgCache, cacheKey, fallback);
   return fallback;
 }

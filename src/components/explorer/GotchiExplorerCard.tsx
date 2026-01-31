@@ -1,9 +1,11 @@
-import { memo, useState, useRef, useEffect } from "react";
+import { memo, useState, useRef, useEffect, useMemo } from "react";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { getRarityTier } from "@/lib/explorer/filters";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { GotchiInfoOverlay } from "./GotchiInfoOverlay";
 import { Info } from "lucide-react";
+import { prefetchGotchiSvg } from "@/components/gotchi/GotchiSvg";
+import { isGotchiRenderReady } from "@/lib/explorer/gotchiReady";
 
 type EyeRarities = {
   shape: number | null;
@@ -17,7 +19,7 @@ type Props = {
   frequencyLoading?: boolean;
 };
 
-const NAKED_WEARABLES = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+const NAKED_WEARABLES = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] as const;
 
 const TRAIT_ABBR = ["NRG", "AGG", "SPK", "BRN", "EYS", "EYC"];
 
@@ -46,6 +48,105 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const traits = gotchi.withSetsNumericTraits || gotchi.modifiedNumericTraits || gotchi.numericTraits;
   const baseRarity = gotchi.baseRarityScore || null;
+  const paintedKeyRef = useRef<string | null>(null);
+
+  // Check if gotchi is ready for rendering
+  const isReady = isGotchiRenderReady(gotchi);
+
+  // Use normalized arrays directly from gotchi (already normalized in transformGotchi)
+  // Memoize to prevent reference changes
+  const stableEquippedWearables = useMemo(() => {
+    if (!Array.isArray(gotchi.equippedWearables) || gotchi.equippedWearables.length !== 16) {
+      return NAKED_WEARABLES;
+    }
+    return gotchi.equippedWearables;
+  }, [
+    // Use stringified array as dependency to prevent re-computation on reference changes
+    Array.isArray(gotchi.equippedWearables) ? gotchi.equippedWearables.join(",") : ""
+  ]);
+
+  const stableNumericTraits = useMemo(() => {
+    if (!Array.isArray(gotchi.numericTraits) || gotchi.numericTraits.length !== 6) {
+      return [0, 0, 0, 0, 0, 0];
+    }
+    return gotchi.numericTraits;
+  }, [
+    // Use stringified array as dependency to prevent re-computation on reference changes
+    Array.isArray(gotchi.numericTraits) ? gotchi.numericTraits.join(",") : ""
+  ]);
+
+  // Compute active wearables based on hover state
+  const activeWearables = useMemo(() => {
+    return imageHovered ? NAKED_WEARABLES : stableEquippedWearables;
+  }, [imageHovered, stableEquippedWearables]);
+
+  // Prewarm both dressed and naked SVGs on mount (only if ready)
+  useEffect(() => {
+    if (!isReady) return;
+
+    const prewarmDressed = () => {
+      if (wearableCount > 0) {
+        prefetchGotchiSvg({
+          gotchiId: gotchi.tokenId,
+          hauntId: gotchi.hauntId,
+          collateral: gotchi.collateral,
+          numericTraits: stableNumericTraits,
+          equippedWearables: stableEquippedWearables,
+          mode: "preview",
+        });
+      }
+    };
+
+    const prewarmNaked = () => {
+      prefetchGotchiSvg({
+        gotchiId: gotchi.tokenId,
+        hauntId: gotchi.hauntId,
+        collateral: gotchi.collateral,
+        numericTraits: stableNumericTraits,
+        equippedWearables: NAKED_WEARABLES,
+        mode: "preview",
+      });
+    };
+
+    // Prewarm both states
+    prewarmNaked();
+    if (wearableCount > 0) {
+      prewarmDressed();
+    }
+  }, [isReady, gotchi.tokenId, gotchi.hauntId, gotchi.collateral, stableNumericTraits, stableEquippedWearables, wearableCount]);
+
+  // Track requestKey stability (dev-only warning)
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development" && isReady) {
+      // Compute current requestKey for dressed state
+      const currentKey = [
+        gotchi.tokenId || "",
+        gotchi.hauntId ?? "",
+        gotchi.collateral || "",
+        stableNumericTraits.join(","),
+        stableEquippedWearables.join("-"),
+        "preview",
+      ].join("|");
+
+      if (paintedKeyRef.current && !imageHovered && paintedKeyRef.current !== currentKey) {
+        if (process.env.NODE_ENV === "development") {
+          console.error(
+            "🚨 Explorer requestKey changed post-paint (not hovered)",
+            {
+              gotchiId: gotchi.tokenId,
+              previousKey: paintedKeyRef.current,
+              currentKey,
+            }
+          );
+        }
+      }
+
+      // Update painted key when not hovered (dressed state)
+      if (!imageHovered) {
+        paintedKeyRef.current = currentKey;
+      }
+    }
+  }, [isReady, gotchi.tokenId, gotchi.hauntId, gotchi.collateral, stableNumericTraits, stableEquippedWearables, imageHovered]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -92,44 +193,27 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
       className={`rounded-lg border ${colors.border} ${colors.bg} hover:ring-1 hover:ring-primary/40 transition-all duration-150 active:scale-[0.98] relative overflow-hidden`}
     >
       <div 
-        className="relative aspect-square flex items-center justify-center bg-gradient-to-b from-transparent to-background/20"
+        className="relative aspect-square flex items-center justify-center"
         onMouseEnter={() => setImageHovered(true)}
         onMouseLeave={() => setImageHovered(false)}
       >
-        {wearableCount > 0 ? (
-          <>
-            <div className={`absolute inset-1 transition-opacity duration-200 ${imageHovered ? "opacity-0" : "opacity-100"}`}>
-              <GotchiSvg
-                gotchiId={gotchi.tokenId}
-                hauntId={gotchi.hauntId}
-                collateral={gotchi.collateral}
-                numericTraits={gotchi.numericTraits as number[]}
-                equippedWearables={gotchi.equippedWearables as number[]}
-                mode="preview"
-                className="w-full h-full"
-              />
-            </div>
-            <div className={`absolute inset-1 transition-opacity duration-200 ${!imageHovered ? "opacity-0" : "opacity-100"}`}>
-              <GotchiSvg
-                gotchiId={gotchi.tokenId}
-                hauntId={gotchi.hauntId}
-                collateral={gotchi.collateral}
-                numericTraits={gotchi.numericTraits as number[]}
-                equippedWearables={NAKED_WEARABLES}
-                mode="preview"
-                className="w-full h-full"
-              />
-            </div>
-          </>
-        ) : (
+        {/* READY GATE: Only mount GotchiSvg when gotchi is ready */}
+        {isReady ? (
           <GotchiSvg
             gotchiId={gotchi.tokenId}
             hauntId={gotchi.hauntId}
             collateral={gotchi.collateral}
-            numericTraits={gotchi.numericTraits as number[]}
-            equippedWearables={NAKED_WEARABLES}
+            numericTraits={stableNumericTraits}
+            equippedWearables={activeWearables}
             mode="preview"
             className="w-full h-full"
+            testId={`explorer-gotchi-${gotchi.tokenId}`}
+            useBlobUrl={true} // Use blob URL to prevent DOM repaint flash
+          />
+        ) : (
+          <div 
+            className="w-full h-full bg-muted/50 animate-pulse"
+            data-testid={`explorer-gotchi-${gotchi.tokenId}-skeleton`}
           />
         )}
         

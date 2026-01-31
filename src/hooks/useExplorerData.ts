@@ -348,6 +348,38 @@ function applyListingsToGotchis(gotchis: ExplorerGotchi[]): ExplorerGotchi[] {
 function transformGotchi(raw: any): ExplorerGotchi {
   const tokenId = String(raw.gotchiId || raw.id);
   
+  // Normalize numericTraits to fixed 6-element array
+  const rawTraits = raw.numericTraits || [];
+  const normalizedTraits = new Array(6).fill(0);
+  for (let i = 0; i < Math.min(6, rawTraits.length); i++) {
+    const val = Number(rawTraits[i]);
+    normalizedTraits[i] = Number.isFinite(val) ? val : 0;
+  }
+  
+  // Normalize equippedWearables to fixed 16-element array
+  const rawWearables = raw.equippedWearables || [];
+  const normalizedWearables = new Array(16).fill(0);
+  for (let i = 0; i < Math.min(16, rawWearables.length); i++) {
+    const val = Number(rawWearables[i]);
+    normalizedWearables[i] = Number.isFinite(val) ? val : 0;
+  }
+  
+  // Normalize modifiedNumericTraits
+  const rawModifiedTraits = raw.modifiedNumericTraits || raw.numericTraits || [];
+  const normalizedModifiedTraits = new Array(6).fill(0);
+  for (let i = 0; i < Math.min(6, rawModifiedTraits.length); i++) {
+    const val = Number(rawModifiedTraits[i]);
+    normalizedModifiedTraits[i] = Number.isFinite(val) ? val : 0;
+  }
+  
+  // Normalize withSetsNumericTraits
+  const rawWithSetsTraits = raw.withSetsNumericTraits || raw.modifiedNumericTraits || raw.numericTraits || [];
+  const normalizedWithSetsTraits = new Array(6).fill(0);
+  for (let i = 0; i < Math.min(6, rawWithSetsTraits.length); i++) {
+    const val = Number(rawWithSetsTraits[i]);
+    normalizedWithSetsTraits[i] = Number.isFinite(val) ? val : 0;
+  }
+  
   const gotchi: ExplorerGotchi = {
     id: raw.id,
     tokenId,
@@ -357,11 +389,15 @@ function transformGotchi(raw: any): ExplorerGotchi {
     baseRarityScore: raw.baseRarityScore || 0,
     modifiedRarityScore: raw.modifiedRarityScore || raw.baseRarityScore || 0,
     withSetsRarityScore: raw.withSetsRarityScore || raw.modifiedRarityScore || raw.baseRarityScore || 0,
-    numericTraits: (raw.numericTraits || []).map((t: any) => Number(t)),
-    modifiedNumericTraits: (raw.modifiedNumericTraits || raw.numericTraits || []).map((t: any) => Number(t)),
-    withSetsNumericTraits: (raw.withSetsNumericTraits || raw.modifiedNumericTraits || raw.numericTraits || []).map((t: any) => Number(t)),
-    equippedWearables: (raw.equippedWearables || []).map((w: any) => Number(w) || 0),
-    collateral: raw.collateral || "",
+    numericTraits: normalizedTraits,
+    modifiedNumericTraits: normalizedModifiedTraits,
+    withSetsNumericTraits: normalizedWithSetsTraits,
+    equippedWearables: normalizedWearables,
+    // CRITICAL: Only set collateral if it's a valid address string
+    // Empty string causes all gotchis to have same requestKey
+    collateral: (raw.collateral && typeof raw.collateral === "string" && raw.collateral.trim().startsWith("0x") && raw.collateral.trim().length >= 10)
+      ? raw.collateral.trim()
+      : "", // Empty string - ready gate will prevent rendering
     owner: raw.owner?.id || "",
     kinship: raw.kinship,
     experience: raw.experience,
@@ -375,6 +411,14 @@ function transformGotchi(raw: any): ExplorerGotchi {
     minimumStake: raw.minimumStake,
     stakedAmount: raw.stakedAmount,
   };
+  
+  // Freeze arrays in dev to catch mutations
+  if (process.env.NODE_ENV === "development") {
+    Object.freeze(gotchi.numericTraits);
+    Object.freeze(gotchi.equippedWearables);
+    Object.freeze(gotchi.modifiedNumericTraits);
+    Object.freeze(gotchi.withSetsNumericTraits);
+  }
   
   // Only cache if we have complete essential data (prevents caching incomplete gotchis)
   if (gotchi.withSetsRarityScore > 0 && gotchi.createdAt) {

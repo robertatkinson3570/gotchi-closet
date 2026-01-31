@@ -5,13 +5,13 @@ export default defineConfig({
   timeout: 30000,
   expect: { timeout: 10000 },
   use: {
-    baseURL: 'http://localhost:5173',
-    headless: true,
+    baseURL: 'http://localhost:5000',
+    headless: false, // Run headed so we can see the flash
     trace: 'retain-on-failure',
   },
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:5173',
+    url: 'http://localhost:5000',
     reuseExistingServer: true,
     timeout: 120000,
   },

@@ -55,7 +55,9 @@ router.post("/preview", async (req, res) => {
       res.json({ svg: getPlaceholderSvg("preview:invalid") });
       return;
     }
+    // CRITICAL: Include tokenId to ensure unique cache keys per gotchi
     const svg = await previewGotchiSvg({
+      tokenId: tokenId ? Number(tokenId) : undefined,
       hauntId: Number(hauntId),
       collateral: collateralStr,
       numericTraits: Array.isArray(numericTraits)
