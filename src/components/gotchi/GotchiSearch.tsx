@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
-import { Search, ChevronDown, ChevronUp, X, Loader2, Plus } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, X, Loader2 } from "lucide-react";
 import { useGotchiSearch } from "@/lib/hooks/useGotchiSearch";
 import { useBaazaarListings } from "@/lib/hooks/useBaazaarListings";
 import { transformBaazaarListingToGotchi } from "@/lib/baazaarListings";
@@ -143,39 +143,40 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
   return (
     <div className="w-full">
       <div className="flex items-center gap-2 px-2 py-1.5 bg-background/80 border-b">
-        {/* Mode selector */}
-        <div className="flex items-center gap-1 border-r pr-2 mr-1">
+        {/* Mode selector - polished toggle */}
+        <div className="flex items-center p-0.5 bg-muted/50 rounded-lg border border-border/50">
           <button
             onClick={() => handleModeChange("name")}
-            className={`px-2 py-1 rounded text-sm transition-colors relative group ${
+            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
               mode === "name"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                ? "bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white shadow-md"
+                : "text-muted-foreground hover:text-foreground"
             }`}
             title="Collection"
           >
-            <span className="text-base leading-none">🗂️</span>
-            {/* Tooltip */}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-foreground text-background text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
-              Collection
-              <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-foreground" />
-            </div>
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            <span className="hidden sm:inline">Collection</span>
           </button>
           <button
             onClick={() => handleModeChange("baazaar")}
-            className={`px-2 py-1 rounded text-sm transition-colors relative group ${
+            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
               mode === "baazaar"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                ? "bg-gradient-to-r from-fuchsia-500 to-violet-500 text-white shadow-md"
+                : "text-muted-foreground hover:text-foreground"
             }`}
             title="Baazaar"
           >
-            <span className="text-base leading-none">🏷️</span>
-            {/* Tooltip */}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-foreground text-background text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
-              Baazaar
-              <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-foreground" />
-            </div>
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+            <span className="hidden sm:inline">Baazaar</span>
           </button>
         </div>
 
@@ -296,35 +297,41 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
                 </div>
               )}
               {baazaarGotchis.length > 0 && (
-                <div className="max-h-[400px] overflow-y-auto p-2 space-y-2">
-                  {baazaarGotchis.map((gotchi) => {
-                    const {
-                      finalTraits,
-                      traitBase,
-                      traitWithMods,
-                      wearableFlat,
-                      setFlatBrs,
-                      ageBrs,
-                      totalBrs,
-                      activeSets,
-                    } = computeInstanceTraits({
-                      baseTraits: gotchi.numericTraits,
-                      modifiedNumericTraits: gotchi.modifiedNumericTraits,
-                      withSetsNumericTraits: gotchi.withSetsNumericTraits,
-                      equippedBySlot: gotchi.equippedWearables,
-                      wearablesById,
-                      blocksElapsed: gotchi.blocksElapsed,
-                    });
-                    const activeSetNames = activeSets.map((set) => set.name);
-                    const price = gotchi.market?.price ? formatPrice(gotchi.market.price) : "N/A";
+                <div className="p-2">
+                  <div className="flex gap-3 overflow-x-auto scrollbar-thin pb-2">
+                    {baazaarGotchis.map((gotchi) => {
+                      const {
+                        finalTraits,
+                        traitBase,
+                        traitWithMods,
+                        wearableFlat,
+                        setFlatBrs,
+                        ageBrs,
+                        totalBrs,
+                        activeSets,
+                      } = computeInstanceTraits({
+                        baseTraits: gotchi.numericTraits,
+                        modifiedNumericTraits: gotchi.modifiedNumericTraits,
+                        withSetsNumericTraits: gotchi.withSetsNumericTraits,
+                        equippedBySlot: gotchi.equippedWearables,
+                        wearablesById,
+                        blocksElapsed: gotchi.blocksElapsed,
+                      });
+                      const activeSetNames = activeSets.map((set) => set.name);
+                      const price = gotchi.market?.price ? formatPrice(gotchi.market.price) : undefined;
+                      const isLoadingThis = loadingGotchiId === (gotchi.gotchiId || gotchi.id);
 
-                    return (
-                      <div
-                        key={gotchi.id}
-                        className="flex items-center gap-3 p-2 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
-                      >
-                        {/* Gotchi preview */}
-                        <div className="flex-shrink-0">
+                      return (
+                        <div
+                          key={gotchi.id}
+                          className={`flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-fuchsia-500 rounded-lg transition-all relative ${isLoadingThis ? 'opacity-60 pointer-events-none' : ''}`}
+                          onClick={() => handleSelect(gotchi)}
+                        >
+                          {isLoadingThis && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-lg z-10">
+                              <Loader2 className="h-5 w-5 animate-spin text-fuchsia-500" />
+                            </div>
+                          )}
                           <GotchiCard
                             gotchi={gotchi}
                             traitBase={gotchi.baseRarityScore ?? traitBase}
@@ -335,69 +342,36 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
                             totalBrs={totalBrs}
                             activeSetNames={activeSetNames}
                             traits={finalTraits}
-                            onSelect={() => handleSelect(gotchi)}
+                            price={price}
                           />
                         </div>
-
-                        {/* Listing info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm truncate">{gotchi.name}</div>
-                          <div className="text-xs text-muted-foreground">ID: {gotchi.gotchiId || gotchi.id}</div>
-                          <div className="text-sm font-semibold text-primary mt-1">{price}</div>
-                        </div>
-
-                        {/* Add button */}
-                        <Button
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelect(gotchi);
-                          }}
-                          disabled={loadingGotchiId === (gotchi.gotchiId || gotchi.id)}
-                          className="shrink-0"
-                        >
-                          {loadingGotchiId === (gotchi.gotchiId || gotchi.id) ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                              Loading...
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="h-4 w-4 mr-1" />
-                              Add
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    );
-                  })}
-
-                  {/* Load more button */}
-                  {baazaarHasMore && (
-                    <div className="pt-2 pb-1 text-center">
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Load more & filter notice */}
+                  <div className="flex items-center justify-between pt-2 border-t border-border/50 mt-2">
+                    {search && (
+                      <span className="text-[10px] text-muted-foreground">
+                        Filter applies to loaded results
+                      </span>
+                    )}
+                    {baazaarHasMore && (
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={baazaarLoadMore}
                         disabled={isLoading}
+                        className="h-6 text-xs ml-auto"
                       >
                         {isLoading ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Loading...
-                          </>
+                          <Loader2 className="h-3 w-3 animate-spin" />
                         ) : (
                           "Load More"
                         )}
                       </Button>
-                    </div>
-                  )}
-
-                  {search && (
-                    <div className="px-2 py-1 text-[10px] text-muted-foreground text-center border-t">
-                      Name filter applies to loaded results only
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               )}
             </>

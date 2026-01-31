@@ -31,6 +31,7 @@ interface GotchiCardProps {
   setDelta?: number[];
   enableSetFilter?: boolean;
   showBestSets?: boolean;
+  price?: string;
 }
 
 export function GotchiCard({
@@ -54,6 +55,7 @@ export function GotchiCard({
   setDelta,
   enableSetFilter = false,
   showBestSets = false,
+  price,
 }: GotchiCardProps) {
   const numericTraitSource = baseTraits || gotchi.numericTraits;
   const baseTraitSource = baseTraits || gotchi.numericTraits;
@@ -145,11 +147,16 @@ export function GotchiCard({
                 )}
               </>
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-sm truncate leading-tight">{gotchi.name}</h3>
               <p className="text-xs text-muted-foreground leading-tight">
                 ID: {gotchi.gotchiId || gotchi.id}
               </p>
+              {price && (
+                <div className="mt-1 inline-flex items-center px-1.5 py-0.5 rounded bg-gradient-to-r from-fuchsia-500/20 to-violet-500/20 border border-fuchsia-500/30">
+                  <span className="text-[10px] font-semibold text-fuchsia-400">{price}</span>
+                </div>
+              )}
             </div>
           </div>
           <BrsSummary

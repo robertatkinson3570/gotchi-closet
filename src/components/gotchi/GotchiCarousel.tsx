@@ -99,33 +99,30 @@ export function GotchiCarousel({
         </div>
       ) : (
         <>
-          {/* Lock All / Unlock All controls */}
-          <div className="flex items-center justify-end gap-2 px-2 py-1 border-b">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-auto py-1 px-2 text-[10px]"
+          <div className="flex items-center gap-1 p-2">
+          {/* Lock All / Unlock All - compact inline */}
+          <div className="flex items-center gap-0.5 mr-1">
+            <button
+              className={`p-1 rounded transition-colors ${allLocked ? 'text-muted-foreground/40' : 'text-amber-500 hover:bg-amber-500/10'}`}
               onClick={handleLockAll}
               disabled={allLocked}
+              title="Lock All"
             >
-              <Lock className="h-3 w-3 mr-1" />
-              Lock All
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-auto py-1 px-2 text-[10px]"
+              <Lock className="h-3.5 w-3.5" />
+            </button>
+            <button
+              className={`p-1 rounded transition-colors ${!anyLocked ? 'text-muted-foreground/40' : 'text-muted-foreground hover:bg-muted/50'}`}
               onClick={handleUnlockAll}
               disabled={!anyLocked}
+              title="Unlock All"
             >
-              <Unlock className="h-3 w-3 mr-1" />
-              Unlock All
-            </Button>
+              <Unlock className="h-3.5 w-3.5" />
+            </button>
           </div>
-          <div className="flex items-center gap-2 p-2">
           <Button
             variant="ghost"
             size="icon"
+            className="h-7 w-7"
             onClick={() => scrollBy(-300)}
             aria-label="Scroll left"
           >
@@ -237,6 +234,7 @@ export function GotchiCarousel({
           <Button
             variant="ghost"
             size="icon"
+            className="h-7 w-7"
             onClick={() => scrollBy(300)}
             aria-label="Scroll right"
           >
