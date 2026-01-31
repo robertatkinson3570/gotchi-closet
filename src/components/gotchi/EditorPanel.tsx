@@ -162,30 +162,66 @@ export function EditorPanel() {
                         </span>
                         <span className="text-[8px] text-muted-foreground">Wearables</span>
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-auto py-1 px-1.5 text-[9px] flex-col leading-tight"
-                        onClick={() => stripAllWearables(instance.instanceId)}
-                      >
-                        <span className="flex items-center gap-0.5">
-                          <Shirt className="h-3 w-3" />
-                          Nakey
-                        </span>
-                        <span className="text-[8px] text-muted-foreground">Strip All</span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-auto py-1 px-1.5 text-[9px] flex-col leading-tight"
-                        onClick={() => restoreOriginalWearables(instance.instanceId)}
-                      >
-                        <span className="flex items-center gap-0.5">
-                          <RotateCcw className="h-3 w-3" />
-                          Restore
-                        </span>
-                        <span className="text-[8px] text-muted-foreground">Original</span>
-                      </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-auto py-1 px-1.5 text-[9px] flex-col leading-tight"
+                          onClick={() => {
+                            // Clear Mommy result when user explicitly strips all
+                            setMommyResult(prev => {
+                              const next = { ...prev };
+                              delete next[instance.instanceId];
+                              return next;
+                            });
+                            setMommyOptions(prev => {
+                              const next = { ...prev };
+                              delete next[instance.instanceId];
+                              return next;
+                            });
+                            setMommyPreEquipped(prev => {
+                              const next = { ...prev };
+                              delete next[instance.instanceId];
+                              return next;
+                            });
+                            stripAllWearables(instance.instanceId);
+                          }}
+                        >
+                          <span className="flex items-center gap-0.5">
+                            <Shirt className="h-3 w-3" />
+                            Nakey
+                          </span>
+                          <span className="text-[8px] text-muted-foreground">Strip All</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-auto py-1 px-1.5 text-[9px] flex-col leading-tight"
+                          onClick={() => {
+                            // Clear Mommy result when user explicitly restores
+                            setMommyResult(prev => {
+                              const next = { ...prev };
+                              delete next[instance.instanceId];
+                              return next;
+                            });
+                            setMommyOptions(prev => {
+                              const next = { ...prev };
+                              delete next[instance.instanceId];
+                              return next;
+                            });
+                            setMommyPreEquipped(prev => {
+                              const next = { ...prev };
+                              delete next[instance.instanceId];
+                              return next;
+                            });
+                            restoreOriginalWearables(instance.instanceId);
+                          }}
+                        >
+                          <span className="flex items-center gap-0.5">
+                            <RotateCcw className="h-3 w-3" />
+                            Restore
+                          </span>
+                          <span className="text-[8px] text-muted-foreground">Original</span>
+                        </Button>
                       <div className="flex flex-col gap-1">
                         <Button
                           variant="outline"
@@ -295,6 +331,13 @@ export function EditorPanel() {
                       });
                       const currentActiveSets = currentTraitsEval.activeSets;
                       
+                      // Check if current editor state matches Mommy build
+                      const mommyEquipped = mommyResultForInstance?.equippedWearables;
+                      const currentMatchesMommy = mommyEquipped 
+                        ? mommyEquipped.length === instance.equippedBySlot.length &&
+                          mommyEquipped.every((id, idx) => (id || 0) === (instance.equippedBySlot[idx] || 0))
+                        : false;
+                      
                       return (
                         <>
                           {mommyResultForInstance && (
@@ -303,13 +346,20 @@ export function EditorPanel() {
                               <div className="p-[1px] bg-gradient-to-br from-purple-500/40 via-fuchsia-500/30 to-violet-600/40 rounded-xl">
                                 <div className="bg-gradient-to-br from-background via-background to-purple-950/20 rounded-xl p-3">
                                   {/* Header with icon */}
-                                  <div className="flex items-center gap-2 mb-3">
-                                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-fuchsia-600 shadow-md shadow-purple-500/20">
-                                      <span className="text-xs">👶</span>
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-fuchsia-600 shadow-md shadow-purple-500/20">
+                                        <span className="text-xs">👶</span>
+                                      </div>
+                                      <span className="text-sm font-semibold bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
+                                        Build Applied
+                                      </span>
                                     </div>
-                                    <span className="text-sm font-semibold bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
-                                      Build Applied
-                                    </span>
+                                    {!currentMatchesMommy && (
+                                      <span className="text-[10px] text-muted-foreground italic">
+                                        You've made changes since Mommy applied this build
+                                      </span>
+                                    )}
                                   </div>
                                   
                                   {/* Strategy & Results Grid */}
