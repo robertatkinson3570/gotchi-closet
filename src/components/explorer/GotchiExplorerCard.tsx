@@ -19,7 +19,7 @@ type Props = {
   frequencyLoading?: boolean;
 };
 
-const NAKED_WEARABLES = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] as const;
+const NAKED_WEARABLES: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 const TRAIT_ABBR = ["NRG", "AGG", "SPK", "BRN", "EYS", "EYC"];
 
@@ -55,9 +55,9 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
 
   // Use normalized arrays directly from gotchi (already normalized in transformGotchi)
   // Memoize to prevent reference changes
-  const stableEquippedWearables = useMemo(() => {
+  const stableEquippedWearables = useMemo((): number[] => {
     if (!Array.isArray(gotchi.equippedWearables) || gotchi.equippedWearables.length !== 16) {
-      return NAKED_WEARABLES;
+      return [...NAKED_WEARABLES]; // Return a copy to ensure mutability
     }
     return gotchi.equippedWearables;
   }, [
@@ -76,8 +76,8 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   ]);
 
   // Compute active wearables based on hover state
-  const activeWearables = useMemo(() => {
-    return imageHovered ? NAKED_WEARABLES : stableEquippedWearables;
+  const activeWearables = useMemo((): number[] => {
+    return imageHovered ? [...NAKED_WEARABLES] : stableEquippedWearables; // Return a copy for hover state
   }, [imageHovered, stableEquippedWearables]);
 
   // Prewarm both dressed and naked SVGs on mount (only if ready)

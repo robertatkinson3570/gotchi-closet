@@ -5,7 +5,7 @@ import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { useTraitFrequency } from "@/hooks/useTraitFrequency";
 import { prefetchGotchiSvg } from "@/components/gotchi/GotchiSvg";
 
-const NAKED_WEARABLES = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] as const;
+const NAKED_WEARABLES: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 type Props = {
   gotchis: ExplorerGotchi[];

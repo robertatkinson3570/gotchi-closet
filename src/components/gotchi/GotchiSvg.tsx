@@ -175,7 +175,7 @@ export function GotchiSvg({
   // CRITICAL: Always start with null - no initial SVG
   const [svg, setSvg] = useState<string | null>(null);
   const [blobUrl, setBlobUrl] = useState<string | null>(null); // Blob URL for <img> rendering
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false); // Loading state (not used in render, but set for future use)
   const requestIdRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
   const previousRequestKeyRef = useRef<string | null>(null);
