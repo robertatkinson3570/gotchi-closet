@@ -37,28 +37,34 @@ async function fetchListingByTokenId(tokenId: string): Promise<{ tokenId: string
 
 async function fetchOwnerListingPrices(owner: string): Promise<ListingPriceMap> {
   const priceMap: ListingPriceMap = {};
-  let skip = 0;
-  const pageSize = 100;
-  let hasMore = true;
+  
+  // Handle multi-wallet addresses separated by |
+  const addresses = owner.split("|").filter(a => a.trim());
 
-  while (hasMore) {
-    const { listings, hasMore: more } = await fetchBaazaarListings({
-      first: pageSize,
-      skip,
-      filterSeller: owner,
-    });
+  for (const address of addresses) {
+    let skip = 0;
+    const pageSize = 100;
+    let hasMore = true;
 
-    for (const listing of listings) {
-      const gotchiId = listing.gotchi?.gotchiId || listing.tokenId;
-      if (gotchiId && listing.priceInWei) {
-        priceMap[gotchiId] = listing.priceInWei;
+    while (hasMore) {
+      const { listings, hasMore: more } = await fetchBaazaarListings({
+        first: pageSize,
+        skip,
+        filterSeller: address.trim(),
+      });
+
+      for (const listing of listings) {
+        const gotchiId = listing.gotchi?.gotchiId || listing.tokenId;
+        if (gotchiId && listing.priceInWei) {
+          priceMap[gotchiId] = listing.priceInWei;
+        }
       }
+
+      hasMore = more;
+      skip += pageSize;
+
+      if (skip > 500) break;
     }
-
-    hasMore = more;
-    skip += pageSize;
-
-    if (skip > 500) break;
   }
 
   return priceMap;
