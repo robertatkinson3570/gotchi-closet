@@ -1,0 +1,113 @@
+Mommy Dress Me Logic Fixes & Clarifications
+
+Update the Mommy Dress Me feature with the following rules and behavior. Do not change unrelated UI or flows.
+
+Global Rule (Critical)
+
+When Mommy Dress Me runs, it must always assume the Gotchi starts naked.
+Ignore all currently equipped wearables when calculating optimizations.
+Current wearables should never cause the system to early-exit or claim “already optimized.”
+
+Trait Direction Rules (Must Enforce Everywhere)
+
+Traits below 50 improve by moving down
+
+Traits above 50 improve by moving up
+
+Never equip a wearable that moves a trait in the wrong direction
+
+Never equip a wearable that lowers total BRS
+
+Example:
+
+BRN = 48 → −BRN is good, +BRN is bad
+
+Trait Sculptor must never accept a wearable that reduces BRS
+
+Set & Wearable Evaluation
+
+Wearable set bonuses must always be considered
+
+However, best sets do not always equal best trait outcomes
+
+Reuse existing logic from:
+
+Best Sets selector
+
+Best Wearables selector
+
+Evaluate:
+
+Set bonuses
+
+Individual wearable modifiers
+
+Combined BRS impact
+
+Trait Sculptor Logic
+General
+
+Trait Sculptor must evaluate traits based on mathematical potential, not current state.
+
+If traits are:
+
+1, 3, 35, 45 → ignore 35 and 45 entirely
+Focus only on 1 and 3 and optimize those
+
+1, 3, 2, 45 → attempt to make 1, 3, and 2 equal only if possible
+
+If equalizable → optimize all (e.g. −4, −4, −4, 45)
+
+If not → fall back to fewer traits (e.g. −8, −8, 2, 45)
+
+User-Selected Modes
+
+Balanced
+
+Try optimizing 4 traits
+
+If not possible → try 3
+
+If not possible → try 2
+
+If not possible → optimize 1 best trait
+
+Dual
+
+Try optimizing 2 traits equally
+
+If not possible → fall back to 1
+
+1 Dominant Trait
+
+Identify which trait can be maximized the most
+
+Use respec + sets + wearables to push that trait as far as possible
+
+Example result: 1, 3, −14, 45
+
+Fill remaining slots only with wearables that do not reduce BRS and preferably support the chosen set
+
+Max BRS Mode
+
+Always start from a naked Gotchi
+
+Respec does not matter
+
+Set bonus takes priority
+
+Never equip a wearable that lowers BRS
+
+Must re-optimize even if the Gotchi is already dressed
+
+Never assume “already optimized” based on current wearables
+
+Known Issues This Must Fix
+
+Max BRS incorrectly exits when Gotchi is already dressed
+
+Trait Sculptor (1 dominant trait) does not currently search for the best possible trait
+
+Dual/Balanced builds are incorrectly treated as optimal for other modes
+
+Each Mommy Dress Me run must fully recompute based on the selected mode, starting from a naked Gotchi, regardless of the Gotchi’s current equipment.

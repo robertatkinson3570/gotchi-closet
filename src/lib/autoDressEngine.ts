@@ -50,6 +50,8 @@ type AutoDressContext = {
   wearablesUsableBySlot: number[][]; // wearablesUsableBySlot[slot] = list of wearable IDs
   prunedWearablesBySlot: number[][]; // Pruned list for performance (goal-specific ranking)
   baselineBrs?: number; // Baseline BRS for constraint checking (balanced goal)
+  nakedBrs?: number; // Naked baseline BRS (gotchi with no wearables on unlocked slots)
+  nakedEval?: Evaluation; // Naked baseline evaluation (for threshold comparison)
   ownedWearableIds: Set<number>; // Set of owned wearable IDs (for validation)
   reservedWearableIds?: Set<number>; // Optional: reserved wearable IDs (DEV-only hook for locked gotchis)
 };
@@ -72,6 +74,50 @@ const BEAM_WIDTH = 20;
 const MAX_ITERATIONS = 12;
 const MAX_OPTIONS_PER_SLOT = 20; // Includes empty option (0)
 const EPS = 1e-6; // Epsilon for floating point comparison
+
+/**
+ * Trait Direction Rules:
+ * - Traits below 50 improve by moving DOWN (toward 0)
+ * - Traits above 50 improve by moving UP (toward 99)
+ * - Trait at exactly 50 can go either direction
+ */
+function getTraitDirection(traitValue: number): "down" | "up" | "neutral" {
+  if (traitValue < 50) return "down";
+  if (traitValue > 50) return "up";
+  return "neutral";
+}
+
+/**
+ * Calculate how extreme a trait is (distance from 50, higher = better for BRS)
+ */
+function getExtremity(traitValue: number): number {
+  return Math.abs(traitValue - 50);
+}
+
+/**
+ * Check if a wearable modifier moves a trait in the correct direction
+ * Returns true if the modifier is beneficial or neutral
+ */
+function isModifierBeneficial(baseTrait: number, modifier: number): boolean {
+  if (modifier === 0) return true; // No effect is neutral
+  const direction = getTraitDirection(baseTrait);
+  if (direction === "neutral") return true; // At 50, any direction is OK
+  if (direction === "down") return modifier < 0; // Want to decrease
+  return modifier > 0; // direction === "up", want to increase
+}
+
+/**
+ * Check if a wearable has any harmful modifiers for the given base traits
+ */
+function hasHarmfulModifiers(baseTrait: number[], wearableModifiers: number[]): boolean {
+  for (let i = 0; i < 4; i++) {
+    const mod = wearableModifiers[i] || 0;
+    if (mod !== 0 && !isModifierBeneficial(baseTrait[i], mod)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /**
  * Canonical rarity ordering (higher number = higher rarity)
@@ -173,9 +219,6 @@ export function autoDress(
     };
   }
 
-  // Store baseline BRS for constraint checking (used by balanced goal)
-  context.baselineBrs = currentEval.totalBrs;
-
   // Build "nakey baseline" start state: all unlocked slots are 0, locked slots keep current equipped
   // Also enforce rarity cap: strip illegal wearables from unlocked slots
   const startEquipped = [...currentEquipped];
@@ -199,6 +242,19 @@ export function autoDress(
       }
     }
     startEquipped[slot] = 0;
+  }
+
+  // CRITICAL: Evaluate naked baseline for threshold comparison AND baseline constraints
+  // Mommy always starts from naked - never compare against dressed state
+  const nakedEval = evaluateBuild(context, { equipped: startEquipped });
+  if (nakedEval) {
+    context.nakedBrs = nakedEval.totalBrs;
+    context.nakedEval = nakedEval;
+    // Use NAKED baseline for constraint checking (balanced goal must not lower BRS below naked)
+    context.baselineBrs = nakedEval.totalBrs;
+  } else {
+    // Fallback to current eval if naked evaluation fails (shouldn't happen normally)
+    context.baselineBrs = currentEval.totalBrs;
   }
 
   // Dev-only check: ensure locked slots are preserved in start state
@@ -273,11 +329,12 @@ export function autoDress(
     };
   }
 
-  // Dev-only assertion: balanced goal must never lower BRS
+  // Dev-only assertion: balanced goal must never lower BRS below NAKED baseline
   if (import.meta.env.DEV && context.options.goal === "traitShape" && context.options.traitShapeType === "balanced") {
-    if (finalEval.totalBrs < currentEval.totalBrs - EPS) {
+    const nakedBrsCheck = context.nakedBrs || currentEval.totalBrs;
+    if (finalEval.totalBrs < nakedBrsCheck - EPS) {
       console.error(
-        `[autoDressEngine] INVARIANT VIOLATION: Balanced goal lowered BRS from ${currentEval.totalBrs} to ${finalEval.totalBrs}`
+        `[autoDressEngine] INVARIANT VIOLATION: Balanced goal lowered BRS below naked baseline from ${nakedBrsCheck} to ${finalEval.totalBrs}`
       );
       return {
         success: false,
@@ -420,6 +477,7 @@ function precomputeUsableWearables(context: AutoDressContext): void {
 
 /**
  * Precompute pruned wearables by slot (performance optimization with goal-specific ranking)
+ * CRITICAL: Filter out wearables with harmful trait modifiers (wrong direction)
  */
 function precomputePrunedWearables(context: AutoDressContext): void {
   context.prunedWearablesBySlot = Array.from({ length: SLOT_COUNT }, () => []);
@@ -434,21 +492,38 @@ function precomputePrunedWearables(context: AutoDressContext): void {
         const wearable = context.wearablesById.get(id);
         if (!wearable) return null;
         
-        let score = 0;
         const traitMods = wearable.traitModifiers || [];
         
+        // CRITICAL: Filter out wearables with harmful modifiers for trait shape modes
+        // A modifier is harmful if it moves a trait in the wrong direction
+        if (context.options.goal === "traitShape") {
+          if (hasHarmfulModifiers(context.baseTraits, traitMods)) {
+            return null; // Skip this wearable entirely
+          }
+        }
+        
+        let score = 0;
+        
         if (context.options.goal === "maximizeBRS") {
-          // Rank by rarityScoreModifier desc, then sum(abs(traitModifiers[0..3])) desc, then id asc
-          score = (wearable.rarityScoreModifier || 0) * 10000; // Primary
+          // Rank by rarityScoreModifier desc, then sum(abs(traitModifiers[0..3])) desc
+          score = (wearable.rarityScoreModifier || 0) * 10000;
           for (let i = 0; i < 4; i++) {
-            score += Math.abs(traitMods[i] || 0) * 10; // Secondary
+            score += Math.abs(traitMods[i] || 0) * 10;
           }
         } else if (context.options.goal === "traitShape") {
-          // Rank by sum(abs(traitModifiers[0..3])) desc, then rarityScoreModifier desc, then id asc
+          // Rank by optimization potential (how much the wearable helps push traits to extremes)
+          // Only count beneficial modifiers
           for (let i = 0; i < 4; i++) {
-            score += Math.abs(traitMods[i] || 0) * 10000; // Primary
+            const mod = traitMods[i] || 0;
+            if (mod !== 0 && isModifierBeneficial(context.baseTraits[i], mod)) {
+              // Score by how much it improves extremity
+              const currentExtremity = getExtremity(context.baseTraits[i]);
+              const newTrait = Math.max(0, Math.min(99, context.baseTraits[i] + mod));
+              const newExtremity = getExtremity(newTrait);
+              score += (newExtremity - currentExtremity) * 10000;
+            }
           }
-          score += (wearable.rarityScoreModifier || 0) * 10; // Secondary
+          score += (wearable.rarityScoreModifier || 0) * 10;
         }
         
         return { id, score };
@@ -516,6 +591,8 @@ function evaluateBuild(context: AutoDressContext, state: BuildState): Evaluation
 
 /**
  * Compute goal-specific score (deterministic)
+ * Uses EXTREMITY scoring - traits are scored by distance from 50 (0 or 99 = max extremity)
+ * This respects trait direction rules automatically
  */
 function computeGoalScore(
   context: AutoDressContext,
@@ -524,6 +601,9 @@ function computeGoalScore(
 ): number {
   const { totalBrs: brsTotal, finalTraits } = breakdown;
   const editableTraits = finalTraits.slice(0, 4); // NRG, AGG, SPK, BRN
+  
+  // Calculate extremity for each trait (distance from 50)
+  const extremities = editableTraits.map(t => getExtremity(t));
 
   switch (context.options.goal) {
     case "maximizeBRS": {
@@ -535,42 +615,53 @@ function computeGoalScore(
       const shapeType = context.options.traitShapeType || "balanced";
 
       if (shapeType === "oneDominant") {
-        // Primary: maximize max(traits[0..3])
-        const maxTrait = Math.max(...editableTraits);
-        // Secondary: maximize "dominance gap" = max - avg(others)
-        const sorted = [...editableTraits].sort((a, b) => b - a);
-        const others = sorted.slice(1);
-        const avgOthers = others.reduce((sum, v) => sum + v, 0) / others.length;
-        const dominanceGap = maxTrait - avgOthers;
-        // Tertiary: BRS
-        return maxTrait * 10000 + dominanceGap * 100 + brsTotal;
+        // Primary: maximize the BEST extremity (not raw value)
+        // This finds which trait can be pushed furthest toward 0 or 99
+        const maxExtremity = Math.max(...extremities);
+        
+        // Secondary: maximize "dominance gap" in extremity space
+        const sortedExtremities = [...extremities].sort((a, b) => b - a);
+        const othersAvg = sortedExtremities.slice(1).reduce((sum, v) => sum + v, 0) / 3;
+        const dominanceGap = maxExtremity - othersAvg;
+        
+        // Tertiary: BRS (for tie-breaking)
+        return maxExtremity * 100_000 + dominanceGap * 1000 + brsTotal;
       }
 
       if (shapeType === "twoEqual") {
-        // Primary: maximize t2 (brings both up)
-        const sorted = [...editableTraits].sort((a, b) => b - a);
-        const t1 = sorted[0];
-        const t2 = sorted[1];
-        // Secondary: minimize |t1 - t2|
-        const diff = Math.abs(t1 - t2);
-        // Tertiary: maximize t1 (tie-breaker)
+        // Primary: maximize the 2nd-best extremity (both top traits should be extreme)
+        const sortedExtremities = [...extremities].sort((a, b) => b - a);
+        const e1 = sortedExtremities[0];
+        const e2 = sortedExtremities[1];
+        
+        // Secondary: minimize difference between top 2 extremities
+        const diff = Math.abs(e1 - e2);
+        
+        // Tertiary: maximize sum of top 2 extremities
         // Quaternary: BRS
-        return t2 * 1_000_000 - diff * 10_000 + t1 * 100 + brsTotal;
+        return e2 * 1_000_000 - diff * 10_000 + e1 * 100 + brsTotal;
       }
 
       if (shapeType === "balanced") {
-        // Primary: maximize maxEqualCount (as many equal traits as possible)
+        // Balanced: maximize average extremity while minimizing variance
+        // CONSTRAINT: Never lower BRS
+        
+        // Primary: maximize count of equal extremities
+        const roundedExtremities = extremities.map(e => Math.round(e));
         const valueCounts = new Map<number, number>();
-        for (const v of editableTraits) {
+        for (const v of roundedExtremities) {
           valueCounts.set(v, (valueCounts.get(v) || 0) + 1);
         }
         const maxEqualCount = Math.max(...Array.from(valueCounts.values()));
-        // Secondary: minimize variance
-        const variance = computeVariance(editableTraits);
-        // Tertiary: maximize average
-        const avg = editableTraits.reduce((sum, v) => sum + v, 0) / editableTraits.length;
+        
+        // Secondary: minimize variance in extremity
+        const variance = computeVariance(extremities);
+        
+        // Tertiary: maximize average extremity
+        const avgExtremity = extremities.reduce((sum, v) => sum + v, 0) / 4;
+        
         // Quaternary: BRS
-        return maxEqualCount * 1_000_000 - variance * 10_000 + avg * 100 + brsTotal;
+        return maxEqualCount * 1_000_000 - variance * 10_000 + avgExtremity * 100 + brsTotal;
       }
 
       return brsTotal;
@@ -866,6 +957,8 @@ function optimizeRespectForTraitShape(
 
 /**
  * Check if improvement meets threshold
+ * CRITICAL: Compare against NAKED baseline, not dressed state
+ * Mommy always starts from naked - never assume "already optimized"
  */
 function meetsThreshold(
   context: AutoDressContext,
@@ -873,55 +966,57 @@ function meetsThreshold(
   finalEval: Evaluation,
   _finalState: BuildState
 ): boolean {
+  // Use naked baseline for comparison (critical fix)
+  // Fallback to current eval if naked baseline not available (shouldn't happen normally)
+  const baselineEval = context.nakedEval || currentEval;
+
   switch (context.options.goal) {
     case "maximizeBRS": {
-      const brsDelta = finalEval.totalBrs - currentEval.totalBrs;
+      // Compare against NAKED baseline BRS, not dressed state
+      const nakedBrs = context.nakedBrs || baselineEval.totalBrs;
+      const brsDelta = finalEval.totalBrs - nakedBrs;
+      // Any improvement over naked is valid (we found wearables that help)
       return brsDelta >= 0.5;
     }
 
     case "traitShape": {
       const shapeType = context.options.traitShapeType || "balanced";
-      const currentTraits = currentEval.finalTraits.slice(0, 4);
+      const baselineTraits = baselineEval.finalTraits.slice(0, 4);
       const finalTraits = finalEval.finalTraits.slice(0, 4);
 
       if (shapeType === "oneDominant") {
-        const currentMax = Math.max(...currentTraits);
-        const finalMax = Math.max(...finalTraits);
-        const currentSorted = [...currentTraits].sort((a, b) => b - a);
-        const finalSorted = [...finalTraits].sort((a, b) => b - a);
-        const currentOthers = currentSorted.slice(1);
-        const finalOthers = finalSorted.slice(1);
-        const currentAvgOthers = currentOthers.reduce((sum, v) => sum + v, 0) / currentOthers.length;
-        const finalAvgOthers = finalOthers.reduce((sum, v) => sum + v, 0) / finalOthers.length;
-        const currentGap = currentMax - currentAvgOthers;
-        const finalGap = finalMax - finalAvgOthers;
+        // Calculate extremity improvement (how far traits moved toward 0 or 99)
+        const baselineExtremity = baselineTraits.map(t => getExtremity(t));
+        const finalExtremity = finalTraits.map(t => getExtremity(t));
+        const maxBaselineExtremity = Math.max(...baselineExtremity);
+        const maxFinalExtremity = Math.max(...finalExtremity);
         
-        // Require dominant trait increases by >= 1 OR dominance gap increases by >= 1
-        return (finalMax >= currentMax + 1) || (finalGap >= currentGap + 1);
+        // Any increase in max extremity is improvement
+        return maxFinalExtremity > maxBaselineExtremity;
       }
 
       if (shapeType === "twoEqual") {
-        const currentSorted = [...currentTraits].sort((a, b) => b - a);
-        const finalSorted = [...finalTraits].sort((a, b) => b - a);
-        const currentT2 = currentSorted[1];
+        // Compare extremity of top 2 traits
+        const baselineSorted = [...baselineTraits].map(t => getExtremity(t)).sort((a, b) => b - a);
+        const finalSorted = [...finalTraits].map(t => getExtremity(t)).sort((a, b) => b - a);
+        const baselineT2 = baselineSorted[1];
         const finalT2 = finalSorted[1];
-        const currentDiff = Math.abs(currentSorted[0] - currentSorted[1]);
-        const finalDiff = Math.abs(finalSorted[0] - finalSorted[1]);
         
-        // Require t2 increases by >= 1 OR |t1-t2| decreases by >= 1 (with no decrease in t2)
-        return (finalT2 >= currentT2 + 1) || (finalDiff <= currentDiff - 1 && finalT2 >= currentT2);
+        // Any increase in 2nd-best extremity is improvement
+        return finalT2 > baselineT2;
       }
 
       if (shapeType === "balanced") {
-        // Hard constraint: Balanced must never lower BRS
-        if (finalEval.totalBrs < currentEval.totalBrs - EPS) return false;
+        // Balanced: improve variance and never lower BRS
+        const nakedBrs = context.nakedBrs || baselineEval.totalBrs;
+        if (finalEval.totalBrs < nakedBrs - EPS) return false;
         
-        const currentVariance = computeVariance(currentTraits);
-        if (currentVariance === 0) return false; // Already perfect, no-op
+        const baselineVariance = computeVariance(baselineTraits);
+        if (baselineVariance === 0) return false; // Already perfect
         
         const newVariance = computeVariance(finalTraits);
-        const varianceImprovement = (currentVariance - newVariance) / currentVariance;
-        return varianceImprovement >= 0.10;
+        const varianceImprovement = (baselineVariance - newVariance) / baselineVariance;
+        return varianceImprovement >= 0.05; // More lenient threshold for balanced
       }
 
       return false;

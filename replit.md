@@ -25,6 +25,12 @@ The application is built with a React 18 frontend using TypeScript and Vite, sty
 - **Wearable Set Data Fixes:** The `data/wearableSets.json` file includes corrections for all 149 wearable sets, verified against the official wiki at https://wiki.aavegotchi.com/en/sets. The original data had systematic errors where BRS values were incorrectly placed in the NRG slot and trait modifiers were scrambled. All sets now have correct trait bonuses [NRG, AGG, SPK, BRN] and BRS values.
 - **Catwalk:** Animates Gotchis walking a runway in rarity order, each performing a deterministic "model-style" move. It includes a progress counter and respects `prefers-reduced-motion`.
 - **Wardrobe Lab:** A wizard-style optimization tool for Gotchis supporting multi-wallet, with respec simulation to optimize traits towards extremes (0 or 99) and considering wearable/set delta modifiers. Results display BRS before/after values and wearable images.
+- **Mommy Dress Me Engine (`src/lib/autoDressEngine.ts`):** Auto-dresser with the following rules:
+  - **Always starts naked:** Ignores currently equipped wearables when calculating optimizations. Never early-exits claiming "already optimized."
+  - **Trait Direction Rules:** Traits below 50 improve by moving DOWN (toward 0), traits above 50 improve by moving UP (toward 99). Wearables with harmful modifiers (wrong direction) are filtered out during pruning.
+  - **Extremity Scoring:** Uses distance from 50 as the optimization metric. A trait at 5 has extremity 45, trait at 95 has extremity 45 - both equally valuable.
+  - **Modes:** Max BRS (maximize total BRS), One Dominant (maximize single trait extremity), Dual (maximize top 2 trait extremities equally), Balanced (minimize variance while maximizing average extremity).
+  - **Naked Baseline Comparison:** Threshold checks compare final build against naked gotchi, not dressed state. This prevents false "no improvement" results.
 - **Wearable Selector:** Features a 3-way toggle for "All | Owned | Baazaar". "Baazaar" mode displays GHST prices fetched from the Goldsky Base core subgraph. "Owned" mode shows only owned wearables with inventory counts, which decrement upon equipping.
 - **Multi-wallet Support:** Allows adding up to 3 additional wallet addresses, with Gotchis loaded from all active wallets.
 - **"Lock & Set" Feature:** Enables reserving wearables for a specific build, excluding them from the available pool.
