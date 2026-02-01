@@ -183,10 +183,10 @@ export function EditorPanel() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute top-2 right-2 h-6 w-6 z-10 hover:bg-rose-500/20 hover:text-rose-400"
+                    className="absolute top-1 right-1 h-5 w-5 z-10 hover:bg-rose-500/20 hover:text-rose-400 opacity-60 hover:opacity-100"
                     onClick={() => removeEditorInstance(instance.instanceId)}
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-3 w-3" />
                   </Button>
 
                   <div className="p-3">
