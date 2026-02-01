@@ -7,6 +7,14 @@ import { ChevronLeft, ChevronRight, Lock, Unlock, X } from "lucide-react";
 import { GotchiSearch } from "./GotchiSearch";
 import type { Gotchi } from "@/types";
 
+function formatPrice(priceWei: string): string {
+  const ghst = parseFloat(priceWei) / 1e18;
+  if (ghst >= 1000) return `${(ghst / 1000).toFixed(1)}k`;
+  if (ghst >= 100) return ghst.toFixed(0);
+  if (ghst >= 10) return ghst.toFixed(1);
+  return ghst.toFixed(2);
+}
+
 type GotchiCarouselProps = {
   manualGotchis?: Gotchi[];
   onAddManualGotchi?: (gotchi: Gotchi) => void;
@@ -185,6 +193,7 @@ export function GotchiCarousel({
               const displayGotchi = isLocked
                 ? { ...gotchi, equippedWearables: displayEquipped }
                 : gotchi;
+              const price = gotchi.market?.price ? formatPrice(gotchi.market.price) : undefined;
               return (
                 <div
                   key={gotchi.id}
@@ -225,6 +234,7 @@ export function GotchiCarousel({
                     totalBrs={totalBrs}
                     activeSetNames={activeSetNames}
                     traits={finalTraits}
+                    price={price}
                     onSelect={() => handleAdd(gotchi)}
                   />
                 </div>
