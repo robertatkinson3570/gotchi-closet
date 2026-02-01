@@ -306,7 +306,7 @@ export function EditorPanel() {
                       </div>
                       
                       <div className="flex-1 min-w-0 flex flex-col md:flex-row gap-3">
-                        <div className="flex-1 min-w-0">
+                        <div className="min-w-0 md:max-w-[200px]">
                           <GotchiCard
                             gotchi={instance.baseGotchi}
                             traitBase={instance.baseGotchi.baseRarityScore ?? traitBase}
@@ -328,7 +328,7 @@ export function EditorPanel() {
                           />
                         </div>
                         
-                        <div className="shrink-0 md:w-auto">
+                        <div className="flex-1 min-w-0">
                           <SlotGrid
                             instanceId={instance.instanceId}
                             equippedBySlot={instance.equippedBySlot}
