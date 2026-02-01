@@ -285,13 +285,16 @@ export function EditorPanel() {
                             </Button>
                           )}
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 rounded-lg bg-gradient-to-br from-pink-500/20 to-fuchsia-500/20 hover:from-pink-500/30 hover:to-fuchsia-500/30 text-pink-400 border border-pink-500/30"
+                            variant="outline"
+                            size="sm"
+                            className="h-auto py-1 px-1.5 text-[9px] flex-col leading-tight border-pink-500/50 bg-pink-500/10 hover:bg-pink-500/20 w-full"
                             onClick={() => setMommyModalInstanceId(instance.instanceId)}
-                            title="Mommy Dress Me"
                           >
-                            <Baby className="h-3.5 w-3.5" />
+                            <span className="flex items-center gap-0.5">
+                              <Baby className="h-3 w-3" />
+                              Mommy
+                            </span>
+                            <span className="text-[8px] text-muted-foreground">Dress Me™</span>
                           </Button>
                         </div>
                         
