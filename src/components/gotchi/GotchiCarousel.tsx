@@ -5,6 +5,7 @@ import { GotchiCard } from "./GotchiCard";
 import { Button } from "@/ui/button";
 import { ChevronLeft, ChevronRight, Lock, Unlock, X } from "lucide-react";
 import { GotchiSearch } from "./GotchiSearch";
+import { useOwnerListings } from "@/lib/hooks/useOwnerListings";
 import type { Gotchi } from "@/types";
 
 function formatPrice(priceWei: string): string {
@@ -29,12 +30,15 @@ export function GotchiCarousel({
   searchRightElement,
 }: GotchiCarouselProps) {
   const walletGotchis = useSortedGotchis();
+  const loadedAddress = useAppStore((state) => state.loadedAddress);
   const addEditorInstance = useAppStore((state) => state.addEditorInstance);
   const overridesById = useAppStore((state) => state.overridesById);
   const isLockSetEnabled = useAppStore((state) => state.isLockSetEnabled);
   const toggleLockSet = useAppStore((state) => state.toggleLockSet);
   const setLockSetEnabledBulk = useAppStore((state) => state.setLockSetEnabledBulk);
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  const { data: ownerListingPrices } = useOwnerListings(loadedAddress);
   const isDragging = useRef(false);
   const startX = useRef(0);
   const scrollStart = useRef(0);
@@ -193,7 +197,9 @@ export function GotchiCarousel({
               const displayGotchi = isLocked
                 ? { ...gotchi, equippedWearables: displayEquipped }
                 : gotchi;
-              const price = gotchi.market?.price ? formatPrice(gotchi.market.price) : undefined;
+              const gotchiTokenId = gotchi.gotchiId || gotchi.id;
+              const listingPriceWei = ownerListingPrices?.[gotchiTokenId] || gotchi.market?.price;
+              const price = listingPriceWei ? formatPrice(listingPriceWei) : undefined;
               return (
                 <div
                   key={gotchi.id}
