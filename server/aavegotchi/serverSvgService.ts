@@ -350,31 +350,33 @@ export async function previewGotchiSvg(input: {
       return decoded;
     }
   } catch (error) {
-    // Log RPC failures to debug why placeholders are being returned
-    console.error(`[previewGotchiSvg] RPC call failed for tokenId=${tokenIdStr}`, {
+    // previewAavegotchi failed - likely due to invalid/unmapped collateral address
+    // Fall back to getAavegotchiSvg(tokenId) if we have a tokenId
+    if (tokenIdStr) {
+      try {
+        console.log(`[previewGotchiSvg] Falling back to getAavegotchiSvg for tokenId=${tokenIdStr}`);
+        const directSvg = await getGotchiSvg(tokenIdStr);
+        if (isValidSvg(directSvg)) {
+          cacheSet(svgCache, cacheKey, directSvg);
+          return directSvg;
+        }
+      } catch (fallbackError) {
+        console.error(`[previewGotchiSvg] Fallback also failed for tokenId=${tokenIdStr}`, {
+          error: (fallbackError as Error).message,
+        });
+      }
+    }
+    // Only log if both attempts failed
+    console.error(`[previewGotchiSvg] All RPC calls failed for tokenId=${tokenIdStr}`, {
       hauntId: input.hauntId,
       collateral: input.collateral.substring(0, 20) + "...",
-      cacheKey: cacheKey.substring(0, 80) + "...",
       error: (error as Error).message,
     });
-    // fall through to placeholder
   }
 
-  // CRITICAL: Use tokenId directly in placeholder seed to ensure unique placeholders per gotchi
-  // This prevents all gotchis from getting the same placeholder when RPC fails
-  // Use tokenId as the primary seed, not the cacheKey (which might hash to same value)
+  // Last resort: placeholder
   const placeholderSeed = tokenIdStr ? `preview:tokenId:${tokenIdStr}` : cacheKey;
   const fallback = getPlaceholderSvg(placeholderSeed);
-  
-  // Log when returning placeholder to debug
-  if (process.env.NODE_ENV === "development" || true) {
-    console.log(`[previewGotchiSvg] Returning placeholder for tokenId=${tokenIdStr}`, {
-      cacheKey: cacheKey.substring(0, 80) + "...",
-      placeholderSeed: placeholderSeed.substring(0, 80) + "...",
-      svgLength: fallback.length,
-    });
-  }
-  
   cacheSet(svgCache, cacheKey, fallback);
   return fallback;
 }
