@@ -183,8 +183,9 @@ export function EditorPanel() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute top-1 right-1 h-5 w-5 z-10 hover:bg-rose-500/20 hover:text-rose-400 opacity-60 hover:opacity-100"
+                    className="absolute -top-1 -right-1 h-5 w-5 z-20 bg-rose-500/80 hover:bg-rose-500 text-white rounded-full shadow-md"
                     onClick={() => removeEditorInstance(instance.instanceId)}
+                    title="Remove from editor"
                   >
                     <X className="h-3 w-3" />
                   </Button>
@@ -224,7 +225,7 @@ export function EditorPanel() {
                               clearMommyState(instance.instanceId);
                               stripAllWearables(instance.instanceId);
                             }}
-                            title="Strip all wearables"
+                            title="Nakey"
                           >
                             <Shirt className="h-3.5 w-3.5" />
                           </Button>
