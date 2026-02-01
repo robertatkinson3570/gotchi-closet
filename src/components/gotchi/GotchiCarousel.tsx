@@ -172,38 +172,25 @@ export function GotchiCarousel({
             </button>
           </div>
           
-          {/* Sort Options */}
-          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-background/50 border border-border/50 text-[10px]">
-            <button
-              className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 transition-colors ${sortOption === 'rarity-high' ? 'bg-purple-500/20 text-purple-400' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setSortOption('rarity-high')}
-              title="Rarity High to Low"
-            >
-              RS<ArrowDown className="h-2.5 w-2.5" />
-            </button>
-            <button
-              className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 transition-colors ${sortOption === 'rarity-low' ? 'bg-purple-500/20 text-purple-400' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setSortOption('rarity-low')}
-              title="Rarity Low to High"
-            >
-              RS<ArrowUp className="h-2.5 w-2.5" />
-            </button>
-            <span className="text-muted-foreground/40 mx-0.5">|</span>
-            <button
-              className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 transition-colors ${sortOption === 'brs-high' ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setSortOption('brs-high')}
-              title="BRS High to Low"
-            >
-              BRS<ArrowDown className="h-2.5 w-2.5" />
-            </button>
-            <button
-              className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 transition-colors ${sortOption === 'brs-low' ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setSortOption('brs-low')}
-              title="BRS Low to High"
-            >
-              BRS<ArrowUp className="h-2.5 w-2.5" />
-            </button>
-          </div>
+          {/* Sort Toggle - Compact */}
+          <button
+            className="flex items-center gap-0.5 px-1.5 py-1 rounded text-[9px] font-medium bg-background/60 border border-border/40 hover:border-purple-500/40 transition-colors"
+            onClick={() => {
+              const order: SortOption[] = ['rarity-high', 'rarity-low', 'brs-high', 'brs-low'];
+              const idx = order.indexOf(sortOption);
+              setSortOption(order[(idx + 1) % order.length]);
+            }}
+            title={`Sort: ${sortOption.includes('rarity') ? 'Rarity' : 'BRS'} ${sortOption.includes('high') ? '↓' : '↑'} (click to cycle)`}
+          >
+            <span className={sortOption.includes('rarity') ? 'text-purple-400' : 'text-fuchsia-400'}>
+              {sortOption.includes('rarity') ? 'RS' : 'BRS'}
+            </span>
+            {sortOption.includes('high') ? (
+              <ArrowDown className="h-2.5 w-2.5" />
+            ) : (
+              <ArrowUp className="h-2.5 w-2.5" />
+            )}
+          </button>
           
           <Button
             variant="ghost"
