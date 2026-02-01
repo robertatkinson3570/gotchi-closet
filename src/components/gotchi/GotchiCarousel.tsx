@@ -1,12 +1,14 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState } from "react";
 import { useAppStore } from "@/state/useAppStore";
 import { computeInstanceTraits, useSortedGotchis, useWearablesById } from "@/state/selectors";
 import { GotchiCard } from "./GotchiCard";
 import { Button } from "@/ui/button";
-import { ChevronLeft, ChevronRight, Lock, Unlock, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, Unlock, X, ArrowUp, ArrowDown } from "lucide-react";
 import { GotchiSearch } from "./GotchiSearch";
 import { useOwnerListings, useGotchiListingPrices } from "@/lib/hooks/useOwnerListings";
 import type { Gotchi } from "@/types";
+
+type SortOption = "rarity-high" | "rarity-low" | "brs-high" | "brs-low";
 
 function formatPrice(priceWei: string): string {
   const ghst = parseFloat(priceWei) / 1e18;
@@ -37,6 +39,8 @@ export function GotchiCarousel({
   const toggleLockSet = useAppStore((state) => state.toggleLockSet);
   const setLockSetEnabledBulk = useAppStore((state) => state.setLockSetEnabledBulk);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [sortOption, setSortOption] = useState<SortOption>("rarity-high");
+  const wearablesById = useWearablesById();
   
   const { data: ownerListingPrices } = useOwnerListings(loadedAddress);
   
@@ -67,8 +71,36 @@ export function GotchiCarousel({
         combined.push(mg);
       }
     }
-    return combined.sort((a, b) => (b.baseRarityScore ?? 0) - (a.baseRarityScore ?? 0));
-  }, [walletGotchis, manualGotchis, walletGotchiIds]);
+    
+    const getBrs = (g: Gotchi) => {
+      const traits = computeInstanceTraits({
+        baseTraits: g.numericTraits,
+        modifiedNumericTraits: g.modifiedNumericTraits,
+        withSetsNumericTraits: g.withSetsNumericTraits,
+        equippedBySlot: g.equippedWearables,
+        wearablesById,
+        blocksElapsed: g.blocksElapsed,
+      });
+      return traits.totalBrs;
+    };
+    
+    const getRarity = (g: Gotchi) => g.withSetsRarityScore ?? g.modifiedRarityScore ?? g.baseRarityScore ?? 0;
+    
+    return combined.sort((a, b) => {
+      switch (sortOption) {
+        case "rarity-high":
+          return getRarity(b) - getRarity(a);
+        case "rarity-low":
+          return getRarity(a) - getRarity(b);
+        case "brs-high":
+          return getBrs(b) - getBrs(a);
+        case "brs-low":
+          return getBrs(a) - getBrs(b);
+        default:
+          return getRarity(b) - getRarity(a);
+      }
+    });
+  }, [walletGotchis, manualGotchis, walletGotchiIds, sortOption, wearablesById]);
   
   const handleAdd = (gotchi: any) => {
     const now = Date.now();
@@ -79,7 +111,6 @@ export function GotchiCarousel({
     addEditorInstance(gotchi);
   };
 
-  const wearablesById = useWearablesById();
   const scrollBy = (delta: number) => {
     scrollRef.current?.scrollBy({ left: delta, behavior: "smooth" });
   };
@@ -140,6 +171,40 @@ export function GotchiCarousel({
               <Unlock className="h-3.5 w-3.5" />
             </button>
           </div>
+          
+          {/* Sort Options */}
+          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-background/50 border border-border/50 text-[10px]">
+            <button
+              className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 transition-colors ${sortOption === 'rarity-high' ? 'bg-purple-500/20 text-purple-400' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setSortOption('rarity-high')}
+              title="Rarity High to Low"
+            >
+              RS<ArrowDown className="h-2.5 w-2.5" />
+            </button>
+            <button
+              className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 transition-colors ${sortOption === 'rarity-low' ? 'bg-purple-500/20 text-purple-400' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setSortOption('rarity-low')}
+              title="Rarity Low to High"
+            >
+              RS<ArrowUp className="h-2.5 w-2.5" />
+            </button>
+            <span className="text-muted-foreground/40 mx-0.5">|</span>
+            <button
+              className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 transition-colors ${sortOption === 'brs-high' ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setSortOption('brs-high')}
+              title="BRS High to Low"
+            >
+              BRS<ArrowDown className="h-2.5 w-2.5" />
+            </button>
+            <button
+              className={`px-1.5 py-0.5 rounded flex items-center gap-0.5 transition-colors ${sortOption === 'brs-low' ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setSortOption('brs-low')}
+              title="BRS Low to High"
+            >
+              BRS<ArrowUp className="h-2.5 w-2.5" />
+            </button>
+          </div>
+          
           <Button
             variant="ghost"
             size="icon"

@@ -9,6 +9,8 @@ export type Gotchi = {
   withSetsNumericTraits?: number[];
   equippedWearables: number[];
   baseRarityScore?: number | null;
+  modifiedRarityScore?: number | null;
+  withSetsRarityScore?: number | null;
   usedSkillPoints?: number;
   hauntId?: number;
   collateral?: string;
