@@ -10,10 +10,10 @@ import type { Gotchi } from "@/types";
 
 function formatPrice(priceWei: string): string {
   const ghst = parseFloat(priceWei) / 1e18;
-  if (ghst >= 1000) return `${(ghst / 1000).toFixed(1)}k`;
-  if (ghst >= 100) return ghst.toFixed(0);
-  if (ghst >= 10) return ghst.toFixed(1);
-  return ghst.toFixed(2);
+  if (ghst >= 1000) return `${(ghst / 1000).toFixed(1)}k GHST`;
+  if (ghst >= 100) return `${ghst.toFixed(0)} GHST`;
+  if (ghst >= 10) return `${ghst.toFixed(1)} GHST`;
+  return `${ghst.toFixed(2)} GHST`;
 }
 
 type GotchiCarouselProps = {
