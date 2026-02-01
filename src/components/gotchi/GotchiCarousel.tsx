@@ -151,55 +151,51 @@ export function GotchiCarousel({
         </div>
       ) : (
         <>
-          <div className="flex items-center gap-1 p-2">
-          {/* Lock All / Unlock All - compact inline */}
-          <div className="flex items-center gap-0.5 mr-1">
+          {/* Minimal controls bar */}
+          <div className="flex items-center justify-end gap-2 px-2 py-0.5 text-[9px] text-muted-foreground">
             <button
-              className={`p-1 rounded transition-colors ${allLocked ? 'text-muted-foreground/40' : 'text-amber-500 hover:bg-amber-500/10'}`}
+              className={`flex items-center gap-0.5 hover:text-foreground transition-colors ${allLocked ? 'opacity-40' : 'text-amber-500'}`}
               onClick={handleLockAll}
               disabled={allLocked}
               title="Lock All"
             >
-              <Lock className="h-3.5 w-3.5" />
+              <Lock className="h-2.5 w-2.5" />
             </button>
             <button
-              className={`p-1 rounded transition-colors ${!anyLocked ? 'text-muted-foreground/40' : 'text-muted-foreground hover:bg-muted/50'}`}
+              className={`flex items-center gap-0.5 hover:text-foreground transition-colors ${!anyLocked ? 'opacity-40' : ''}`}
               onClick={handleUnlockAll}
               disabled={!anyLocked}
               title="Unlock All"
             >
-              <Unlock className="h-3.5 w-3.5" />
+              <Unlock className="h-2.5 w-2.5" />
+            </button>
+            <span className="text-muted-foreground/30">|</span>
+            <button
+              className="flex items-center gap-0.5 hover:text-foreground transition-colors"
+              onClick={() => {
+                const order: SortOption[] = ['rarity-high', 'rarity-low', 'brs-high', 'brs-low'];
+                const idx = order.indexOf(sortOption);
+                setSortOption(order[(idx + 1) % order.length]);
+              }}
+              title="Click to cycle sort"
+            >
+              <span className={sortOption.includes('rarity') ? 'text-purple-400' : 'text-fuchsia-400'}>
+                {sortOption.includes('rarity') ? 'RS' : 'BRS'}
+              </span>
+              {sortOption.includes('high') ? <ArrowDown className="h-2 w-2" /> : <ArrowUp className="h-2 w-2" />}
             </button>
           </div>
           
-          {/* Sort Toggle - Compact */}
-          <button
-            className="flex items-center gap-0.5 px-1.5 py-1 rounded text-[9px] font-medium bg-background/60 border border-border/40 hover:border-purple-500/40 transition-colors"
-            onClick={() => {
-              const order: SortOption[] = ['rarity-high', 'rarity-low', 'brs-high', 'brs-low'];
-              const idx = order.indexOf(sortOption);
-              setSortOption(order[(idx + 1) % order.length]);
-            }}
-            title={`Sort: ${sortOption.includes('rarity') ? 'Rarity' : 'BRS'} ${sortOption.includes('high') ? '↓' : '↑'} (click to cycle)`}
-          >
-            <span className={sortOption.includes('rarity') ? 'text-purple-400' : 'text-fuchsia-400'}>
-              {sortOption.includes('rarity') ? 'RS' : 'BRS'}
-            </span>
-            {sortOption.includes('high') ? (
-              <ArrowDown className="h-2.5 w-2.5" />
-            ) : (
-              <ArrowUp className="h-2.5 w-2.5" />
-            )}
-          </button>
-          
+          {/* Gotchi strip with scroll buttons */}
+          <div className="flex items-center gap-1 px-1">
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7"
+            className="h-6 w-6 shrink-0"
             onClick={() => scrollBy(-300)}
             aria-label="Scroll left"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3.5 w-3.5" />
           </Button>
           <div
             ref={scrollRef}
@@ -311,13 +307,13 @@ export function GotchiCarousel({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7"
+            className="h-6 w-6 shrink-0"
             onClick={() => scrollBy(300)}
             aria-label="Scroll right"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3.5 w-3.5" />
           </Button>
-        </div>
+          </div>
         </>
       )}
     </div>
