@@ -179,18 +179,15 @@ export function EditorPanel() {
                   <div className="h-full w-full rounded-xl bg-background" />
                 </div>
                 
-                <div className="relative rounded-xl bg-gradient-to-br from-background via-background to-purple-950/5">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute -top-1 -right-1 h-5 w-5 z-20 bg-rose-500/80 hover:bg-rose-500 text-white rounded-full shadow-md"
+                <div className="relative rounded-xl bg-gradient-to-br from-background via-background to-purple-950/5 group/card">
+                  <div 
+                    className="absolute top-0 right-0 bottom-0 w-6 flex items-center justify-center cursor-pointer opacity-0 group-hover/card:opacity-100 transition-opacity bg-gradient-to-l from-rose-500/20 to-transparent hover:from-rose-500/40 rounded-r-xl"
                     onClick={() => removeEditorInstance(instance.instanceId)}
                     title="Remove from editor"
                   >
-                    <X className="h-3 w-3" />
-                  </Button>
-
-                  <div className="p-3">
+                    <X className="h-3.5 w-3.5 text-rose-400" />
+                  </div>
+                  <div className="p-3 pr-8">
                     <div className="flex gap-3">
                       <div className="flex flex-col items-center gap-2 shrink-0">
                         <div className="relative group">
