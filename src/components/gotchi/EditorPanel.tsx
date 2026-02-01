@@ -240,15 +240,6 @@ export function EditorPanel() {
                           >
                             <RotateCcw className="h-3.5 w-3.5" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 rounded-lg bg-gradient-to-br from-pink-500/20 to-fuchsia-500/20 hover:from-pink-500/30 hover:to-fuchsia-500/30 text-pink-400 border border-pink-500/30"
-                            onClick={() => setMommyModalInstanceId(instance.instanceId)}
-                            title="Mommy Dress Me"
-                          >
-                            <Baby className="h-3.5 w-3.5" />
-                          </Button>
                           {isLockSetEnabled(instance.baseGotchi.id) ? (
                             <Button
                               variant="ghost"
@@ -295,6 +286,15 @@ export function EditorPanel() {
                               <Wand2 className="h-3.5 w-3.5" />
                             </Button>
                           )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 rounded-lg bg-gradient-to-br from-pink-500/20 to-fuchsia-500/20 hover:from-pink-500/30 hover:to-fuchsia-500/30 text-pink-400 border border-pink-500/30"
+                            onClick={() => setMommyModalInstanceId(instance.instanceId)}
+                            title="Mommy Dress Me"
+                          >
+                            <Baby className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                         
                         {mommyStatusMessage && mommyStatusMessage.instanceId === instance.instanceId && (
