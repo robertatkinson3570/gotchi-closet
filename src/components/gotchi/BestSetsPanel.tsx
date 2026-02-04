@@ -22,10 +22,36 @@ export function BestSetsPanel({ baseTraits, enableSetFilter = false }: BestSetsP
 
   const handleSetClick = (setName: string) => {
     if (!enableSetFilter) return;
-    const normalized = setName.toLowerCase().replace(/\s*\(.*\)\s*$/, "").trim();
-    const match = storeSets.find(
-      (s) => s.name.toLowerCase().trim() === normalized
+    
+    const lowerName = setName.toLowerCase().trim();
+    
+    // Try exact match first
+    let match = storeSets.find(
+      (s) => s.name.toLowerCase().trim() === lowerName
     );
+    
+    if (!match) {
+      // Handle "SetName (Rarity)" → "Rarity SetName" pattern
+      // e.g., "Wizard (Mythical)" → "Mythical Wizard"
+      const parentheticalMatch = setName.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+      if (parentheticalMatch) {
+        const baseName = parentheticalMatch[1].trim();
+        const rarity = parentheticalMatch[2].trim();
+        const reorderedName = `${rarity} ${baseName}`.toLowerCase();
+        match = storeSets.find(
+          (s) => s.name.toLowerCase().trim() === reorderedName
+        );
+      }
+    }
+    
+    if (!match) {
+      // Fall back to stripped version (remove parenthetical suffix)
+      const stripped = setName.toLowerCase().replace(/\s*\(.*\)\s*$/, "").trim();
+      match = storeSets.find(
+        (s) => s.name.toLowerCase().trim() === stripped
+      );
+    }
+    
     if (match) {
       setFilters({ set: match.id });
       setIsExpanded(false);
