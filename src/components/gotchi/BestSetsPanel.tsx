@@ -70,7 +70,7 @@ export function BestSetsPanel({ baseTraits, enableSetFilter = false }: BestSetsP
   }
 
   return (
-    <div className="mt-2">
+    <div className="mt-2 relative">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
@@ -85,7 +85,7 @@ export function BestSetsPanel({ baseTraits, enableSetFilter = false }: BestSetsP
       </button>
 
       {isExpanded && (
-        <div className="mt-1 p-1.5 bg-muted/50 rounded-md max-h-[200px] overflow-y-auto">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 p-1.5 bg-background border border-border rounded-md shadow-lg max-h-[200px] overflow-y-auto">
           {rankedSets.length === 0 ? (
             <p className="text-[10px] text-muted-foreground">
               No sets available.
