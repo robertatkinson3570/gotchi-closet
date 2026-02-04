@@ -6,6 +6,9 @@ type Props = {
 };
 
 export function FamilyPhotoItem({ gotchi }: Props) {
+  const brs = gotchi.withSetsRarityScore || gotchi.modifiedRarityScore;
+  const baseRar = gotchi.baseRarityScore;
+  
   return (
     <div
       className="flex flex-col items-center p-1 rounded hover:bg-muted/30 transition-colors text-center min-w-0 group"
@@ -20,11 +23,11 @@ export function FamilyPhotoItem({ gotchi }: Props) {
           className="w-full h-full"
         />
       </div>
-      <span className="text-[10px] sm:text-xs font-medium truncate w-full mt-0.5 group-hover:text-primary transition-colors leading-tight">
+      <span className="text-[10px] sm:text-xs font-medium w-full mt-0.5 group-hover:text-primary transition-colors leading-tight break-words">
         {gotchi.name || `#${gotchi.tokenId}`}
       </span>
       <span className="text-[9px] sm:text-[10px] text-purple-500 font-medium leading-tight">
-        {gotchi.withSetsRarityScore}
+        RAR {brs} ({baseRar})
       </span>
     </div>
   );
