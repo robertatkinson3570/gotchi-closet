@@ -4,10 +4,11 @@ import { Button } from "@/ui/button";
 import { Search, ChevronDown, ChevronUp, X, Loader2 } from "lucide-react";
 import { useGotchiSearch } from "@/lib/hooks/useGotchiSearch";
 import { useBaazaarListings } from "@/lib/hooks/useBaazaarListings";
-import { transformBaazaarListingToGotchi } from "@/lib/baazaarListings";
+import { transformBaazaarListingToGotchi, fetchBaazaarListings } from "@/lib/baazaarListings";
 import { fetchGotchiByTokenId } from "@/graphql/fetchers";
 import { GotchiCard } from "./GotchiCard";
 import { computeInstanceTraits, useWearablesById } from "@/state/selectors";
+import { useQuery } from "@tanstack/react-query";
 import type { Gotchi } from "@/types";
 
 type SearchMode = "name" | "baazaar";
@@ -33,6 +34,42 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
     mode === "name" && (isExpanded || search.length >= 2)
   );
 
+  // Also run name search for Baazaar mode to find gotchis by name
+  const isNameSearch = search.trim().length >= 2 && !/^\d+$/.test(search.trim()) && !search.trim().startsWith("0x");
+  const { results: baazaarNameResults } = useGotchiSearch(
+    search,
+    mode === "baazaar" && isExpanded && isNameSearch
+  );
+
+  // For gotchis found by name search, check if they have Baazaar listings
+  const { data: nameMatchListings = [], isLoading: nameMatchLoading } = useQuery({
+    queryKey: ["baazaar-name-match", baazaarNameResults.map(g => g.id).join(",")],
+    queryFn: async () => {
+      if (baazaarNameResults.length === 0) return [];
+      
+      // Fetch listings for each found gotchi
+      const listings = await Promise.all(
+        baazaarNameResults.slice(0, 5).map(async (gotchi) => {
+          try {
+            const result = await fetchBaazaarListings({
+              first: 1,
+              skip: 0,
+              orderBy: "timeCreated",
+              orderDirection: "desc",
+              filterTokenId: gotchi.id,
+            });
+            return result.listings[0] || null;
+          } catch {
+            return null;
+          }
+        })
+      );
+      return listings.filter(Boolean);
+    },
+    enabled: mode === "baazaar" && baazaarNameResults.length > 0 && isNameSearch,
+    staleTime: 30_000,
+  });
+
   // Baazaar listings (new)
   const {
     listings: baazaarListings,
@@ -56,12 +93,34 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
     }
   }, [baazaarLoading, baazaarHasMore, baazaarLoadMore]);
 
-  // Transform Baazaar listings to Gotchi format
+  // Transform Baazaar listings to Gotchi format, merging name-matched listings
   const baazaarGotchis = useMemo(() => {
-    return baazaarListings
-      .map(transformBaazaarListingToGotchi)
-      .filter((g) => !excludeIds.has(g.id));
-  }, [baazaarListings, excludeIds]);
+    const fromListings = baazaarListings.map(transformBaazaarListingToGotchi);
+    const validNameMatches = nameMatchListings.filter((l): l is NonNullable<typeof l> => l !== null);
+    const fromNameMatch = validNameMatches.map(transformBaazaarListingToGotchi);
+    
+    // Merge: name match results first (if searching), then regular listings
+    const seenIds = new Set<string>();
+    const merged: Gotchi[] = [];
+    
+    // Add name matches first (they're more relevant when searching by name)
+    for (const g of fromNameMatch) {
+      if (!seenIds.has(g.id) && !excludeIds.has(g.id)) {
+        seenIds.add(g.id);
+        merged.push(g);
+      }
+    }
+    
+    // Add remaining listings
+    for (const g of fromListings) {
+      if (!seenIds.has(g.id) && !excludeIds.has(g.id)) {
+        seenIds.add(g.id);
+        merged.push(g);
+      }
+    }
+    
+    return merged;
+  }, [baazaarListings, nameMatchListings, excludeIds]);
 
   const filteredNameResults = nameResults.filter((g) => !excludeIds.has(g.id));
 
@@ -139,7 +198,7 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
     }
   };
 
-  const isLoading = mode === "name" ? nameLoading : baazaarLoading;
+  const isLoading = mode === "name" ? nameLoading : (baazaarLoading || nameMatchLoading);
   const error = mode === "name" ? nameError : baazaarError;
   const showResults = mode === "name" ? filteredNameResults.length > 0 : baazaarGotchis.length > 0;
   const shouldShowResults = mode === "name" 
