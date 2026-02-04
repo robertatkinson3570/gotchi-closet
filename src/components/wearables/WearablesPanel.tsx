@@ -19,7 +19,7 @@ export function WearablesPanel() {
   const editorInstances = useAppStore((state) => state.editorInstances);
   const gotchis = useAppStore((state) => state.gotchis);
   const setError = useAppStore((state) => state.setError);
-  const { availCountsWithLocked } = useWearableInventory();
+  const { ownedCounts, availCountsWithLocked } = useWearableInventory();
   const { baazaarPrices, baazaarLoading, isBaazaarMode } = useBaazaar();
   const equippedIds = editorInstances
     .flatMap((instance) => instance.equippedBySlot)
@@ -30,14 +30,15 @@ export function WearablesPanel() {
   const [modalOpen, setModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const failedThumbsRef = useRef<Set<number>>(new Set());
-
+  
   const filteredWearables = useMemo(() => {
     let filtered = [...wearables];
 
     // Apply wearableMode filter first
-    // "owned" mode uses availCountsWithLocked to exclude wearables reserved by locked builds
+    // "owned" mode shows ALL owned wearables (even if equipped elsewhere)
+    // The availCountsWithLocked is only used for displaying remaining quantity
     if (filters.wearableMode === "owned") {
-      filtered = filtered.filter((w) => (availCountsWithLocked[w.id] || 0) > 0);
+      filtered = filtered.filter((w) => (ownedCounts[w.id] || 0) > 0);
     } else if (filters.wearableMode === "baazaar") {
       filtered = filtered.filter((w) => baazaarPrices[w.id] !== undefined);
     }
@@ -102,7 +103,7 @@ export function WearablesPanel() {
     }
 
     return filtered;
-  }, [wearables, filters, sets, equippedIds, availCountsWithLocked, baazaarPrices]);
+  }, [wearables, filters, sets, equippedIds, ownedCounts, baazaarPrices]);
 
   const activeSet = useMemo(() => {
     if (!filters.set) return null;

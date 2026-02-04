@@ -1,0 +1,137 @@
+Fix Gotchi Editor + Wearable Selector Bugs & Logic
+
+Please address the following issues and confirmations in the Gotchi Editor and Wearable Selector. Do not change unrelated UI or flows.
+
+1. Wearable hover tooltip in Gotchi Editor
+
+In the Gotchi Editor, when hovering over a wearable already equipped on a gotchi, show a tooltip with:
+
+Wearable name
+
+Trait modifiers (+/− traits)
+
+This tooltip should behave and look the same as the tooltip used in the Wearable Selector.
+
+2. “Filter Best Wearables” button should not toggle selector tabs
+
+When clicking “Filter Best Wearables” in the Gotchi Editor:
+
+The Wearable Selector must not auto-toggle tabs (All / Owned / Baazaar).
+
+Tab state should remain exactly as the user last set it.
+
+3. Owned wearables must always reflect actual ownership
+
+Owned wearables should:
+
+Always appear in the Owned tab of the Wearable Selector if the user owns them.
+
+Not disappear simply because they are equipped on another gotchi.
+
+Update dynamically as wearables are added to or removed from gotchis, but ownership must always be factored into the selector.
+
+4. “Filter Best Wearables” must consistently filter across all tabs
+
+When “Filter Best Wearables” is enabled:
+
+All tabs (All / Owned / Baazaar) must show all wearables that are valid for the currently edited gotchi.
+
+There are cases where valid wearables do not appear — this needs to be fixed.
+
+Filtering logic must be consistent and deterministic.
+
+5. Best Sets dropdown validation
+
+In the Gotchi Selector, confirm that:
+
+All listed sets actually apply to the gotchi currently in the editor.
+
+A set is only shown if the gotchi’s traits match that set’s required +/− traits.
+
+Example:
+
+If a set requires SPK+ and BRN+, the gotchi must also be SPK+ and BRN+ for that set option to appear.
+
+6. Slot filter state should persist when switching tabs
+
+Current behavior:
+
+Clicking a wearable slot correctly filters the selector to that slot.
+
+Switching between All / Owned / Baazaar clears the slot filter, which feels wrong.
+
+Required behavior:
+
+Slot filter state must persist across tab changes.
+
+Slot filter should only clear if the user explicitly clears or changes wearable filters.
+
+7. Mommy Dress Me — never leave empty slots unnecessarily
+
+Update the Mommy Dress Me logic with the following rules:
+
+Global rules
+
+Never leave a wearable slot empty if a suitable wearable exists.
+
+A wearable must respect gotchi trait +/− alignment.
+
+Strategy priority applies first, but BRS is always important.
+
+If a wearable would clearly worsen the gotchi, it may be left empty.
+
+Highest BRS
+
+Always attempt to complete a matching set first.
+
+After set completion, fill all remaining slots with the best available wearables.
+
+Never leave empty slots if a wearable improves or maintains BRS.
+
+Trait Sculptor
+
+Primary goal: maximize the number of strongest like traits.
+
+Examples (best to worst):
+
+104,104,104,104
+
+104,104,104
+
+104,104,98,75
+
+Try for:
+
+Four matching strong traits
+
+Then three
+
+Then two
+
+Then one
+
+After achieving the strongest trait configuration possible, fill remaining slots with valid wearables.
+
+Balanced mode currently does nothing — confirm or fix.
+
+Dual Trait
+
+Prioritize two strong traits.
+
+If not possible, fall back to one strong trait.
+
+After that, fill remaining slots where valid.
+
+Dominant
+
+Focus entirely on one trait (current behavior mostly correct).
+
+After locking the dominant trait, still fill remaining slots if valid wearables exist.
+
+Respec
+
+Current respec handling looks correct, but verify it still respects all the above logic.
+
+Do not change unrelated editor behavior.
+Do not change UI layouts.
+Focus only on fixing state, filtering, and logic correctness.

@@ -6,9 +6,11 @@ import { SLOT_NAMES } from "@/lib/constants";
 import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
 import { placeholderSvg } from "@/lib/placeholderSvg";
 import { formatTraitValue } from "@/lib/format";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { Wearable } from "@/types";
 import { useAppStore } from "@/state/useAppStore";
+
+const TRAIT_LABELS = ["NRG", "AGG", "SPK", "BRN"];
 
 interface SlotCardProps {
   slotIndex: number;
@@ -41,6 +43,19 @@ export function SlotCard({
   const emptySlotSvg =
     '<svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg"><rect width="96" height="96" rx="12" fill="hsl(203 50% 95%)"/></svg>';
 
+  const tooltip = useMemo(() => {
+    if (!wearable) return SLOT_NAMES[slotIndex];
+    const traitSummary = wearable.traitModifiers
+      .slice(0, 4)
+      .map((mod, i) => {
+        if (mod === 0) return null;
+        return `${TRAIT_LABELS[i]} ${formatTraitValue(mod)}`;
+      })
+      .filter(Boolean)
+      .join(", ");
+    return `${wearable.name}${traitSummary ? ` • ${traitSummary}` : ""}`;
+  }, [wearable, slotIndex]);
+
   useEffect(() => {
     setUrlIndex(0);
     setLoaded(false);
@@ -58,6 +73,7 @@ export function SlotCard({
       <Card
         data-testid={`slot-${instanceId}-${slotIndex}`}
         data-wearable-id={wearable ? String(wearable.id) : ""}
+        title={tooltip}
         className={`group relative w-[72px] flex-shrink-0 p-1 overflow-hidden cursor-pointer hover:ring-1 hover:ring-primary/50 ${
           isDragOver ? "ring-2 ring-primary" : ""
         }`}

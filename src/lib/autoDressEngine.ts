@@ -277,7 +277,7 @@ export function autoDress(
   }
 
   // Run beam search starting from nakey baseline (locked slots preserved)
-  const bestState = beamSearch(context, startEquipped);
+  let bestState = beamSearch(context, startEquipped);
   if (!bestState) {
     return {
       success: false,
@@ -285,6 +285,10 @@ export function autoDress(
       explanation: "Mommy couldn't find a meaningful improvement 💅",
     };
   }
+
+  // POST-PASS: Fill any remaining empty slots with best valid wearables
+  // This ensures we never leave slots empty if valid wearables exist
+  bestState = fillEmptySlots(context, bestState);
 
   // Evaluate best candidate
   const bestEval = evaluateBuild(context, bestState);
@@ -597,18 +601,30 @@ function evaluateBuild(context: AutoDressContext, state: BuildState): Evaluation
 function computeGoalScore(
   context: AutoDressContext,
   breakdown: ReturnType<typeof computeBRSBreakdown>,
-  _equipped: number[]
+  equipped: number[]
 ): number {
   const { totalBrs: brsTotal, finalTraits } = breakdown;
   const editableTraits = finalTraits.slice(0, 4); // NRG, AGG, SPK, BRN
   
   // Calculate extremity for each trait (distance from 50)
   const extremities = editableTraits.map(t => getExtremity(t));
+  
+  // SLOT FILL COUNT: Used as a final tie-breaker, not a primary factor
+  // Count filled slots (excluding locked slots and slots with no usable wearables)
+  let filledSlots = 0;
+  for (let slot = 0; slot < 8; slot++) { // Only count main 8 slots
+    if (context.lockedSlots.has(slot)) continue;
+    if (equipped[slot] && equipped[slot] !== 0) {
+      filledSlots++;
+    }
+  }
+  // Slot fill as a tiny tie-breaker (0.001 per slot, won't affect primary scoring)
+  const slotFillTieBreaker = filledSlots * 0.001;
 
   switch (context.options.goal) {
     case "maximizeBRS": {
-      // Pure maximize BRS (no set bonus)
-      return brsTotal;
+      // Pure maximize BRS, slot fill only as tie-breaker
+      return brsTotal + slotFillTieBreaker;
     }
 
     case "traitShape": {
@@ -624,8 +640,8 @@ function computeGoalScore(
         const othersAvg = sortedExtremities.slice(1).reduce((sum, v) => sum + v, 0) / 3;
         const dominanceGap = maxExtremity - othersAvg;
         
-        // Tertiary: BRS (for tie-breaking)
-        return maxExtremity * 100_000 + dominanceGap * 1000 + brsTotal;
+        // Tertiary: BRS, slot fill as tie-breaker
+        return maxExtremity * 100_000 + dominanceGap * 1000 + brsTotal + slotFillTieBreaker;
       }
 
       if (shapeType === "twoEqual") {
@@ -638,15 +654,21 @@ function computeGoalScore(
         const diff = Math.abs(e1 - e2);
         
         // Tertiary: maximize sum of top 2 extremities
-        // Quaternary: BRS
-        return e2 * 1_000_000 - diff * 10_000 + e1 * 100 + brsTotal;
+        // Quaternary: BRS, slot fill as tie-breaker
+        return e2 * 1_000_000 - diff * 10_000 + e1 * 100 + brsTotal + slotFillTieBreaker;
       }
 
       if (shapeType === "balanced") {
         // Balanced: maximize average extremity while minimizing variance
         // CONSTRAINT: Never lower BRS
         
-        // Primary: maximize count of equal extremities
+        // Primary: maximize average extremity (all traits should improve)
+        const avgExtremity = extremities.reduce((sum, v) => sum + v, 0) / 4;
+        
+        // Secondary: minimize variance in extremity
+        const variance = computeVariance(extremities);
+        
+        // Tertiary: maximize count of equal extremities
         const roundedExtremities = extremities.map(e => Math.round(e));
         const valueCounts = new Map<number, number>();
         for (const v of roundedExtremities) {
@@ -654,17 +676,11 @@ function computeGoalScore(
         }
         const maxEqualCount = Math.max(...Array.from(valueCounts.values()));
         
-        // Secondary: minimize variance in extremity
-        const variance = computeVariance(extremities);
-        
-        // Tertiary: maximize average extremity
-        const avgExtremity = extremities.reduce((sum, v) => sum + v, 0) / 4;
-        
-        // Quaternary: BRS
-        return maxEqualCount * 1_000_000 - variance * 10_000 + avgExtremity * 100 + brsTotal;
+        // Quaternary: BRS, slot fill as tie-breaker
+        return avgExtremity * 1_000_000 + maxEqualCount * 10_000 - variance * 100 + brsTotal + slotFillTieBreaker;
       }
 
-      return brsTotal;
+      return brsTotal + slotFillTieBreaker;
     }
 
     default:
@@ -876,6 +892,78 @@ function isValidState(context: AutoDressContext, state: BuildState): boolean {
   }
 
   return true;
+}
+
+/**
+ * POST-PASS: Fill any remaining empty slots with best valid wearables
+ * STRICT: Only accepts wearables that maintain or improve BRS/goalScore
+ * Recomputes baseline after each accepted fill
+ */
+function fillEmptySlots(context: AutoDressContext, state: BuildState): BuildState {
+  const equipped = [...state.equipped];
+  
+  // Iterate through slots 0-7 (main wearable slots)
+  for (let slot = 0; slot < 8; slot++) {
+    // Skip locked or already filled slots
+    if (context.lockedSlots.has(slot)) continue;
+    if (equipped[slot] && equipped[slot] !== 0) continue;
+    
+    // Get usable wearables for this slot
+    const usableWearables = context.wearablesUsableBySlot[slot] || [];
+    if (usableWearables.length === 0) continue;
+    
+    // Recompute baseline after each potential fill
+    const currentEval = evaluateBuild(context, { equipped });
+    if (!currentEval) continue;
+    
+    // Find the best wearable that improves or maintains the build
+    let bestWearableId: number | null = null;
+    let bestImprovement = 0; // Must be >= 0 to accept
+    
+    for (const wearableId of usableWearables) {
+      // Check if we can use this wearable (count check)
+      if (wouldViolateCounts(context, equipped, slot, wearableId)) continue;
+      
+      // Check if this wearable would harm traits (only for trait shape modes)
+      const wearable = context.wearablesById.get(wearableId);
+      if (!wearable) continue;
+      
+      // For trait shape, skip wearables with harmful modifiers
+      if (context.options.goal === "traitShape") {
+        if (hasHarmfulModifiers(context.baseTraits, wearable.traitModifiers)) {
+          continue;
+        }
+      }
+      
+      // Evaluate the build with this wearable
+      const testEquipped = [...equipped];
+      testEquipped[slot] = wearableId;
+      const testEval = evaluateBuild(context, { equipped: testEquipped });
+      if (!testEval) continue;
+      
+      // STRICT: Only accept if BRS is maintained or improved
+      if (testEval.totalBrs < currentEval.totalBrs - EPS) continue;
+      
+      // For trait shape, also check goal score is maintained
+      if (context.options.goal === "traitShape") {
+        if (testEval.goalScore < currentEval.goalScore - EPS) continue;
+      }
+      
+      // Calculate improvement (prefer higher BRS improvement)
+      const improvement = testEval.totalBrs - currentEval.totalBrs;
+      if (improvement > bestImprovement || (improvement === bestImprovement && bestWearableId === null)) {
+        bestWearableId = wearableId;
+        bestImprovement = improvement;
+      }
+    }
+    
+    // Fill the slot if we found a valid wearable that maintains/improves BRS
+    if (bestWearableId !== null) {
+      equipped[slot] = bestWearableId;
+    }
+  }
+  
+  return { ...state, equipped };
 }
 
 /**

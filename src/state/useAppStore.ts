@@ -305,7 +305,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => ({ 
       filters: { 
         ...initialFilters, 
-        ownedOnly: state.filters.ownedOnly 
+        ownedOnly: state.filters.ownedOnly,
+        wearableMode: state.filters.wearableMode,
+        slot: state.filters.slot,
       } 
     }));
   },
