@@ -35,7 +35,7 @@ The application is built with a React 18 frontend using TypeScript and Vite, sty
 - **Wearable Selector:** Features a 3-way toggle for "All | Owned | Baazaar". "Baazaar" mode displays GHST prices fetched from the Goldsky Base core subgraph. "Owned" mode shows only owned wearables with inventory counts, which decrement upon equipping.
 - **Multi-wallet Support:** Allows adding up to 3 additional wallet addresses, with Gotchis loaded from all active wallets.
 - **"Lock & Set" Feature:** Enables reserving wearables for a specific build, excluding them from the available pool.
-- **Best Sets Feature:** Displays all wearable sets ranked by projected BRS gain, using reference data from `aadventure.io`. Clicking a set filters wearables to that set. **Name matching** handles inconsistent naming between data sources: tries exact match first, then transforms "SetName (Rarity)" → "Rarity SetName" pattern (e.g., "Wizard (Mythical)" → "Mythical Wizard"), then falls back to stripped base name.
+- **Best Sets Feature:** Displays all wearable sets ranked by projected BRS gain, using reference data from `aadventure.io`. Clicking a set filters wearables to that set. **Data cleaned** to remove duplicate entries (e.g., both "Mythical Wizard" and "Wizard (Mythical)") and phantom sets that don't exist in wearableSets.json. All 149 Best Sets entries now map 1:1 to actual sets. **Name matching** handles inconsistent naming between data sources: tries exact match first, then transforms "SetName (Rarity)" → "Rarity SetName" pattern, then falls back to stripped base name.
 - **Respec Simulator:** Uses `computeSimTraits()` to calculate `simBase` and `simModified` traits, fetching birth traits via contract calls.
 
 ## External Dependencies
