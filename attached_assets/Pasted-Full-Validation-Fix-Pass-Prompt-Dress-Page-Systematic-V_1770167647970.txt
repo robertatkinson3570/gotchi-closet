@@ -1,0 +1,191 @@
+Full Validation & Fix Pass
+
+Prompt: Dress Page Systematic Validation & Repair
+
+You are performing a full feature validation pass on the Dress page only.
+
+This page is production-critical.
+Prefer correctness and state safety over cleverness.
+
+Hard rules (do not violate)
+
+Do not change UI layout, spacing, or visual design
+
+Do not refactor unrelated logic
+
+Do not rename components, hooks, or state unless required to fix a bug
+
+Do not touch other pages
+
+Preserve all behavior that currently works
+
+What to test (follow in this order)
+1. Initial load & default state
+
+Verify on first load:
+
+Gotchi selector initializes correctly
+
+First gotchi loads dressed correctly
+
+Wearable Selector defaults (tabs, filters, slot state) are correct
+
+No filters are implicitly applied
+
+No state mutates before user interaction
+
+Fix any unexpected side effects.
+
+2. Gotchi selection
+
+Test:
+
+Switching between gotchis
+
+Returning to a previously selected gotchi
+
+Confirm:
+
+Equipped wearables match the gotchi
+
+Trait values and BRS update correctly
+
+Wearable Selector reflects the current gotchi
+
+No filters, tabs, or slot states reset unless explicitly intended
+
+3. Wearable Selector tabs
+
+Test All / Owned / Baazaar:
+
+Switching tabs does not reset filters
+
+Switching tabs does not reset slot filtering
+
+Owned tab always reflects true ownership
+
+Baazaar tab only shows listed items
+
+All tab includes everything valid
+
+Fix any tab causing unintended state resets.
+
+4. Slot filtering behavior
+
+Test:
+
+Clicking a wearable slot filters the selector to that slot
+
+Switching tabs while a slot filter is active
+
+Clearing slot filters manually
+
+Expected behavior:
+
+Slot filter persists across tab changes
+
+Slot filter only clears when explicitly cleared or changed
+
+No silent unfiltering
+
+5. “Filter Best Wearables” button
+
+Test:
+
+Enable / disable repeatedly
+
+Enable → switch tabs
+
+Enable → click slot → switch tabs
+
+Enable → change gotchi
+
+Confirm:
+
+It never toggles selector tabs
+
+It applies consistently across all tabs
+
+All valid wearables appear (no missing items)
+
+Disabling restores previous state cleanly
+
+Fix any inconsistent filtering logic.
+
+6. Equipping / unequipping wearables
+
+Test:
+
+Equip wearable manually
+
+Remove wearable
+
+Equip on multiple gotchis
+
+Swap wearables rapidly
+
+Confirm:
+
+Trait deltas update correctly
+
+BRS updates correctly
+
+Ownership logic is preserved
+
+Wearable Selector updates without losing state
+
+7. Mommy Dress Me feature
+
+Test each mode:
+
+Highest BRS
+
+Trait Sculptor
+
+Dual Trait
+
+Dominant
+
+Confirm:
+
+Strategy logic is respected
+
+Empty slots are only left empty if equipping would worsen results
+
+Sets are completed when possible
+
+Remaining slots are filled when valid wearables exist
+
+Respec logic applies correctly and does not over-apply
+
+Fix any mode that violates these rules.
+
+8. Cross-feature safety
+
+Test interactions between:
+
+Manual equip ↔ Mommy Dress Me
+
+Filters ↔ Manual changes
+
+Slot filtering ↔ Auto dressing
+
+Confirm:
+
+No feature silently overrides another
+
+User intent always wins
+
+State remains predictable
+
+Fix rules
+
+When an issue is found:
+
+Identify the root cause briefly
+
+Apply the smallest possible fix
+
+Prefer explicit state over derived magic
+
+No speculative optimizations
