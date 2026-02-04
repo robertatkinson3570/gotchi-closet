@@ -39,7 +39,7 @@ export function GotchiCarousel({
   const toggleLockSet = useAppStore((state) => state.toggleLockSet);
   const setLockSetEnabledBulk = useAppStore((state) => state.setLockSetEnabledBulk);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [sortOption, setSortOption] = useState<SortOption>("rarity-high");
+  const [sortOption, setSortOption] = useState<SortOption>("brs-high");
   const wearablesById = useWearablesById();
   
   const { data: ownerListingPrices } = useOwnerListings(loadedAddress);
@@ -173,14 +173,14 @@ export function GotchiCarousel({
             <button
               className="flex items-center gap-0.5 hover:text-foreground transition-colors"
               onClick={() => {
-                const order: SortOption[] = ['rarity-high', 'rarity-low', 'brs-high', 'brs-low'];
+                const order: SortOption[] = ['brs-high', 'brs-low', 'rarity-high', 'rarity-low'];
                 const idx = order.indexOf(sortOption);
                 setSortOption(order[(idx + 1) % order.length]);
               }}
               title="Click to cycle sort"
             >
-              <span className={sortOption.includes('rarity') ? 'text-purple-400' : 'text-fuchsia-400'}>
-                {sortOption.includes('rarity') ? 'RS' : 'BRS'}
+              <span className={sortOption.includes('brs') ? 'text-purple-400' : 'text-fuchsia-400'}>
+                {sortOption.includes('brs') ? 'BRS' : 'RS'}
               </span>
               {sortOption.includes('high') ? <ArrowDown className="h-2 w-2" /> : <ArrowUp className="h-2 w-2" />}
             </button>
