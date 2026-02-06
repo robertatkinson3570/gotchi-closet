@@ -40,6 +40,7 @@ export function EditorPanel() {
   const [mommyPreEquipped, setMommyPreEquipped] = useState<Record<string, number[]>>({});
   const [mommyStatusMessage, setMommyStatusMessage] = useState<{ instanceId: string; message: string } | null>(null);
   const mommyStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [committedRespecs, setCommittedRespecs] = useState<Record<string, number[]>>({});
 
   const activeSet = useMemo(() => {
     if (!filters.set) return null;
@@ -246,7 +247,7 @@ export function EditorPanel() {
                               onClick={() => {
                                 const override: LockedOverride = {
                                   wearablesBySlot: [...instance.equippedBySlot],
-                                  respecAllocated: null,
+                                  respecAllocated: committedRespecs[instance.instanceId] || null,
                                   timestamp: Date.now(),
                                 };
                                 toggleLockSet(instance.baseGotchi.id, override);
@@ -263,7 +264,7 @@ export function EditorPanel() {
                               onClick={() => {
                                 const override: LockedOverride = {
                                   wearablesBySlot: [...instance.equippedBySlot],
-                                  respecAllocated: null,
+                                  respecAllocated: committedRespecs[instance.instanceId] || null,
                                   timestamp: Date.now(),
                                 };
                                 toggleLockSet(instance.baseGotchi.id, override);
@@ -325,6 +326,12 @@ export function EditorPanel() {
                             setDelta={setTraitModsDelta}
                             enableSetFilter
                             showBestSets
+                            onCommitRespec={(delta) => {
+                              setCommittedRespecs(prev => ({
+                                ...prev,
+                                [instance.instanceId]: delta,
+                              }));
+                            }}
                           />
                         </div>
                         

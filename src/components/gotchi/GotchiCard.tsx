@@ -32,6 +32,7 @@ interface GotchiCardProps {
   enableSetFilter?: boolean;
   showBestSets?: boolean;
   price?: string;
+  onCommitRespec?: (delta: number[]) => void;
 }
 
 export function GotchiCard({
@@ -56,6 +57,7 @@ export function GotchiCard({
   enableSetFilter = false,
   showBestSets = false,
   price,
+  onCommitRespec,
 }: GotchiCardProps) {
   const numericTraitSource = baseTraits || gotchi.numericTraits;
   const baseTraitSource = baseTraits || gotchi.numericTraits;
@@ -195,7 +197,13 @@ export function GotchiCard({
                       variant="ghost"
                       size="sm"
                       className="h-6 px-2 text-[11px]"
-                      onClick={() => respec.toggleRespecMode()}
+                      onClick={() => {
+                        if (respec.isRespecMode && onCommitRespec) {
+                          const delta = respec.simBase.slice(0, 4).map((v, i) => v - (numericTraitSource[i] || 0));
+                          onCommitRespec(delta);
+                        }
+                        respec.toggleRespecMode();
+                      }}
                       data-testid="respec-toggle"
                     >
                       {respec.isRespecMode ? "Confirm" : "Respec"}
