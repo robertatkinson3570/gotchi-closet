@@ -235,7 +235,7 @@ export function GotchiCarousel({
               const displayEquipped = override?.wearablesBySlot || gotchi.equippedWearables;
               const respecDelta = override?.respecAllocated;
               const adjustedBaseTraits = respecDelta
-                ? gotchi.numericTraits.map((v, i) => i < 4 ? Math.max(0, Math.min(99, v + (respecDelta[i] || 0))) : v)
+                ? gotchi.numericTraits.map((v, i) => i < 4 ? v + (respecDelta[i] || 0) : v)
                 : gotchi.numericTraits;
               const {
                 finalTraits,
