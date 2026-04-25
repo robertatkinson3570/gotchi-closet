@@ -19,4 +19,4 @@ USER gotchicloset
 ENV NODE_ENV=production
 EXPOSE 8787
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["pnpm", "exec", "tsx", "server/index.ts"]
+CMD ["node", "node_modules/tsx/dist/cli.mjs", "server/index.ts"]
