@@ -38,7 +38,8 @@ jobs:
 
       - name: Health check
         run: |
-          set -euxo pipefail
+          set -uxo pipefail
+          cd /root/gotchicloset
           for i in 1 2 3 4 5 6 7 8 9 10; do
             if curl -fsS http://127.0.0.1:8791/api/lending/autorenew/health > /tmp/health.json; then
               cat /tmp/health.json
@@ -49,11 +50,30 @@ jobs:
             sleep 3
           done
           echo "health check failed"
-          docker compose -p gotchicloset -f deploy/docker-compose.yml logs --tail=80
           exit 1
+
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          set -uxo pipefail
+          cd /root/gotchicloset
+          echo "==== docker compose ps ===="
+          docker compose -p gotchicloset -f deploy/docker-compose.yml ps -a || true
+          echo "==== docker compose logs ===="
+          docker compose -p gotchicloset -f deploy/docker-compose.yml logs --tail=200 || true
+          echo "==== container inspect (state) ===="
+          docker inspect gotchicloset-autorenew --format '{{json .State}}' 2>/dev/null | python3 -m json.tool || true
+          echo "==== .env presence + sanitized vars ===="
+          if [[ -f .env ]]; then
+            stat .env
+            grep -v 'AUTORENEW_HOT_WALLET_KEY' .env | head -30 || true
+            grep '^AUTORENEW_HOT_WALLET_KEY=' .env | sed 's/=.*/=<redacted len='"$(grep '^AUTORENEW_HOT_WALLET_KEY=' .env | wc -c)"'>/'
+          else
+            echo "(no .env file)"
+          fi
 
       - name: Show status
         if: always()
         run: |
           cd /root/gotchicloset
-          docker compose -p gotchicloset -f deploy/docker-compose.yml ps
+          docker compose -p gotchicloset -f deploy/docker-compose.yml ps -a || true
