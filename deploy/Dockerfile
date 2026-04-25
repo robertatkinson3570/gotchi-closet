@@ -4,7 +4,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 build-essential \
   && rm -rf /var/lib/apt/lists/*
 COPY package.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --frozen-lockfile
+# pnpm 10 ignores build scripts by default — rebuild native modules (better-sqlite3)
+RUN corepack enable \
+  && pnpm install --frozen-lockfile \
+  && pnpm rebuild better-sqlite3
 
 FROM node:20-bookworm-slim AS runner
 WORKDIR /app
