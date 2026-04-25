@@ -53,10 +53,18 @@ section "1/5  GitHub Actions runner"
 if [[ -d "$RUNNER_DIR" && -f "$RUNNER_DIR/.runner" ]]; then
   yellow "runner already configured at $RUNNER_DIR — skipping registration"
 else
-  if [[ -z "${GH_PAT:-}" ]]; then
-    red "Need GH_PAT env var with a GitHub PAT (repo scope) to mint a runner registration token."
-    red "Mint one at: https://github.com/settings/tokens/new (classic, scope: repo)"
-    red "Then run:    export GH_PAT='ghp_...'  &&  re-run this script"
+  # Two paths to authenticate the runner registration:
+  #   - RUNNER_TOKEN: a pre-minted runner registration token (simplest path)
+  #   - GH_PAT:       a Personal Access Token with `repo` scope; script mints the
+  #                   registration token itself
+  if [[ -z "${RUNNER_TOKEN:-}" && -z "${GH_PAT:-}" ]]; then
+    red "Need RUNNER_TOKEN or GH_PAT env var. Easiest path:"
+    red "  1. Open https://github.com/${REPO_OWNER}/${REPO_NAME}/settings/actions/runners/new"
+    red "  2. Pick 'Linux x64' — you'll see a 'Configure' block with --token AABBCC..."
+    red "  3. Copy the token (the long string after --token, NOT the 'ghp_...' classic token)"
+    red "  4. Run:"
+    red "       export RUNNER_TOKEN='AABBCC...'"
+    red "       curl -fsSL https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/deploy/setup-vps.sh | bash"
     exit 1
   fi
 
@@ -70,24 +78,28 @@ else
     rm runner.tar.gz
   fi
 
-  yellow "minting registration token via REST API…"
-  RESP=$(curl -fsS -X POST \
-    -H "Authorization: Bearer $GH_PAT" \
-    -H "Accept: application/vnd.github+json" \
-    -H "X-GitHub-Api-Version: 2022-11-28" \
-    "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runners/registration-token")
-  if command -v jq >/dev/null 2>&1; then
-    TOKEN=$(echo "$RESP" | jq -r .token)
-  elif command -v python3 >/dev/null 2>&1; then
-    TOKEN=$(echo "$RESP" | python3 -c 'import sys,json; print(json.load(sys.stdin)["token"])')
+  if [[ -n "${RUNNER_TOKEN:-}" ]]; then
+    TOKEN="$RUNNER_TOKEN"
+    yellow "using RUNNER_TOKEN provided (pre-minted)"
   else
-    # Crude fallback: regex out the token field
-    TOKEN=$(echo "$RESP" | grep -oP '"token"\s*:\s*"\K[^"]+')
-  fi
-  if [[ -z "$TOKEN" || "$TOKEN" == "null" ]]; then
-    red "Failed to get registration token. Server said:"
-    echo "$RESP"
-    exit 1
+    yellow "minting registration token via REST API…"
+    RESP=$(curl -fsS -X POST \
+      -H "Authorization: Bearer $GH_PAT" \
+      -H "Accept: application/vnd.github+json" \
+      -H "X-GitHub-Api-Version: 2022-11-28" \
+      "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runners/registration-token")
+    if command -v jq >/dev/null 2>&1; then
+      TOKEN=$(echo "$RESP" | jq -r .token)
+    elif command -v python3 >/dev/null 2>&1; then
+      TOKEN=$(echo "$RESP" | python3 -c 'import sys,json; print(json.load(sys.stdin)["token"])')
+    else
+      TOKEN=$(echo "$RESP" | grep -oP '"token"\s*:\s*"\K[^"]+')
+    fi
+    if [[ -z "$TOKEN" || "$TOKEN" == "null" ]]; then
+      red "Failed to get registration token. Server said:"
+      echo "$RESP"
+      exit 1
+    fi
   fi
 
   # Allow running as root — the runner refuses by default. Officially supported env flag.
