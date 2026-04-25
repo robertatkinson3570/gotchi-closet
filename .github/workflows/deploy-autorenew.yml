@@ -1,0 +1,59 @@
+name: Deploy auto-renew to VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+      - "deploy/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/deploy-autorenew.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-autorenew
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, gotchicloset-vps]
+    timeout-minutes: 15
+    steps:
+      - name: Pull latest
+        run: |
+          set -euxo pipefail
+          cd /root/gotchicloset
+          git fetch --all --prune
+          git reset --hard origin/main
+
+      - name: Build + start
+        # Isolation guarantee: -p gotchicloset namespaces every container, volume,
+        # and network as `gotchicloset_*`. Cannot affect MarquIQ or any other
+        # docker-compose project on the same VPS.
+        run: |
+          set -euxo pipefail
+          cd /root/gotchicloset
+          docker compose -p gotchicloset -f deploy/docker-compose.yml up -d --build
+
+      - name: Health check
+        run: |
+          set -euxo pipefail
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS http://127.0.0.1:8791/api/lending/autorenew/health > /tmp/health.json; then
+              cat /tmp/health.json
+              echo "ok"
+              exit 0
+            fi
+            echo "wait $i…"
+            sleep 3
+          done
+          echo "health check failed"
+          docker compose -p gotchicloset -f deploy/docker-compose.yml logs --tail=80
+          exit 1
+
+      - name: Show status
+        if: always()
+        run: |
+          cd /root/gotchicloset
+          docker compose -p gotchicloset -f deploy/docker-compose.yml ps

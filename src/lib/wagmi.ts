@@ -12,8 +12,8 @@ const metadata = {
   url:
     typeof window !== "undefined"
       ? window.location.origin
-      : "https://gotchicloset.xyz",
-  icons: ["https://gotchicloset.xyz/icon.png"],
+      : "https://www.gotchicloset.com",
+  icons: ["https://www.gotchicloset.com/icon.png"],
 };
 
 const connectors = [

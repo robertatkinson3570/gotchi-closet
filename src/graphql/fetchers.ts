@@ -38,10 +38,14 @@ export async function fetchGotchisByOwner(
       ? g.equippedWearables.map((w: any) => Number(w) || 0)
       : [0, 0, 0, 0, 0, 0, 0, 0],
     baseRarityScore: g.baseRarityScore ? Number(g.baseRarityScore) : null,
+    modifiedRarityScore: g.modifiedRarityScore ? Number(g.modifiedRarityScore) : null,
+    withSetsRarityScore: g.withSetsRarityScore ? Number(g.withSetsRarityScore) : null,
     usedSkillPoints: g.usedSkillPoints ? Number(g.usedSkillPoints) : undefined,
     hauntId: g.hauntId ? Number(g.hauntId) : undefined,
     collateral: g.collateral ? String(g.collateral) : undefined,
     createdAt: g.createdAt ? Number(g.createdAt) : undefined,
+    lending: g.lending != null ? Number(g.lending) : null,
+    kinship: g.kinship != null ? Number(g.kinship) : undefined,
     blocksElapsed:
       currentBlock && g.createdAt
         ? Math.max(0, currentBlock - Number(g.createdAt))

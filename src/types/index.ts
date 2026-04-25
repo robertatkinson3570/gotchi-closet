@@ -16,6 +16,9 @@ export type Gotchi = {
   collateral?: string;
   createdAt?: number;
   blocksElapsed?: number;
+  // True (>0) when this gotchi has an active GotchiLending listing.
+  lending?: number | string | null;
+  kinship?: number;
   // Optional Baazaar metadata (only present for Baazaar-sourced gotchis)
   market?: {
     source: "baazaar";

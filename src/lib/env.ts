@@ -28,7 +28,7 @@ function resolveEnv(
 export const env = {
   siteUrl: resolveEnv(
     "VITE_SITE_URL",
-    "https://gotchicloset.xyz"
+    "https://www.gotchicloset.com"
   ),
   baseRpcUrl: resolveEnv(
     "VITE_BASE_RPC_URL",
@@ -44,5 +44,24 @@ export const env = {
   donationAddress: resolveEnv("VITE_DONATION_ADDRESS", ""),
   grimlabsName: resolveEnv("VITE_GRIMLABS_NAME", "GrimLabs"),
   grimlabsUrl: resolveEnv("VITE_GRIMLABS_URL", "https://grimlabs.xyz"),
+  // Address that receives the third-party split on listings created via this UI.
+  // Set to your collection wallet to capture the nominal fee. Empty = no third-party.
+  lendingFeeAddress: resolveEnv("VITE_LENDING_FEE_ADDRESS", ""),
+  // Percentage of revenue split that goes to lendingFeeAddress (0-100, must keep
+  // owner+borrower+other = 100). Default 1%.
+  lendingFeePct: resolveEnv("VITE_LENDING_FEE_PCT", "1"),
+  // Auto-renew operator wallet — backend hot wallet that re-lists gotchis on schedule.
+  // Owner must call setLendingOperator(thisAddr, tokenId, true) once to opt in.
+  autoRenewOperator: resolveEnv("VITE_AUTORENEW_OPERATOR", ""),
+  // Auto-renew backend API URL (where the cron service runs)
+  autoRenewApiUrl: resolveEnv("VITE_AUTORENEW_API_URL", ""),
+  // Auto-renew service fee — paid in GHST via the protocol's splitOther mechanism.
+  // Default: 5% of revenue split goes to GotchiCloset operator wallet on every rental
+  // of an auto-renewed listing. Owner can opt out (then auto-renew is disallowed).
+  autoRenewFeeAddress: resolveEnv(
+    "VITE_AUTORENEW_FEE_ADDRESS",
+    "0xc4Cb6cB969e8b4e309Ab98E4Da51b77887aFaD96"
+  ),
+  autoRenewFeePct: resolveEnv("VITE_AUTORENEW_FEE_PCT", "5"),
 };
 

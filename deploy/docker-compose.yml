@@ -1,0 +1,21 @@
+services:
+  autorenew:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: gotchicloset-autorenew
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    ports:
+      - "127.0.0.1:8791:8787"
+    volumes:
+      - autorenew_data:/srv/gotchicloset/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8787/api/lending/autorenew/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  autorenew_data:

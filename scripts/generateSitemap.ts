@@ -6,7 +6,7 @@ import wearables from "../data/wearables.json";
 const SITE_URL =
   process.env.VITE_SITE_URL ||
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://gotchicloset.xyz";
+  "https://www.gotchicloset.com";
 
 function toSlug(value: string): string {
   return value

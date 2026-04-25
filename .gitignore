@@ -25,4 +25,12 @@ dist-ssr
 
 .env
 .env.local
+.env.production
+
+# Lending research dumps (regenerable from scripts/)
+tmp/
+
+# Auto-renew SQLite db (created on VPS)
+data/
+
 

@@ -11,6 +11,11 @@ import RarityScorePage from "@/pages/RarityScorePage";
 import WearablesIndexPage from "@/pages/WearablesIndexPage";
 import WearablePage from "@/pages/WearablePage";
 import GotchiPage from "@/pages/GotchiPage";
+import LendingPage from "@/pages/LendingPage";
+import LendingAnalyticsPage from "@/pages/LendingAnalyticsPage";
+import LendingMePage from "@/pages/LendingMePage";
+import WhitelistsPage from "@/pages/WhitelistsPage";
+import BulkListPage from "@/pages/BulkListPage";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { RootLayout } from "@/components/layout/RootLayout";
 
@@ -67,6 +72,26 @@ export const router = createBrowserRouter([
       {
         path: "explorer",
         element: <ExplorerPage />,
+      },
+      {
+        path: "lending",
+        element: <LendingPage />,
+      },
+      {
+        path: "lending/analytics",
+        element: <LendingAnalyticsPage />,
+      },
+      {
+        path: "lending/me",
+        element: <LendingMePage />,
+      },
+      {
+        path: "lending/me/list",
+        element: <BulkListPage />,
+      },
+      {
+        path: "lending/whitelists",
+        element: <WhitelistsPage />,
       },
     ],
   },

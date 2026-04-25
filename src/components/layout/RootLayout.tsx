@@ -1,4 +1,6 @@
 import { Outlet, useLocation, Link } from "react-router-dom";
+import { Coins, Search, Shirt } from "lucide-react";
+import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { FooterAttribution } from "@/components/FooterAttribution";
 
@@ -8,7 +10,8 @@ export function RootLayout() {
   const isExplorer = location.pathname.startsWith("/explorer");
   const isWardrobeLab = location.pathname.startsWith("/wardrobe-lab");
   const isHome = location.pathname === "/";
-  const hideHeader = isDress || isExplorer || isWardrobeLab;
+  // Home has its own entry UI; Dress/Explorer/Wardrobe Lab take the full viewport.
+  const hideHeader = isHome || isDress || isExplorer || isWardrobeLab;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -28,7 +31,33 @@ export function RootLayout() {
                 </span>
               </div>
             </Link>
-            <ThemeToggle />
+            <div className="flex items-center gap-1.5">
+              <Link to="/explorer">
+                <Button size="sm" variant="ghost" className="h-8 px-2" title="Explorer">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/dress">
+                <Button size="sm" variant="ghost" className="h-8 px-2" title="Dress">
+                  <Shirt className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/lending">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className={`h-8 px-2 ${
+                    location.pathname.startsWith("/lending")
+                      ? "bg-primary/15 text-primary"
+                      : ""
+                  }`}
+                  title="Lending"
+                >
+                  <Coins className="h-4 w-4" />
+                </Button>
+              </Link>
+              <ThemeToggle />
+            </div>
           </div>
         </header>
       )}
@@ -38,10 +67,8 @@ export function RootLayout() {
       {!hideHeader && (
         <FooterAttribution
           className="px-4 py-4 text-center"
-          showLink={!isHome}
         />
       )}
     </div>
   );
 }
-
