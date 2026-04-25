@@ -1,0 +1,27 @@
+# Don't copy host build artifacts into the Docker build context
+node_modules
+dist
+dist-ssr
+.next
+.cache
+
+# Local data + secrets
+data
+.env
+.env.*
+!.env.example
+
+# Generated dumps
+tmp
+test-results
+
+# Editor / VCS
+.git
+.github
+.vscode
+.idea
+.DS_Store
+*.log
+
+# Markdown docs not needed at runtime
+*.md
