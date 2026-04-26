@@ -4,9 +4,11 @@ import type { Lending } from "@/lib/lending/types";
 import { brsBandOf } from "@/lib/lending/types";
 import { formatGhst, formatPeriod, formatGhstPerDay } from "@/lib/lending/transform";
 import { GotchiSvg, prefetchGotchiSvg } from "@/components/gotchi/GotchiSvg";
-import { Zap, Lock, Coins, Clock, Sparkles } from "lucide-react";
+import { Zap, Lock, Coins, Clock } from "lucide-react";
 
 const NAKED_WEARABLES: number[] = new Array(16).fill(0);
+// Order matches the Aavegotchi int16[6] numericTraits layout the explorer card uses.
+const TRAIT_ABBR = ["NRG", "AGG", "SPK", "BRN", "EYS", "EYC"];
 
 const tierColors: Record<string, { border: string; bg: string; text: string }> = {
   "<500": { border: "border-gray-400/20", bg: "bg-gray-500/5", text: "text-gray-500" },
@@ -36,10 +38,20 @@ export const LendingCard = memo(function LendingCard({ lending }: Props) {
   };
 
   const equipped = useMemo(() => g?.equippedWearables ?? NAKED_WEARABLES, [g?.equippedWearables]);
-  const traits = useMemo(
-    () => g?.numericTraits ?? [0, 0, 0, 0, 0, 0],
-    [g?.numericTraits]
-  );
+  // Render-traits mirror what the explorer's GotchiSvg consumes: prefer
+  // withSets, then modified, then base — same precedence order as
+  // GotchiExplorerCard so dressed-vs-naked SVGs match what users see there.
+  const renderTraits = useMemo(() => {
+    if (!g) return [0, 0, 0, 0, 0, 0];
+    const arr = (g.withSetsNumericTraits?.length ? g.withSetsNumericTraits :
+                 g.modifiedNumericTraits?.length ? g.modifiedNumericTraits :
+                 g.numericTraits) ?? [0, 0, 0, 0, 0, 0];
+    return arr.length === 6 ? arr : [0, 0, 0, 0, 0, 0];
+  }, [g]);
+  // For the SVG renderer we still pass numericTraits (raw birth traits) because
+  // the GotchiSvg endpoint expects those + equipped wearables to compute its
+  // own modified traits. Don't substitute renderTraits here.
+  const traits = useMemo(() => g?.numericTraits ?? [0, 0, 0, 0, 0, 0], [g?.numericTraits]);
   const wearableCount = useMemo(() => equipped.filter((w) => w > 0).length, [equipped]);
 
   useEffect(() => {
@@ -73,13 +85,21 @@ export const LendingCard = memo(function LendingCard({ lending }: Props) {
 
   return (
     <div
-      className={`group rounded-lg border ${colors.border} ${colors.bg} glass lift hover:shadow-glow-md hover:border-primary/40 relative overflow-hidden flex flex-col`}
+      className={`group rounded-lg border ${colors.border} ${colors.bg} glass lift hover:shadow-glow-md hover:border-primary/40 relative overflow-hidden flex flex-col cursor-pointer`}
       data-testid={`lending-card-${lending.id}`}
+      onClick={openDetail}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openDetail();
+        }
+      }}
     >
-      <button
-        type="button"
-        onClick={openDetail}
-        className="relative aspect-square flex items-center justify-center w-full text-left"
+      {/* Hover-to-undress: click handling is on the outer card now. */}
+      <div
+        className="relative aspect-square flex items-center justify-center w-full"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
@@ -122,7 +142,7 @@ export const LendingCard = memo(function LendingCard({ lending }: Props) {
             BRS {lending.gotchiBRS}
           </span>
         </div>
-      </button>
+      </div>
 
       <div className="px-2 py-1.5 flex flex-col gap-1 flex-1">
         <div className="flex items-center justify-between gap-1 min-h-[16px]">
@@ -134,7 +154,42 @@ export const LendingCard = memo(function LendingCard({ lending }: Props) {
           </span>
         </div>
 
-        <div className="flex items-center justify-between text-[10px]">
+        {/* Gotchi stats — mirrors the explorer card so users see the same
+            shape of info on lending listings they're considering. */}
+        {g && (
+          <>
+            <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
+              <span className="bg-muted/50 px-1 rounded" title="Haunt">
+                H{g.hauntId}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground">
+              <span title="Kinship">KIN <span className="text-foreground">{g.kinship || 0}</span></span>
+              <span title="Level">LVL <span className="text-foreground">{g.level}</span></span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-x-2 gap-y-0.5 text-[9px]">
+              {renderTraits.slice(0, 6).map((val, i) => {
+                // Match explorer's "extreme" rule. EYS/EYC use the 0-99 scale;
+                // NRG/AGG/SPK/BRN can be signed offsets from 50 in the raw
+                // subgraph data — the same `val <= 10 || val >= 90` test
+                // happens to also flag those (negatives + 99-mapped values).
+                const isExtreme = val <= 10 || val >= 90;
+                return (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="text-muted-foreground">{TRAIT_ABBR[i]}</span>
+                    <span className={isExtreme ? "text-purple-400 font-semibold" : "text-foreground"}>
+                      {val}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        <div className="flex items-center justify-between text-[10px] pt-1 border-t border-border/30">
           <div className="flex items-center gap-1 text-green-500 font-semibold">
             <Coins className="w-3 h-3" />
             <span>{ghst}</span>
@@ -154,13 +209,9 @@ export const LendingCard = memo(function LendingCard({ lending }: Props) {
           <span title="Effective price per day">{perDay}</span>
         </div>
 
-        <div className="flex items-center justify-between text-[9px] pt-1 border-t border-border/30">
+        <div className="flex items-center justify-between text-[9px]">
           <span className="text-muted-foreground truncate max-w-[60%]" title={wlLabel}>
             {wlLabel}
-          </span>
-          <span className="flex items-center gap-0.5 text-muted-foreground">
-            <Sparkles className="w-2.5 h-2.5" />
-            Lv {g?.level ?? 1}
           </span>
         </div>
       </div>
