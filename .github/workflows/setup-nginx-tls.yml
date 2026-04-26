@@ -87,7 +87,7 @@ jobs:
         run: |
           set -uxo pipefail
           for i in 1 2 3 4 5; do
-            if curl -fsS https://api.gotchicloset.com/api/lending/autorenew/health > /tmp/health.json; then
+            if curl -fsS --resolve api.gotchicloset.com:443:127.0.0.1 https://api.gotchicloset.com/api/lending/autorenew/health > /tmp/health.json; then
               cat /tmp/health.json
               echo
               exit 0
@@ -97,3 +97,20 @@ jobs:
           done
           echo "public HTTPS health check failed"
           exit 1
+
+      - name: Nginx diagnostics
+        if: always()
+        run: |
+          set -uxo pipefail
+          echo "==== sites-enabled ===="
+          ls -la /etc/nginx/sites-enabled/ || true
+          echo "==== api.gotchicloset.com effective config ===="
+          nginx -T 2>/dev/null | grep -A 30 "server_name api.gotchicloset.com" || true
+          echo "==== nginx -t ===="
+          nginx -t || true
+          echo "==== listening ports ===="
+          ss -tlnp 2>/dev/null | grep -E "(:80\b|:443\b|:8791)" || true
+          echo "==== nginx process ===="
+          ps -ef | grep nginx | grep -v grep || true
+          echo "==== local curls ===="
+          curl -kfsv --resolve api.gotchicloset.com:443:127.0.0.1 https://api.gotchicloset.com/api/lending/autorenew/health 2>&1 | tail -30 || true
