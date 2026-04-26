@@ -37,7 +37,14 @@ function useTxBase() {
   const chainId = useChainId();
   const isOnBase = chainId === BASE_CHAIN_ID;
   const tx = useWriteContract();
-  const receipt = useWaitForTransactionReceipt({ hash: tx.data });
+  // Poll every 2s with explicit confirmations:1 + a generous retry window.
+  // The default polling occasionally stalls on Base public RPC.
+  const receipt = useWaitForTransactionReceipt({
+    hash: tx.data,
+    confirmations: 1,
+    pollingInterval: 2_000,
+    retryCount: 60, // ~2 min of retries before giving up
+  });
   const [step, setStep] = useState<TxStep>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 

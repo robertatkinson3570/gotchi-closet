@@ -78,7 +78,9 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && list.step !== "submitting" && list.step !== "confirming") onClose();
+      // Always allow Esc to close — never trap the user even mid-tx. The tx
+      // continues on-chain regardless of whether the modal stays open.
+      if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
@@ -234,7 +236,7 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
   const body = (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-6"
-      onClick={busy ? undefined : onClose}
+      onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
@@ -249,8 +251,8 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
           <button
             type="button"
             onClick={onClose}
-            disabled={busy}
-            className="inline-flex items-center justify-center h-8 w-8 rounded-full hover:bg-muted/60 disabled:opacity-50"
+            className="inline-flex items-center justify-center h-8 w-8 rounded-full hover:bg-muted/60"
+            title="Close (the transaction continues on-chain)"
           >
             <X className="w-4 h-4" />
           </button>
@@ -567,6 +569,47 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
             {submitted && list.errorMsg && list.step === "error" && (
               <div className="mt-2 rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive break-words">
                 {list.errorMsg.slice(0, 240)}
+              </div>
+            )}
+
+            {/* Tx hash + BaseScan link visible the moment tx is submitted, so
+                users can verify the result themselves if our receipt polling
+                hangs (wagmi's useWaitForTransactionReceipt has been observed
+                to stall on flaky RPC connections). */}
+            {list.tx.data && list.step !== "error" && (
+              <div className="mt-2 rounded border border-border/40 bg-muted/30 p-2 text-[11px] flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="text-muted-foreground inline-flex items-center gap-1">
+                    {list.step === "success" ? (
+                      <>
+                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                        Confirmed on-chain
+                      </>
+                    ) : (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Polling for receipt…
+                      </>
+                    )}
+                  </span>
+                  <a
+                    href={`https://basescan.org/tx/${list.tx.data}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline font-mono text-[10px]"
+                    data-testid="list-tx-link"
+                  >
+                    {list.tx.data.slice(0, 10)}…{list.tx.data.slice(-8)} ↗
+                  </a>
+                </div>
+                {list.step === "confirming" && (
+                  <div className="text-[10px] text-muted-foreground leading-relaxed">
+                    Polling stuck? Check the BaseScan link above. If the tx
+                    succeeded, your listing is on-chain regardless of this
+                    modal — close it and refresh /lending. If it reverted,
+                    BaseScan will show the revert reason.
+                  </div>
+                )}
               </div>
             )}
           </div>
