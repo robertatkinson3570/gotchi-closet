@@ -141,6 +141,8 @@ export function UnlistedGotchiList({ ownerAddress }: Props) {
           gotchiTokenId={listing.tokenId}
           gotchiName={listing.name}
           modBRS={listing.modBRS}
+          kinship={listing.kinship}
+          hauntId={listing.hauntId}
           originalOwner={ownerAddress}
           onClose={() => setListing(null)}
           onListed={() => setListing(null)}

@@ -18,6 +18,9 @@ type Props = {
   originalOwner?: string;
   // Optional BRS w/ wearables — enables Auto-price button
   modBRS?: number;
+  // Optional kinship + haunt — improves channelling-mode pricing accuracy
+  kinship?: number;
+  hauntId?: number;
   onClose: () => void;
   onListed?: () => void;
 };
@@ -32,7 +35,7 @@ const PERIOD_PRESETS = [
   { label: "30 days", days: 30 },
 ];
 
-export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, modBRS, onClose, onListed }: Props) {
+export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, modBRS, kinship, hauntId, onClose, onListed }: Props) {
   const { address } = useAccount();
   const { isOnBase } = useAddressState();
   const { toast } = useToast();
@@ -453,6 +456,8 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
       {showAutoPrice && modBRS != null && (
         <AutoPriceModal
           brs={modBRS}
+          kinship={kinship}
+          hauntId={hauntId}
           gotchiName={gotchiName}
           gotchiTokenId={gotchiTokenId}
           onApply={(r) => {
@@ -463,14 +468,16 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
                 : String(Math.round(r.recommendedUpfrontGhst))
             );
             setChannelling(r.recommendedChannellingAllowed);
+            // Apply mode-aware splits (channelling-mode = 50/50)
+            setSplitOwner(r.recommendedSplitOwner);
             setShowAutoPrice(false);
             toast({
-              title: "Auto-price applied",
-              description: `${r.recommendedPeriodDays}d at ${
+              title: `Auto-price applied (${r.mode})`,
+              description: `${r.recommendedPeriodDays}d · ${
                 r.recommendedUpfrontGhst < 1
                   ? r.recommendedUpfrontGhst.toFixed(2)
                   : Math.round(r.recommendedUpfrontGhst)
-              } GHST · ${r.confidence}/100 confidence`,
+              } GHST upfront · L/B ${r.recommendedSplitOwner}/${r.recommendedSplitBorrower}%`,
             });
           }}
           onClose={() => setShowAutoPrice(false)}

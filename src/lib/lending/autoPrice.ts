@@ -23,13 +23,18 @@ export type AutoPriceInput = {
   periodDaysOptions?: number[];
   // for channelling yield projection
   hauntId?: number;
+  kinship?: number;
   alchemicaPrices?: AlchemicaPrices;
 };
+
+export type AutoPriceMode = "battler" | "channelling";
 
 export type AutoPriceResult = {
   brs: number;
   band: string;
   goal: AutoPriceGoal;
+  // Which market the recommendation targets
+  mode: AutoPriceMode;
   // Best candidate
   recommendedPeriodDays: number;
   recommendedUpfrontGhst: number;
@@ -96,6 +101,27 @@ function compsBandWide(
   return open.map((l) => l.upfrontGhst).sort((a, b) => a - b);
 }
 
+// Channelling-mode comps: any open-market paid lending with channelling=true,
+// regardless of BRS or duration bucket. The renter is paying for parcel-yield
+// access, not battler stats.
+function compsChannelling(
+  lendings: HistoricalLending[],
+  periodSec: number
+): number[] {
+  const bucket = durationBucketOf(periodSec);
+  const open = lendings.filter(
+    (l) =>
+      (!l.whitelistId || l.whitelistId === "0") &&
+      l.upfrontGhst > 0 &&
+      l.channellingAllowed
+  );
+  // Prefer same-bucket comps; fall back to all if too few
+  const sameBucket = open.filter((l) => durationBucketOf(l.period) === bucket);
+  return (sameBucket.length >= 3 ? sameBucket : open)
+    .map((l) => l.upfrontGhst)
+    .sort((a, b) => a - b);
+}
+
 // Estimate fill probability from comp count (assumes 30d window)
 function fillProbabilityFromCompCount(count: number, periodDays: number): number {
   // demand per week = comps / (windowDays / 7); we list for periodDays so we get
@@ -129,67 +155,88 @@ export function autoPrice(
   const { brs } = input;
   const periodOptions = input.periodDaysOptions ?? DEFAULT_PERIODS;
   const band = brsBandOf(brs);
+  const haunt = input.hauntId ?? 2;
+  const kinship = input.kinship ?? 50;
+  const alchPrices = input.alchemicaPrices ?? ALCHEMICA_PRICES_GHST_FALLBACK;
   const notes: string[] = [];
 
-  // Channelling premium signal for this band
+  // Battler-side channelling premium signal
   const chComp = buildChannellingComparison(lendings).find((r) => r.brsBand === band);
-  let channellingAllowed = true;
-  if (chComp && chComp.premiumPct != null) {
-    if (chComp.premiumPct < -10) {
-      channellingAllowed = false;
-      notes.push(
-        `Channelling-off carries a ~${Math.round(Math.abs(chComp.premiumPct))}% price premium in this band — turning off channelling.`
-      );
-    } else if (chComp.premiumPct > 10) {
-      notes.push(
-        `Channelling-on adds ~${Math.round(chComp.premiumPct)}% — leaving it on.`
-      );
-    }
+  let battlerChannellingAllowed = true;
+  if (chComp && chComp.premiumPct != null && chComp.premiumPct < -10) {
+    battlerChannellingAllowed = false;
   }
 
-  // Heatmap-driven candidate eval
-  const haunt = input.hauntId ?? 2;
-  const alchPrices = input.alchemicaPrices ?? ALCHEMICA_PRICES_GHST_FALLBACK;
-  // Default lender split = 20% (typical 80/20). Lender gets that share of channelling.
-  const lenderSplit = 0.20;
-
   const candidates: AutoPriceCandidate[] = [];
+  const candidateModes: AutoPriceMode[] = [];
+
   for (const periodDays of periodOptions) {
     const periodSec = periodDays * 86400;
-    let prices = compsForCell(lendings, brs, periodSec);
-    let compsCount = prices.length;
+    let prices: number[] = [];
+    let mode: AutoPriceMode = "battler";
+    let goalForCandidate: AutoPriceGoal = goal;
     const reasons: string[] = [];
 
+    // Tier 1 — battler band+bucket
+    prices = compsForCell(lendings, brs, periodSec);
+
+    // Tier 2 — battler band-wide (any duration)
     if (prices.length < 3) {
       const wide = compsBandWide(lendings, brs);
       if (wide.length >= 3) {
         prices = wide;
-        compsCount = wide.length;
-        reasons.push("used same-band comps across all durations");
+        reasons.push("battler comps thin in cell — used same-band any-duration");
       } else {
-        reasons.push("very thin comp data — directional only");
+        // Tier 3 — channelling mode (no BRS filter; channelling-allowed only)
+        const ch = compsChannelling(lendings, periodSec);
+        if (ch.length >= 3) {
+          prices = ch;
+          mode = "channelling";
+          // Channelling renters are price-sensitive; pick a lower percentile
+          goalForCandidate = goal === "maximize_revenue" ? "balance" : "fast_fill";
+          reasons.push("no battler comps → channelling-mode (any-BRS, channel=on)");
+        } else {
+          reasons.push("very thin comp data — using alch-yield floor only");
+        }
       }
     }
 
-    const upfront = priceForGoal(prices, goal);
-    const fillProb = fillProbabilityFromCompCount(compsCount, periodDays);
-    const expectedRevenue = upfront * fillProb;
-    // Normalize to GHST/week to compare across periods
-    const ghstPerWeek = (upfront * 7) / Math.max(1, periodDays);
+    let upfront = priceForGoal(prices, goalForCandidate);
 
-    // Channelling value: borrower could channel up to maxChannelsInPeriod times.
-    // Assume realistic capture of 70% of max (some borrowers don't channel daily).
-    const maxChannels = maxChannelsInPeriod(periodSec);
-    const realisticChannels = channellingAllowed ? maxChannels * 0.7 : 0;
-    const totalChannellingGhst = estimateChannellingValueGhst(
+    // Channelling rentals: floor at ~25% of expected alch yield to lender so it always fills
+    const candidateChannelling = mode === "channelling" ? true : battlerChannellingAllowed;
+    const realisticChannels = candidateChannelling
+      ? maxChannelsInPeriod(periodSec) * 0.7
+      : 0;
+    const totalAlchYield = estimateChannellingValueGhst(
       haunt,
       realisticChannels,
-      alchPrices
+      alchPrices,
+      kinship
     );
-    const channellingValueLenderGhst = totalChannellingGhst * lenderSplit * fillProb;
-    const totalGhstPerWeek = ghstPerWeek + (channellingValueLenderGhst * 7) / Math.max(1, periodDays);
+    if (mode === "channelling" && upfront < totalAlchYield * 0.25) {
+      upfront = totalAlchYield * 0.25;
+      reasons.push(
+        `floored at 25% of expected ${totalAlchYield.toFixed(1)} GHST alch yield (kinship ${kinship})`
+      );
+    }
+    if (prices.length === 0 && totalAlchYield > 0) {
+      // No comps at all: anchor on alch yield × 25%
+      upfront = totalAlchYield * 0.25;
+      mode = "channelling";
+    }
 
-    // Score: blend total expected revenue per week with fill probability
+    const compsCount = prices.length;
+    const fillProb = fillProbabilityFromCompCount(compsCount, periodDays);
+    const expectedRevenue = upfront * fillProb;
+    const ghstPerWeek = (upfront * 7) / Math.max(1, periodDays);
+
+    // Lender split varies by mode — channelling renters expect lender to take more
+    const lenderSplit = mode === "channelling" ? 0.50 : 0.20;
+    const channellingValueLenderGhst = totalAlchYield * lenderSplit * fillProb;
+    const totalGhstPerWeek =
+      ghstPerWeek + (channellingValueLenderGhst * 7) / Math.max(1, periodDays);
+
     const score =
       (expectedRevenue + channellingValueLenderGhst) *
       (1 / Math.max(1, periodDays / 7)) *
@@ -207,26 +254,56 @@ export function autoPrice(
       score,
       reasons,
     });
+    candidateModes.push(mode);
   }
 
   candidates.sort((a, b) => b.score - a.score);
   const best = candidates[0];
+  const bestIdx = best
+    ? candidates.findIndex((c) => c === best)
+    : -1;
+  // bestIdx points to sorted index; we need original to look up mode
+  // Easier: re-derive mode from reasons
+  const bestIsChannelling = best?.reasons.some((r) =>
+    r.includes("channelling-mode") || r.includes("alch-yield") || r.includes("alch yield")
+  ) ?? false;
+  const finalMode: AutoPriceMode = bestIsChannelling ? "channelling" : "battler";
+  void bestIdx;
+  void candidateModes;
 
-  // Confidence: scale by best candidate's compsCount, capped
-  const confidence = Math.min(100, Math.round((best?.compsCount ?? 0) * 12));
-  if (confidence < 30) {
-    notes.push("Low comp density in this band; treat the recommendation as a starting point.");
+  if (finalMode === "channelling") {
+    notes.push(
+      `No battler-rental comps for this BRS — recommending channelling-renter pricing. Higher lender split (50%) captures more of the alchemica yield.`
+    );
+    if (kinship < 50) {
+      notes.push(`Kinship ${kinship} is below baseline — alchemica yield is reduced. Consider petting before listing.`);
+    } else if (kinship >= 100) {
+      notes.push(`Kinship ${kinship} boosts channelling yield by ~${Math.round((1 + (kinship - 50) * 0.005 - 1) * 100)}%.`);
+    }
+  } else if (chComp && chComp.premiumPct != null && chComp.premiumPct > 10) {
+    notes.push(`Channelling-on adds ~${Math.round(chComp.premiumPct)}% in this band — leaving it on.`);
+  } else if (!battlerChannellingAllowed) {
+    notes.push(
+      `Channelling-off carries a price premium in this band — turning off channelling for max revenue.`
+    );
   }
 
-  // Default split — use the protocol-typical 80% borrower / 20% lender, account for fee config
-  const splitBorrower = 80;
-  const splitOwner = 20;
+  const confidence = Math.min(100, Math.round((best?.compsCount ?? 0) * 12));
+  if (confidence < 30 && finalMode === "battler") {
+    notes.push("Low comp density; treat the recommendation as a starting point.");
+  }
+
+  // Splits + channelling depend on mode
+  const splitBorrower = finalMode === "channelling" ? 50 : 80;
+  const splitOwner = finalMode === "channelling" ? 50 : 20;
   const splitOther = 0;
+  const channellingAllowed = finalMode === "channelling" ? true : battlerChannellingAllowed;
 
   return {
     brs,
     band,
     goal,
+    mode: finalMode,
     recommendedPeriodDays: best?.periodDays ?? 7,
     recommendedUpfrontGhst: best?.upfrontGhst ?? 0,
     recommendedSplitBorrower: splitBorrower,
@@ -243,12 +320,25 @@ export function autoPrice(
 // Optimize across many gotchis at once — used by bulk-list wizard.
 export function autoPriceBatch(
   lendings: HistoricalLending[],
-  brsByToken: { tokenId: string; brs: number }[],
-  goal: AutoPriceGoal = "balance"
+  inputs: { tokenId: string; brs: number; hauntId?: number; kinship?: number }[],
+  goal: AutoPriceGoal = "balance",
+  alchemicaPrices?: AlchemicaPrices
 ): Map<string, AutoPriceResult> {
   const out = new Map<string, AutoPriceResult>();
-  for (const g of brsByToken) {
-    out.set(g.tokenId, autoPrice(lendings, { brs: g.brs }, goal));
+  for (const g of inputs) {
+    out.set(
+      g.tokenId,
+      autoPrice(
+        lendings,
+        {
+          brs: g.brs,
+          hauntId: g.hauntId,
+          kinship: g.kinship,
+          alchemicaPrices,
+        },
+        goal
+      )
+    );
   }
   return out;
 }

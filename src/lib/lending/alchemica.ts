@@ -37,13 +37,29 @@ export const CHANNELLING_COOLDOWN_SEC = 86400;
 
 export type AlchemicaPrices = typeof ALCHEMICA_PRICES_GHST_FALLBACK;
 
+/**
+ * Approximate channelling output multiplier from kinship.
+ * Aavegotchi's alchemica payout scales with kinship; baseline kinship is 50.
+ * Formula here is a clamped linear approximation:
+ *   k=50  -> 1.0x   (baseline)
+ *   k=100 -> 1.25x
+ *   k=200 -> 1.75x
+ *   k=250+ -> 2.0x  (cap)
+ *   k<50  -> down to 0.5x at k=0 (penalty for low kinship)
+ */
+export function kinshipMultiplier(kinship: number): number {
+  if (!Number.isFinite(kinship) || kinship <= 0) return 1;
+  const raw = 1 + (kinship - 50) * 0.005;
+  return Math.max(0.5, Math.min(2.0, raw));
+}
+
 // Estimate the GHST-equivalent value of alchemica from N channels.
-// Assumes 50/50 split between borrower (revenue split) and lender — protocol
-// pays the lender via splitOwner percentage on every channel.
+// `kinship` (default 50, the baseline) scales the per-channel output.
 export function estimateChannellingValueGhst(
   hauntId: number,
   numChannels: number,
-  prices: AlchemicaPrices = ALCHEMICA_PRICES_GHST_FALLBACK
+  prices: AlchemicaPrices = ALCHEMICA_PRICES_GHST_FALLBACK,
+  kinship: number = 50
 ): number {
   const yieldPerChannel =
     CHANNELLING_YIELD_BY_HAUNT[hauntId] ?? CHANNELLING_YIELD_BY_HAUNT[2];
@@ -52,7 +68,7 @@ export function estimateChannellingValueGhst(
     yieldPerChannel.fomo * prices.fomo +
     yieldPerChannel.alpha * prices.alpha +
     yieldPerChannel.kek * prices.kek;
-  return perChannelGhst * numChannels;
+  return perChannelGhst * numChannels * kinshipMultiplier(kinship);
 }
 
 // How many channels could happen during a period (1 per 24h cooldown).

@@ -18,6 +18,7 @@ import { fetchGotchisByOwner } from "@/graphql/fetchers";
 import { useWhitelistsForAddress } from "@/hooks/useWhitelists";
 import { useAddListing } from "@/hooks/useLendingTx";
 import { useHistoricalLendings } from "@/hooks/useHistoricalLendings";
+import { useAlchemicaPrices } from "@/hooks/useAlchemicaPrices";
 import { autoPriceBatch, type AutoPriceGoal } from "@/lib/lending/autoPrice";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { Seo } from "@/components/Seo";
@@ -35,6 +36,8 @@ type GotchiRow = {
   modBRS: number;
   baseBRS: number;
   level: number;
+  kinship: number;
+  hauntId: number;
   lendingActive: boolean;
   ownerWallet: string;
 };
@@ -90,6 +93,7 @@ export default function BulkListPage() {
 
   const { asOwner: myWhitelists } = useWhitelistsForAddress(ownerLower || null);
   const { lendings: historical } = useHistoricalLendings(60);
+  const { prices: alchPrices } = useAlchemicaPrices();
 
   const [step, setStep] = useState<Step>(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -112,13 +116,20 @@ export default function BulkListPage() {
     const selectedRows = rows.filter((r) => selected.has(r.tokenId));
     const results = autoPriceBatch(
       historical,
-      selectedRows.map((r) => ({ tokenId: r.tokenId, brs: r.modBRS })),
-      goal
+      selectedRows.map((r) => ({
+        tokenId: r.tokenId,
+        brs: r.modBRS,
+        hauntId: r.hauntId,
+        kinship: r.kinship,
+      })),
+      goal,
+      alchPrices
     );
     const next: Record<string, string> = { ...overrides };
-    let useChannelling = 0;
-    let useNoChannelling = 0;
-    let modeUpdates: { period: number | null } = { period: null };
+    let channellingOn = 0;
+    const periods: number[] = [];
+    let modeBattler = 0;
+    let modeChannelling = 0;
     for (const r of selectedRows) {
       const res = results.get(r.tokenId);
       if (!res) continue;
@@ -127,15 +138,27 @@ export default function BulkListPage() {
           ? res.recommendedUpfrontGhst.toFixed(2)
           : Math.round(res.recommendedUpfrontGhst)
       );
-      if (modeUpdates.period == null) modeUpdates.period = res.recommendedPeriodDays;
-      if (res.recommendedChannellingAllowed) useChannelling += 1;
-      else useNoChannelling += 1;
+      periods.push(res.recommendedPeriodDays);
+      if (res.recommendedChannellingAllowed) channellingOn += 1;
+      if (res.mode === "battler") modeBattler += 1;
+      else modeChannelling += 1;
     }
     setOverrides(next);
     setUseSuggestedPrice(false);
-    if (modeUpdates.period) setPeriodDays(modeUpdates.period);
-    if (useChannelling >= useNoChannelling) setChannelling(true);
-    else setChannelling(false);
+    // Use the median recommended period so the global setting reflects the bulk
+    if (periods.length) {
+      const sorted = [...periods].sort((a, b) => a - b);
+      const median = sorted[Math.floor(sorted.length / 2)];
+      setPeriodDays(median);
+    }
+    setChannelling(channellingOn >= selectedRows.length / 2);
+    // If majority is channelling-mode, push the lender split higher (50/50)
+    if (modeChannelling > modeBattler) {
+      setSplitOwner(50);
+    } else {
+      setSplitOwner(20);
+    }
+    void modeBattler;
   };
 
   // Submit queue state
@@ -159,6 +182,8 @@ export default function BulkListPage() {
           modBRS,
           baseBRS,
           level: Number(g.level ?? 1),
+          kinship: Number(g.kinship ?? 50),
+          hauntId: Number(g.hauntId ?? 2),
           lendingActive: Boolean(g.lending && Number(g.lending) > 0),
           ownerWallet: String(g._ownerWallet ?? ""),
         };

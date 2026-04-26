@@ -6,6 +6,8 @@ import { useHistoricalLendings } from "@/hooks/useHistoricalLendings";
 
 type Props = {
   brs: number;
+  hauntId?: number;
+  kinship?: number;
   gotchiName: string | null;
   gotchiTokenId: string;
   onApply: (result: AutoPriceResult) => void;
@@ -32,6 +34,8 @@ const GOAL_META: Record<AutoPriceGoal, { label: string; icon: React.ReactNode; d
 
 export function AutoPriceModal({
   brs,
+  hauntId,
+  kinship,
   gotchiName,
   gotchiTokenId,
   onApply,
@@ -42,8 +46,8 @@ export function AutoPriceModal({
 
   const result = useMemo(() => {
     if (!lendings.length) return null;
-    return autoPrice(lendings, { brs }, goal);
-  }, [lendings, brs, goal]);
+    return autoPrice(lendings, { brs, hauntId, kinship }, goal);
+  }, [lendings, brs, hauntId, kinship, goal]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -115,9 +119,18 @@ export function AutoPriceModal({
           {result && !loading && (
             <>
               <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    Recommendation · {result.band} band
+                <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground inline-flex items-center gap-1.5">
+                    <span>Recommendation · {result.band} band</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                        result.mode === "channelling"
+                          ? "bg-cyan/15 text-cyan"
+                          : "bg-primary/15 text-primary"
+                      }`}
+                    >
+                      {result.mode === "channelling" ? "Channelling renter" : "Battler renter"}
+                    </span>
                   </div>
                   <div className="text-[10px] text-muted-foreground">
                     confidence {result.confidence}/100
