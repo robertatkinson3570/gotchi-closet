@@ -49,17 +49,38 @@ function useTxBase() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (tx.isPending) setStep("submitting");
-    else if (receipt.isLoading) setStep("confirming");
-    else if (receipt.isSuccess) setStep("success");
-    else if (tx.isError) {
+    // Order matters. Errors first so a wallet rejection is surfaced rather
+    // than masked by a stale `receipt.isLoading=true` (wagmi defaults that
+    // to true even when there's no tx hash).
+    if (tx.isError) {
       setStep("error");
       setErrorMsg(parseRevert(tx.error));
-    } else if (receipt.isError) {
+      return;
+    }
+    if (tx.isPending) {
+      setStep("submitting");
+      return;
+    }
+    // CRITICAL: only enter "confirming" when we actually have a tx hash.
+    // Otherwise wagmi's default `receipt.isLoading=true` traps the user in
+    // a fake confirming state when the wallet popup closes without
+    // broadcasting (silent cancel, wallet glitch, network drop).
+    if (tx.data && receipt.isError) {
       setStep("error");
       setErrorMsg(parseRevert(receipt.error));
+      return;
     }
-  }, [tx.isPending, tx.isError, tx.error, receipt.isLoading, receipt.isSuccess, receipt.isError, receipt.error]);
+    if (tx.data && receipt.isSuccess) {
+      setStep("success");
+      return;
+    }
+    if (tx.data && receipt.isLoading) {
+      setStep("confirming");
+      return;
+    }
+    // No hash + no error + not pending = idle (e.g. just after reset() or
+    // wallet popup dismissed without a clear error). Caller can retry.
+  }, [tx.isPending, tx.isError, tx.error, tx.data, receipt.isLoading, receipt.isSuccess, receipt.isError, receipt.error]);
 
   const reset = useCallback(() => {
     tx.reset();
