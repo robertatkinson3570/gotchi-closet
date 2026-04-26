@@ -13,15 +13,20 @@ jobs:
     runs-on: [self-hosted, gotchicloset-vps]
     timeout-minutes: 5
     steps:
-      - name: Verify DNS resolves to this VPS
+      - name: Verify DNS resolves to this VPS (IPv4)
         run: |
           set -uxo pipefail
-          IP_OBSERVED=$(curl -fsS https://ifconfig.me 2>/dev/null || curl -fsS https://api.ipify.org)
-          IP_DNS=$(getent hosts api.gotchicloset.com | awk '{print $1}' | head -1)
-          echo "VPS public IP:   $IP_OBSERVED"
-          echo "DNS A record IP: $IP_DNS"
+          command -v dig >/dev/null 2>&1 || apt-get install -y dnsutils
+          IP_OBSERVED=$(curl -4 -fsS https://api.ipify.org)
+          IP_DNS=$(dig +short A api.gotchicloset.com @1.1.1.1 | head -1)
+          echo "VPS public IPv4: $IP_OBSERVED"
+          echo "DNS A record:    $IP_DNS"
+          if [[ -z "$IP_DNS" ]]; then
+            echo "DNS A record not visible on 1.1.1.1 yet — wait for propagation"
+            exit 1
+          fi
           if [[ "$IP_OBSERVED" != "$IP_DNS" ]]; then
-            echo "DNS does not point at this VPS yet — bailing so certbot doesn't fail"
+            echo "DNS does not point at this VPS — bailing so certbot doesn't fail"
             exit 1
           fi
 
