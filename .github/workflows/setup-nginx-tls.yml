@@ -108,9 +108,17 @@ jobs:
           nginx -T 2>/dev/null | grep -A 30 "server_name api.gotchicloset.com" || true
           echo "==== nginx -t ===="
           nginx -t || true
-          echo "==== listening ports ===="
-          ss -tlnp 2>/dev/null | grep -E "(:80\b|:443\b|:8791)" || true
-          echo "==== nginx process ===="
+          echo "==== ALL listening sockets (anything on :80 :443 :8791) ===="
+          ss -tlnp 2>/dev/null || netstat -tlnp 2>/dev/null
+          echo "==== nginx processes ===="
           ps -ef | grep nginx | grep -v grep || true
+          echo "==== ufw status ===="
+          ufw status verbose 2>&1 || echo "(ufw not installed)"
+          echo "==== iptables INPUT chain ===="
+          iptables -L INPUT -n 2>&1 | head -20 || true
+          echo "==== fail2ban ===="
+          fail2ban-client status 2>&1 || echo "(fail2ban not installed)"
           echo "==== local curls ===="
-          curl -kfsv --resolve api.gotchicloset.com:443:127.0.0.1 https://api.gotchicloset.com/api/lending/autorenew/health 2>&1 | tail -30 || true
+          curl -kfsv --resolve api.gotchicloset.com:443:127.0.0.1 https://api.gotchicloset.com/api/lending/autorenew/health 2>&1 | tail -10 || true
+          echo "==== external IP curl ===="
+          curl -kfsv --resolve api.gotchicloset.com:443:187.77.15.149 https://api.gotchicloset.com/api/lending/autorenew/health 2>&1 | tail -10 || true
