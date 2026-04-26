@@ -22,6 +22,11 @@ const initial: State = { asMember: [], asOwner: [], loading: false, error: null 
 const cache = new Map<string, { ts: number; data: State }>();
 const CACHE_TTL_MS = 60_000;
 
+export function invalidateWhitelistsCache(address?: string) {
+  if (address) cache.delete(address.toLowerCase());
+  else cache.clear();
+}
+
 export function useWhitelistsForAddress(address: string | null | undefined) {
   const [state, setState] = useState<State>(initial);
 

@@ -4,7 +4,7 @@ import { useAccount } from "wagmi";
 import { ArrowLeft, Users, Plus, X, UserPlus, UserMinus, Loader2, CheckCircle2, Save, ArrowRightLeft } from "lucide-react";
 import { client } from "@/graphql/client";
 import { WHITELIST_DETAIL } from "@/graphql/whitelistDetailQuery";
-import { useWhitelistsForAddress } from "@/hooks/useWhitelists";
+import { useWhitelistsForAddress, invalidateWhitelistsCache } from "@/hooks/useWhitelists";
 import { useCreateWhitelist, useUpdateWhitelist, useTransferWhitelist } from "@/hooks/useLendingTx";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { Seo } from "@/components/Seo";
@@ -23,11 +23,23 @@ export default function WhitelistsPage() {
   const create = useCreateWhitelist();
   useEffect(() => {
     if (create.step === "success") {
-      toast({ title: "Whitelist created", description: "Refresh to see it in the list." });
+      toast({
+        title: "Whitelist created",
+        description: "It may take a few seconds for the subgraph to index — refreshing list…",
+      });
       setCreating(false);
+      // Invalidate cache + force a re-fetch by toggling address through useEffect deps
+      invalidateWhitelistsCache(address ?? undefined);
+      // Wait a bit for subgraph indexing then trigger reload via a state change
+      setTimeout(() => {
+        invalidateWhitelistsCache(address ?? undefined);
+        // Force re-render of useWhitelistsForAddress by mounting/unmounting the page is overkill;
+        // the next address change will pick up. For now, user can refresh OR open one detail to see.
+        window.location.reload();
+      }, 4000);
       create.reset();
     }
-  }, [create.step, create, toast]);
+  }, [create.step, create, toast, address]);
 
   return (
     <div className="container mx-auto max-w-5xl px-4 py-6">
@@ -48,6 +60,9 @@ export default function WhitelistsPage() {
           <h1 className="text-2xl font-bold tracking-tight mt-1">Whitelists</h1>
           <p className="text-sm text-muted-foreground">
             Restrict who can borrow your gotchis to specific addresses.
+          </p>
+          <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+            Note: the protocol doesn't support deleting whitelists. To retire one, transfer ownership to a burner address.
           </p>
         </div>
         <button
@@ -252,8 +267,11 @@ function WhitelistDetail({ id }: { id: string }) {
 
       {/* Borrow limit ----------------------------------------------------- */}
       <div className="border-t border-border/30 pt-3">
-        <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5">
-          Borrow limit per address
+        <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center justify-between">
+          <span>Borrow limit per address</span>
+          <span className="text-muted-foreground/70 normal-case tracking-normal">
+            current: {maxBorrowLimit === "" ? "0 (unlimited)" : maxBorrowLimit}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <input

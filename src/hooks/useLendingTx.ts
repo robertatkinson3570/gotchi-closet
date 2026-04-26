@@ -11,6 +11,7 @@ import {
   LENDING_FACET_ABI,
   WHITELIST_FACET_ABI,
 } from "@/lib/lending/contracts";
+import { parseRevert } from "@/lib/lending/parseRevert";
 import { invalidateLendingsCache } from "@/hooks/useLendings";
 
 export type TxStep = "idle" | "submitting" | "confirming" | "success" | "error";
@@ -44,9 +45,12 @@ function useTxBase() {
     else if (receipt.isSuccess) setStep("success");
     else if (tx.isError) {
       setStep("error");
-      setErrorMsg(tx.error?.message || "Transaction failed");
+      setErrorMsg(parseRevert(tx.error));
+    } else if (receipt.isError) {
+      setStep("error");
+      setErrorMsg(parseRevert(receipt.error));
     }
-  }, [tx.isPending, tx.isError, tx.error, receipt.isLoading, receipt.isSuccess]);
+  }, [tx.isPending, tx.isError, tx.error, receipt.isLoading, receipt.isSuccess, receipt.isError, receipt.error]);
 
   const reset = useCallback(() => {
     tx.reset();
@@ -124,6 +128,20 @@ export function useClaimLending() {
   return { ...base, send };
 }
 
+function listingParamsToTuple(p: ListingParams) {
+  return {
+    tokenId: p.tokenId,
+    initialCost: p.initialCostWei,
+    period: p.periodSeconds,
+    revenueSplit: [p.splitOwner, p.splitBorrower, p.splitOther] as const,
+    originalOwner: p.originalOwner,
+    thirdParty: p.thirdParty,
+    whitelistId: p.whitelistId,
+    revenueTokens: p.revenueTokens,
+    permissions: p.permissions,
+  };
+}
+
 export function useAddListing() {
   const base = useTxBase();
   const send = useCallback(
@@ -133,19 +151,28 @@ export function useAddListing() {
         address: AAVEGOTCHI_DIAMOND_BASE,
         abi: LENDING_FACET_ABI,
         functionName: "addGotchiListing",
-        args: [
-          {
-            tokenId: p.tokenId,
-            initialCost: p.initialCostWei,
-            period: p.periodSeconds,
-            revenueSplit: [p.splitOwner, p.splitBorrower, p.splitOther] as const,
-            originalOwner: p.originalOwner,
-            thirdParty: p.thirdParty,
-            whitelistId: p.whitelistId,
-            revenueTokens: p.revenueTokens,
-            permissions: p.permissions,
-          } as any,
-        ],
+        args: [listingParamsToTuple(p) as any],
+      });
+    },
+    [base]
+  );
+  useEffect(() => {
+    if (base.step === "success") invalidateLendingsCache();
+  }, [base.step]);
+  return { ...base, send };
+}
+
+export function useBatchAddListing() {
+  const base = useTxBase();
+  const send = useCallback(
+    (listings: ListingParams[]) => {
+      if (!base.canWrite || listings.length === 0) return;
+      const tuples = listings.map(listingParamsToTuple);
+      base.tx.writeContract({
+        address: AAVEGOTCHI_DIAMOND_BASE,
+        abi: LENDING_FACET_ABI,
+        functionName: "batchAddGotchiListing",
+        args: [tuples as any],
       });
     },
     [base]

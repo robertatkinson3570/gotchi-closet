@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAccount } from "wagmi";
 import {
@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { fetchGotchisByOwner } from "@/graphql/fetchers";
 import { useWhitelistsForAddress } from "@/hooks/useWhitelists";
-import { useAddListing } from "@/hooks/useLendingTx";
+import { useBatchAddListing, type ListingParams } from "@/hooks/useLendingTx";
 import { useHistoricalLendings } from "@/hooks/useHistoricalLendings";
 import { useAlchemicaPrices } from "@/hooks/useAlchemicaPrices";
 import { autoPriceBatch, type AutoPriceGoal } from "@/lib/lending/autoPrice";
@@ -161,12 +161,10 @@ export default function BulkListPage() {
     void modeBattler;
   };
 
-  // Submit queue state
-  const [queueIdx, setQueueIdx] = useState<number | null>(null);
-  const [queueResults, setQueueResults] = useState<
-    Record<string, "pending" | "success" | "error">
-  >({});
-  const list = useAddListing();
+  // Single-batch submit state — collapses N gotchis into ONE tx via batchAddGotchiListing
+  const list = useBatchAddListing();
+  const [submittedRows, setSubmittedRows] = useState<GotchiRow[]>([]);
+  const [skippedRows, setSkippedRows] = useState<GotchiRow[]>([]);
 
   const rows: GotchiRow[] = useMemo(() => {
     return allGotchis
@@ -206,78 +204,52 @@ export default function BulkListPage() {
   const selectAllVisible = () => setSelected(new Set(rows.map((r) => r.tokenId)));
   const clearAll = () => setSelected(new Set());
 
-  // Listing queue: drive sequentially based on tx state
-  useEffect(() => {
-    if (queueIdx == null) return;
-    if (queueIdx >= selectedRows.length) return;
-    if (list.step === "success") {
-      const cur = selectedRows[queueIdx];
-      setQueueResults((r) => ({ ...r, [cur.tokenId]: "success" }));
-      list.reset();
-      setQueueIdx((i) => (i ?? 0) + 1);
-      return;
-    }
-    if (list.step === "error") {
-      const cur = selectedRows[queueIdx];
-      setQueueResults((r) => ({ ...r, [cur.tokenId]: "error" }));
-      list.reset();
-      setQueueIdx((i) => (i ?? 0) + 1);
-      return;
-    }
-  }, [list.step, queueIdx, selectedRows, list]);
-
-  // When advancing or starting, fire next tx
-  useEffect(() => {
-    if (queueIdx == null || queueIdx >= selectedRows.length) return;
-    const cur = selectedRows[queueIdx];
-    if (queueResults[cur.tokenId]) return; // already processed
-    if (list.step !== "idle") return; // wait for previous to settle
-
-    // Skip rows owned by a different wallet — only the connected signer can list.
-    if (
-      cur.ownerWallet &&
-      address &&
-      cur.ownerWallet.toLowerCase() !== address.toLowerCase()
-    ) {
-      setQueueResults((r) => ({ ...r, [cur.tokenId]: "error" }));
-      setQueueIdx((i) => (i ?? 0) + 1);
-      return;
-    }
-
-    const ghst = (() => {
-      if (overrides[cur.tokenId]) return Number(overrides[cur.tokenId]);
-      if (useSuggestedPrice) return suggestedPrice(cur.modBRS);
-      return Number(flatPrice) || 0;
-    })();
-    const initialCostWei = ghstToWei(ghst);
-    setQueueResults((r) => ({ ...r, [cur.tokenId]: "pending" }));
-    list.send({
-      tokenId: Number(cur.tokenId),
-      initialCostWei,
-      periodSeconds: periodDays * 86400,
-      splitOwner,
-      splitBorrower,
-      splitOther,
-      originalOwner: (cur.ownerWallet || address) as `0x${string}`,
-      thirdParty: (splitOther > 0 && thirdParty
-        ? thirdParty
-        : ZERO) as `0x${string}`,
-      whitelistId: Number(whitelistId) || 0,
-      revenueTokens: [],
-      permissions: channelling ? BigInt(0) : BigInt(1),
-    });
-  }, [queueIdx, list, selectedRows, queueResults, overrides, useSuggestedPrice, flatPrice, periodDays, splitOwner, splitBorrower, splitOther, address, thirdParty, whitelistId, channelling]);
-
   const startQueue = () => {
     if (!address) return;
-    setQueueResults({});
-    setQueueIdx(0);
+    // Split selected rows: owned-by-connected (will batch), others (skip + warn)
+    const mine = selectedRows.filter(
+      (r) =>
+        !r.ownerWallet ||
+        r.ownerWallet.toLowerCase() === address.toLowerCase()
+    );
+    const skipped = selectedRows.filter(
+      (r) =>
+        r.ownerWallet &&
+        r.ownerWallet.toLowerCase() !== address.toLowerCase()
+    );
+    setSkippedRows(skipped);
+    setSubmittedRows(mine);
     setStep(3);
+
+    if (mine.length === 0) return;
+
+    const tuples: ListingParams[] = mine.map((cur) => {
+      const ghst = (() => {
+        if (overrides[cur.tokenId]) return Number(overrides[cur.tokenId]);
+        if (useSuggestedPrice) return suggestedPrice(cur.modBRS);
+        return Number(flatPrice) || 0;
+      })();
+      return {
+        tokenId: Number(cur.tokenId),
+        initialCostWei: ghstToWei(ghst),
+        periodSeconds: periodDays * 86400,
+        splitOwner,
+        splitBorrower,
+        splitOther,
+        originalOwner: (cur.ownerWallet || address) as `0x${string}`,
+        thirdParty: (splitOther > 0 && thirdParty ? thirdParty : ZERO) as `0x${string}`,
+        whitelistId: Number(whitelistId) || 0,
+        revenueTokens: [],
+        permissions: channelling ? BigInt(0) : BigInt(1),
+      };
+    });
+
+    list.send(tuples);
   };
 
-  const queueDone = queueIdx != null && queueIdx >= selectedRows.length;
-  const successCount = Object.values(queueResults).filter((s) => s === "success").length;
-  const failCount = Object.values(queueResults).filter((s) => s === "error").length;
+  const submitDone = list.step === "success" || list.step === "error";
+  const successCount = list.step === "success" ? submittedRows.length : 0;
+  const failCount = list.step === "error" ? submittedRows.length : 0;
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-6">
@@ -295,7 +267,7 @@ export default function BulkListPage() {
       </Link>
       <h1 className="text-2xl font-bold tracking-tight mb-1">Bulk list for rent</h1>
       <p className="text-sm text-muted-foreground mb-5">
-        Pick gotchis, set shared params, sign in sequence (one tx per gotchi).
+        Pick gotchis, set terms, sign <span className="text-primary font-medium">one transaction</span> for all of them.
       </p>
 
       {!isConnected ? (
@@ -364,14 +336,15 @@ export default function BulkListPage() {
 
           {step === 3 && (
             <Step3Submit
-              selectedRows={selectedRows}
-              queueResults={queueResults}
-              queueIdx={queueIdx}
+              submittedRows={submittedRows}
+              skippedRows={skippedRows}
+              txStep={list.step}
+              txError={list.errorMsg}
               successCount={successCount}
               failCount={failCount}
-              done={queueDone}
+              done={submitDone}
               onBack={() => {
-                setQueueIdx(null);
+                list.reset();
                 setStep(2);
               }}
             />
@@ -759,7 +732,7 @@ function Step2Configure({
             disabled={!splitsOk || selectedRows.length === 0}
             className="inline-flex items-center gap-1.5 h-10 px-5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 text-sm font-semibold"
           >
-            Sign {selectedRows.length} txs <ArrowRight className="w-4 h-4" />
+            Sign 1 tx for {selectedRows.length} listings <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -768,49 +741,84 @@ function Step2Configure({
 }
 
 function Step3Submit({
-  selectedRows,
-  queueResults,
-  queueIdx,
+  submittedRows,
+  skippedRows,
+  txStep,
+  txError,
   successCount,
   failCount,
   done,
   onBack,
 }: {
-  selectedRows: GotchiRow[];
-  queueResults: Record<string, "pending" | "success" | "error">;
-  queueIdx: number | null;
+  submittedRows: GotchiRow[];
+  skippedRows: GotchiRow[];
+  txStep: string;
+  txError: string | null;
   successCount: number;
   failCount: number;
   done: boolean;
   onBack: () => void;
 }) {
+  const submitting = txStep === "submitting";
+  const confirming = txStep === "confirming";
+  const errored = txStep === "error";
+
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border border-border/40 bg-card/50 p-3 text-sm">
-        {done ? (
+      <div className="rounded-lg glass p-3 text-sm">
+        {done && successCount > 0 && (
           <span className="inline-flex items-center gap-2 text-green-600 dark:text-green-400 font-medium">
             <CheckCircle2 className="w-4 h-4" />
-            Done — {successCount} listed{failCount > 0 ? `, ${failCount} failed` : ""}
+            Done — all {successCount} listings confirmed in one tx
           </span>
-        ) : (
+        )}
+        {done && errored && (
+          <span className="inline-flex items-center gap-2 text-destructive font-medium">
+            <XCircle className="w-4 h-4" />
+            Batch failed — {failCount || submittedRows.length} listings did not go through
+          </span>
+        )}
+        {!done && submitting && (
           <span className="inline-flex items-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin" />
-            Signing transaction {(queueIdx ?? 0) + 1} of {selectedRows.length}…
+            Sign in your wallet… (one tx for all {submittedRows.length} gotchis)
+          </span>
+        )}
+        {!done && confirming && (
+          <span className="inline-flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Confirming on-chain… ({submittedRows.length} listings in one tx)
           </span>
         )}
       </div>
-      <div className="rounded-lg border border-border/40 bg-card/50 divide-y divide-border/30 max-h-[60vh] overflow-y-auto">
-        {selectedRows.map((r, i) => {
-          const status = queueResults[r.tokenId];
-          const isCurrent = queueIdx === i && !status;
+
+      {errored && txError && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive break-words">
+          {txError}
+        </div>
+      )}
+
+      {skippedRows.length > 0 && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-xs text-amber-600 dark:text-amber-400">
+          <div className="font-medium mb-1">
+            {skippedRows.length} gotchis skipped — owned by a different wallet
+          </div>
+          <div className="text-[11px] opacity-80">
+            Switch to {Array.from(new Set(skippedRows.map((r) => r.ownerWallet))).map((w) => `${w.slice(0, 6)}…${w.slice(-4)}`).join(", ")} in your wallet, then come back and re-run for those.
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-lg glass divide-y divide-border/30 max-h-[60vh] overflow-y-auto">
+        {submittedRows.map((r) => {
+          const ok = txStep === "success";
+          const fail = txStep === "error";
           return (
             <div key={r.tokenId} className="flex items-center gap-2 px-3 py-2 text-sm">
               <div className="w-5">
-                {status === "success" && <CheckCircle2 className="w-4 h-4 text-green-500" />}
-                {status === "error" && <XCircle className="w-4 h-4 text-destructive" />}
-                {status === "pending" && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
-                {isCurrent && !status && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
-                {!isCurrent && !status && <span className="text-muted-foreground/40">·</span>}
+                {ok && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                {fail && <XCircle className="w-4 h-4 text-destructive" />}
+                {!ok && !fail && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="truncate text-xs">{r.name}</div>
@@ -822,6 +830,7 @@ function Step3Submit({
           );
         })}
       </div>
+
       <div className="flex justify-between">
         <button
           type="button"
@@ -830,7 +839,7 @@ function Step3Submit({
         >
           ← Back to terms
         </button>
-        {done && (
+        {done && successCount > 0 && (
           <Link
             to="/lending/me"
             className="h-9 px-4 inline-flex items-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold"

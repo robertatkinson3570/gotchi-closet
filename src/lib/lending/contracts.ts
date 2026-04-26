@@ -108,6 +108,29 @@ export const LENDING_FACET_ABI = [
     outputs: [],
   },
   {
+    name: "batchAddGotchiListing",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      {
+        name: "listings",
+        type: "tuple[]",
+        components: [
+          { name: "tokenId", type: "uint32" },
+          { name: "initialCost", type: "uint96" },
+          { name: "period", type: "uint32" },
+          { name: "revenueSplit", type: "uint8[3]" },
+          { name: "originalOwner", type: "address" },
+          { name: "thirdParty", type: "address" },
+          { name: "whitelistId", type: "uint32" },
+          { name: "revenueTokens", type: "address[]" },
+          { name: "permissions", type: "uint256" },
+        ],
+      },
+    ],
+    outputs: [],
+  },
+  {
     name: "setLendingOperator",
     type: "function",
     stateMutability: "nonpayable",

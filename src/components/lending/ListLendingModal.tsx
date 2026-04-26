@@ -267,7 +267,7 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
                 className="w-20 h-8 px-2 rounded border border-border/40 bg-background/70 text-xs"
                 title="Custom days (1-30)"
               />
-              <span className="text-xs text-muted-foreground self-center">days</span>
+              <span className="text-xs text-muted-foreground self-center">days <span className="text-[10px]">(max 30 — protocol cap)</span></span>
               {modBRS != null && modBRS > 0 && (
                 <button
                   type="button"
@@ -293,9 +293,20 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
               placeholder="0 = free rental"
               className="w-full h-9 px-2 rounded border border-border/40 bg-background/70 text-sm"
             />
+            {modBRS != null && modBRS > 0 && (
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Typical for BRS {modBRS}: <span className="font-semibold text-foreground">~{suggestUpfrontHint(modBRS, periodDays)} GHST</span> for {periodDays}d rentals (rough median; click Auto-price for live market data).
+              </p>
+            )}
             <p className="text-[10px] text-muted-foreground mt-1">
               Charged once when borrower agrees. 0 = free, suitable for friend/whitelist rentals.
             </p>
+            {Number(upfrontGhst) === 0 && upfrontGhst !== "" && (
+              <div className="mt-1.5 rounded border border-amber-500/40 bg-amber-500/5 px-2 py-1 text-[10px] text-amber-700 dark:text-amber-400 inline-flex items-center gap-1">
+                <Info className="w-3 h-3" />
+                You set 0 GHST — borrowers will rent for free (no upfront). Make sure that's intentional.
+              </div>
+            )}
           </Section>
 
           {/* Splits */}
@@ -392,8 +403,9 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
                     <span className="font-mono">{autoRenewFeeAddr.slice(0, 6)}…{autoRenewFeeAddr.slice(-4)}</span>
                   </div>
                   <div className="opacity-80 mt-0.5">
-                    Paid through the protocol on every rental. Borrower split decreases by {autoRenewFeePct}%;
-                    your lender split is unchanged. Disabling auto-renew reverts these.
+                    Paid <strong>per rental</strong> (taken from each completed rental's revenue split, not at listing time).
+                    Borrower split decreases by {autoRenewFeePct}%; your lender split is unchanged.
+                    Listing itself is free — only successful rentals carry the fee.
                   </div>
                 </div>
               )}
@@ -505,6 +517,19 @@ function Section({
       {children}
     </div>
   );
+}
+
+// Rough per-band hint for inline display. Aligned with our research bands.
+function suggestUpfrontHint(brs: number, periodDays: number): number {
+  let weekly: number;
+  if (brs >= 700) weekly = 200;
+  else if (brs >= 660) weekly = 100;
+  else if (brs >= 630) weekly = 60;
+  else if (brs >= 600) weekly = 40;
+  else if (brs >= 570) weekly = 20;
+  else if (brs >= 530) weekly = 10;
+  else weekly = 5;
+  return Math.max(1, Math.round((weekly * periodDays) / 7));
 }
 
 function SplitInput({

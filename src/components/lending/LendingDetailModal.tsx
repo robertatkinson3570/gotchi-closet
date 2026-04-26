@@ -276,11 +276,18 @@ function DetailContent({
             >
               {status}
             </span>
-            {lending.channellingAllowed && (
-              <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 inline-flex items-center gap-1">
-                <Zap className="w-3 h-3" /> Channelling
-              </span>
-            )}
+            <span
+              className={`text-xs px-2 py-0.5 rounded inline-flex items-center gap-1 ${
+                lending.channellingAllowed
+                  ? "bg-amber-500/10 text-amber-500"
+                  : "bg-muted/40 text-muted-foreground"
+              }`}
+              title={lending.channellingAllowed
+                ? "Borrower may channel alchemica from realm parcels"
+                : "Channelling disabled — battler-style listing"}
+            >
+              <Zap className="w-3 h-3" /> Channelling: {lending.channellingAllowed ? "ON" : "OFF"}
+            </span>
             {!isOpen && (
               <span className="text-xs px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-500 inline-flex items-center gap-1">
                 <Lock className="w-3 h-3" /> {wlLabel}

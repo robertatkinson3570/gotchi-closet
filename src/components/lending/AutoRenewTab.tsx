@@ -98,22 +98,63 @@ export function AutoRenewTab() {
     }
   };
 
+  const handleDisableAll = async () => {
+    const enabled = templates.filter((t) => t.enabled === 1);
+    if (enabled.length === 0) return;
+    if (!confirm(
+      `Disable auto-renew on all ${enabled.length} active templates?\n\n` +
+      `This flips the backend off for all of them. ` +
+      `On-chain operator authorization for each gotchi remains until you list one with auto-renew on or revoke it manually.`
+    )) return;
+    let failed = 0;
+    for (const t of enabled) {
+      try {
+        await setTemplateEnabled(t.token_id, false);
+      } catch {
+        failed += 1;
+      }
+    }
+    toast({
+      title: failed > 0 ? "Partial disable" : "All disabled",
+      description: failed > 0
+        ? `${enabled.length - failed} disabled, ${failed} failed`
+        : `${enabled.length} templates disabled`,
+      variant: failed > 0 ? "destructive" : undefined,
+    });
+    reload();
+  };
+
+  const enabledCount = templates.filter((t) => t.enabled === 1).length;
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
         <p className="text-xs text-muted-foreground">
-          Templates registered with the GotchiCloset auto-renew backend.
+          Templates registered with the GotchiCloset auto-renew backend. Service fee is paid <strong>per rental</strong> via the protocol's revenue split.
         </p>
-        <button
-          type="button"
-          onClick={reload}
-          disabled={loading}
-          className="inline-flex items-center gap-1 h-8 px-2 rounded text-xs border border-border/40 hover:bg-muted/50 transition-colors"
-          title="Refresh"
-        >
-          <RotateCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-1.5">
+          {enabledCount > 0 && (
+            <button
+              type="button"
+              onClick={handleDisableAll}
+              className="inline-flex items-center gap-1 h-8 px-2.5 rounded text-xs border border-destructive/40 bg-destructive/10 hover:bg-destructive/20 text-destructive font-semibold"
+              title="Disable auto-renew on all templates (backend off; on-chain operator stays authorized)"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              Disable all ({enabledCount})
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={reload}
+            disabled={loading}
+            className="inline-flex items-center gap-1 h-8 px-2 rounded text-xs border border-border/40 hover:bg-muted/50 transition-colors"
+            title="Refresh"
+          >
+            <RotateCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error && (
