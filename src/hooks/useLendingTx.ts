@@ -15,6 +15,7 @@ import {
 } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { invalidateLendingsCache } from "@/hooks/useLendings";
+import { invalidateMyLendings } from "@/hooks/useMyLendings";
 
 export type TxStep = "idle" | "submitting" | "confirming" | "success" | "error";
 
@@ -121,7 +122,10 @@ export function useCancelLending() {
     [base]
   );
   useEffect(() => {
-    if (base.step === "success") invalidateLendingsCache();
+    if (base.step === "success") {
+      invalidateLendingsCache();
+      invalidateMyLendings();
+    }
   }, [base.step]);
   return { ...base, send };
 }
@@ -142,7 +146,10 @@ export function useClaimAndEndLending() {
     [base]
   );
   useEffect(() => {
-    if (base.step === "success") invalidateLendingsCache();
+    if (base.step === "success") {
+      invalidateLendingsCache();
+      invalidateMyLendings();
+    }
   }, [base.step]);
   return { ...base, send };
 }
@@ -195,7 +202,10 @@ export function useAddListing() {
     [base]
   );
   useEffect(() => {
-    if (base.step === "success") invalidateLendingsCache();
+    if (base.step === "success") {
+      invalidateLendingsCache();
+      invalidateMyLendings();
+    }
   }, [base.step]);
   return { ...base, send };
 }
@@ -217,7 +227,10 @@ export function useBatchAddListing() {
     [base]
   );
   useEffect(() => {
-    if (base.step === "success") invalidateLendingsCache();
+    if (base.step === "success") {
+      invalidateLendingsCache();
+      invalidateMyLendings();
+    }
   }, [base.step]);
   return { ...base, send };
 }

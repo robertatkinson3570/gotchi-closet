@@ -136,18 +136,19 @@ export function useRentLending(params: RentParams | null) {
   }, [approveReceipt.isSuccess, refetchAllowance]);
 
   const sendApproval = useCallback(() => {
-    if (!params || !isConnected || !isOnBase) return;
+    if (!params || !isConnected) return;
     setErrorMsg(null);
     approve.writeContract({
+      chainId: BASE_CHAIN_ID,
       address: GHST_TOKEN_BASE,
       abi: ERC20_ABI,
       functionName: "approve",
       args: [AAVEGOTCHI_DIAMOND_BASE, MAX_UINT256],
     });
-  }, [params, isConnected, isOnBase, approve]);
+  }, [params, isConnected, approve]);
 
   const sendRent = useCallback(() => {
-    if (!params || !isConnected || !isOnBase) return;
+    if (!params || !isConnected) return;
     if (!hasEnoughGhst) {
       setErrorMsg(
         `Need ${(Number(upfrontWei) / 1e18).toFixed(2)} GHST upfront; wallet has ${(Number(balanceBig) / 1e18).toFixed(2)}.`
@@ -157,6 +158,7 @@ export function useRentLending(params: RentParams | null) {
     }
     setErrorMsg(null);
     rent.writeContract({
+      chainId: BASE_CHAIN_ID,
       address: AAVEGOTCHI_DIAMOND_BASE,
       abi: LENDING_FACET_ABI,
       functionName: "agreeGotchiLending",
