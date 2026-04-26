@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { env } from "@/lib/env";
 
+export type AutoRenewSubscription = {
+  token_id: number;
+  owner: string;
+  months_paid_total: number;
+  expires_at: number;
+  last_payment_tx: string | null;
+  last_payment_ghst: string | null;
+  last_payment_at: number | null;
+  created_at: number;
+  updated_at: number;
+};
+
 export type AutoRenewTemplate = {
   token_id: number;
   owner: string;
@@ -17,6 +29,10 @@ export type AutoRenewTemplate = {
   last_error: string | null;
   created_at: number;
   updated_at: number;
+  // Subscription state — present when backend is the v2-with-subs version.
+  subscription?: AutoRenewSubscription | null;
+  subscriptionActive?: boolean;
+  daysLeft?: number;
 };
 
 type State = {

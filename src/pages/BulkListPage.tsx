@@ -25,7 +25,6 @@ import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { useAddressState } from "@/lib/addressState";
 import { switchToBaseChain } from "@/lib/chains";
-import { env } from "@/lib/env";
 import { Sparkles } from "lucide-react";
 import { useQueries } from "@tanstack/react-query";
 import { loadMultiWallets } from "@/lib/multiWallet";
@@ -102,14 +101,13 @@ export default function BulkListPage() {
   const periodSec = periodUnit === "days" ? periodValue * 86400 : periodValue * 3600;
   const [whitelistId, setWhitelistId] = useState("0");
   const [splitOwner, setSplitOwner] = useState(20);
-  const [splitOther, setSplitOther] = useState(
-    env.lendingFeeAddress ? Number(env.lendingFeePct) || 0 : 0
-  );
-  const [thirdParty, setThirdParty] = useState(env.lendingFeeAddress);
+  // splitOther always 0 — fee model moved off-chain (subscription).
+  const splitOther = 0;
+  const thirdParty = ZERO;
   const [channelling, setChannelling] = useState(true);
   const [useSuggestedPrice, setUseSuggestedPrice] = useState(true);
   const [flatPrice, setFlatPrice] = useState("");
-  const splitBorrower = Math.max(0, 100 - splitOwner - splitOther);
+  const splitBorrower = 100 - splitOwner;
 
   // Per-gotchi price overrides
   const [overrides, setOverrides] = useState<Record<string, string>>({});
@@ -317,10 +315,6 @@ export default function BulkListPage() {
               splitOwner={splitOwner}
               setSplitOwner={setSplitOwner}
               splitBorrower={splitBorrower}
-              splitOther={splitOther}
-              setSplitOther={setSplitOther}
-              thirdParty={thirdParty}
-              setThirdParty={setThirdParty}
               whitelistId={whitelistId}
               setWhitelistId={setWhitelistId}
               myWhitelists={myWhitelists}
@@ -514,10 +508,6 @@ function Step2Configure({
   splitOwner,
   setSplitOwner,
   splitBorrower,
-  splitOther,
-  setSplitOther,
-  thirdParty,
-  setThirdParty,
   whitelistId,
   setWhitelistId,
   myWhitelists,
@@ -541,10 +531,6 @@ function Step2Configure({
   splitOwner: number;
   setSplitOwner: (v: number) => void;
   splitBorrower: number;
-  splitOther: number;
-  setSplitOther: (v: number) => void;
-  thirdParty: string;
-  setThirdParty: (v: string) => void;
   whitelistId: string;
   setWhitelistId: (v: string) => void;
   myWhitelists: { id: string; name: string | null }[];
@@ -561,7 +547,7 @@ function Step2Configure({
   onBack: () => void;
   onNext: () => void;
 }) {
-  const splitsOk = splitOwner + splitBorrower + splitOther === 100;
+  const splitsOk = splitOwner + splitBorrower === 100;
   return (
     <div className="grid md:grid-cols-2 gap-4">
       <div className="space-y-4">
@@ -677,26 +663,20 @@ function Step2Configure({
           )}
         </Section>
 
-        <Section label="Revenue split (sum to 100%)">
-          <div className="grid grid-cols-3 gap-2">
-            <SplitCell label="Lender" value={splitOwner} onChange={setSplitOwner} />
-            <SplitCell label="Borrower" value={splitBorrower} disabled />
-            <SplitCell label="3rd party" value={splitOther} onChange={setSplitOther} />
+        <Section label="Channelled alchemica split">
+          <div className="grid grid-cols-2 gap-2">
+            <SplitCell label="Lender %" value={splitOwner} onChange={setSplitOwner} />
+            <SplitCell label="Borrower %" value={splitBorrower} disabled />
           </div>
           {!splitsOk && (
             <p className="text-[10px] text-destructive mt-1">
-              Splits sum to {splitOwner + splitBorrower + splitOther}%, must be 100.
+              Splits must sum to 100.
             </p>
           )}
-          {splitOther > 0 && (
-            <input
-              type="text"
-              value={thirdParty}
-              onChange={(e) => setThirdParty(e.target.value)}
-              placeholder="0x… (third-party address)"
-              className="mt-2 w-full h-8 px-2 rounded border border-border/40 bg-background/70 text-xs font-mono"
-            />
-          )}
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Splits any alchemica the borrower channels via realm parcels. Battler
+            winnings go direct to the borrower regardless.
+          </p>
         </Section>
 
         <Section label="Whitelist" icon={<Lock className="w-3.5 h-3.5" />}>

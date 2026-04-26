@@ -10,6 +10,8 @@ import {
   AAVEGOTCHI_DIAMOND_BASE,
   LENDING_FACET_ABI,
   WHITELIST_FACET_ABI,
+  ERC20_ABI,
+  GHST_TOKEN_BASE,
 } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { invalidateLendingsCache } from "@/hooks/useLendings";
@@ -198,6 +200,26 @@ export function useCreateWhitelist() {
     [base]
   );
   return { ...base, send };
+}
+
+// Transfers GHST from the connected wallet — used to pay an auto-renew
+// subscription to the operator hot wallet. The backend verifies the resulting
+// txHash matches expected (to, amount) before crediting the subscription.
+export function useTransferGhst() {
+  const base = useTxBase();
+  const send = useCallback(
+    (to: `0x${string}`, amountWei: bigint) => {
+      if (!base.canWrite) return;
+      base.tx.writeContract({
+        address: GHST_TOKEN_BASE,
+        abi: ERC20_ABI,
+        functionName: "transfer",
+        args: [to, amountWei],
+      });
+    },
+    [base]
+  );
+  return { ...base, send, txHash: base.tx.data };
 }
 
 export function useSetLendingOperator() {

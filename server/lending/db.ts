@@ -49,6 +49,35 @@ function initSchema(d: Database.Database) {
       ts INTEGER NOT NULL DEFAULT (strftime('%s','now'))
     );
     CREATE INDEX IF NOT EXISTS idx_relist_log_token ON relist_log(token_id);
+
+    -- Auto-renew subscriptions: paid in GHST, gates whether the cron actually
+    -- relists. Cron checks expires_at > now() before each addGotchiListing.
+    -- Strict: once expires_at passes, cron does nothing for this token until
+    -- the user pays again to extend.
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      token_id INTEGER PRIMARY KEY,
+      owner TEXT NOT NULL,
+      months_paid_total INTEGER NOT NULL DEFAULT 0,
+      expires_at INTEGER NOT NULL,
+      last_payment_tx TEXT,
+      last_payment_ghst TEXT,
+      last_payment_at INTEGER,
+      created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+      updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_subscriptions_owner ON subscriptions(owner);
+    CREATE INDEX IF NOT EXISTS idx_subscriptions_expires ON subscriptions(expires_at);
+
+    -- Idempotency: prevent the same payment tx from crediting twice. Indexed
+    -- so we can fast-reject replays.
+    CREATE TABLE IF NOT EXISTS payment_tx_log (
+      tx_hash TEXT PRIMARY KEY,
+      token_id INTEGER NOT NULL,
+      owner TEXT NOT NULL,
+      months INTEGER NOT NULL,
+      ghst_wei TEXT NOT NULL,
+      credited_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+    );
   `);
 }
 
@@ -135,4 +164,111 @@ export function getRecentRelists(tokenId: number, limit = 10) {
   return getDb()
     .prepare(`SELECT * FROM relist_log WHERE token_id = ? ORDER BY ts DESC LIMIT ?`)
     .all(tokenId, limit);
+}
+
+// ----- Subscriptions ---------------------------------------------------------
+
+export type Subscription = {
+  token_id: number;
+  owner: string;
+  months_paid_total: number;
+  expires_at: number;
+  last_payment_tx: string | null;
+  last_payment_ghst: string | null;
+  last_payment_at: number | null;
+  created_at: number;
+  updated_at: number;
+};
+
+export function getSubscription(tokenId: number): Subscription | null {
+  return (
+    (getDb()
+      .prepare(`SELECT * FROM subscriptions WHERE token_id = ?`)
+      .get(tokenId) as Subscription | undefined) ?? null
+  );
+}
+
+export function listSubscriptionsForOwner(owner: string): Subscription[] {
+  return getDb()
+    .prepare(`SELECT * FROM subscriptions WHERE owner = ? ORDER BY token_id`)
+    .all(owner.toLowerCase()) as Subscription[];
+}
+
+export function listAllActiveSubscriptions(): Subscription[] {
+  return getDb()
+    .prepare(`SELECT * FROM subscriptions WHERE expires_at > strftime('%s','now') ORDER BY token_id`)
+    .all() as Subscription[];
+}
+
+export function listAllSubscriptions(): Subscription[] {
+  return getDb()
+    .prepare(`SELECT * FROM subscriptions ORDER BY expires_at DESC`)
+    .all() as Subscription[];
+}
+
+export function isSubscriptionActive(tokenId: number): boolean {
+  const row = getDb()
+    .prepare(`SELECT expires_at FROM subscriptions WHERE token_id = ?`)
+    .get(tokenId) as { expires_at: number } | undefined;
+  if (!row) return false;
+  return row.expires_at > Math.floor(Date.now() / 1000);
+}
+
+// Credit a payment. Extends from max(now, current expires_at) so users who
+// renew early don't lose paid time. Throws if the txHash has already been
+// used (idempotency).
+export function creditSubscription(
+  tokenId: number,
+  owner: string,
+  months: number,
+  paymentTxHash: string,
+  ghstWei: bigint
+): Subscription {
+  const d = getDb();
+  const ownerLc = owner.toLowerCase();
+  const tx = d.transaction(() => {
+    // Idempotency check
+    const existingTx = d
+      .prepare(`SELECT 1 FROM payment_tx_log WHERE tx_hash = ?`)
+      .get(paymentTxHash);
+    if (existingTx) {
+      throw new Error("payment tx already credited");
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const ext = months * 30 * 86400;
+    const existing = d
+      .prepare(`SELECT * FROM subscriptions WHERE token_id = ?`)
+      .get(tokenId) as Subscription | undefined;
+    const baseExpiry = existing && existing.expires_at > now ? existing.expires_at : now;
+    const newExpiry = baseExpiry + ext;
+    const newTotal = (existing?.months_paid_total ?? 0) + months;
+
+    if (existing) {
+      d.prepare(
+        `UPDATE subscriptions
+           SET owner = ?,
+               months_paid_total = ?,
+               expires_at = ?,
+               last_payment_tx = ?,
+               last_payment_ghst = ?,
+               last_payment_at = ?,
+               updated_at = strftime('%s','now')
+         WHERE token_id = ?`
+      ).run(ownerLc, newTotal, newExpiry, paymentTxHash, ghstWei.toString(), now, tokenId);
+    } else {
+      d.prepare(
+        `INSERT INTO subscriptions
+          (token_id, owner, months_paid_total, expires_at, last_payment_tx, last_payment_ghst, last_payment_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      ).run(tokenId, ownerLc, months, newExpiry, paymentTxHash, ghstWei.toString(), now);
+    }
+
+    d.prepare(
+      `INSERT INTO payment_tx_log (tx_hash, token_id, owner, months, ghst_wei) VALUES (?, ?, ?, ?, ?)`
+    ).run(paymentTxHash, tokenId, ownerLc, months, ghstWei.toString());
+  });
+  tx();
+
+  return getSubscription(tokenId)!;
 }

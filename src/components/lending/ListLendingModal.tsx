@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Loader2, CheckCircle2, AlertCircle, Coins, Clock, Zap, Lock, Info, Sparkles, RotateCw } from "lucide-react";
 import { AutoPriceModal } from "./AutoPriceModal";
-import { useSetLendingOperator } from "@/hooks/useLendingTx";
+import { useSetLendingOperator, useTransferGhst } from "@/hooks/useLendingTx";
 import { useAccount } from "wagmi";
 import { useToast } from "@/ui/use-toast";
 import { useAddListing } from "@/hooks/useLendingTx";
@@ -33,6 +33,19 @@ const HOUR_PRESETS = [1, 4, 8, 12, 24];
 const MAX_DAYS = 30;
 const MAX_HOURS = 720; // 30 days protocol cap
 
+// Auto-renew subscription pricing (1 GHST/month base + tiered discounts).
+// Keep in sync with server/lending/subscriptionPricing.ts so backend tx
+// verification accepts the same amount the UI charged.
+export const SUBSCRIPTION_TIERS: { months: number; priceGhst: number; discountPct: number }[] = [
+  { months: 1, priceGhst: 1, discountPct: 0 },
+  { months: 3, priceGhst: 2.5, discountPct: 17 },
+  { months: 6, priceGhst: 4.5, discountPct: 25 },
+  { months: 12, priceGhst: 8, discountPct: 33 },
+];
+function tierFor(months: number) {
+  return SUBSCRIPTION_TIERS.find((t) => t.months === months) ?? SUBSCRIPTION_TIERS[0];
+}
+
 export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, modBRS, kinship, hauntId, onClose, onListed }: Props) {
   const { address } = useAccount();
   const { isOnBase } = useAddressState();
@@ -40,51 +53,26 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
   const ownerAddr = (originalOwner || address || "").toLowerCase();
   const myWhitelists = useWhitelistsForAddress(ownerAddr);
 
-  const feeAddr = env.lendingFeeAddress.toLowerCase();
-  const feePctNum = Math.max(0, Math.min(50, Number(env.lendingFeePct) || 0));
-  const hasFee = Boolean(feeAddr) && feePctNum > 0;
-
   const [periodUnit, setPeriodUnit] = useState<PeriodUnit>("days");
   const [periodValue, setPeriodValue] = useState<number>(7);
   const [upfrontGhst, setUpfrontGhst] = useState<string>("");
-  const [splitBorrower, setSplitBorrower] = useState<number>(hasFee ? 80 - feePctNum : 80);
+  // Two-way split (lender / borrower). The on-chain `splitOther` is always 0
+  // — the marketplace fee model moved off-chain (subscription) so we never
+  // route alchemica revenue to a third-party.
   const [splitOwner, setSplitOwner] = useState<number>(20);
+  const splitBorrower = 100 - splitOwner;
   const [whitelistId, setWhitelistId] = useState<string>("0");
   const [channelling, setChannelling] = useState<boolean>(true);
-  const [thirdParty, setThirdParty] = useState<string>(hasFee ? feeAddr : "");
-  const [splitOther, setSplitOther] = useState<number>(hasFee ? feePctNum : 0);
   const [submitted, setSubmitted] = useState(false);
   const [showAutoPrice, setShowAutoPrice] = useState(false);
   const [autoRenew, setAutoRenew] = useState(false);
+  const [subscriptionMonths, setSubscriptionMonths] = useState<number>(1);
   const setOperator = useSetLendingOperator();
+  const subPay = useTransferGhst();
+  const [subRegistered, setSubRegistered] = useState(false);
+  const [subRegError, setSubRegError] = useState<string | null>(null);
   const autoRenewOperator = env.autoRenewOperator;
   const autoRenewAvailable = Boolean(autoRenewOperator);
-  const autoRenewFeeAddr = env.autoRenewFeeAddress.toLowerCase();
-  const autoRenewFeePct = Math.max(0, Math.min(20, Number(env.autoRenewFeePct) || 0));
-
-  // When auto-renew is enabled, override third-party config to point at the service fee address.
-  useEffect(() => {
-    if (autoRenew && autoRenewFeeAddr && autoRenewFeePct > 0) {
-      setThirdParty(autoRenewFeeAddr);
-      setSplitOther(autoRenewFeePct);
-    } else if (!autoRenew && hasFee) {
-      setThirdParty(feeAddr);
-      setSplitOther(feePctNum);
-    } else if (!autoRenew && !hasFee) {
-      setSplitOther(0);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRenew]);
-
-  // ensure splits always sum to 100
-  useEffect(() => {
-    const sum = splitOwner + splitBorrower + splitOther;
-    if (sum !== 100) {
-      // auto-adjust borrower to balance
-      const next = Math.max(0, 100 - splitOwner - splitOther);
-      if (next !== splitBorrower) setSplitBorrower(next);
-    }
-  }, [splitOwner, splitOther, splitBorrower]);
 
   const list = useAddListing();
 
@@ -112,9 +100,10 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
     // If auto-renew opted in, fire setLendingOperator + register with backend.
     if (autoRenew && autoRenewAvailable) {
       setOperator.send(autoRenewOperator as `0x${string}`, Number(gotchiTokenId), true);
-      // Best-effort POST to backend to register the listing template.
+      // Best-effort POST to backend to register the listing template. The cron
+      // won't actually relist until a paid subscription record is in place; the
+      // subscription payment step happens after this success state.
       if (env.autoRenewApiUrl) {
-        // Recompute these here so we don't have to reference forward-declared consts.
         const ghst = Number(upfrontGhst) || 0;
         const [whole, frac = ""] = String(ghst).split(".");
         const fracPad = (frac + "000000000000000000").slice(0, 18);
@@ -132,8 +121,8 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
               periodSeconds: periodSec,
               splitOwner,
               splitBorrower,
-              splitOther,
-              thirdParty: splitOther > 0 ? thirdParty : ZERO,
+              splitOther: 0,
+              thirdParty: ZERO,
               whitelistId: Number(whitelistId) || 0,
               channelling,
             },
@@ -142,11 +131,58 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
       }
     }
 
-    // auto-close after a moment
+    // Auto-close only when there's no pending subscription payment step.
+    // With auto-renew on, leave the modal open so the user can pay the
+    // subscription before it closes.
+    if (autoRenew && autoRenewAvailable) return;
     const t = setTimeout(onClose, 1500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [list.step]);
+
+  // Subscription payment success → POST to backend so cron can start relisting.
+  useEffect(() => {
+    if (subPay.step !== "success" || !subPay.txHash) return;
+    if (!env.autoRenewApiUrl || !address) return;
+    const months = subscriptionMonths;
+    fetch(`${env.autoRenewApiUrl}/subscriptions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        tokenId: Number(gotchiTokenId),
+        owner: address,
+        months,
+        paymentTxHash: subPay.txHash,
+      }),
+    })
+      .then(async (r) => {
+        if (!r.ok) {
+          const txt = await r.text().catch(() => "");
+          throw new Error(`HTTP ${r.status}: ${txt.slice(0, 120)}`);
+        }
+        setSubRegistered(true);
+        toast({
+          title: "Auto-renew active",
+          description: `Subscription paid (${months * 30} days). Cron starts on next tick.`,
+        });
+        const t = setTimeout(onClose, 2000);
+        return () => clearTimeout(t);
+      })
+      .catch((err) => {
+        setSubRegError(String(err?.message || err));
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subPay.step]);
+
+  const handlePaySubscription = () => {
+    if (!autoRenewOperator) return;
+    const tier = tierFor(subscriptionMonths);
+    // GHST has 18 decimals. Use string math to avoid float drift on 2.5 / 4.5.
+    const [whole, frac = ""] = String(tier.priceGhst).split(".");
+    const fracPad = (frac + "000000000000000000").slice(0, 18);
+    const wei = BigInt(whole) * (BigInt(10) ** BigInt(18)) + BigInt(fracPad);
+    subPay.send(autoRenewOperator as `0x${string}`, wei);
+  };
 
   useEffect(() => {
     if (list.step === "error" && list.errorMsg) {
@@ -168,14 +204,10 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
     return BigInt(whole) * (BigInt(10) ** BigInt(18)) + BigInt(fracPad);
   }, [ghstNum]);
 
-  const splitsValid = splitOwner + splitBorrower + splitOther === 100;
+  const splitsValid = splitOwner + splitBorrower === 100;
   const periodSec = periodUnit === "days" ? periodValue * 86400 : periodValue * 3600;
   const periodValid = periodSec >= 3600 && periodSec <= 30 * 86400;
-  const thirdPartyValid =
-    splitOther === 0 ||
-    (thirdParty.length === 42 && thirdParty.startsWith("0x"));
-  const formValid =
-    Boolean(address) && isOnBase && splitsValid && periodValid && thirdPartyValid;
+  const formValid = Boolean(address) && isOnBase && splitsValid && periodValid;
 
   const handleSubmit = () => {
     if (!formValid || !address) return;
@@ -186,9 +218,9 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
       periodSeconds: periodSec,
       splitOwner,
       splitBorrower,
-      splitOther,
+      splitOther: 0,
       originalOwner: address as `0x${string}`,
-      thirdParty: (splitOther > 0 ? thirdParty : ZERO) as `0x${string}`,
+      thirdParty: ZERO as `0x${string}`,
       whitelistId: Number(whitelistId) || 0,
       revenueTokens: [],
       // permissions: bit 0 = channelling allowed (best guess; protocol stores
@@ -342,57 +374,18 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
             )}
           </Section>
 
-          {/* Splits */}
-          <Section title="Revenue split (must total 100%)">
-            <div className="grid grid-cols-3 gap-2">
-              <SplitInput label="Lender (you)" value={splitOwner} onChange={setSplitOwner} />
-              <SplitInput label="Borrower" value={splitBorrower} onChange={setSplitBorrower} />
-              <SplitInput
-                label="3rd party"
-                value={splitOther}
-                onChange={setSplitOther}
-                disabled={autoRenew}
-              />
+          {/* Splits — two-way, channelled alchemica between lender & borrower */}
+          <Section title="Channelled alchemica split (lender / borrower)">
+            <div className="grid grid-cols-2 gap-2">
+              <SplitInput label="Lender (you) %" value={splitOwner} onChange={setSplitOwner} />
+              <SplitInput label="Borrower %" value={splitBorrower} onChange={() => {}} disabled />
             </div>
-            {!splitsValid && (
-              <p className="text-[10px] text-destructive mt-1">
-                Splits sum to {splitOwner + splitBorrower + splitOther}%, must be 100.
-              </p>
-            )}
-            {autoRenew ? (
-              <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1 inline-flex items-center gap-1">
-                <Lock className="w-3 h-3" />
-                3rd party fixed at {autoRenewFeePct}% — required for auto-renew. Disable auto-renew to edit.
-              </p>
-            ) : hasFee ? (
-              <p className="text-[10px] text-muted-foreground mt-1 inline-flex items-center gap-1">
-                <Info className="w-3 h-3" />
-                {feePctNum}% pre-filled to {feeAddr.slice(0, 6)}…{feeAddr.slice(-4)} as the GotchiCloset
-                marketplace fee. Set to 0 to opt out.
-              </p>
-            ) : null}
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Splits any alchemica the borrower channels via realm parcels. Battler winnings go
+              direct to the borrower regardless. Typical: 20/80 lender/borrower for battler-mode,
+              50/50 for channelling-mode rentals.
+            </p>
           </Section>
-
-          {splitOther > 0 && (
-            <Section title="Third-party address">
-              <input
-                type="text"
-                value={thirdParty}
-                onChange={(e) => setThirdParty(e.target.value)}
-                placeholder="0x…"
-                disabled={autoRenew}
-                className={`w-full h-9 px-2 rounded border bg-background/70 text-sm font-mono ${
-                  thirdPartyValid ? "border-border/40" : "border-destructive/50"
-                } ${autoRenew ? "opacity-60 cursor-not-allowed" : ""}`}
-              />
-              {autoRenew && (
-                <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1 inline-flex items-center gap-1">
-                  <Lock className="w-3 h-3" />
-                  Locked to GotchiCloset operator while auto-renew is on. Disable auto-renew to edit.
-                </p>
-              )}
-            </Section>
-          )}
 
           {/* Whitelist */}
           <Section title="Whitelist" icon={<Lock className="w-3.5 h-3.5" />}>
@@ -432,33 +425,59 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
           </Section>
 
           {autoRenewAvailable && (
-            <Section title="Auto-renew (premium)" icon={<RotateCw className="w-3.5 h-3.5" />}>
+            <Section title="Auto-renew subscription" icon={<RotateCw className="w-3.5 h-3.5" />}>
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input
                   type="checkbox"
                   checked={autoRenew}
                   onChange={(e) => setAutoRenew(e.target.checked)}
                   className="w-4 h-4 rounded border-border/40"
+                  data-testid="auto-renew-toggle"
                 />
                 Re-list automatically when this rental ends
               </label>
               <p className="text-[10px] text-muted-foreground mt-1">
-                You'll authorize the GotchiCloset operator wallet (one-time per gotchi) via{" "}
-                <code className="text-[9px]">setLendingOperator</code>. Our backend re-lists with these
-                params after each rental ends.
+                Backend service polls every 2 min, claims expired rentals, and re-lists with these
+                params. One-time operator authorization via{" "}
+                <code className="text-[9px]">setLendingOperator</code>.
               </p>
+
               {autoRenew && (
-                <div className="mt-2 rounded border border-amber-500/30 bg-amber-500/5 p-2 text-[10px] text-amber-700 dark:text-amber-400">
-                  <div className="font-medium">Service fee: {autoRenewFeePct}% splitOther → GHST to{" "}
-                    <span className="font-mono">{autoRenewFeeAddr.slice(0, 6)}…{autoRenewFeeAddr.slice(-4)}</span>
+                <div className="mt-2 space-y-2" data-testid="auto-renew-subscription-step">
+                  <div className="text-[11px] font-medium">Subscription term</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SUBSCRIPTION_TIERS.map((t) => (
+                      <button
+                        key={t.months}
+                        type="button"
+                        onClick={() => setSubscriptionMonths(t.months)}
+                        data-testid={`sub-tier-${t.months}`}
+                        className={`px-2.5 py-1.5 rounded text-xs border transition-colors ${
+                          subscriptionMonths === t.months
+                            ? "bg-primary/15 border-primary/40 text-primary"
+                            : "bg-background/50 border-border/40 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                        }`}
+                      >
+                        <div className="font-semibold">{t.months}{t.months === 1 ? " month" : " months"}</div>
+                        <div className="text-[10px] opacity-80">
+                          {t.priceGhst} GHST{t.discountPct > 0 ? ` · ${t.discountPct}% off` : ""}
+                        </div>
+                      </button>
+                    ))}
                   </div>
-                  <div className="opacity-80 mt-0.5">
-                    Paid <strong>per rental</strong> (taken from each completed rental's revenue split, not at listing time).
-                    Borrower split decreases by {autoRenewFeePct}%; your lender split is unchanged.
-                    Listing itself is free — only successful rentals carry the fee.
+                  <div className="rounded border border-primary/30 bg-primary/5 p-2 text-[10px]">
+                    <div className="font-semibold text-foreground inline-flex items-center gap-1">
+                      <Coins className="w-3 h-3" />
+                      Total: {tierFor(subscriptionMonths).priceGhst} GHST · expires in {subscriptionMonths * 30} days
+                    </div>
+                    <div className="text-muted-foreground mt-0.5">
+                      Paid once via GHST transfer. Cron stops the moment the term ends — no
+                      surprise renewals. Extend any time from /lending/me.
+                    </div>
                   </div>
                 </div>
               )}
+
               {autoRenew && setOperator.step !== "idle" && (
                 <div className="mt-1.5 text-[10px] text-muted-foreground inline-flex items-center gap-1">
                   {setOperator.step === "submitting" || setOperator.step === "confirming" ? (
@@ -477,10 +496,55 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
 
           {/* Submit */}
           <div className="border-t border-border/30 pt-4">
-            {list.step === "success" ? (
+            {list.step === "success" && autoRenew && autoRenewAvailable && !subRegistered ? (
+              <div className="space-y-2">
+                <div className="rounded-lg border border-green-500/40 bg-green-500/10 p-2.5 inline-flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium w-full">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  Listed. Now pay the subscription to start auto-renew.
+                </div>
+                <button
+                  type="button"
+                  onClick={handlePaySubscription}
+                  disabled={subPay.step === "submitting" || subPay.step === "confirming"}
+                  data-testid="sub-pay-btn"
+                  className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 text-sm font-semibold transition-colors"
+                >
+                  {subPay.step === "submitting" || subPay.step === "confirming" ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {subPay.step === "submitting" ? "Confirm in wallet…" : "Confirming on-chain…"}
+                    </>
+                  ) : subPay.step === "success" && !subRegistered && !subRegError ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Registering subscription…
+                    </>
+                  ) : (
+                    <>
+                      Pay {tierFor(subscriptionMonths).priceGhst} GHST · {subscriptionMonths * 30} days
+                    </>
+                  )}
+                </button>
+                {subPay.errorMsg && (
+                  <p className="text-[11px] text-destructive">{subPay.errorMsg.slice(0, 200)}</p>
+                )}
+                {subRegError && (
+                  <p className="text-[11px] text-destructive">
+                    Payment confirmed but backend rejected: {subRegError}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-full text-[11px] text-muted-foreground hover:text-foreground"
+                >
+                  Skip for now (auto-renew won't fire until you pay from /lending/me)
+                </button>
+              </div>
+            ) : list.step === "success" ? (
               <div className="rounded-lg border border-green-500/40 bg-green-500/10 p-3 inline-flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium">
                 <CheckCircle2 className="w-4 h-4" />
-                Listed successfully
+                {subRegistered ? "Listed · auto-renew active" : "Listed successfully"}
               </div>
             ) : (
               <button
