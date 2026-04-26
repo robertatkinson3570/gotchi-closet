@@ -27,13 +27,11 @@ type Props = {
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 
-const PERIOD_PRESETS = [
-  { label: "1 day", days: 1 },
-  { label: "3 days", days: 3 },
-  { label: "7 days", days: 7 },
-  { label: "14 days", days: 14 },
-  { label: "30 days", days: 30 },
-];
+type PeriodUnit = "hours" | "days";
+const DAY_PRESETS = [1, 3, 7, 14, 30];
+const HOUR_PRESETS = [1, 4, 8, 12, 24];
+const MAX_DAYS = 30;
+const MAX_HOURS = 720; // 30 days protocol cap
 
 export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, modBRS, kinship, hauntId, onClose, onListed }: Props) {
   const { address } = useAccount();
@@ -46,7 +44,8 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
   const feePctNum = Math.max(0, Math.min(50, Number(env.lendingFeePct) || 0));
   const hasFee = Boolean(feeAddr) && feePctNum > 0;
 
-  const [periodDays, setPeriodDays] = useState<number>(7);
+  const [periodUnit, setPeriodUnit] = useState<PeriodUnit>("days");
+  const [periodValue, setPeriodValue] = useState<number>(7);
   const [upfrontGhst, setUpfrontGhst] = useState<string>("");
   const [splitBorrower, setSplitBorrower] = useState<number>(hasFee ? 80 - feePctNum : 80);
   const [splitOwner, setSplitOwner] = useState<number>(20);
@@ -130,7 +129,7 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
             owner: address,
             template: {
               initialCostWei: wei.toString(),
-              periodSeconds: periodDays * 86400,
+              periodSeconds: periodSec,
               splitOwner,
               splitBorrower,
               splitOther,
@@ -170,8 +169,8 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
   }, [ghstNum]);
 
   const splitsValid = splitOwner + splitBorrower + splitOther === 100;
-  const periodSec = periodDays * 86400;
-  const periodValid = periodSec > 0 && periodSec <= 30 * 86400;
+  const periodSec = periodUnit === "days" ? periodValue * 86400 : periodValue * 3600;
+  const periodValid = periodSec >= 3600 && periodSec <= 30 * 86400;
   const thirdPartyValid =
     splitOther === 0 ||
     (thirdParty.length === 42 && thirdParty.startsWith("0x"));
@@ -243,31 +242,65 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
         <div className="p-5 space-y-5">
           {/* Period */}
           <Section title="Rental period" icon={<Clock className="w-3.5 h-3.5" />}>
-            <div className="flex flex-wrap gap-1.5 items-center">
-              {PERIOD_PRESETS.map((p) => (
+            {/* Unit toggle */}
+            <div className="inline-flex rounded-md border border-border/40 bg-background/40 p-0.5 mb-2">
+              {(["days", "hours"] as PeriodUnit[]).map((u) => (
                 <button
-                  key={p.days}
+                  key={u}
                   type="button"
-                  onClick={() => setPeriodDays(p.days)}
+                  onClick={() => {
+                    if (u === periodUnit) return;
+                    // Convert current value when switching units, clamping to limits
+                    if (u === "hours") {
+                      setPeriodValue(Math.max(1, Math.min(MAX_HOURS, Math.round(periodValue * 24))));
+                    } else {
+                      setPeriodValue(Math.max(1, Math.min(MAX_DAYS, Math.max(1, Math.round(periodValue / 24)))));
+                    }
+                    setPeriodUnit(u);
+                  }}
+                  className={`px-3 h-7 rounded text-xs font-medium transition-colors ${
+                    periodUnit === u
+                      ? "bg-primary/15 text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {u === "days" ? "Days" : "Hours"}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-1.5 items-center">
+              {(periodUnit === "days" ? DAY_PRESETS : HOUR_PRESETS).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setPeriodValue(n)}
                   className={`px-2.5 py-1 rounded text-xs border transition-colors ${
-                    periodDays === p.days
+                    periodValue === n
                       ? "bg-primary/15 border-primary/40 text-primary"
                       : "bg-background/50 border-border/40 text-muted-foreground hover:border-primary/30 hover:text-foreground"
                   }`}
                 >
-                  {p.label}
+                  {n} {periodUnit === "days" ? (n === 1 ? "day" : "days") : (n === 1 ? "hour" : "hours")}
                 </button>
               ))}
               <input
                 type="number"
                 min={1}
-                max={30}
-                value={periodDays}
-                onChange={(e) => setPeriodDays(Math.max(1, Math.min(30, Number(e.target.value) || 1)))}
+                max={periodUnit === "days" ? MAX_DAYS : MAX_HOURS}
+                value={periodValue}
+                onChange={(e) => {
+                  const max = periodUnit === "days" ? MAX_DAYS : MAX_HOURS;
+                  setPeriodValue(Math.max(1, Math.min(max, Number(e.target.value) || 1)));
+                }}
                 className="w-20 h-8 px-2 rounded border border-border/40 bg-background/70 text-xs"
-                title="Custom days (1-30)"
+                title={`Custom ${periodUnit} (1-${periodUnit === "days" ? MAX_DAYS : MAX_HOURS})`}
               />
-              <span className="text-xs text-muted-foreground self-center">days <span className="text-[10px]">(max 30 — protocol cap)</span></span>
+              <span className="text-xs text-muted-foreground self-center">
+                {periodUnit === "days" ? "days" : "hours"}{" "}
+                <span className="text-[10px]">
+                  (max {periodUnit === "days" ? "30 days" : "720 hours"} — protocol cap)
+                </span>
+              </span>
               {modBRS != null && modBRS > 0 && (
                 <button
                   type="button"
@@ -295,7 +328,7 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
             />
             {modBRS != null && modBRS > 0 && (
               <p className="text-[10px] text-muted-foreground mt-1">
-                Typical for BRS {modBRS}: <span className="font-semibold text-foreground">~{suggestUpfrontHint(modBRS, periodDays)} GHST</span> for {periodDays}d rentals (rough median; click Auto-price for live market data).
+                Typical for BRS {modBRS}: <span className="font-semibold text-foreground">~{suggestUpfrontHint(modBRS, periodSec)} GHST</span> for {periodValue} {periodUnit === "days" ? (periodValue === 1 ? "day" : "days") : (periodValue === 1 ? "hour" : "hours")} (rough median; click Auto-price for live market data).
               </p>
             )}
             <p className="text-[10px] text-muted-foreground mt-1">
@@ -473,7 +506,8 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
           gotchiName={gotchiName}
           gotchiTokenId={gotchiTokenId}
           onApply={(r) => {
-            setPeriodDays(r.recommendedPeriodDays);
+            setPeriodUnit("days");
+            setPeriodValue(r.recommendedPeriodDays);
             setUpfrontGhst(
               r.recommendedUpfrontGhst < 1
                 ? r.recommendedUpfrontGhst.toFixed(2)
@@ -520,7 +554,7 @@ function Section({
 }
 
 // Rough per-band hint for inline display. Aligned with our research bands.
-function suggestUpfrontHint(brs: number, periodDays: number): number {
+function suggestUpfrontHint(brs: number, periodSec: number): number {
   let weekly: number;
   if (brs >= 700) weekly = 200;
   else if (brs >= 660) weekly = 100;
@@ -529,7 +563,11 @@ function suggestUpfrontHint(brs: number, periodDays: number): number {
   else if (brs >= 570) weekly = 20;
   else if (brs >= 530) weekly = 10;
   else weekly = 5;
-  return Math.max(1, Math.round((weekly * periodDays) / 7));
+  const fraction = periodSec / (7 * 86400);
+  const raw = weekly * fraction;
+  // For sub-day rentals, allow 2 decimals so hourly hints aren't all "1 GHST"
+  if (raw < 1) return Math.round(raw * 100) / 100;
+  return Math.max(1, Math.round(raw));
 }
 
 function SplitInput({

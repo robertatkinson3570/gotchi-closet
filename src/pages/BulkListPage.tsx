@@ -97,7 +97,9 @@ export default function BulkListPage() {
 
   const [step, setStep] = useState<Step>(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [periodDays, setPeriodDays] = useState(7);
+  const [periodUnit, setPeriodUnit] = useState<"hours" | "days">("days");
+  const [periodValue, setPeriodValue] = useState(7);
+  const periodSec = periodUnit === "days" ? periodValue * 86400 : periodValue * 3600;
   const [whitelistId, setWhitelistId] = useState("0");
   const [splitOwner, setSplitOwner] = useState(20);
   const [splitOther, setSplitOther] = useState(
@@ -149,7 +151,8 @@ export default function BulkListPage() {
     if (periods.length) {
       const sorted = [...periods].sort((a, b) => a - b);
       const median = sorted[Math.floor(sorted.length / 2)];
-      setPeriodDays(median);
+      setPeriodUnit("days");
+      setPeriodValue(median);
     }
     setChannelling(channellingOn >= selectedRows.length / 2);
     // If majority is channelling-mode, push the lender split higher (50/50)
@@ -232,7 +235,7 @@ export default function BulkListPage() {
       return {
         tokenId: Number(cur.tokenId),
         initialCostWei: ghstToWei(ghst),
-        periodSeconds: periodDays * 86400,
+        periodSeconds: periodSec,
         splitOwner,
         splitBorrower,
         splitOther,
@@ -307,8 +310,10 @@ export default function BulkListPage() {
 
           {step === 2 && (
             <Step2Configure
-              periodDays={periodDays}
-              setPeriodDays={setPeriodDays}
+              periodUnit={periodUnit}
+              setPeriodUnit={setPeriodUnit}
+              periodValue={periodValue}
+              setPeriodValue={setPeriodValue}
               splitOwner={splitOwner}
               setSplitOwner={setSplitOwner}
               splitBorrower={splitBorrower}
@@ -502,8 +507,10 @@ function Step1Select({
 }
 
 function Step2Configure({
-  periodDays,
-  setPeriodDays,
+  periodUnit,
+  setPeriodUnit,
+  periodValue,
+  setPeriodValue,
   splitOwner,
   setSplitOwner,
   splitBorrower,
@@ -527,8 +534,10 @@ function Step2Configure({
   onBack,
   onNext,
 }: {
-  periodDays: number;
-  setPeriodDays: (v: number) => void;
+  periodUnit: "hours" | "days";
+  setPeriodUnit: (v: "hours" | "days") => void;
+  periodValue: number;
+  setPeriodValue: (v: number) => void;
   splitOwner: number;
   setSplitOwner: (v: number) => void;
   splitBorrower: number;
@@ -590,15 +599,44 @@ function Step2Configure({
         </div>
 
         <Section label="Period" icon={<Clock className="w-3.5 h-3.5" />}>
+          <div className="inline-flex rounded-md border border-border/40 bg-background/40 p-0.5 mr-2 align-middle">
+            {(["days", "hours"] as const).map((u) => (
+              <button
+                key={u}
+                type="button"
+                onClick={() => {
+                  if (u === periodUnit) return;
+                  if (u === "hours") {
+                    setPeriodValue(Math.max(1, Math.min(720, Math.round(periodValue * 24))));
+                  } else {
+                    setPeriodValue(Math.max(1, Math.min(30, Math.max(1, Math.round(periodValue / 24)))));
+                  }
+                  setPeriodUnit(u);
+                }}
+                className={`px-2.5 h-7 rounded text-xs font-medium transition-colors ${
+                  periodUnit === u
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {u === "days" ? "Days" : "Hours"}
+              </button>
+            ))}
+          </div>
           <input
             type="number"
             min={1}
-            max={30}
-            value={periodDays}
-            onChange={(e) => setPeriodDays(Math.max(1, Math.min(30, Number(e.target.value) || 1)))}
-            className="w-24 h-9 px-2 rounded border border-border/40 bg-background/70 text-sm"
+            max={periodUnit === "days" ? 30 : 720}
+            value={periodValue}
+            onChange={(e) => {
+              const max = periodUnit === "days" ? 30 : 720;
+              setPeriodValue(Math.max(1, Math.min(max, Number(e.target.value) || 1)));
+            }}
+            className="w-24 h-9 px-2 rounded border border-border/40 bg-background/70 text-sm align-middle"
           />
-          <span className="ml-2 text-xs text-muted-foreground">days (max 30)</span>
+          <span className="ml-2 text-xs text-muted-foreground">
+            {periodUnit === "days" ? "days (max 30)" : "hours (max 720)"}
+          </span>
         </Section>
 
         <Section label="Pricing" icon={<Coins className="w-3.5 h-3.5" />}>

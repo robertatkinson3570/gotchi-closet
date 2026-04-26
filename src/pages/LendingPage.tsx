@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useHotkeys } from "react-hotkeys-hook";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { LendingTopBar } from "@/components/lending/LendingTopBar";
 import { LendingFilters } from "@/components/lending/LendingFilters";
@@ -82,17 +81,35 @@ export default function LendingPage() {
   );
 
   // Hotkeys
-  useHotkeys("/", (e) => {
-    e.preventDefault();
-    const input = document.querySelector<HTMLInputElement>('[data-testid="lending-search"]');
-    input?.focus();
-  });
-  useHotkeys("escape", () => {
-    if (detailId) closeDetail();
-  });
-  useHotkeys("f", () => {
-    setSidebarOpen((o) => !o);
-  });
+  // Direct keydown listener — react-hotkeys-hook's default config ignores some
+  // keys / form-tag contexts; using the native listener gives us deterministic
+  // behavior across browsers and Playwright.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
+      const isTyping = tag === "input" || tag === "textarea" || (e.target as HTMLElement | null)?.isContentEditable;
+
+      // `/` focuses search, even when not typing
+      if (e.key === "/" && !isTyping) {
+        e.preventDefault();
+        const input = document.querySelector<HTMLInputElement>('[data-testid="lending-search"]');
+        input?.focus();
+        input?.select();
+        return;
+      }
+      // `esc` closes detail modal (it has its own listener too, this is fallback)
+      if (e.key === "Escape" && detailId && !isTyping) {
+        closeDetail();
+        return;
+      }
+      // `f` toggles filter sidebar
+      if (e.key === "f" && !isTyping) {
+        setSidebarOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [detailId, closeDetail]);
 
   const sorted = useMemo(() => applyLendingSort(filtered, sort), [filtered, sort]);
 
