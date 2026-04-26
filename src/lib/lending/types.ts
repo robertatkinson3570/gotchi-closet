@@ -53,6 +53,7 @@ export const defaultLendingSort: LendingSort = {
 
 export type WhitelistMode = "any" | "open" | "whitelisted" | "rentable_by_me";
 export type ChannellingMode = "any" | "yes" | "no";
+export type DurationUnit = "hours" | "days";
 
 export type LendingFilters = {
   search: string; // gotchi id, name, owner addr
@@ -61,8 +62,13 @@ export type LendingFilters = {
   priceMin: string;
   priceMax: string;
   whitelist: WhitelistMode;
+  whitelistId: string; // exact whitelist id, e.g. "1234"; "" = no constraint
   channelling: ChannellingMode;
   borrowerSplitMin: string; // % min
+  durationMinValue: string; // numeric string; empty = no constraint
+  durationMinUnit: DurationUnit;
+  kinshipMin: string; // numeric string; empty = no constraint
+  haunts: string[]; // ["1","2","3","4"]; empty = all
 };
 
 export const defaultLendingFilters: LendingFilters = {
@@ -72,8 +78,13 @@ export const defaultLendingFilters: LendingFilters = {
   priceMin: "",
   priceMax: "",
   whitelist: "any",
+  whitelistId: "",
   channelling: "any",
   borrowerSplitMin: "",
+  durationMinValue: "",
+  durationMinUnit: "days",
+  kinshipMin: "",
+  haunts: [],
 };
 
 export const BRS_BANDS = [

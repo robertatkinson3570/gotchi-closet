@@ -23,6 +23,13 @@ export const LENDING_FACET_ABI = [
     ],
     outputs: [],
   },
+  {
+    name: "claimAndEndGotchiLending",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_tokenId", type: "uint32" }],
+    outputs: [],
+  },
 ] as const;
 
 export const AAVEGOTCHI_DIAMOND_BASE = "0xA99c4B08201F2913Db8D28e71d020c4298F29dBF";

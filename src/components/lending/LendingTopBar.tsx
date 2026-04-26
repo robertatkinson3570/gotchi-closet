@@ -1,6 +1,15 @@
 import { Link } from "react-router-dom";
 import type { LendingSort, Lending } from "@/lib/lending/types";
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, BarChart3, User, Download } from "lucide-react";
+import {
+  Search,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  BarChart3,
+  User,
+  Download,
+  SlidersHorizontal,
+} from "lucide-react";
 import { activeLendingsToCsv, downloadCsv } from "@/lib/lending/csvExport";
 
 type Props = {
@@ -11,6 +20,9 @@ type Props = {
   count: number;
   total: number;
   visibleLendings?: Lending[];
+  // Mobile-only: opens the filters drawer
+  onOpenFiltersMobile?: () => void;
+  filterCount?: number;
 };
 
 const SORT_FIELDS: { value: LendingSort["field"]; label: string }[] = [
@@ -30,6 +42,8 @@ export function LendingTopBar({
   count,
   total,
   visibleLendings,
+  onOpenFiltersMobile,
+  filterCount = 0,
 }: Props) {
   const flipDir = () =>
     onSortChange({ ...sort, direction: sort.direction === "asc" ? "desc" : "asc" });
@@ -51,6 +65,24 @@ export function LendingTopBar({
             {count.toLocaleString()} of {total.toLocaleString()} listings
           </span>
         </div>
+
+        {onOpenFiltersMobile && (
+          <button
+            type="button"
+            onClick={onOpenFiltersMobile}
+            className="lg:hidden inline-flex items-center gap-1 h-9 px-2 rounded-md border border-border/40 bg-background/70 hover:bg-muted/50 text-xs font-medium shrink-0"
+            data-testid="lending-mobile-filters-btn"
+            title="Filters"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span className="hidden xs:inline">Filters</span>
+            {filterCount > 0 && (
+              <span className="ml-0.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-primary/15 text-primary text-[10px] font-semibold">
+                {filterCount}
+              </span>
+            )}
+          </button>
+        )}
 
         <div className="flex-1 flex items-center gap-2 max-w-2xl mx-auto">
           <div className="relative flex-1">

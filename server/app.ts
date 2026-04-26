@@ -10,7 +10,16 @@ import { startAutoRenewCron } from "./lending/cron";
 export function createApp() {
   const app = express();
 
-  const defaultOrigins = [
+  // Production origins. Allowed unconditionally — these are the only places
+  // the SPA legitimately runs from.
+  const prodOrigins: (string | RegExp)[] = [
+    "https://www.gotchicloset.com",
+    "https://gotchicloset.com",
+    // Vercel preview deployments (gotchi-closet-*.vercel.app)
+    /^https:\/\/gotchi-closet[a-z0-9-]*\.vercel\.app$/,
+  ];
+  // Dev origins. Always included so local dev + Replit work.
+  const devOrigins: (string | RegExp)[] = [
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:3000",
@@ -18,14 +27,27 @@ export function createApp() {
     /\.replit\.dev$/,
     /\.repl\.co$/,
   ];
+  // Optional env override appends extra allowed origins (e.g. staging hosts).
   const envOrigins = (process.env.VITE_DEV_ALLOWED_ORIGINS || "")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
-  const allowedOrigins = envOrigins.length > 0 ? envOrigins : defaultOrigins;
+  const allowedOrigins: (string | RegExp)[] = [...prodOrigins, ...devOrigins, ...envOrigins];
   app.use(
     cors({
-      origin: allowedOrigins,
+      origin: (origin, callback) => {
+        // Same-origin or curl/no-origin requests (e.g. server-to-server) are allowed.
+        if (!origin) return callback(null, true);
+        const ok = allowedOrigins.some((entry) =>
+          entry instanceof RegExp ? entry.test(origin) : entry === origin
+        );
+        if (ok) return callback(null, true);
+        // Log + reject. Do NOT echo the origin back, do NOT throw — keep the
+        // server resilient to scanner traffic.
+        console.warn(`[cors] rejected origin: ${origin}`);
+        return callback(null, false);
+      },
+      credentials: false,
     })
   );
   app.use(express.json({ limit: "2mb" }));

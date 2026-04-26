@@ -27,13 +27,22 @@ export function initWallet() {
   return true;
 }
 
-// Look up active lendings for a tokenId; we re-list only if there is no active listing.
-async function tokenHasActiveListing(tokenId: number): Promise<boolean> {
+type ActiveLendingState =
+  | { kind: "none" }
+  | { kind: "open" } // listed but not yet rented (borrower=null)
+  | { kind: "rented_active"; lendingId: string; expiresAt: number }
+  | { kind: "rented_expired"; lendingId: string; expiresAt: number };
+
+// Look up the active listing for a tokenId so we can decide between:
+//  - relisting (if no active row exists)
+//  - claiming-and-ending (if rented and the period has passed)
+//  - skipping (if open or rental still in progress)
+async function getActiveLendingState(tokenId: number): Promise<ActiveLendingState> {
   const query = `query Q($t: BigInt!) {
     gotchiLendings(
       first: 1
       where: { gotchiTokenId: $t, cancelled: false, completed: false }
-    ) { id }
+    ) { id borrower timeAgreed period }
   }`;
   const res = await fetch(SUBGRAPH_URL, {
     method: "POST",
@@ -43,7 +52,39 @@ async function tokenHasActiveListing(tokenId: number): Promise<boolean> {
   if (!res.ok) throw new Error(`Subgraph HTTP ${res.status}`);
   const json = await res.json();
   if (json.errors) throw new Error(JSON.stringify(json.errors));
-  return Array.isArray(json.data?.gotchiLendings) && json.data.gotchiLendings.length > 0;
+  const row = json.data?.gotchiLendings?.[0];
+  if (!row) return { kind: "none" };
+  if (!row.borrower) return { kind: "open" };
+  const timeAgreed = Number(row.timeAgreed);
+  const period = Number(row.period);
+  if (!timeAgreed || !period) return { kind: "rented_active", lendingId: row.id, expiresAt: 0 };
+  const expiresAt = timeAgreed + period;
+  const now = Math.floor(Date.now() / 1000);
+  return expiresAt <= now
+    ? { kind: "rented_expired", lendingId: row.id, expiresAt }
+    : { kind: "rented_active", lendingId: row.id, expiresAt };
+}
+
+async function claimAndEnd(tokenId: number): Promise<{ txHash: string | null; error: string | null }> {
+  if (!walletClient || !publicClient) return { txHash: null, error: "wallet not initialized" };
+  try {
+    const hash = await walletClient.writeContract({
+      address: AAVEGOTCHI_DIAMOND_BASE as `0x${string}`,
+      abi: LENDING_FACET_ABI,
+      functionName: "claimAndEndGotchiLending",
+      args: [tokenId],
+      chain: base,
+      account: walletClient.account!,
+    });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash, timeout: 60_000 });
+    if (receipt.status !== "success") return { txHash: hash, error: "claim-tx reverted" };
+    return { txHash: hash, error: null };
+  } catch (err: any) {
+    return {
+      txHash: null,
+      error: (err?.shortMessage || err?.message || String(err)).slice(0, 500),
+    };
+  }
 }
 
 export async function maybeRelist(t: Template): Promise<{ success: boolean; txHash: string | null; error: string | null }> {
@@ -51,10 +92,19 @@ export async function maybeRelist(t: Template): Promise<{ success: boolean; txHa
     return { success: false, txHash: null, error: "Auto-renew wallet not initialized (set AUTORENEW_HOT_WALLET_KEY)" };
   }
   try {
-    const hasActive = await tokenHasActiveListing(t.token_id);
-    if (hasActive) {
-      // Already listed or rented — nothing to do
+    const state = await getActiveLendingState(t.token_id);
+    if (state.kind === "open" || state.kind === "rented_active") {
+      // Open listing waiting on a borrower, or rental still in progress — nothing to do
       return { success: false, txHash: null, error: "already-active" };
+    }
+    if (state.kind === "rented_expired") {
+      // Rental period passed but nobody called claimAndEnd — operator does it,
+      // freeing the gotchi from escrow so we can re-list this same tick.
+      const claim = await claimAndEnd(t.token_id);
+      if (claim.error) {
+        return { success: false, txHash: claim.txHash, error: `claim-and-end: ${claim.error}` };
+      }
+      console.log(`[autorenew] claimed expired rental #${t.token_id} tx=${claim.txHash}`);
     }
 
     const params = {

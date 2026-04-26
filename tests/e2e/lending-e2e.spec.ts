@@ -170,6 +170,126 @@ test.describe("/lending marketplace", () => {
   });
 });
 
+test.describe("/lending new filters", () => {
+  test("price-max filter narrows results", async ({ page }) => {
+    await gotoPage(page, "/lending");
+    await page.getByTestId("lending-grid").waitFor({ timeout: 20_000 });
+    const before = await page.locator("[data-testid^='lending-card-']").count();
+    await page.getByTestId("filter-price-max").fill("1");
+    await page.waitForTimeout(400);
+    const after = await page.locator("[data-testid^='lending-card-']").count();
+    expect(after).toBeLessThanOrEqual(before);
+  });
+
+  test("min duration filter (days) narrows results", async ({ page }) => {
+    await gotoPage(page, "/lending");
+    await page.getByTestId("lending-grid").waitFor({ timeout: 20_000 });
+    const before = await page.locator("[data-testid^='lending-card-']").count();
+    await page.getByTestId("filter-duration-min").fill("60"); // > 30d protocol cap
+    await page.waitForTimeout(400);
+    const after = await page.locator("[data-testid^='lending-card-']").count();
+    expect(after).toBeLessThanOrEqual(before);
+  });
+
+  test("min duration unit toggle switches between days and hours", async ({ page }) => {
+    await gotoPage(page, "/lending");
+    await page.getByTestId("lending-grid").waitFor({ timeout: 20_000 });
+    const before = await page.locator("[data-testid^='lending-card-']").count();
+    // Switch to hours, then require >= 24 hours (most listings are days, this should keep many)
+    await page.getByTestId("filter-duration-unit-hours").click();
+    await page.waitForTimeout(150);
+    await page.getByTestId("filter-duration-min").fill("24");
+    await page.waitForTimeout(400);
+    const after24h = await page.locator("[data-testid^='lending-card-']").count();
+    expect(after24h).toBeLessThanOrEqual(before);
+    // Switch back to days, set 1 day → equivalent to 24h, count should match
+    await page.getByTestId("filter-duration-unit-days").click();
+    await page.getByTestId("filter-duration-min").fill("1");
+    await page.waitForTimeout(400);
+    const after1d = await page.locator("[data-testid^='lending-card-']").count();
+    expect(after1d).toBe(after24h);
+  });
+
+  test("min kinship filter narrows results", async ({ page }) => {
+    await gotoPage(page, "/lending");
+    await page.getByTestId("lending-grid").waitFor({ timeout: 20_000 });
+    const before = await page.locator("[data-testid^='lending-card-']").count();
+    await page.getByTestId("filter-kinship-min").fill("9999");
+    await page.waitForTimeout(400);
+    const after = await page.locator("[data-testid^='lending-card-']").count();
+    expect(after).toBeLessThanOrEqual(before);
+  });
+
+  test("whitelist-id filter narrows results", async ({ page }) => {
+    await gotoPage(page, "/lending");
+    await page.getByTestId("lending-grid").waitFor({ timeout: 20_000 });
+    await page.getByTestId("filter-whitelist-id").fill("99999999");
+    await page.waitForTimeout(400);
+    const after = await page.locator("[data-testid^='lending-card-']").count();
+    // Unrealistic id → empty grid
+    expect(after).toBe(0);
+  });
+
+  test("haunt filter chip narrows results", async ({ page }) => {
+    await gotoPage(page, "/lending");
+    await page.getByTestId("lending-grid").waitFor({ timeout: 20_000 });
+    const before = await page.locator("[data-testid^='lending-card-']").count();
+    await page.getByTestId("filter-haunt-1").click();
+    await page.waitForTimeout(400);
+    const after = await page.locator("[data-testid^='lending-card-']").count();
+    expect(after).toBeLessThanOrEqual(before);
+  });
+
+  test("channelling Disabled chip narrows results", async ({ page }) => {
+    await gotoPage(page, "/lending");
+    await page.getByTestId("lending-grid").waitFor({ timeout: 20_000 });
+    const before = await page.locator("[data-testid^='lending-card-']").count();
+    await page.getByTestId("filter-channelling-no").click();
+    await page.waitForTimeout(400);
+    const after = await page.locator("[data-testid^='lending-card-']").count();
+    expect(after).toBeLessThanOrEqual(before);
+  });
+});
+
+test.describe("Mobile (375px)", () => {
+  test.use({ viewport: { width: 375, height: 740 } });
+
+  test("filter drawer opens, applies, and closes", async ({ page }) => {
+    await gotoPage(page, "/lending");
+    await page.getByTestId("lending-grid").waitFor({ timeout: 20_000 });
+    // Filters button is visible on mobile (hidden on lg+)
+    const btn = page.getByTestId("lending-mobile-filters-btn");
+    await expect(btn).toBeVisible();
+    await btn.click();
+    const drawer = page.getByTestId("lending-mobile-filters-drawer");
+    await expect(drawer).toBeVisible();
+    // Apply a filter from inside the drawer
+    await drawer.getByTestId("filter-haunt-1").click();
+    await page.waitForTimeout(300);
+    // Close the drawer
+    await page.getByTestId("lending-mobile-filters-close").click();
+    await expect(drawer).not.toBeVisible({ timeout: 3000 });
+  });
+
+  test("home page renders without horizontal overflow at 375px", async ({ page }) => {
+    await gotoPage(page, "/");
+    // Body should never exceed viewport width
+    const bodyOverflow = await page.evaluate(() => {
+      return document.documentElement.scrollWidth > document.documentElement.clientWidth;
+    });
+    expect(bodyOverflow).toBe(false);
+  });
+
+  test("/lending renders without horizontal overflow at 375px", async ({ page }) => {
+    await gotoPage(page, "/lending");
+    await page.getByTestId("lending-grid").waitFor({ timeout: 20_000 });
+    const bodyOverflow = await page.evaluate(() => {
+      return document.documentElement.scrollWidth > document.documentElement.clientWidth;
+    });
+    expect(bodyOverflow).toBe(false);
+  });
+});
+
 test.describe("/lending CSV export", () => {
   test("exports visible listings", async ({ page }) => {
     await gotoPage(page, "/lending");

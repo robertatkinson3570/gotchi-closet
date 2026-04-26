@@ -347,20 +347,30 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
             <div className="grid grid-cols-3 gap-2">
               <SplitInput label="Lender (you)" value={splitOwner} onChange={setSplitOwner} />
               <SplitInput label="Borrower" value={splitBorrower} onChange={setSplitBorrower} />
-              <SplitInput label="3rd party" value={splitOther} onChange={setSplitOther} />
+              <SplitInput
+                label="3rd party"
+                value={splitOther}
+                onChange={setSplitOther}
+                disabled={autoRenew}
+              />
             </div>
             {!splitsValid && (
               <p className="text-[10px] text-destructive mt-1">
                 Splits sum to {splitOwner + splitBorrower + splitOther}%, must be 100.
               </p>
             )}
-            {hasFee && (
+            {autoRenew ? (
+              <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1 inline-flex items-center gap-1">
+                <Lock className="w-3 h-3" />
+                3rd party fixed at {autoRenewFeePct}% — required for auto-renew. Disable auto-renew to edit.
+              </p>
+            ) : hasFee ? (
               <p className="text-[10px] text-muted-foreground mt-1 inline-flex items-center gap-1">
                 <Info className="w-3 h-3" />
                 {feePctNum}% pre-filled to {feeAddr.slice(0, 6)}…{feeAddr.slice(-4)} as the GotchiCloset
                 marketplace fee. Set to 0 to opt out.
               </p>
-            )}
+            ) : null}
           </Section>
 
           {splitOther > 0 && (
@@ -370,10 +380,17 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
                 value={thirdParty}
                 onChange={(e) => setThirdParty(e.target.value)}
                 placeholder="0x…"
+                disabled={autoRenew}
                 className={`w-full h-9 px-2 rounded border bg-background/70 text-sm font-mono ${
                   thirdPartyValid ? "border-border/40" : "border-destructive/50"
-                }`}
+                } ${autoRenew ? "opacity-60 cursor-not-allowed" : ""}`}
               />
+              {autoRenew && (
+                <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1 inline-flex items-center gap-1">
+                  <Lock className="w-3 h-3" />
+                  Locked to GotchiCloset operator while auto-renew is on. Disable auto-renew to edit.
+                </p>
+              )}
             </Section>
           )}
 
@@ -574,10 +591,12 @@ function SplitInput({
   label,
   value,
   onChange,
+  disabled,
 }: {
   label: string;
   value: number;
   onChange: (v: number) => void;
+  disabled?: boolean;
 }) {
   return (
     <div>
@@ -587,8 +606,11 @@ function SplitInput({
         min={0}
         max={100}
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
-        className="w-full h-8 px-2 rounded border border-border/40 bg-background/70 text-sm text-right"
+        className={`w-full h-8 px-2 rounded border border-border/40 bg-background/70 text-sm text-right ${
+          disabled ? "opacity-60 cursor-not-allowed" : ""
+        }`}
       />
     </div>
   );

@@ -17,6 +17,12 @@ export function applyLendingFilters(
   const priceMinNum = f.priceMin ? Number(f.priceMin) : null;
   const priceMaxNum = f.priceMax ? Number(f.priceMax) : null;
   const splitMinNum = f.borrowerSplitMin ? Number(f.borrowerSplitMin) : null;
+  const kinshipMinNum = f.kinshipMin ? Number(f.kinshipMin) : null;
+  const wlIdTrim = f.whitelistId.trim();
+  const durationMinSec =
+    f.durationMinValue && Number(f.durationMinValue) > 0
+      ? Number(f.durationMinValue) * (f.durationMinUnit === "days" ? 86400 : 3600)
+      : null;
 
   return lendings.filter((l) => {
     if (search) {
@@ -69,6 +75,22 @@ export function applyLendingFilters(
 
     if (splitMinNum !== null && l.splitBorrower < splitMinNum) return false;
 
+    if (wlIdTrim) {
+      if (!l.whitelistId || l.whitelistId !== wlIdTrim) return false;
+    }
+
+    if (durationMinSec !== null && l.period < durationMinSec) return false;
+
+    if (kinshipMinNum !== null) {
+      const k = l.gotchi?.kinship ?? 0;
+      if (k < kinshipMinNum) return false;
+    }
+
+    if (f.haunts.length > 0) {
+      const h = String(l.gotchi?.hauntId ?? "");
+      if (!f.haunts.includes(h)) return false;
+    }
+
     return true;
   });
 }
@@ -120,8 +142,12 @@ export function getActiveLendingFilterCount(f: LendingFilters): number {
   if (f.durationBuckets.length) n += 1;
   if (f.priceMin || f.priceMax) n += 1;
   if (f.whitelist !== "any") n += 1;
+  if (f.whitelistId.trim()) n += 1;
   if (f.channelling !== "any") n += 1;
   if (f.borrowerSplitMin) n += 1;
+  if (f.durationMinValue && Number(f.durationMinValue) > 0) n += 1;
+  if (f.kinshipMin) n += 1;
+  if (f.haunts.length) n += 1;
   return n;
 }
 

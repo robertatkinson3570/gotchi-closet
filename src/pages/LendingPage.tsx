@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Filter } from "lucide-react";
 import { LendingTopBar } from "@/components/lending/LendingTopBar";
 import { LendingFilters } from "@/components/lending/LendingFilters";
 import { LendingGrid } from "@/components/lending/LendingGrid";
@@ -69,10 +69,21 @@ export default function LendingPage() {
     const saved = localStorage.getItem(FILTERS_OPEN_KEY);
     return saved == null ? true : saved === "1";
   });
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(FILTERS_OPEN_KEY, sidebarOpen ? "1" : "0");
   }, [sidebarOpen]);
+
+  // Lock body scroll while drawer is open
+  useEffect(() => {
+    if (!mobileDrawerOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileDrawerOpen]);
 
   const myWhitelistIds = useMyWhitelistMemberIds();
   const filtered = useMemo(
@@ -140,6 +151,8 @@ export default function LendingPage() {
         count={sorted.length}
         total={lendings.length}
         visibleLendings={sorted}
+        onOpenFiltersMobile={() => setMobileDrawerOpen(true)}
+        filterCount={filterCount}
       />
 
       <SavedSearchesBar
@@ -209,6 +222,67 @@ export default function LendingPage() {
       </div>
 
       {detailId && <LendingDetailModal lendingId={detailId} onClose={closeDetail} />}
+
+      {/* Mobile filters drawer */}
+      {mobileDrawerOpen && (
+        <div
+          className="fixed inset-0 z-40 lg:hidden bg-black/60 backdrop-blur-sm"
+          onClick={() => setMobileDrawerOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Filters"
+        >
+          <div
+            className="absolute inset-x-0 bottom-0 max-h-[85vh] rounded-t-2xl border-t border-border/40 bg-background flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+            data-testid="lending-mobile-filters-drawer"
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 sticky top-0 bg-background z-10">
+              <div className="inline-flex items-center gap-2">
+                <Filter className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-sm">Filters</span>
+                {filterCount > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[18px] h-5 px-1.5 rounded-full bg-primary/15 text-primary text-[10px] font-semibold">
+                    {filterCount}
+                  </span>
+                )}
+              </div>
+              <div className="inline-flex items-center gap-2">
+                {filterCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="text-xs text-primary hover:underline"
+                    data-testid="lending-mobile-clear-filters"
+                  >
+                    Clear all
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setMobileDrawerOpen(false)}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-muted/60"
+                  data-testid="lending-mobile-filters-close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <LendingFilters filters={filters} onChange={setFilters} />
+            </div>
+            <div className="px-4 py-3 border-t border-border/40 sticky bottom-0 bg-background">
+              <button
+                type="button"
+                onClick={() => setMobileDrawerOpen(false)}
+                className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-semibold"
+              >
+                Show {sorted.length} listings
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
