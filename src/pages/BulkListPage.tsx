@@ -241,7 +241,9 @@ export default function BulkListPage() {
         thirdParty: (splitOther > 0 && thirdParty ? thirdParty : ZERO) as `0x${string}`,
         whitelistId: Number(whitelistId) || 0,
         revenueTokens: [],
-        permissions: channelling ? BigInt(0) : BigInt(1),
+        // permissions encoding (matches official dapp on Base):
+        // 0x101 = channelling allowed; 0x0 = disabled. Was inverted prior.
+        permissions: channelling ? BigInt(0x101) : BigInt(0),
       };
     });
 

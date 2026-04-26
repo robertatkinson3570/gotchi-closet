@@ -85,6 +85,23 @@ export function RentAction({ lending, status, onRentSuccess }: Props) {
     );
   }
 
+  // Can't rent your own gotchi (the diamond would revert; surface this clearly).
+  // Compare against both `lender` (caller of addGotchiListing — always the owner
+  // or operator) and `originalOwner` (where revenue routes) just to be safe.
+  const connectedLc = connected.toLowerCase();
+  const isOwnGotchi =
+    lending.lender.toLowerCase() === connectedLc ||
+    lending.originalOwner.toLowerCase() === connectedLc;
+  if (isOwnGotchi) {
+    return (
+      <div className="rounded-lg border border-border/40 bg-muted/20 p-3 text-sm text-muted-foreground inline-flex items-center gap-2">
+        <AlertCircle className="w-4 h-4" />
+        This is your own listing — you can't rent your own gotchi. Use the
+        Cancel action instead.
+      </div>
+    );
+  }
+
   if (!isOnBase) {
     return (
       <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 space-y-2">

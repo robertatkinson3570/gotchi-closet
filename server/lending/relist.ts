@@ -116,7 +116,9 @@ export async function maybeRelist(t: Template): Promise<{ success: boolean; txHa
       thirdParty: (t.third_party as `0x${string}`) || ("0x0000000000000000000000000000000000000000" as `0x${string}`),
       whitelistId: t.whitelist_id,
       revenueTokens: [] as `0x${string}`[],
-      permissions: t.channelling ? BigInt(0) : BigInt(1),
+      // 0x101 = channelling allowed (bit 0 + bit 8, matching dapp convention
+      // verified via getGotchiLendingFromToken on Base); 0x0 = disabled.
+      permissions: t.channelling ? BigInt(0x101) : BigInt(0),
     };
 
     const hash = await walletClient.writeContract({

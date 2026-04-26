@@ -229,9 +229,13 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
       thirdParty: ZERO as `0x${string}`,
       whitelistId: Number(whitelistId) || 0,
       revenueTokens: [],
-      // permissions: bit 0 = channelling allowed (best guess; protocol stores
-      // channellingAllowed flag derived from this). 0 means default.
-      permissions: channelling ? BigInt(0) : BigInt(1),
+      // permissions encoding (verified empirically against multiple
+      // channellingAllowed=true listings on Base via getGotchiLendingFromToken):
+      //   0x101 = channelling allowed (bit 0 + bit 8, matching the official dapp)
+      //   0x000 = channelling disabled
+      // Earlier code had this inverted, which silently produced listings with
+      // channelling off even when the user checked the box.
+      permissions: channelling ? BigInt(0x101) : BigInt(0),
     });
   };
 
