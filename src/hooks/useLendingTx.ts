@@ -5,6 +5,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
+import { useQueryClient } from "@tanstack/react-query";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import {
   AAVEGOTCHI_DIAMOND_BASE,
@@ -33,10 +34,26 @@ export type ListingParams = {
   permissions: bigint;
 };
 
+/**
+ * Invalidate the TanStack Query cache for the connected user's gotchis.
+ *
+ * Used after listing / cancel / claim flows so the unlisted-gotchis list and
+ * the bulk-list page refresh without a hard reload. Goldsky's subgraph takes
+ * 5-15s to index a new lending event — schedule three invalidations
+ * (immediate, 6s, 20s) to cover indexer lag.
+ */
+function scheduleGotchiInvalidation(queryClient: ReturnType<typeof useQueryClient>) {
+  const fire = () => queryClient.invalidateQueries({ queryKey: ["gotchis"] });
+  fire();
+  setTimeout(fire, 6_000);
+  setTimeout(fire, 20_000);
+}
+
 function useTxBase() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const isOnBase = chainId === BASE_CHAIN_ID;
+  const queryClient = useQueryClient();
   const tx = useWriteContract();
   // Poll every 2s with explicit confirmations:1 + a generous retry window.
   // The default polling occasionally stalls on Base public RPC.
@@ -98,6 +115,7 @@ function useTxBase() {
     step,
     errorMsg,
     reset,
+    queryClient,
     // Allow writes even when wallet is on wrong chain — every writeContract
     // call below pins chainId to BASE_CHAIN_ID, so wagmi will prompt the
     // wallet to switch to Base before signing. Stale chainId detection in
@@ -125,8 +143,9 @@ export function useCancelLending() {
     if (base.step === "success") {
       invalidateLendingsCache();
       invalidateMyLendings();
+      scheduleGotchiInvalidation(base.queryClient);
     }
-  }, [base.step]);
+  }, [base.step, base.queryClient]);
   return { ...base, send };
 }
 
@@ -149,8 +168,9 @@ export function useClaimAndEndLending() {
     if (base.step === "success") {
       invalidateLendingsCache();
       invalidateMyLendings();
+      scheduleGotchiInvalidation(base.queryClient);
     }
-  }, [base.step]);
+  }, [base.step, base.queryClient]);
   return { ...base, send };
 }
 
@@ -205,8 +225,9 @@ export function useAddListing() {
     if (base.step === "success") {
       invalidateLendingsCache();
       invalidateMyLendings();
+      scheduleGotchiInvalidation(base.queryClient);
     }
-  }, [base.step]);
+  }, [base.step, base.queryClient]);
   return { ...base, send };
 }
 
@@ -230,8 +251,9 @@ export function useBatchAddListing() {
     if (base.step === "success") {
       invalidateLendingsCache();
       invalidateMyLendings();
+      scheduleGotchiInvalidation(base.queryClient);
     }
-  }, [base.step]);
+  }, [base.step, base.queryClient]);
   return { ...base, send };
 }
 
