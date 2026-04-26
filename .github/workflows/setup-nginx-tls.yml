@@ -13,16 +13,19 @@ jobs:
     runs-on: [self-hosted, gotchicloset-vps]
     timeout-minutes: 5
     steps:
-      - name: Verify DNS resolves to this VPS (IPv4)
+      - name: Verify DNS resolves to this VPS (IPv4, via authoritative NS)
         run: |
           set -uxo pipefail
           command -v dig >/dev/null 2>&1 || apt-get install -y dnsutils
           IP_OBSERVED=$(curl -4 -fsS https://api.ipify.org)
-          IP_DNS=$(dig +short A api.gotchicloset.com @1.1.1.1 | head -1)
-          echo "VPS public IPv4: $IP_OBSERVED"
-          echo "DNS A record:    $IP_DNS"
+          # Find authoritative NS for the apex domain (skip propagation lag)
+          AUTH_NS=$(dig +short NS gotchicloset.com | head -1)
+          echo "Authoritative NS: $AUTH_NS"
+          IP_DNS=$(dig +short A api.gotchicloset.com @"$AUTH_NS" | head -1)
+          echo "VPS public IPv4 : $IP_OBSERVED"
+          echo "DNS A record    : $IP_DNS"
           if [[ -z "$IP_DNS" ]]; then
-            echo "DNS A record not visible on 1.1.1.1 yet — wait for propagation"
+            echo "No A record at apex NS — DNS not configured yet"
             exit 1
           fi
           if [[ "$IP_OBSERVED" != "$IP_DNS" ]]; then
