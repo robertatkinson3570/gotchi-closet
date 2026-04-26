@@ -97,7 +97,11 @@ function useTxBase() {
     step,
     errorMsg,
     reset,
-    canWrite: isConnected && isOnBase,
+    // Allow writes even when wallet is on wrong chain — every writeContract
+    // call below pins chainId to BASE_CHAIN_ID, so wagmi will prompt the
+    // wallet to switch to Base before signing. Stale chainId detection in
+    // useChainId() should never block a submit.
+    canWrite: isConnected,
   };
 }
 
@@ -107,6 +111,7 @@ export function useCancelLending() {
     (gotchiTokenId: number) => {
       if (!base.canWrite) return;
       base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
         address: AAVEGOTCHI_DIAMOND_BASE,
         abi: LENDING_FACET_ABI,
         functionName: "cancelGotchiLendingByToken",
@@ -127,6 +132,7 @@ export function useClaimAndEndLending() {
     (gotchiTokenId: number) => {
       if (!base.canWrite) return;
       base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
         address: AAVEGOTCHI_DIAMOND_BASE,
         abi: LENDING_FACET_ABI,
         functionName: "claimAndEndGotchiLending",
@@ -147,6 +153,7 @@ export function useClaimLending() {
     (gotchiTokenId: number) => {
       if (!base.canWrite) return;
       base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
         address: AAVEGOTCHI_DIAMOND_BASE,
         abi: LENDING_FACET_ABI,
         functionName: "claimGotchiLending",
@@ -178,6 +185,7 @@ export function useAddListing() {
     (p: ListingParams) => {
       if (!base.canWrite) return;
       base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
         address: AAVEGOTCHI_DIAMOND_BASE,
         abi: LENDING_FACET_ABI,
         functionName: "addGotchiListing",
@@ -199,6 +207,7 @@ export function useBatchAddListing() {
       if (!base.canWrite || listings.length === 0) return;
       const tuples = listings.map(listingParamsToTuple);
       base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
         address: AAVEGOTCHI_DIAMOND_BASE,
         abi: LENDING_FACET_ABI,
         functionName: "batchAddGotchiListing",
@@ -219,6 +228,7 @@ export function useCreateWhitelist() {
     (name: string, addresses: `0x${string}`[]) => {
       if (!base.canWrite) return;
       base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
         address: AAVEGOTCHI_DIAMOND_BASE,
         abi: WHITELIST_FACET_ABI,
         functionName: "createWhitelist",
@@ -239,6 +249,7 @@ export function useTransferGhst() {
     (to: `0x${string}`, amountWei: bigint) => {
       if (!base.canWrite) return;
       base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
         address: GHST_TOKEN_BASE,
         abi: ERC20_ABI,
         functionName: "transfer",
@@ -256,6 +267,7 @@ export function useSetLendingOperator() {
     (operator: `0x${string}`, tokenId: number, approved: boolean) => {
       if (!base.canWrite) return;
       base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
         address: AAVEGOTCHI_DIAMOND_BASE,
         abi: LENDING_FACET_ABI,
         functionName: "setLendingOperator",
@@ -273,6 +285,7 @@ export function useTransferWhitelist() {
     (whitelistId: number, newOwner: `0x${string}`) => {
       if (!base.canWrite) return;
       base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
         address: AAVEGOTCHI_DIAMOND_BASE,
         abi: WHITELIST_FACET_ABI,
         functionName: "transferOwnershipOfWhitelist",
@@ -290,6 +303,7 @@ export function useUpdateWhitelist() {
     (whitelistId: number, addresses: `0x${string}`[]) => {
       if (!base.canWrite) return;
       base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
         address: AAVEGOTCHI_DIAMOND_BASE,
         abi: WHITELIST_FACET_ABI,
         functionName: "updateWhitelist",
@@ -302,6 +316,7 @@ export function useUpdateWhitelist() {
     (whitelistId: number, addresses: `0x${string}`[]) => {
       if (!base.canWrite) return;
       base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
         address: AAVEGOTCHI_DIAMOND_BASE,
         abi: WHITELIST_FACET_ABI,
         functionName: "removeAddressesFromWhitelist",
@@ -314,6 +329,7 @@ export function useUpdateWhitelist() {
     (whitelistId: number, limit: bigint) => {
       if (!base.canWrite) return;
       base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
         address: AAVEGOTCHI_DIAMOND_BASE,
         abi: WHITELIST_FACET_ABI,
         functionName: "setBorrowLimit",

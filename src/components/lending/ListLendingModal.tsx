@@ -209,7 +209,11 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
   const splitsValid = splitOwner + splitBorrower === 100;
   const periodSec = periodUnit === "days" ? periodValue * 86400 : periodValue * 3600;
   const periodValid = periodSec >= 3600 && periodSec <= 30 * 86400;
-  const formValid = Boolean(address) && isOnBase && splitsValid && periodValid;
+  // Note: we don't gate on isOnBase. wagmi's writeContract is pinned to
+  // BASE_CHAIN_ID so it will prompt the wallet to switch chains automatically
+  // if the user is on the wrong network. The warning banner above is just an
+  // early heads-up — the submit will work either way.
+  const formValid = Boolean(address) && splitsValid && periodValid;
 
   const handleSubmit = () => {
     if (!formValid || !address) return;
