@@ -20,7 +20,7 @@ export function BarHistogram({ title, bins, unit = "", color = "primary" }: Prop
   const fillClass = COLORS[color] ?? COLORS.primary;
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card/50 p-4">
+    <div className="rounded-xl glass p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold text-sm">{title}</h3>
         <span className="text-[10px] text-muted-foreground">{total} samples</span>

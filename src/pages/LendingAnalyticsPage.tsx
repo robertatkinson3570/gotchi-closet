@@ -262,7 +262,7 @@ export default function LendingAnalyticsPage() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 mb-4">
-        <div className="lg:col-span-2 rounded-xl border border-border/40 bg-card/50 p-4">
+        <div className="lg:col-span-2 rounded-xl glass p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold">Price heatmap</h2>
             <span className="text-[10px] text-muted-foreground">
@@ -286,7 +286,7 @@ export default function LendingAnalyticsPage() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4 mb-4">
-        <div className="rounded-xl border border-border/40 bg-card/50 p-4">
+        <div className="rounded-xl glass p-4">
           <h2 className="font-semibold mb-3">Daily volume — last {windowDays} days</h2>
           {loading ? (
             <div className="h-64 bg-muted/30 animate-pulse rounded" />
@@ -420,7 +420,7 @@ function Stat({
   loading: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border/40 bg-card/50 p-3">
+    <div className="rounded-xl glass p-3">
       <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
         {icon}
         <span>{label}</span>
@@ -448,7 +448,7 @@ function Leaderboard({
   }[];
 }) {
   return (
-    <div className="rounded-xl border border-border/40 bg-card/50 p-4">
+    <div className="rounded-xl glass p-4">
       <h2 className="font-semibold mb-2">{title}</h2>
       {loading ? (
         <div className="space-y-2">

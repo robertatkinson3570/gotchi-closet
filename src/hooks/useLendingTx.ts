@@ -190,6 +190,23 @@ export function useSetLendingOperator() {
   return { ...base, send };
 }
 
+export function useTransferWhitelist() {
+  const base = useTxBase();
+  const send = useCallback(
+    (whitelistId: number, newOwner: `0x${string}`) => {
+      if (!base.canWrite) return;
+      base.tx.writeContract({
+        address: AAVEGOTCHI_DIAMOND_BASE,
+        abi: WHITELIST_FACET_ABI,
+        functionName: "transferOwnershipOfWhitelist",
+        args: [whitelistId, newOwner],
+      });
+    },
+    [base]
+  );
+  return { ...base, send };
+}
+
 export function useUpdateWhitelist() {
   const base = useTxBase();
   const add = useCallback(

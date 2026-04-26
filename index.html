@@ -1,18 +1,35 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0b0316" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fafafe" media="(prefers-color-scheme: light)" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GotchiCloset</title>
+    <script>
+      // Apply theme before paint to prevent flash. Defaults to dark.
+      (function () {
+        try {
+          var stored = localStorage.getItem("gotchicloset-theme");
+          var theme;
+          if (stored === "light" || stored === "dark") {
+            theme = stored;
+          } else {
+            theme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          }
+          document.documentElement.classList.toggle("dark", theme === "dark");
+        } catch (e) { /* fall through; dark class is set as default */ }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

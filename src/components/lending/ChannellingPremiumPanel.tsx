@@ -10,7 +10,7 @@ export function ChannellingPremiumPanel({ rows }: Props) {
     (r) => r.withChannelling.count > 0 || r.withoutChannelling.count > 0
   );
   return (
-    <div className="rounded-xl border border-border/40 bg-card/50 p-4">
+    <div className="rounded-xl glass p-4">
       <div className="flex items-center justify-between mb-3">
         <div>
           <h3 className="font-semibold inline-flex items-center gap-1.5">

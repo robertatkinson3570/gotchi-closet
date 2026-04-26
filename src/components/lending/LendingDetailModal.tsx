@@ -24,6 +24,7 @@ import { brsBandOf } from "@/lib/lending/types";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { RentAction } from "@/components/lending/RentAction";
 import { OwnerActions } from "@/components/lending/OwnerActions";
+import { BorrowerActions } from "@/components/lending/BorrowerActions";
 import { invalidateLendingsCache } from "@/hooks/useLendings";
 import { useMyWhitelistMemberIds } from "@/hooks/useWhitelists";
 
@@ -295,6 +296,15 @@ function DetailContent({
 
         <OwnerActions
           lender={lending.lender}
+          gotchiTokenId={lending.gotchiTokenId}
+          status={rentStatus}
+          timeAgreed={extras?.timeAgreed}
+          periodSeconds={lending.period}
+          onAfterTx={() => invalidateLendingsCache()}
+        />
+
+        <BorrowerActions
+          borrower={extras?.borrower ?? null}
           gotchiTokenId={lending.gotchiTokenId}
           status={rentStatus}
           timeAgreed={extras?.timeAgreed}

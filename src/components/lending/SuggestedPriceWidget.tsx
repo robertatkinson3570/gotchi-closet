@@ -36,7 +36,7 @@ export function SuggestedPriceWidget({ lendings }: Props) {
   const tier = result ? TIER_LABELS[result.matchTier] : null;
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card/50 p-4">
+    <div className="rounded-xl glass p-4">
       <div className="flex items-center gap-2 mb-3">
         <Calculator className="w-4 h-4 text-primary" />
         <h3 className="font-semibold">Suggested price</h3>

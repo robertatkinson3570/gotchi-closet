@@ -10,14 +10,17 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 const STORAGE_KEY = "gotchicloset-theme";
 
 function getSystemTheme(): Theme {
-  if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  // Default to dark — the neon-spectral look is the signature; users on light
+  // can still toggle. Most browsers report "no-preference" as light, so without
+  // this default the site flashes light on first paint.
+  if (typeof window === "undefined") return "dark";
+  return window.matchMedia("(prefers-color-scheme: light)").matches
+    ? "light"
+    : "dark";
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>("dark");
   const [isLocked, setIsLocked] = useState(false);
 
   useEffect(() => {

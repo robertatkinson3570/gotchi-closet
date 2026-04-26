@@ -25,15 +25,16 @@ const config = {
     container: {
       center: true,
       padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
+      screens: { "2xl": "1400px" },
     },
     extend: {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
+        heading: ['"DM Serif Display"', "Inter", "serif"],
+        mono: ['"JetBrains Mono"', "ui-monospace", "monospace"],
       },
       colors: {
+        // shadcn aliases driven by CSS vars
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -67,11 +68,35 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Brand neon palette — usable as `text-spectral`, `bg-ghst-pink/20`, etc.
+        spectral: "hsl(var(--spectral))",
+        "ghst-pink": "hsl(var(--ghst-pink))",
+        cyan: "hsl(var(--cyan))",
+        ecto: "hsl(var(--ecto))",
+        gold: "hsl(var(--gold))",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        "glow-sm": "var(--shadow-glow-sm)",
+        "glow-md": "var(--shadow-glow-md)",
+        "glow-lg": "var(--shadow-glow-lg)",
+        lift: "var(--shadow-lift)",
+        card: "var(--shadow-card)",
+      },
+      transitionTimingFunction: {
+        spring: "var(--ease-spring)",
+      },
+      backgroundImage: {
+        "gradient-spectral":
+          "linear-gradient(120deg, hsl(var(--spectral)) 0%, hsl(var(--ghst-pink)) 50%, hsl(var(--cyan)) 100%)",
+        "gradient-ecto":
+          "linear-gradient(120deg, hsl(var(--ecto)) 0%, hsl(var(--cyan)) 100%)",
+        "gradient-gold":
+          "linear-gradient(120deg, hsl(var(--gold)) 0%, hsl(var(--ghst-pink)) 100%)",
       },
       keyframes: {
         "accordion-down": {
@@ -82,10 +107,26 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        // Neon aura that drifts
+        aurora: {
+          "0%, 100%": { transform: "translate3d(0,0,0) scale(1)" },
+          "50%":      { transform: "translate3d(0,-12px,0) scale(1.04)" },
+        },
+        shimmer: {
+          "0%":   { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "var(--shadow-glow-sm)" },
+          "50%":      { boxShadow: "var(--shadow-glow-md)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        "accordion-up":   "accordion-up 0.2s ease-out",
+        aurora:           "aurora 14s ease-in-out infinite",
+        shimmer:          "shimmer 3.5s ease-in-out infinite",
+        "glow-pulse":     "glow-pulse 3s ease-in-out infinite",
       },
     },
   },
@@ -93,4 +134,3 @@ const config = {
 } satisfies Config
 
 export default config
-

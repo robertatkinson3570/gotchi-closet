@@ -2,20 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   Theme tokens — neon-spectral aesthetic w/ MarquIQ-style polish
+   No feature changes; cosmetic only.
+   ============================================================ */
+
 @layer base {
   :root {
-    --bg: 220 20% 98%;
+    /* Light mode — soft neutral with a hint of cool */
+    --bg: 230 30% 98%;
     --surface: 0 0% 100%;
-    --surface-2: 220 18% 96%;
-    --text: 222 22% 12%;
-    --muted: 222 10% 45%;
-    --border: 220 14% 90%;
-    --shadow: 222 30% 12% / 0.06;
-    --accent: 262 83% 58%;
-    --accent-2: 210 90% 56%;
-    --chip-bg: 220 18% 94%;
-    --chip-text: 222 18% 22%;
+    --surface-2: 230 30% 96%;
+    --text: 230 30% 12%;
+    --muted: 230 12% 42%;
+    --border: 230 18% 88%;
+    --shadow: 230 30% 14% / 0.06;
+    --accent: 275 100% 60%;        /* spectral purple */
+    --accent-2: 195 100% 50%;      /* cyan */
 
+    /* Brand triad — used for gradients/glows */
+    --spectral: 275 100% 64%;      /* #b847ff-ish */
+    --ghst-pink: 326 100% 64%;     /* #ff47ab */
+    --cyan: 175 100% 56%;          /* #47ffea */
+    --ecto: 132 100% 64%;          /* #47ff7a */
+    --gold: 47 100% 64%;           /* #ffd747 */
+
+    /* Glow shadows — color-matched */
+    --shadow-glow-sm: 0 0 8px hsl(var(--spectral) / 0.20);
+    --shadow-glow-md: 0 0 18px hsl(var(--spectral) / 0.28);
+    --shadow-glow-lg: 0 0 36px hsl(var(--spectral) / 0.40);
+    --shadow-lift: 0 12px 40px -16px hsl(var(--spectral) / 0.30);
+    --shadow-card: 0 1px 0 hsl(0 0% 100% / 0.4) inset, 0 8px 24px -12px hsl(var(--shadow));
+
+    /* Eased motion */
+    --ease-spring: cubic-bezier(0.2, 0.7, 0.2, 1);
+    --duration-fast: 150ms;
+    --duration-normal: 220ms;
+    --duration-slow: 420ms;
+
+    /* shadcn aliases */
     --background: var(--bg);
     --foreground: var(--text);
     --card: var(--surface);
@@ -23,30 +48,43 @@
     --popover: var(--surface);
     --popover-foreground: var(--text);
     --primary: var(--accent);
-    --primary-foreground: 210 40% 98%;
+    --primary-foreground: 0 0% 100%;
     --secondary: var(--surface-2);
     --secondary-foreground: var(--text);
     --muted-foreground: var(--muted);
     --accent-foreground: var(--text);
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 350 95% 58%;
+    --destructive-foreground: 0 0% 100%;
     --input: var(--border);
     --ring: var(--accent);
     --radius: 0.75rem;
   }
 
   .dark {
-    --bg: 222 22% 10%;
-    --surface: 222 20% 13%;
-    --surface-2: 222 18% 16%;
-    --text: 220 25% 92%;
-    --muted: 220 12% 65%;
-    --border: 222 14% 22%;
-    --shadow: 0 0% 0% / 0.35;
-    --accent: 262 83% 70%;
-    --accent-2: 210 90% 70%;
-    --chip-bg: 222 16% 18%;
-    --chip-text: 220 18% 90%;
+    /* Dark mode — phantom void with neon accents (signature look) */
+    --bg: 265 60% 4%;              /* near-black with violet tint */
+    --surface: 265 50% 7%;
+    --surface-2: 265 45% 11%;
+    --text: 265 30% 96%;
+    --muted: 265 18% 70%;
+    --border: 275 50% 22% / 0.4;   /* ALPHA: lets neon lines shine */
+    --shadow: 0 0% 0% / 0.5;
+    --accent: 275 100% 70%;
+    --accent-2: 175 100% 60%;
+
+    --spectral: 275 100% 70%;
+    --ghst-pink: 326 100% 68%;
+    --cyan: 175 100% 60%;
+    --ecto: 132 100% 64%;
+    --gold: 47 100% 64%;
+
+    --shadow-glow-sm: 0 0 10px hsl(var(--spectral) / 0.30);
+    --shadow-glow-md: 0 0 24px hsl(var(--spectral) / 0.45);
+    --shadow-glow-lg: 0 0 48px hsl(var(--spectral) / 0.55);
+    --shadow-lift: 0 14px 50px -16px hsl(var(--spectral) / 0.45);
+    --shadow-card:
+      0 1px 0 hsl(var(--spectral) / 0.06) inset,
+      0 24px 50px -28px hsl(var(--shadow));
 
     --background: var(--bg);
     --foreground: var(--text);
@@ -55,61 +93,198 @@
     --popover: var(--surface);
     --popover-foreground: var(--text);
     --primary: var(--accent);
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary-foreground: 265 60% 6%;
     --secondary: var(--surface-2);
     --secondary-foreground: var(--text);
     --muted-foreground: var(--muted);
     --accent-foreground: var(--text);
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 350 90% 60%;
+    --destructive-foreground: 0 0% 100%;
     --input: var(--border);
     --ring: var(--accent);
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
+
   html, body {
     @apply bg-background text-foreground;
     overflow-x: hidden;
+    font-feature-settings: "ss01", "ss02", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
-  #root {
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-}
 
-img {
-  max-width: none;
+  body {
+    font-family: "Inter", system-ui, sans-serif;
+  }
+
+  #root { min-height: 100vh; overflow-x: hidden; }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "DM Serif Display", "Inter", serif;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+
+  /* Ambient background — radial neon orbs (dark only; subtle in light) */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 80% 60% at 18% 20%, hsl(var(--spectral) / 0.10), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 82% 30%, hsl(var(--ghst-pink) / 0.08), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 50% 88%, hsl(var(--cyan) / 0.06), transparent 60%);
+    transition: opacity var(--duration-slow) var(--ease-spring);
+  }
+
+  /* Faint scanline overlay (CRT vibe; <1% opacity so it never reads as noise) */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      hsl(var(--spectral) / 0.018) 2px,
+      hsl(var(--spectral) / 0.018) 3px
+    );
+    mix-blend-mode: screen;
+    opacity: 0.6;
+  }
+
+  /* Light mode toned-down ambient */
+  :root:not(.dark) body::before {
+    background:
+      radial-gradient(ellipse 60% 50% at 18% 18%, hsl(var(--spectral) / 0.05), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 82% 28%, hsl(var(--ghst-pink) / 0.04), transparent 60%);
+  }
+  :root:not(.dark) body::after { opacity: 0; }
+
+  ::selection {
+    background: hsl(var(--spectral) / 0.30);
+    color: hsl(var(--text));
+  }
 }
 
 @layer utilities {
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  /* Surfaces ------------------------------------------------------------ */
+  .glass {
+    background: hsl(var(--surface) / 0.7);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--shadow-card);
   }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  .glass-strong {
+    background: hsl(var(--surface) / 0.88);
+    backdrop-filter: blur(22px) saturate(150%);
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--shadow-card);
   }
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--border)) transparent;
+  .glass-nav {
+    background: hsl(var(--bg) / 0.72);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border-bottom: 1px solid hsl(var(--border));
   }
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+
+  /* Glow utilities ------------------------------------------------------ */
+  .glow-sm { box-shadow: var(--shadow-glow-sm); }
+  .glow-md { box-shadow: var(--shadow-glow-md); }
+  .glow-lg { box-shadow: var(--shadow-glow-lg); }
+  .glow-on-hover { transition: box-shadow var(--duration-normal) var(--ease-spring); }
+  .glow-on-hover:hover { box-shadow: var(--shadow-glow-md); }
+
+  /* Hover lift — MarquIQ-style snap */
+  .lift {
+    transition: transform var(--duration-normal) var(--ease-spring),
+                box-shadow var(--duration-normal) var(--ease-spring),
+                border-color var(--duration-normal) var(--ease-spring);
   }
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
+  .lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift);
   }
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--border));
-    border-radius: 3px;
+
+  /* Gradient text — title accent (purple → pink → cyan) */
+  .gradient-text {
+    background: linear-gradient(
+      120deg,
+      hsl(var(--spectral)) 0%,
+      hsl(var(--ghst-pink)) 50%,
+      hsl(var(--cyan)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    filter: drop-shadow(0 0 24px hsl(var(--spectral) / 0.30));
   }
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: hsl(var(--muted));
+
+  /* Gradient border — neon outline w/o adding a wrapper */
+  .gradient-border {
+    position: relative;
+    background-clip: padding-box;
+    border: 1px solid transparent;
+  }
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    margin: -1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--spectral) / 0.6),
+      hsl(var(--ghst-pink) / 0.4),
+      hsl(var(--cyan) / 0.5)
+    );
+  }
+
+  /* Focus ring */
+  .focus-ring {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  /* Subtle dotted/grid background (utility) */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* Existing scrollbar utilities preserved */
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-thin { scrollbar-width: thin; scrollbar-color: hsl(var(--border)) transparent; }
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background-color: hsl(var(--border)); border-radius: 3px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: hsl(var(--muted)); }
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
+img { max-width: none; }
+
+/* Bring app content above ambient layers */
+#root { position: relative; z-index: 1; }

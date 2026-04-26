@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAccount } from "wagmi";
-import { ArrowLeft, Users, Plus, X, UserPlus, UserMinus, Loader2, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Users, Plus, X, UserPlus, UserMinus, Loader2, CheckCircle2, Save, ArrowRightLeft } from "lucide-react";
 import { client } from "@/graphql/client";
 import { WHITELIST_DETAIL } from "@/graphql/whitelistDetailQuery";
 import { useWhitelistsForAddress } from "@/hooks/useWhitelists";
-import { useCreateWhitelist, useUpdateWhitelist } from "@/hooks/useLendingTx";
+import { useCreateWhitelist, useUpdateWhitelist, useTransferWhitelist } from "@/hooks/useLendingTx";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
@@ -72,7 +72,7 @@ export default function WhitelistsPage() {
           ))}
         </div>
       ) : asOwner.length === 0 ? (
-        <div className="rounded-xl border border-border/40 bg-card/50 p-8 text-center">
+        <div className="rounded-xl glass p-8 text-center">
           <Users className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
           <p className="text-sm font-medium">No whitelists yet</p>
           <p className="text-xs text-muted-foreground mt-1">
@@ -125,10 +125,13 @@ export default function WhitelistsPage() {
 
 function WhitelistDetail({ id }: { id: string }) {
   const [members, setMembers] = useState<string[] | null>(null);
+  const [maxBorrowLimit, setMaxBorrowLimit] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [addInput, setAddInput] = useState("");
+  const [transferInput, setTransferInput] = useState("");
   const [removingAddrs, setRemovingAddrs] = useState<Set<string>>(new Set());
   const update = useUpdateWhitelist();
+  const transfer = useTransferWhitelist();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -142,6 +145,9 @@ function WhitelistDetail({ id }: { id: string }) {
         const wl = res.data?.whitelist;
         const memberArr = Array.isArray(wl?.members) ? wl.members : [];
         setMembers(memberArr.map((m: any) => String(m).toLowerCase()));
+        if (wl?.maxBorrowLimit != null) {
+          setMaxBorrowLimit(String(wl.maxBorrowLimit));
+        }
         setLoading(false);
       });
     return () => {
@@ -155,6 +161,17 @@ function WhitelistDetail({ id }: { id: string }) {
       update.reset();
     }
   }, [update.step, update, toast]);
+
+  useEffect(() => {
+    if (transfer.step === "success") {
+      toast({
+        title: "Ownership transferred",
+        description: "This whitelist now belongs to the new owner.",
+      });
+      setTransferInput("");
+      transfer.reset();
+    }
+  }, [transfer.step, transfer, toast]);
 
   const handleAdd = () => {
     const lines = addInput
@@ -232,6 +249,86 @@ function WhitelistDetail({ id }: { id: string }) {
           {update.errorMsg.slice(0, 200)}
         </div>
       )}
+
+      {/* Borrow limit ----------------------------------------------------- */}
+      <div className="border-t border-border/30 pt-3">
+        <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5">
+          Borrow limit per address
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min={0}
+            value={maxBorrowLimit}
+            onChange={(e) => setMaxBorrowLimit(e.target.value)}
+            placeholder="0 = unlimited"
+            className="w-32 h-8 px-2 rounded border border-border/40 bg-background/70 text-xs"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const v = Number(maxBorrowLimit);
+              if (!Number.isFinite(v) || v < 0) return;
+              update.setLimit(Number(id), BigInt(Math.floor(v)));
+            }}
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-primary/15 text-primary hover:bg-primary/25 text-xs font-semibold disabled:opacity-50"
+          >
+            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            Save
+          </button>
+          <span className="text-[10px] text-muted-foreground">
+            max # of active rentals each member can have from your gotchis
+          </span>
+        </div>
+      </div>
+
+      {/* Ownership transfer ----------------------------------------------- */}
+      <div className="border-t border-border/30 pt-3">
+        <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5">
+          Transfer ownership of this whitelist
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={transferInput}
+            onChange={(e) => setTransferInput(e.target.value)}
+            placeholder="0x… new owner"
+            className="flex-1 h-8 px-2 rounded border border-border/40 bg-background/70 text-xs font-mono"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (!/^0x[a-fA-F0-9]{40}$/.test(transferInput.trim())) return;
+              if (!confirm(
+                `Transfer whitelist #${id} to ${transferInput.trim()}? You will lose admin rights.`
+              )) return;
+              transfer.send(Number(id), transferInput.trim() as `0x${string}`);
+            }}
+            disabled={
+              transfer.step === "submitting" ||
+              transfer.step === "confirming" ||
+              !/^0x[a-fA-F0-9]{40}$/.test(transferInput.trim())
+            }
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold disabled:opacity-50"
+          >
+            {transfer.step === "submitting" || transfer.step === "confirming" ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <ArrowRightLeft className="w-3.5 h-3.5" />
+            )}
+            Transfer
+          </button>
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-1">
+          Permanent. You'll lose admin rights to add/remove members on this whitelist.
+        </p>
+        {transfer.errorMsg && transfer.step === "error" && (
+          <div className="mt-1 rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive break-words">
+            {transfer.errorMsg.slice(0, 200)}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

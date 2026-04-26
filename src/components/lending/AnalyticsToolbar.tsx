@@ -42,7 +42,7 @@ export function AnalyticsToolbar({
   };
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card/50 p-3 mb-4 flex flex-wrap items-center gap-2">
+    <div className="rounded-xl glass p-3 mb-4 flex flex-wrap items-center gap-2">
       <div className="flex items-center gap-1 rounded-md border border-border/40 bg-background/70 p-0.5">
         {WINDOWS.map((d) => (
           <button

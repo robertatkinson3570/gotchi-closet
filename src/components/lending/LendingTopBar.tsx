@@ -42,8 +42,8 @@ export function LendingTopBar({
   };
 
   return (
-    <div className="border-b border-border/30">
-      <div className="flex items-center gap-2 px-3 py-2">
+    <div className="border-b border-border/40 glass-nav">
+      <div className="flex items-center gap-2 px-3 py-2 max-w-[1600px] mx-auto">
         <div className="hidden sm:flex items-center gap-1 text-[11px] text-muted-foreground shrink-0">
           <span className="font-medium text-foreground">Lending</span>
           <span className="text-muted-foreground/50">·</span>

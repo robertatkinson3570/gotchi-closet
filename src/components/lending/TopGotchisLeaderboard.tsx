@@ -35,7 +35,7 @@ export function TopGotchisLeaderboard({ rows }: Props) {
   };
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card/50 p-4">
+    <div className="rounded-xl glass p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold inline-flex items-center gap-1.5">
           <Trophy className="w-4 h-4 text-amber-500" /> Top gotchis

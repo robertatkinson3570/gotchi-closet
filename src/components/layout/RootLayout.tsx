@@ -10,25 +10,24 @@ export function RootLayout() {
   const isExplorer = location.pathname.startsWith("/explorer");
   const isWardrobeLab = location.pathname.startsWith("/wardrobe-lab");
   const isHome = location.pathname === "/";
-  // Home has its own entry UI; Dress/Explorer/Wardrobe Lab take the full viewport.
   const hideHeader = isHome || isDress || isExplorer || isWardrobeLab;
 
   return (
     <div className="min-h-screen flex flex-col">
       {!hideHeader && (
-        <header className="h-14 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex h-14 items-center justify-between px-4">
-            <Link to="/" className="flex items-center gap-1.5 min-w-0 hover:opacity-80 transition-opacity">
+        <header className="h-14 w-full glass-nav sticky top-0 z-30">
+          <div className="flex h-14 items-center justify-between px-3 md:px-4 gap-3 max-w-[1600px] mx-auto">
+            <Link
+              to="/"
+              className="flex items-center gap-1.5 min-w-0 hover:opacity-90 transition-opacity"
+            >
               <img
                 src="/logo.png"
                 alt="GotchiCloset"
                 className="h-12 w-12 object-contain -my-2"
               />
-              <div className="text-xl font-semibold tracking-tight truncate">
-                Gotchi
-                <span className="font-normal text-[hsl(var(--muted))]">
-                  Closet
-                </span>
+              <div className="text-xl font-heading tracking-tight truncate gradient-text">
+                GotchiCloset
               </div>
             </Link>
             <div className="flex items-center gap-1.5">
@@ -48,7 +47,7 @@ export function RootLayout() {
                   variant="ghost"
                   className={`h-8 px-2 ${
                     location.pathname.startsWith("/lending")
-                      ? "bg-primary/15 text-primary"
+                      ? "bg-primary/15 text-primary shadow-glow-sm"
                       : ""
                   }`}
                   title="Lending"
@@ -61,13 +60,11 @@ export function RootLayout() {
           </div>
         </header>
       )}
-      <main className="flex-1">
+      <main className="flex-1 relative z-[1]">
         <Outlet />
       </main>
       {!hideHeader && (
-        <FooterAttribution
-          className="px-4 py-4 text-center"
-        />
+        <FooterAttribution className="px-4 py-4 text-center" />
       )}
     </div>
   );

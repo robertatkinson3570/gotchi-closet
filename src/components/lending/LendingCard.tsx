@@ -73,7 +73,7 @@ export const LendingCard = memo(function LendingCard({ lending }: Props) {
 
   return (
     <div
-      className={`group rounded-lg border ${colors.border} ${colors.bg} hover:ring-1 hover:ring-primary/40 transition-all relative overflow-hidden flex flex-col`}
+      className={`group rounded-lg border ${colors.border} ${colors.bg} glass lift hover:shadow-glow-md hover:border-primary/40 relative overflow-hidden flex flex-col`}
       data-testid={`lending-card-${lending.id}`}
     >
       <button

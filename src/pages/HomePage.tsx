@@ -88,7 +88,7 @@ export default function HomePage() {
   const canAddMore = multiWallets.length < 3;
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+    <div className="relative min-h-screen">
       <Seo
         title="GotchiCloset – Dress Your Aavegotchi, Preview Wearables & Optimize Sets"
         description="Preview wearables, try full sets, and optimize traits for your Aavegotchi. A fast, clean fitting room built for battlers and collectors."
@@ -101,16 +101,10 @@ export default function HomePage() {
           operatingSystem: "Web",
         }}
       />
-      
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-0 w-80 h-80 bg-pink-500/5 rounded-full blur-3xl" />
-      </div>
 
       <div className="relative z-10 flex flex-col items-center px-4 sm:px-6 pt-4 pb-6">
         <div className="w-full max-w-md">
-          <div className="backdrop-blur-sm bg-card/80 rounded-2xl border border-border/50 shadow-2xl shadow-black/5 overflow-hidden">
+          <div className="glass-strong rounded-2xl overflow-hidden lift">
             <div className="px-5 pt-3 pb-2 text-center">
               <div className="flex justify-center mb-2">
                 <img
@@ -119,11 +113,11 @@ export default function HomePage() {
                   className="w-48 h-48 sm:w-64 sm:h-64 object-contain drop-shadow-lg"
                 />
               </div>
-              <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+              <h1 className="font-heading text-2xl sm:text-3xl tracking-tight gradient-text">
                 Your Gotchi's Been in the Closet Long Enough
               </h1>
-              <p className="text-sm text-muted-foreground">
-                Put an outfit on it already!
+              <p className="text-sm text-muted-foreground mt-1">
+                Put an outfit on it already.
               </p>
             </div>
 
@@ -265,52 +259,52 @@ export default function HomePage() {
             <div className="grid grid-cols-5 gap-2">
               <Link
                 to="/explorer"
-                className="group flex flex-col items-center gap-1 p-2.5 rounded-xl bg-card/50 border border-border/30 hover:border-primary/30 hover:bg-card/80 transition-all"
+                className="group glass rounded-xl flex flex-col items-center gap-1 p-2.5 lift"
               >
-                <div className="p-2 rounded-lg bg-green-500/10 text-green-500 group-hover:scale-110 transition-transform">
+                <div className="p-2 rounded-lg bg-ecto/10 text-ecto group-hover:scale-110 transition-transform duration-220 ease-spring">
                   <Search className="h-4 w-4" />
                 </div>
                 <span className="text-xs font-medium text-foreground">Explorer</span>
               </Link>
               <Link
                 to="/lending"
-                className="group flex flex-col items-center gap-1 p-2.5 rounded-xl bg-card/50 border border-border/30 hover:border-primary/30 hover:bg-card/80 transition-all"
+                className="group glass rounded-xl flex flex-col items-center gap-1 p-2.5 lift"
               >
-                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform">
+                <div className="p-2 rounded-lg bg-gold/10 text-gold group-hover:scale-110 transition-transform duration-220 ease-spring">
                   <Coins className="h-4 w-4" />
                 </div>
                 <span className="text-xs font-medium text-foreground">Lending</span>
               </Link>
               <Link
                 to="/sets"
-                className="group flex flex-col items-center gap-1 p-2.5 rounded-xl bg-card/50 border border-border/30 hover:border-primary/30 hover:bg-card/80 transition-all"
+                className="group glass rounded-xl flex flex-col items-center gap-1 p-2.5 lift"
               >
-                <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+                <div className="p-2 rounded-lg bg-spectral/10 text-spectral group-hover:scale-110 transition-transform duration-220 ease-spring">
                   <Layers className="h-4 w-4" />
                 </div>
                 <span className="text-xs font-medium text-foreground">Sets</span>
               </Link>
               <Link
                 to="/traits/nrg"
-                className="group flex flex-col items-center gap-1 p-2.5 rounded-xl bg-card/50 border border-border/30 hover:border-primary/30 hover:bg-card/80 transition-all"
+                className="group glass rounded-xl flex flex-col items-center gap-1 p-2.5 lift"
               >
-                <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500 group-hover:scale-110 transition-transform">
+                <div className="p-2 rounded-lg bg-cyan/10 text-cyan group-hover:scale-110 transition-transform duration-220 ease-spring">
                   <Sparkles className="h-4 w-4" />
                 </div>
                 <span className="text-xs font-medium text-foreground">Traits</span>
               </Link>
               <Link
                 to="/rarity-score"
-                className="group flex flex-col items-center gap-1 p-2.5 rounded-xl bg-card/50 border border-border/30 hover:border-primary/30 hover:bg-card/80 transition-all"
+                className="group glass rounded-xl flex flex-col items-center gap-1 p-2.5 lift"
               >
-                <div className="p-2 rounded-lg bg-pink-500/10 text-pink-500 group-hover:scale-110 transition-transform">
+                <div className="p-2 rounded-lg bg-ghst-pink/10 text-ghst-pink group-hover:scale-110 transition-transform duration-220 ease-spring">
                   <BarChart3 className="h-4 w-4" />
                 </div>
                 <span className="text-xs font-medium text-foreground">Rarity</span>
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-card/30 border border-border/20">
+            <div className="grid grid-cols-2 gap-3 p-3 rounded-xl glass">
               <div>
                 <h2 className="text-xs font-semibold text-foreground mb-0.5">
                   What it does

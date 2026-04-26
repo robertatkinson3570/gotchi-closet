@@ -7,11 +7,12 @@ import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { LendingCard } from "@/components/lending/LendingCard";
 import { LendingDetailModal } from "@/components/lending/LendingDetailModal";
 import { UnlistedGotchiList } from "@/components/lending/UnlistedGotchiList";
+import { AutoRenewTab } from "@/components/lending/AutoRenewTab";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { ghstFromWei } from "@/lib/lending/transform";
 
-type Tab = "unlisted" | "active" | "rented" | "borrowing" | "ended";
+type Tab = "unlisted" | "active" | "rented" | "borrowing" | "ended" | "autorenew";
 
 export default function LendingMePage() {
   const { address, isConnected } = useAccount();
@@ -157,6 +158,7 @@ export default function LendingMePage() {
                 { value: "active", label: "Listed" },
                 { value: "rented", label: "Rented out" },
                 { value: "borrowing", label: "I'm borrowing" },
+                { value: "autorenew", label: "Auto-renew" },
                 { value: "ended", label: "Past" },
               ] as { value: Tab; label: string }[]
             ).map((t) => (
@@ -171,7 +173,7 @@ export default function LendingMePage() {
                 }`}
               >
                 {t.label}
-                {t.value !== "unlisted" && (
+                {t.value !== "unlisted" && t.value !== "autorenew" && (
                   <span className="text-[10px] text-muted-foreground ml-1">({counts[t.value as keyof typeof counts]})</span>
                 )}
               </button>
@@ -180,6 +182,8 @@ export default function LendingMePage() {
 
           {tab === "unlisted" ? (
             address ? <UnlistedGotchiList ownerAddress={address.toLowerCase()} /> : null
+          ) : tab === "autorenew" ? (
+            <AutoRenewTab />
           ) : loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -220,7 +224,7 @@ function Stat({
   hint?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border/40 bg-card/50 p-3">
+    <div className="rounded-xl glass p-3">
       <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
         {icon}
         <span>{label}</span>
