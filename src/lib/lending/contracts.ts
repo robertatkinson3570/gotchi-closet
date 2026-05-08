@@ -81,6 +81,13 @@ export const LENDING_FACET_ABI = [
     outputs: [],
   },
   {
+    name: "batchCancelGotchiLendingByToken",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_erc721TokenIds", type: "uint32[]" }],
+    outputs: [],
+  },
+  {
     name: "claimGotchiLending",
     type: "function",
     stateMutability: "nonpayable",
@@ -88,10 +95,38 @@ export const LENDING_FACET_ABI = [
     outputs: [],
   },
   {
+    name: "batchClaimGotchiLending",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_tokenIds", type: "uint32[]" }],
+    outputs: [],
+  },
+  {
     name: "claimAndEndGotchiLending",
     type: "function",
     stateMutability: "nonpayable",
     inputs: [{ name: "_tokenId", type: "uint32" }],
+    outputs: [],
+  },
+  {
+    name: "batchClaimAndEndGotchiLending",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_tokenIds", type: "uint32[]" }],
+    outputs: [],
+  },
+  {
+    name: "claimAndEndAndRelistGotchiLending",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_tokenId", type: "uint32" }],
+    outputs: [],
+  },
+  {
+    name: "batchClaimAndEndAndRelistGotchiLending",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_tokenIds", type: "uint32[]" }],
     outputs: [],
   },
   {

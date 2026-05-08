@@ -1,22 +1,48 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAccount } from "wagmi";
-import { ArrowLeft, Coins, Users, ListPlus, Wallet, BarChart3, Share2, Check } from "lucide-react";
+import {
+  ArrowLeft,
+  Coins,
+  Users,
+  ListPlus,
+  Wallet,
+  BarChart3,
+  Share2,
+  Check,
+  CheckSquare,
+  Square,
+  XCircle,
+  Pencil,
+  HandCoins,
+  StopCircle,
+  RotateCw,
+  Loader2,
+} from "lucide-react";
 import { useMyConnectedLendings } from "@/hooks/useMyLendings";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { LendingCard } from "@/components/lending/LendingCard";
 import { LendingDetailModal } from "@/components/lending/LendingDetailModal";
 import { UnlistedGotchiList } from "@/components/lending/UnlistedGotchiList";
 import { AutoRenewTab } from "@/components/lending/AutoRenewTab";
+import { BulkEditModal } from "@/components/lending/BulkEditModal";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { ghstFromWei } from "@/lib/lending/transform";
+import {
+  useBatchCancelLending,
+  useBatchClaimLending,
+  useBatchClaimAndEndLending,
+  useBatchClaimAndEndAndRelistLending,
+} from "@/hooks/useLendingTx";
+import { useToast } from "@/ui/use-toast";
 
 type Tab = "unlisted" | "active" | "rented" | "borrowing" | "ended" | "autorenew";
 
 export default function LendingMePage() {
   const { address, isConnected } = useAccount();
   const { lender, borrower, loading, error } = useMyConnectedLendings();
+  const { toast } = useToast();
   const [tab, setTab] = useState<Tab>("unlisted");
   const [searchParams, setSearchParams] = useSearchParams();
   const detailId = searchParams.get("l");
@@ -25,6 +51,27 @@ export default function LendingMePage() {
     next.delete("l");
     setSearchParams(next, { replace: true });
   };
+
+  // Bulk-select state. Selection is a set of lending ids; we always reset
+  // when the user switches tabs so an "active" selection doesn't accidentally
+  // bleed into a "rented out" bulk-end action with mixed-state tokens.
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Reset selection whenever tab changes — different tabs surface different
+  // bulk actions, and a selection from "active" can't be applied to "rented".
+  useEffect(() => {
+    setSelected(new Set());
+  }, [tab]);
 
   const sections = useMemo(() => {
     const active = lender.filter((l) => !l.cancelled && !l.completed && !l.borrower);
@@ -62,6 +109,15 @@ export default function LendingMePage() {
       : tab === "ended"
       ? sections.ended
       : [];
+
+  // Tabs that support bulk select. "borrowing" and "ended" have no bulk
+  // actions worth surfacing (no on-chain calls available to the borrower).
+  const supportsBulk = tab === "active" || tab === "rented";
+
+  const selectedRows = useMemo(
+    () => visible.filter((l) => selected.has(l.id)),
+    [visible, selected]
+  );
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-6">
@@ -198,17 +254,340 @@ export default function LendingMePage() {
               {tab === "ended" && "No past lendings yet."}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-              {visible.map((l) => (
-                <LendingCard key={l.id} lending={l} />
-              ))}
-            </div>
+            <>
+              {supportsBulk && (
+                <BulkToolbar
+                  bulkMode={bulkMode}
+                  setBulkMode={setBulkMode}
+                  visible={visible}
+                  selected={selected}
+                  setSelected={setSelected}
+                />
+              )}
+              {bulkMode && supportsBulk && selectedRows.length > 0 && (
+                <BulkActionBar
+                  tab={tab}
+                  selectedRows={selectedRows}
+                  onClearSelection={() => setSelected(new Set())}
+                  onOpenEdit={() => setShowBulkEdit(true)}
+                  onAfterTx={() => {
+                    setSelected(new Set());
+                    setBulkMode(false);
+                  }}
+                  toast={toast}
+                />
+              )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                {visible.map((l) => (
+                  <LendingCard
+                    key={l.id}
+                    lending={l}
+                    selectable={bulkMode && supportsBulk}
+                    selected={selected.has(l.id)}
+                    onToggleSelect={toggleSelect}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </>
       )}
 
       {detailId && <LendingDetailModal lendingId={detailId} onClose={closeDetail} />}
+      {showBulkEdit && (
+        <BulkEditModal
+          listings={selectedRows}
+          onClose={() => {
+            setShowBulkEdit(false);
+            setSelected(new Set());
+            setBulkMode(false);
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function BulkToolbar({
+  bulkMode,
+  setBulkMode,
+  visible,
+  selected,
+  setSelected,
+}: {
+  bulkMode: boolean;
+  setBulkMode: (b: boolean) => void;
+  visible: { id: string }[];
+  selected: Set<string>;
+  setSelected: (s: Set<string>) => void;
+}) {
+  const allSelected = bulkMode && visible.length > 0 && visible.every((v) => selected.has(v.id));
+  return (
+    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <div className="text-xs text-muted-foreground">
+        {bulkMode
+          ? `${selected.size} of ${visible.length} selected`
+          : `${visible.length} listing${visible.length === 1 ? "" : "s"}`}
+      </div>
+      <div className="flex items-center gap-1.5">
+        {bulkMode && (
+          <button
+            type="button"
+            onClick={() =>
+              setSelected(allSelected ? new Set() : new Set(visible.map((v) => v.id)))
+            }
+            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-border/40 bg-background/70 hover:bg-muted/50 text-xs font-medium"
+          >
+            {allSelected ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+            {allSelected ? "Clear all" : "Select all"}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            setBulkMode(!bulkMode);
+            if (bulkMode) setSelected(new Set());
+          }}
+          className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-xs font-semibold transition-colors ${
+            bulkMode
+              ? "bg-primary/15 text-primary border border-primary/40"
+              : "border border-border/40 bg-background/70 hover:bg-muted/50"
+          }`}
+        >
+          <CheckSquare className="w-3.5 h-3.5" />
+          {bulkMode ? "Exit bulk mode" : "Bulk select"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+type BulkRow = {
+  id: string;
+  gotchiTokenId: string;
+  period: number;
+  borrower?: string | null;
+  timeAgreed?: number;
+  cancelled?: boolean;
+  completed?: boolean;
+};
+
+function BulkActionBar({
+  tab,
+  selectedRows,
+  onClearSelection,
+  onOpenEdit,
+  onAfterTx,
+  toast,
+}: {
+  tab: Tab;
+  selectedRows: BulkRow[];
+  onClearSelection: () => void;
+  onOpenEdit: () => void;
+  onAfterTx: () => void;
+  toast: ReturnType<typeof useToast>["toast"];
+}) {
+  const cancel = useBatchCancelLending();
+  const claim = useBatchClaimLending();
+  const claimEnd = useBatchClaimAndEndLending();
+  const claimEndRelist = useBatchClaimAndEndAndRelistLending();
+
+  const tokenIds = useMemo(
+    () => selectedRows.map((r) => Number(r.gotchiTokenId)),
+    [selectedRows]
+  );
+
+  // For "rented out" tab: only include rentals whose period has expired —
+  // the contract reverts on end-before-period for any single one. We compute
+  // this so the End/Relist buttons can disable cleanly when none qualify.
+  const nowSec = Math.floor(Date.now() / 1000);
+  const endableTokenIds = useMemo(() => {
+    if (tab !== "rented") return tokenIds;
+    return selectedRows
+      .filter((r) => {
+        const ta = r.timeAgreed ?? 0;
+        return ta && nowSec >= ta + r.period;
+      })
+      .map((r) => Number(r.gotchiTokenId));
+    // nowSec deliberately excluded — we don't want the memo to re-fire every
+    // render and create new array identities.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRows, tab]);
+
+  const someNotEndable = tab === "rented" && endableTokenIds.length < selectedRows.length;
+
+  const onSuccess = (label: string, count: number) => {
+    toast({
+      title: label,
+      description: `Applied to ${count} listing${count === 1 ? "" : "s"}.`,
+    });
+    onAfterTx();
+  };
+
+  useEffect(() => {
+    if (cancel.step === "success") onSuccess("Bulk cancel done", tokenIds.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cancel.step]);
+  useEffect(() => {
+    if (claim.step === "success") onSuccess("Bulk claim done", tokenIds.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [claim.step]);
+  useEffect(() => {
+    if (claimEnd.step === "success") onSuccess("Bulk end done", endableTokenIds.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [claimEnd.step]);
+  useEffect(() => {
+    if (claimEndRelist.step === "success")
+      onSuccess("Bulk claim + end + relist done", endableTokenIds.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [claimEndRelist.step]);
+
+  useEffect(() => {
+    const err = cancel.errorMsg || claim.errorMsg || claimEnd.errorMsg || claimEndRelist.errorMsg;
+    if (err) {
+      toast({
+        title: "Bulk action failed",
+        description: err.length > 140 ? err.slice(0, 140) + "…" : err,
+        variant: "destructive",
+      });
+    }
+  }, [cancel.errorMsg, claim.errorMsg, claimEnd.errorMsg, claimEndRelist.errorMsg, toast]);
+
+  const anyBusy =
+    cancel.step === "submitting" ||
+    cancel.step === "confirming" ||
+    claim.step === "submitting" ||
+    claim.step === "confirming" ||
+    claimEnd.step === "submitting" ||
+    claimEnd.step === "confirming" ||
+    claimEndRelist.step === "submitting" ||
+    claimEndRelist.step === "confirming";
+
+  return (
+    <div className="sticky top-0 z-10 mb-3 rounded-lg border border-primary/40 bg-primary/10 backdrop-blur p-2.5 flex items-center justify-between gap-2 flex-wrap">
+      <div className="text-xs font-medium text-primary inline-flex items-center gap-2">
+        <Check className="w-3.5 h-3.5" />
+        {selectedRows.length} selected
+        {someNotEndable && (
+          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-normal">
+            ({endableTokenIds.length} have period expired)
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {tab === "active" && (
+          <>
+            <ActionButton
+              onClick={onOpenEdit}
+              disabled={anyBusy}
+              icon={<Pencil className="w-3.5 h-3.5" />}
+              variant="primary"
+            >
+              Edit ({selectedRows.length})
+            </ActionButton>
+            <ActionButton
+              onClick={() => cancel.send(tokenIds)}
+              busy={cancel.step === "submitting" || cancel.step === "confirming"}
+              busyLabel={cancel.step === "submitting" ? "Sign…" : "Confirming…"}
+              disabled={anyBusy}
+              icon={<XCircle className="w-3.5 h-3.5" />}
+              variant="danger"
+            >
+              Cancel ({selectedRows.length})
+            </ActionButton>
+          </>
+        )}
+        {tab === "rented" && (
+          <>
+            <ActionButton
+              onClick={() => claim.send(tokenIds)}
+              busy={claim.step === "submitting" || claim.step === "confirming"}
+              busyLabel={claim.step === "submitting" ? "Sign…" : "Confirming…"}
+              disabled={anyBusy}
+              icon={<HandCoins className="w-3.5 h-3.5" />}
+            >
+              Claim ({selectedRows.length})
+            </ActionButton>
+            <ActionButton
+              onClick={() => claimEnd.send(endableTokenIds)}
+              busy={claimEnd.step === "submitting" || claimEnd.step === "confirming"}
+              busyLabel={claimEnd.step === "submitting" ? "Sign…" : "Confirming…"}
+              disabled={anyBusy || endableTokenIds.length === 0}
+              title={endableTokenIds.length === 0 ? "No selected rentals have an expired period" : undefined}
+              icon={<StopCircle className="w-3.5 h-3.5" />}
+              variant="danger"
+            >
+              End ({endableTokenIds.length})
+            </ActionButton>
+            <ActionButton
+              onClick={() => claimEndRelist.send(endableTokenIds)}
+              busy={
+                claimEndRelist.step === "submitting" ||
+                claimEndRelist.step === "confirming"
+              }
+              busyLabel={claimEndRelist.step === "submitting" ? "Sign…" : "Confirming…"}
+              disabled={anyBusy || endableTokenIds.length === 0}
+              title={
+                endableTokenIds.length === 0
+                  ? "No selected rentals have an expired period"
+                  : "Atomically claim earnings, end rental, and re-list with same terms"
+              }
+              icon={<RotateCw className="w-3.5 h-3.5" />}
+              variant="primary"
+            >
+              Auto claim + relist ({endableTokenIds.length})
+            </ActionButton>
+          </>
+        )}
+        <button
+          type="button"
+          onClick={onClearSelection}
+          disabled={anyBusy}
+          className="h-8 px-2.5 rounded-md text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ActionButton({
+  onClick,
+  busy,
+  busyLabel,
+  disabled,
+  icon,
+  children,
+  variant = "default",
+  title,
+}: {
+  onClick: () => void;
+  busy?: boolean;
+  busyLabel?: string;
+  disabled?: boolean;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  variant?: "default" | "primary" | "danger";
+  title?: string;
+}) {
+  const cls =
+    variant === "primary"
+      ? "border border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90"
+      : variant === "danger"
+      ? "border border-destructive/40 bg-destructive/10 hover:bg-destructive/20 text-destructive"
+      : "border border-border/40 bg-background/70 hover:bg-muted/50";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || busy}
+      title={title}
+      className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${cls}`}
+    >
+      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : icon}
+      {busy ? busyLabel ?? "Working…" : children}
+    </button>
   );
 }
 

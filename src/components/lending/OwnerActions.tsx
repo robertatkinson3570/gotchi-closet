@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Loader2, XCircle, CheckCircle2, StopCircle, AlertCircle, HandCoins } from "lucide-react";
+import { Loader2, XCircle, CheckCircle2, StopCircle, AlertCircle, HandCoins, RotateCw } from "lucide-react";
 import { useAccount } from "wagmi";
 import { useAddressState } from "@/lib/addressState";
 import { useToast } from "@/ui/use-toast";
@@ -7,6 +7,7 @@ import {
   useCancelLending,
   useClaimAndEndLending,
   useClaimLending,
+  useClaimAndEndAndRelistLending,
 } from "@/hooks/useLendingTx";
 
 type Status = "available" | "active" | "completed" | "cancelled";
@@ -37,6 +38,7 @@ export function OwnerActions({
   const cancel = useCancelLending();
   const claimEnd = useClaimAndEndLending();
   const claim = useClaimLending();
+  const claimEndRelist = useClaimAndEndAndRelistLending();
 
   // success toasts
   useEffect(() => {
@@ -60,9 +62,19 @@ export function OwnerActions({
     }
   }, [claim.step, toast, gotchiTokenId, onAfterTx]);
 
+  useEffect(() => {
+    if (claimEndRelist.step === "success") {
+      toast({
+        title: "Auto-relisted",
+        description: `#${gotchiTokenId} claimed, ended, and re-listed with the same terms.`,
+      });
+      onAfterTx?.();
+    }
+  }, [claimEndRelist.step, toast, gotchiTokenId, onAfterTx]);
+
   // error toasts
   useEffect(() => {
-    const err = cancel.errorMsg || claimEnd.errorMsg || claim.errorMsg;
+    const err = cancel.errorMsg || claimEnd.errorMsg || claim.errorMsg || claimEndRelist.errorMsg;
     if (err) {
       toast({
         title: "Transaction failed",
@@ -70,7 +82,7 @@ export function OwnerActions({
         variant: "destructive",
       });
     }
-  }, [cancel.errorMsg, claimEnd.errorMsg, claim.errorMsg, toast]);
+  }, [cancel.errorMsg, claimEnd.errorMsg, claim.errorMsg, claimEndRelist.errorMsg, toast]);
 
   if (!connected || connected.toLowerCase() !== lender.toLowerCase()) {
     return null;
@@ -131,6 +143,7 @@ export function OwnerActions({
     const periodIsOver = Date.now() / 1000 >= periodEnd;
     const claimBusy = claim.step === "submitting" || claim.step === "confirming";
     const endBusy = claimEnd.step === "submitting" || claimEnd.step === "confirming";
+    const relistBusy = claimEndRelist.step === "submitting" || claimEndRelist.step === "confirming";
 
     return (
       <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
@@ -172,6 +185,25 @@ export function OwnerActions({
             End rental
           </button>
         </div>
+        <button
+          type="button"
+          onClick={() => claimEndRelist.send(tokenIdNum)}
+          disabled={relistBusy || !periodIsOver}
+          title={
+            !periodIsOver
+              ? "Only available after the rental period expires"
+              : "Claim earnings, end the rental, and re-list with the same terms in one tx"
+          }
+          data-testid="owner-claim-end-relist-btn"
+          className="w-full inline-flex items-center justify-center gap-1.5 h-9 rounded-md border border-primary/40 bg-primary/10 hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold text-primary transition-colors"
+        >
+          {relistBusy ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <RotateCw className="w-4 h-4" />
+          )}
+          Auto claim + end + relist (same terms)
+        </button>
       </div>
     );
   }

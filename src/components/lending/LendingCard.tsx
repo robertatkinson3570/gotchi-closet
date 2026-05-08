@@ -4,7 +4,7 @@ import type { Lending } from "@/lib/lending/types";
 import { brsBandOf } from "@/lib/lending/types";
 import { formatGhst, formatPeriod, formatGhstPerDay } from "@/lib/lending/transform";
 import { GotchiSvg, prefetchGotchiSvg } from "@/components/gotchi/GotchiSvg";
-import { Zap, Lock, Coins, Clock } from "lucide-react";
+import { Zap, Lock, Coins, Clock, Check } from "lucide-react";
 
 const NAKED_WEARABLES: number[] = new Array(16).fill(0);
 // Order matches the Aavegotchi int16[6] numericTraits layout the explorer card uses.
@@ -23,15 +23,30 @@ const tierColors: Record<string, { border: string; bg: string; text: string }> =
 
 type Props = {
   lending: Lending;
+  // Selection-mode props. When `selectable` is true, the card swallows clicks
+  // to toggle selection instead of opening the detail modal — used by the
+  // bulk action bar on /lending/me.
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (lendingId: string) => void;
 };
 
-export const LendingCard = memo(function LendingCard({ lending }: Props) {
+export const LendingCard = memo(function LendingCard({
+  lending,
+  selectable,
+  selected,
+  onToggleSelect,
+}: Props) {
   const g = lending.gotchi;
   const band = brsBandOf(lending.gotchiBRS);
   const colors = tierColors[band] ?? tierColors["<500"];
   const [hovered, setHovered] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const openDetail = () => {
+    if (selectable) {
+      onToggleSelect?.(lending.id);
+      return;
+    }
     const next = new URLSearchParams(searchParams);
     next.set("l", lending.id);
     setSearchParams(next, { replace: false });
@@ -83,10 +98,17 @@ export const LendingCard = memo(function LendingCard({ lending }: Props) {
   const isOpen = !lending.whitelistId || lending.whitelistId === "0";
   const wlLabel = isOpen ? "Open" : lending.whitelistName || `WL #${lending.whitelistId}`;
 
+  const selectionRing = selectable && selected
+    ? "ring-2 ring-primary border-primary/60"
+    : selectable
+    ? "ring-1 ring-border/30 hover:ring-primary/50"
+    : "";
+
   return (
     <div
-      className={`group rounded-lg border ${colors.border} ${colors.bg} glass lift hover:shadow-glow-md hover:border-primary/40 relative overflow-hidden flex flex-col cursor-pointer`}
+      className={`group rounded-lg border ${colors.border} ${colors.bg} glass lift hover:shadow-glow-md hover:border-primary/40 relative overflow-hidden flex flex-col cursor-pointer ${selectionRing}`}
       data-testid={`lending-card-${lending.id}`}
+      data-selected={selectable ? (selected ? "true" : "false") : undefined}
       onClick={openDetail}
       role="button"
       tabIndex={0}
@@ -97,6 +119,19 @@ export const LendingCard = memo(function LendingCard({ lending }: Props) {
         }
       }}
     >
+      {selectable && (
+        <div className="absolute top-1.5 right-1.5 z-20 pointer-events-none">
+          <div
+            className={`w-5 h-5 rounded border flex items-center justify-center ${
+              selected
+                ? "bg-primary border-primary text-primary-foreground"
+                : "bg-background/80 border-border/60"
+            }`}
+          >
+            {selected && <Check className="w-3 h-3" />}
+          </div>
+        </div>
+      )}
       {/* Hover-to-undress: click handling is on the outer card now. */}
       <div
         className="relative aspect-square flex items-center justify-center w-full"

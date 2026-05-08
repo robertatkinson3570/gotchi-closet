@@ -149,6 +149,31 @@ export function useCancelLending() {
   return { ...base, send };
 }
 
+export function useBatchCancelLending() {
+  const base = useTxBase();
+  const send = useCallback(
+    (gotchiTokenIds: number[]) => {
+      if (!base.canWrite || gotchiTokenIds.length === 0) return;
+      base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
+        address: AAVEGOTCHI_DIAMOND_BASE,
+        abi: LENDING_FACET_ABI,
+        functionName: "batchCancelGotchiLendingByToken",
+        args: [gotchiTokenIds],
+      });
+    },
+    [base]
+  );
+  useEffect(() => {
+    if (base.step === "success") {
+      invalidateLendingsCache();
+      invalidateMyLendings();
+      scheduleGotchiInvalidation(base.queryClient);
+    }
+  }, [base.step, base.queryClient]);
+  return { ...base, send };
+}
+
 export function useClaimAndEndLending() {
   const base = useTxBase();
   const send = useCallback(
@@ -174,6 +199,84 @@ export function useClaimAndEndLending() {
   return { ...base, send };
 }
 
+export function useBatchClaimAndEndLending() {
+  const base = useTxBase();
+  const send = useCallback(
+    (gotchiTokenIds: number[]) => {
+      if (!base.canWrite || gotchiTokenIds.length === 0) return;
+      base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
+        address: AAVEGOTCHI_DIAMOND_BASE,
+        abi: LENDING_FACET_ABI,
+        functionName: "batchClaimAndEndGotchiLending",
+        args: [gotchiTokenIds],
+      });
+    },
+    [base]
+  );
+  useEffect(() => {
+    if (base.step === "success") {
+      invalidateLendingsCache();
+      invalidateMyLendings();
+      scheduleGotchiInvalidation(base.queryClient);
+    }
+  }, [base.step, base.queryClient]);
+  return { ...base, send };
+}
+
+// Atomic claim + end + relist with the same parameters. Only valid for an
+// active rental whose period has expired. The on-chain function preserves the
+// original listing terms (price, period, splits, whitelist, channelling).
+export function useClaimAndEndAndRelistLending() {
+  const base = useTxBase();
+  const send = useCallback(
+    (gotchiTokenId: number) => {
+      if (!base.canWrite) return;
+      base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
+        address: AAVEGOTCHI_DIAMOND_BASE,
+        abi: LENDING_FACET_ABI,
+        functionName: "claimAndEndAndRelistGotchiLending",
+        args: [gotchiTokenId],
+      });
+    },
+    [base]
+  );
+  useEffect(() => {
+    if (base.step === "success") {
+      invalidateLendingsCache();
+      invalidateMyLendings();
+      scheduleGotchiInvalidation(base.queryClient);
+    }
+  }, [base.step, base.queryClient]);
+  return { ...base, send };
+}
+
+export function useBatchClaimAndEndAndRelistLending() {
+  const base = useTxBase();
+  const send = useCallback(
+    (gotchiTokenIds: number[]) => {
+      if (!base.canWrite || gotchiTokenIds.length === 0) return;
+      base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
+        address: AAVEGOTCHI_DIAMOND_BASE,
+        abi: LENDING_FACET_ABI,
+        functionName: "batchClaimAndEndAndRelistGotchiLending",
+        args: [gotchiTokenIds],
+      });
+    },
+    [base]
+  );
+  useEffect(() => {
+    if (base.step === "success") {
+      invalidateLendingsCache();
+      invalidateMyLendings();
+      scheduleGotchiInvalidation(base.queryClient);
+    }
+  }, [base.step, base.queryClient]);
+  return { ...base, send };
+}
+
 export function useClaimLending() {
   const base = useTxBase();
   const send = useCallback(
@@ -185,6 +288,24 @@ export function useClaimLending() {
         abi: LENDING_FACET_ABI,
         functionName: "claimGotchiLending",
         args: [gotchiTokenId],
+      });
+    },
+    [base]
+  );
+  return { ...base, send };
+}
+
+export function useBatchClaimLending() {
+  const base = useTxBase();
+  const send = useCallback(
+    (gotchiTokenIds: number[]) => {
+      if (!base.canWrite || gotchiTokenIds.length === 0) return;
+      base.tx.writeContract({
+        chainId: BASE_CHAIN_ID,
+        address: AAVEGOTCHI_DIAMOND_BASE,
+        abi: LENDING_FACET_ABI,
+        functionName: "batchClaimGotchiLending",
+        args: [gotchiTokenIds],
       });
     },
     [base]
