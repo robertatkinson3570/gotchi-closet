@@ -110,9 +110,10 @@ export default function LendingMePage() {
       ? sections.ended
       : [];
 
-  // Tabs that support bulk select. "borrowing" and "ended" have no bulk
-  // actions worth surfacing (no on-chain calls available to the borrower).
-  const supportsBulk = tab === "active" || tab === "rented";
+  // Tabs that support bulk select. "ended" has no bulk actions worth
+  // surfacing. Borrowing surfaces "Return early" — the borrower-side path
+  // to flush channelled alchemica from the escrow before the period expires.
+  const supportsBulk = tab === "active" || tab === "rented" || tab === "borrowing";
 
   const selectedRows = useMemo(
     () => visible.filter((l) => selected.has(l.id)),
@@ -497,6 +498,21 @@ function BulkActionBar({
             </ActionButton>
           </>
         )}
+        {tab === "borrowing" && (
+          <>
+            <ActionButton
+              onClick={() => claimEnd.send(tokenIds)}
+              busy={claimEnd.step === "submitting" || claimEnd.step === "confirming"}
+              busyLabel={claimEnd.step === "submitting" ? "Sign…" : "Confirming…"}
+              disabled={anyBusy}
+              title="Ends the rental(s) early and flushes all channelled alchemica to your borrower wallet. Forfeits remaining rental period."
+              icon={<StopCircle className="w-3.5 h-3.5" />}
+              variant="primary"
+            >
+              Return early & flush alch ({selectedRows.length})
+            </ActionButton>
+          </>
+        )}
         {tab === "rented" && (
           <>
             <ActionButton
@@ -504,6 +520,7 @@ function BulkActionBar({
               busy={claim.step === "submitting" || claim.step === "confirming"}
               busyLabel={claim.step === "submitting" ? "Sign…" : "Confirming…"}
               disabled={anyBusy}
+              title="Mid-rental claim. On Base this often returns 0 until the rental ends — use End or Auto-relist below to fully sweep channelled alchemica."
               icon={<HandCoins className="w-3.5 h-3.5" />}
             >
               Claim ({selectedRows.length})
