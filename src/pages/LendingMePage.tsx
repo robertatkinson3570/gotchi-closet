@@ -26,6 +26,7 @@ import { LendingDetailModal } from "@/components/lending/LendingDetailModal";
 import { UnlistedGotchiList } from "@/components/lending/UnlistedGotchiList";
 import { AutoRenewTab } from "@/components/lending/AutoRenewTab";
 import { BulkEditModal } from "@/components/lending/BulkEditModal";
+import { EscrowSummaryBar } from "@/components/lending/EscrowSummaryBar";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { ghstFromWei } from "@/lib/lending/transform";
@@ -206,6 +207,11 @@ export default function LendingMePage() {
               {error}
             </div>
           )}
+
+          {/* Escrow sweep — only renders when there's alch sitting in
+              per-gotchi escrows on unlocked gotchis. Surfaces a one-tx
+              batchTransferEscrow to recover it. */}
+          <EscrowSummaryBar />
 
           {/* Tabs */}
           <div className="flex items-center gap-1 mb-4 border-b border-border/30 overflow-x-auto">
@@ -520,7 +526,7 @@ function BulkActionBar({
               busy={claim.step === "submitting" || claim.step === "confirming"}
               busyLabel={claim.step === "submitting" ? "Sign…" : "Confirming…"}
               disabled={anyBusy}
-              title="Mid-rental claim. On Base this often returns 0 until the rental ends — use End or Auto-relist below to fully sweep channelled alchemica."
+              title="Mid-rental lending-facet claim. On Base this typically returns 0 because farming alch goes to each gotchi's escrow (locked during rentals). To actually withdraw alch: end the rental (or use Return early & flush alch on the Borrowing tab), then use the Escrow sweep bar that appears above the tabs."
               icon={<HandCoins className="w-3.5 h-3.5" />}
             >
               Claim ({selectedRows.length})
