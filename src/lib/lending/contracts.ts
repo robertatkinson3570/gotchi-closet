@@ -14,6 +14,19 @@ export const ALCHEMICA_TOKENS_BASE = [
   { symbol: "KEK", address: "0xE52b9170fF4ece4C35E796Ffd74B57Dec68Ca0e5" as const },
 ] as const;
 
+// Just the addresses, in the canonical order Aavegotchi uses
+// (FUD=0, FOMO=1, ALPHA=2, KEK=3). Pass this to addGotchiListing as
+// `revenueTokens` so the on-chain claim function knows which tokens to
+// sweep from the gotchi escrow at claim time. Listings created with an
+// empty array CANNOT pay out alchemica via claimGotchiLending — the
+// contract iterates over revenueTokens to determine what to split.
+export const ALCHEMICA_TOKEN_ADDRESSES_BASE = [
+  "0x2028b4043e6722Ea164946c82fe806c4a43a0fF4",
+  "0xA32137bfb57d2b6A9Fd2956Ba4B54741a6D54b58",
+  "0x15e7CaC885e3730ce6389447BC0f7AC032f31947",
+  "0xE52b9170fF4ece4C35E796Ffd74B57Dec68Ca0e5",
+] as `0x${string}`[];
+
 // Minimal ERC20 ABI for GHST allowance + approve.
 export const ERC20_ABI = [
   {

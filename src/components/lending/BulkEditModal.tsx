@@ -23,6 +23,7 @@ import { useToast } from "@/ui/use-toast";
 import { useAddressState } from "@/lib/addressState";
 import { switchToBaseChain } from "@/lib/chains";
 import { ghstFromWei } from "@/lib/lending/transform";
+import { ALCHEMICA_TOKEN_ADDRESSES_BASE } from "@/lib/lending/contracts";
 import type { Lending } from "@/lib/lending/types";
 
 type Props = {
@@ -150,7 +151,9 @@ export function BulkEditModal({ listings, onClose }: Props) {
         originalOwner: (address ?? ZERO) as `0x${string}`,
         thirdParty: ZERO as `0x${string}`,
         whitelistId: wl,
-        revenueTokens: [],
+        // Must declare all 4 alchemica addresses — claimGotchiLending iterates
+        // over this to know which tokens to split from the gotchi escrow.
+        revenueTokens: ALCHEMICA_TOKEN_ADDRESSES_BASE,
         permissions: ch ? BigInt(0x101) : BigInt(0),
       };
     });

@@ -115,7 +115,17 @@ export async function maybeRelist(t: Template): Promise<{ success: boolean; txHa
       originalOwner: t.owner as `0x${string}`,
       thirdParty: (t.third_party as `0x${string}`) || ("0x0000000000000000000000000000000000000000" as `0x${string}`),
       whitelistId: t.whitelist_id,
-      revenueTokens: [] as `0x${string}`[],
+      // CRITICAL: must declare alchemica addresses or claimGotchiLending pays
+      // out 0 — the on-chain claim iterates over this array to know which
+      // tokens to sweep from the gotchi escrow. Empty array silently disables
+      // all alch payouts. Order matches canonical Aavegotchi index
+      // (FUD=0, FOMO=1, ALPHA=2, KEK=3).
+      revenueTokens: [
+        "0x2028b4043e6722Ea164946c82fe806c4a43a0fF4",
+        "0xA32137bfb57d2b6A9Fd2956Ba4B54741a6D54b58",
+        "0x15e7CaC885e3730ce6389447BC0f7AC032f31947",
+        "0xE52b9170fF4ece4C35E796Ffd74B57Dec68Ca0e5",
+      ] as `0x${string}`[],
       // 0x101 = channelling allowed (bit 0 + bit 8, matching dapp convention
       // verified via getGotchiLendingFromToken on Base); 0x0 = disabled.
       permissions: t.channelling ? BigInt(0x101) : BigInt(0),
