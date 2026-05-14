@@ -26,6 +26,7 @@ import { LendingDetailModal } from "@/components/lending/LendingDetailModal";
 import { UnlistedGotchiList } from "@/components/lending/UnlistedGotchiList";
 import { AutoRenewTab } from "@/components/lending/AutoRenewTab";
 import { BulkEditModal } from "@/components/lending/BulkEditModal";
+import { BulkReturnAndSweepModal } from "@/components/lending/BulkReturnAndSweepModal";
 import { EscrowSummaryBar } from "@/components/lending/EscrowSummaryBar";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
@@ -59,6 +60,7 @@ export default function LendingMePage() {
   const [bulkMode, setBulkMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const [showReturnAndSweep, setShowReturnAndSweep] = useState(false);
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -277,6 +279,7 @@ export default function LendingMePage() {
                   selectedRows={selectedRows}
                   onClearSelection={() => setSelected(new Set())}
                   onOpenEdit={() => setShowBulkEdit(true)}
+                  onOpenReturnAndSweep={() => setShowReturnAndSweep(true)}
                   onAfterTx={() => {
                     setSelected(new Set());
                     setBulkMode(false);
@@ -306,6 +309,20 @@ export default function LendingMePage() {
           listings={selectedRows}
           onClose={() => {
             setShowBulkEdit(false);
+            setSelected(new Set());
+            setBulkMode(false);
+          }}
+        />
+      )}
+      {showReturnAndSweep && (
+        <BulkReturnAndSweepModal
+          rentals={selectedRows.map((r) => ({
+            id: r.id,
+            gotchiTokenId: r.gotchiTokenId,
+            lender: r.lender,
+          }))}
+          onClose={() => {
+            setShowReturnAndSweep(false);
             setSelected(new Set());
             setBulkMode(false);
           }}
@@ -373,6 +390,9 @@ type BulkRow = {
   id: string;
   gotchiTokenId: string;
   period: number;
+  // Lender address from the listing; needed by the return-and-sweep flow
+  // to know which wallet must sign the post-end escrow sweep tx.
+  lender: string;
   borrower?: string | null;
   timeAgreed?: number;
   cancelled?: boolean;
@@ -384,6 +404,7 @@ function BulkActionBar({
   selectedRows,
   onClearSelection,
   onOpenEdit,
+  onOpenReturnAndSweep,
   onAfterTx,
   toast,
 }: {
@@ -391,6 +412,7 @@ function BulkActionBar({
   selectedRows: BulkRow[];
   onClearSelection: () => void;
   onOpenEdit: () => void;
+  onOpenReturnAndSweep: () => void;
   onAfterTx: () => void;
   toast: ReturnType<typeof useToast>["toast"];
 }) {
@@ -507,15 +529,23 @@ function BulkActionBar({
         {tab === "borrowing" && (
           <>
             <ActionButton
+              onClick={onOpenReturnAndSweep}
+              disabled={anyBusy}
+              title="Auto-chains two txs: (1) end rentals from this borrower wallet, (2) switch to lender wallet → sweep gotchi escrows to your wallet. Required for listings with empty revenueTokens — claim alone can't pay out on those."
+              icon={<Coins className="w-3.5 h-3.5" />}
+              variant="primary"
+            >
+              Return & sweep alch ({selectedRows.length})
+            </ActionButton>
+            <ActionButton
               onClick={() => claimEnd.send(tokenIds)}
               busy={claimEnd.step === "submitting" || claimEnd.step === "confirming"}
               busyLabel={claimEnd.step === "submitting" ? "Sign…" : "Confirming…"}
               disabled={anyBusy}
-              title="Ends the rental(s) early and flushes all channelled alchemica to your borrower wallet. Forfeits remaining rental period."
+              title="End rentals only — does NOT auto-sweep the gotchi escrows. Use 'Return & sweep' above for the full one-flow recovery."
               icon={<StopCircle className="w-3.5 h-3.5" />}
-              variant="primary"
             >
-              Return early & flush alch ({selectedRows.length})
+              End only ({selectedRows.length})
             </ActionButton>
           </>
         )}
