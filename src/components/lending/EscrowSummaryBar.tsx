@@ -4,6 +4,7 @@ import { useAccount } from "wagmi";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
 import { useMyConnectedLendings } from "@/hooks/useMyLendings";
 import { useEscrowBalances, useBatchTransferEscrow } from "@/hooks/useEscrowWithdraw";
+import { useBatchClaimLending } from "@/hooks/useLendingTx";
 import { useToast } from "@/ui/use-toast";
 import { useAddressState } from "@/lib/addressState";
 
@@ -113,7 +114,34 @@ export function EscrowSummaryBar() {
   const lockedTotals = useMemo(() => sumBySymbol(lockedRows), [lockedRows]);
 
   const withdraw = useBatchTransferEscrow();
+  const claimMidRental = useBatchClaimLending();
   const [confirming, setConfirming] = useState(false);
+
+  // Toast + refetch on mid-rental claim success/failure. Mid-rental claim
+  // distributes the gotchi escrow per the listing's revenueSplit, so the
+  // alch lands in either the lender or borrower wallet (or split between
+  // both) — we don't know per-listing here, so the toast is intentionally
+  // generic. The escrow balances refresh shortly after via refetch().
+  useEffect(() => {
+    if (claimMidRental.step === "success") {
+      toast({
+        title: "Mid-rental claim sent",
+        description:
+          "Gotchi escrows swept and split per each listing's terms (lender + borrower wallets per splitOwner / splitBorrower).",
+      });
+      refetch();
+    }
+    if (claimMidRental.step === "error" && claimMidRental.errorMsg) {
+      toast({
+        title: "Mid-rental claim failed",
+        description:
+          claimMidRental.errorMsg.slice(0, 160) +
+          " — Listing may have been created with empty revenueTokens (closet bug pre-684ae2e). End rental + transferEscrow is the fallback.",
+        variant: "destructive",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [claimMidRental.step]);
 
   useEffect(() => {
     if (withdraw.step === "success") {
@@ -214,7 +242,7 @@ export function EscrowSummaryBar() {
         <div className="rounded border border-amber-500/30 bg-amber-500/5 p-2.5 flex items-center justify-between gap-3 flex-wrap">
           <div className="text-xs min-w-0">
             <div className="font-semibold text-amber-700 dark:text-amber-400 inline-flex items-center gap-1">
-              <Lock className="w-3.5 h-3.5" /> Locked — end the rental first
+              <Lock className="w-3.5 h-3.5" /> Locked in active rentals
             </div>
             <div className="text-muted-foreground break-words">
               <span className="text-foreground font-medium">{lockedSummary}</span>
@@ -223,13 +251,51 @@ export function EscrowSummaryBar() {
               </span>
             </div>
             <div className="text-[10px] mt-0.5">
-              `transferEscrow` reverts while a gotchi is in an active lending.
-              Connect the <span className="font-mono">borrower</span> wallet and use{" "}
-              <span className="font-medium">"Return early &amp; flush alch"</span> on the
-              Borrowing tab to end each rental — the gotchis unlock, then come back here
-              with the lender wallet to sweep.
+              <span className="font-medium">Claim mid-rental</span> works only if the
+              listing was created with revenueTokens declared (any closet listing made
+              after fix <span className="font-mono">684ae2e</span>). Try the button — alch
+              flows per each listing's <span className="font-mono">splitOwner / splitBorrower</span>.
+              If it pays out 0, the listing has empty revenueTokens (legacy bug) and the
+              only recovery is to <span className="font-medium">end the rental</span> from
+              the borrower wallet, then sweep with{" "}
+              <span className="font-medium">Withdraw all to wallet</span> above.
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              const lockedTokenIds = Array.from(
+                new Set(lockedRows.map((b) => b.tokenId))
+              );
+              claimMidRental.send(lockedTokenIds);
+            }}
+            disabled={
+              claimMidRental.step === "submitting" ||
+              claimMidRental.step === "confirming" ||
+              !isOnBase
+            }
+            title={
+              !isOnBase
+                ? "Switch to Base"
+                : "Calls batchClaimGotchiLending — sweeps each gotchi's escrow and splits per the listing's revenueSplit. No need to end rentals."
+            }
+            data-testid="escrow-claim-midrental"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold transition-colors"
+          >
+            {claimMidRental.step === "submitting" ||
+            claimMidRental.step === "confirming" ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {claimMidRental.step === "submitting" ? "Sign…" : "Confirming…"}
+              </>
+            ) : claimMidRental.step === "success" ? (
+              <>
+                <CheckCircle2 className="w-4 h-4" /> Sent
+              </>
+            ) : (
+              <>Claim mid-rental ({lockedGotchiCount})</>
+            )}
+          </button>
         </div>
       )}
     </div>
