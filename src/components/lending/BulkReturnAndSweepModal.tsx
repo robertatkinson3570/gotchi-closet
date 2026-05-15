@@ -135,6 +135,18 @@ export function BulkReturnAndSweepModal({ rentals, onClose }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [claimEnd.step, phase]);
 
+  // Auto-poll escrow balances during the switch-wallet phase. Multicall is
+  // a view call so this is cheap (one RPC per tick), and it covers the case
+  // where the rental-end tx confirmed but the on-chain state hadn't yet
+  // propagated to the connected RPC at the time of the first refetch.
+  // Stops the moment we have any non-zero balance OR phase advances.
+  useEffect(() => {
+    if (phase !== "switch-wallet") return;
+    if (balances.length > 0) return;
+    const id = setInterval(() => refetch(), 3_000);
+    return () => clearInterval(id);
+  }, [phase, balances.length, refetch]);
+
   // Whether the connected wallet matches the lender (= can sign sweep tx).
   // We surface this in the UI rather than auto-firing on detection because
   // some wallets (Rabby, some MM versions) don't emit accountsChanged

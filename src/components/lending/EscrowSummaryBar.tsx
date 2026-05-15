@@ -46,31 +46,41 @@ export function EscrowSummaryBar() {
   // We track lock state per id so we can split the totals into
   // "withdrawable now" vs "locked — end rental first" for the UI.
   const { allIds, lockedSet } = useMemo(() => {
-    const set = new Map<number, boolean>(); // id → locked
-    for (const g of gotchis ?? []) {
-      const lendingFlag = Number((g as any).lending ?? 0);
-      const id = Number((g as any).gotchiId ?? (g as any).id);
-      if (!Number.isFinite(id)) continue;
-      // Subgraph's `lending` is the active listing id (>0 when locked).
-      set.set(id, lendingFlag > 0);
-    }
+    // Build authoritative state from lender records first — these reflect
+    // the most recent on-chain lending events the subgraph has indexed,
+    // including end/cancel transitions. The gotchisOwned `lending` flag is
+    // a derived field that lags behind, so we let the lender record win
+    // whenever the same id appears in both sources.
+    const lenderState = new Map<number, "locked" | "unlocked">();
     for (const l of lender) {
       const id = Number(l.gotchiTokenId);
       if (!Number.isFinite(id)) continue;
-      // CRITICAL: only treat as locked if the lending is truly active
-      // (not cancelled, not completed). The subgraph keeps historical
-      // records around for ended rentals — counting those would falsely
-      // gray out the Withdraw button after a rental ends.
       const trulyLocked = !l.cancelled && !l.completed;
-      // If the gotchi is already in the map, only escalate from
-      // unlocked → locked (never the other way) so a stale historical
-      // record can't override a fresh "I own this" signal.
-      if (trulyLocked) {
-        set.set(id, true);
-      } else if (!set.has(id)) {
-        set.set(id, false);
-      }
+      // Most-recent lender record wins; useMyConnectedLendings returns the
+      // freshest first so first-seen is most current. (If multiple records
+      // exist for the same gotchi from different rental cycles, the active
+      // one — if any — must be authoritative.)
+      const prev = lenderState.get(id);
+      if (prev === "locked") continue; // an active lock outranks a history row
+      lenderState.set(id, trulyLocked ? "locked" : "unlocked");
     }
+
+    const set = new Map<number, boolean>();
+    for (const [id, state] of lenderState) {
+      set.set(id, state === "locked");
+    }
+    // Fold in directly-owned gotchis the user holds outright (no lender
+    // record at all). These are unambiguously unlocked — `gotchisOwned`
+    // can only return them if the subgraph thinks the connected wallet
+    // currently owns the gotchi. Skip ids the lender map already covers.
+    for (const g of gotchis ?? []) {
+      const id = Number((g as any).gotchiId ?? (g as any).id);
+      if (!Number.isFinite(id)) continue;
+      if (set.has(id)) continue;
+      const lendingFlag = Number((g as any).lending ?? 0);
+      set.set(id, lendingFlag > 0);
+    }
+
     return {
       allIds: Array.from(set.keys()),
       lockedSet: new Set(

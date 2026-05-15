@@ -427,9 +427,19 @@ function BulkActionBar({
   );
 
   // For "rented out" tab: only include rentals whose period has expired —
-  // the contract reverts on end-before-period for any single one. We compute
-  // this so the End/Relist buttons can disable cleanly when none qualify.
-  const nowSec = Math.floor(Date.now() / 1000);
+  // the contract reverts on end-before-period for any single one. We tick
+  // every 15s so a user staring at the bar past a period boundary sees the
+  // End/Relist buttons enable without needing to navigate away. Without the
+  // tick the memo's `nowSec` is captured at first render and stays stale.
+  const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    if (tab !== "rented") return;
+    const id = setInterval(
+      () => setNowSec(Math.floor(Date.now() / 1000)),
+      15_000
+    );
+    return () => clearInterval(id);
+  }, [tab]);
   const endableTokenIds = useMemo(() => {
     if (tab !== "rented") return tokenIds;
     return selectedRows
@@ -438,10 +448,7 @@ function BulkActionBar({
         return ta && nowSec >= ta + r.period;
       })
       .map((r) => Number(r.gotchiTokenId));
-    // nowSec deliberately excluded — we don't want the memo to re-fire every
-    // render and create new array identities.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRows, tab]);
+  }, [selectedRows, tab, tokenIds, nowSec]);
 
   const someNotEndable = tab === "rented" && endableTokenIds.length < selectedRows.length;
 

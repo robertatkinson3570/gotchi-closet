@@ -97,12 +97,21 @@ export function OwnerActions({
     );
   }
 
-  // success state shows confirmation card
-  if (cancel.step === "success" || claimEnd.step === "success") {
+  // success state shows confirmation card. Includes claimEndRelist so the
+  // active-rental UI doesn't redraw underneath after a successful auto-relist.
+  if (
+    cancel.step === "success" ||
+    claimEnd.step === "success" ||
+    claimEndRelist.step === "success"
+  ) {
     return (
       <div className="rounded-lg border border-green-500/40 bg-green-500/10 p-3 inline-flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium">
         <CheckCircle2 className="w-4 h-4" />
-        {cancel.step === "success" ? "Listing cancelled" : "Rental ended & claimed"}
+        {cancel.step === "success"
+          ? "Listing cancelled"
+          : claimEndRelist.step === "success"
+          ? "Claimed, ended & re-listed"
+          : "Rental ended & claimed"}
       </div>
     );
   }
