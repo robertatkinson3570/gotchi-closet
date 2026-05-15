@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import { X, Loader2, CheckCircle2, AlertCircle, Coins, Clock, Zap, Lock, Info, Sparkles, RotateCw } from "lucide-react";
 import { AutoPriceModal } from "./AutoPriceModal";
 import { useSetLendingOperator, useTransferGhst } from "@/hooks/useLendingTx";
-import { ALCHEMICA_TOKEN_ADDRESSES_BASE } from "@/lib/lending/contracts";
 import { useAccount } from "wagmi";
 import { useToast } from "@/ui/use-toast";
 import { useAddListing } from "@/hooks/useLendingTx";
@@ -229,10 +228,11 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
       originalOwner: address as `0x${string}`,
       thirdParty: ZERO as `0x${string}`,
       whitelistId: Number(whitelistId) || 0,
-      // Must include all 4 alchemica addresses or claim distributes nothing
-      // — claimGotchiLending iterates over this array to know what to sweep
-      // from the gotchi escrow at claim time.
-      revenueTokens: ALCHEMICA_TOKEN_ADDRESSES_BASE,
+      // ROLLED BACK: passing alchemica addresses tripped the on-chain
+      // revenueTokenAllowed check on Base — addGotchiListing reverted.
+      // Empty array passes validation but disables claimGotchiLending
+      // payout (alch sits in escrow until end-of-rental + transferEscrow).
+      revenueTokens: [] as `0x${string}`[],
       // permissions encoding (verified empirically against multiple
       // channellingAllowed=true listings on Base via getGotchiLendingFromToken):
       //   0x101 = channelling allowed (bit 0 + bit 8, matching the official dapp)

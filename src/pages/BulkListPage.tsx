@@ -17,7 +17,6 @@ import {
 import { fetchGotchisByOwner } from "@/graphql/fetchers";
 import { useWhitelistsForAddress } from "@/hooks/useWhitelists";
 import { useBatchAddListing, type ListingParams } from "@/hooks/useLendingTx";
-import { ALCHEMICA_TOKEN_ADDRESSES_BASE } from "@/lib/lending/contracts";
 import { useHistoricalLendings } from "@/hooks/useHistoricalLendings";
 import { useAlchemicaPrices } from "@/hooks/useAlchemicaPrices";
 import { autoPriceBatch, type AutoPriceGoal } from "@/lib/lending/autoPrice";
@@ -241,12 +240,13 @@ export default function BulkListPage() {
         originalOwner: (cur.ownerWallet || address) as `0x${string}`,
         thirdParty: (splitOther > 0 && thirdParty ? thirdParty : ZERO) as `0x${string}`,
         whitelistId: Number(whitelistId) || 0,
-        // CRITICAL: must include the alchemica addresses here. The on-chain
-        // `claimGotchiLending` iterates over `lending.revenueTokenAddresses`
-        // to know which ERC-20s to sweep from the gotchi escrow at claim
-        // time. An empty array silently disables all alchemica payouts —
-        // claim still succeeds but transfers nothing.
-        revenueTokens: ALCHEMICA_TOKEN_ADDRESSES_BASE,
+        // ROLLED BACK from ALCHEMICA_TOKEN_ADDRESSES_BASE: the on-chain
+        // checkRevenueParams enforces an allowlist (`s.revenueTokenAllowed`),
+        // and at least one of the addresses we passed isn't on it on Base —
+        // batchAddGotchiListing reverts. Need to verify each token's allowlist
+        // status before re-enabling. Empty array passes validation but
+        // disables claimGotchiLending payout (alch goes to escrow only).
+        revenueTokens: [] as `0x${string}`[],
         // permissions encoding (matches official dapp on Base):
         // 0x101 = channelling allowed; 0x0 = disabled. Was inverted prior.
         permissions: channelling ? BigInt(0x101) : BigInt(0),
