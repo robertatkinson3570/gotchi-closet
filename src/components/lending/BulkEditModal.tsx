@@ -23,6 +23,7 @@ import { useToast } from "@/ui/use-toast";
 import { useAddressState } from "@/lib/addressState";
 import { switchToBaseChain } from "@/lib/chains";
 import { ghstFromWei } from "@/lib/lending/transform";
+import { ALCHEMICA_TOKEN_ADDRESSES_BASE } from "@/lib/lending/contracts";
 import type { Lending } from "@/lib/lending/types";
 
 type Props = {
@@ -150,9 +151,8 @@ export function BulkEditModal({ listings, onClose }: Props) {
         originalOwner: (address ?? ZERO) as `0x${string}`,
         thirdParty: ZERO as `0x${string}`,
         whitelistId: wl,
-        // ROLLED BACK: see BulkListPage.tsx — alch addresses tripped the
-        // on-chain revenueTokenAllowed allowlist on Base, batch reverted.
-        revenueTokens: [] as `0x${string}`[],
+        // Declare alchemica so future claims pay out per splits.
+        revenueTokens: ALCHEMICA_TOKEN_ADDRESSES_BASE,
         permissions: ch ? BigInt(0x101) : BigInt(0),
       };
     });

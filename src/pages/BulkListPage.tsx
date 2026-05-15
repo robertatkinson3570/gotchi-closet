@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAccount } from "wagmi";
 import {
@@ -17,6 +17,7 @@ import {
 import { fetchGotchisByOwner } from "@/graphql/fetchers";
 import { useWhitelistsForAddress } from "@/hooks/useWhitelists";
 import { useBatchAddListing, type ListingParams } from "@/hooks/useLendingTx";
+import { ALCHEMICA_TOKEN_ADDRESSES_BASE } from "@/lib/lending/contracts";
 import { useHistoricalLendings } from "@/hooks/useHistoricalLendings";
 import { useAlchemicaPrices } from "@/hooks/useAlchemicaPrices";
 import { autoPriceBatch, type AutoPriceGoal } from "@/lib/lending/autoPrice";
@@ -162,10 +163,19 @@ export default function BulkListPage() {
     void modeBattler;
   };
 
-  // Single-batch submit state — collapses N gotchis into ONE tx via batchAddGotchiListing
+  // Chunked-batch submit. With revenueTokens populated each addGotchiListing
+  // costs ~280k gas, so 58+ listings in one tx exceeded Base's per-tx limit
+  // (~16.7M cap, observed 16.5M used → revert). We chunk into smaller batches
+  // and sign each sequentially. 25/batch keeps each tx well under 8M gas.
+  const LIST_CHUNK_SIZE = 25;
   const list = useBatchAddListing();
   const [submittedRows, setSubmittedRows] = useState<GotchiRow[]>([]);
   const [skippedRows, setSkippedRows] = useState<GotchiRow[]>([]);
+  const chunkQueueRef = useRef<ListingParams[][]>([]);
+  const [chunkIndex, setChunkIndex] = useState(0);
+  const [chunksDone, setChunksDone] = useState(0);
+  const [chunksFailed, setChunksFailed] = useState(0);
+  const advancingRef = useRef(false);
 
   const rows: GotchiRow[] = useMemo(() => {
     return allGotchis
@@ -240,25 +250,73 @@ export default function BulkListPage() {
         originalOwner: (cur.ownerWallet || address) as `0x${string}`,
         thirdParty: (splitOther > 0 && thirdParty ? thirdParty : ZERO) as `0x${string}`,
         whitelistId: Number(whitelistId) || 0,
-        // ROLLED BACK from ALCHEMICA_TOKEN_ADDRESSES_BASE: the on-chain
-        // checkRevenueParams enforces an allowlist (`s.revenueTokenAllowed`),
-        // and at least one of the addresses we passed isn't on it on Base —
-        // batchAddGotchiListing reverts. Need to verify each token's allowlist
-        // status before re-enabling. Empty array passes validation but
-        // disables claimGotchiLending payout (alch goes to escrow only).
-        revenueTokens: [] as `0x${string}`[],
+        // Declare the 4 alchemica addresses so claimGotchiLending iterates
+        // over them and actually splits escrow alch per the lending terms.
+        // (Verified via subgraph — every real Base lending uses these 4.)
+        // The previous "empty array" workaround silently disabled all
+        // claim-time payouts, leaving alch stranded in escrow.
+        revenueTokens: ALCHEMICA_TOKEN_ADDRESSES_BASE,
         // permissions encoding (matches official dapp on Base):
         // 0x101 = channelling allowed; 0x0 = disabled. Was inverted prior.
         permissions: channelling ? BigInt(0x101) : BigInt(0),
       };
     });
 
-    list.send(tuples);
+    // Chunk into per-tx batches so we don't blow Base's per-tx gas limit.
+    const chunks: ListingParams[][] = [];
+    for (let i = 0; i < tuples.length; i += LIST_CHUNK_SIZE) {
+      chunks.push(tuples.slice(i, i + LIST_CHUNK_SIZE));
+    }
+    chunkQueueRef.current = chunks;
+    setChunkIndex(0);
+    setChunksDone(0);
+    setChunksFailed(0);
+    advancingRef.current = false;
+    list.reset();
+    // Submit chunk 0 immediately. Subsequent chunks fire from the useEffect
+    // below once each receipt confirms.
+    list.send(chunks[0]);
   };
 
-  const submitDone = list.step === "success" || list.step === "error";
-  const successCount = list.step === "success" ? submittedRows.length : 0;
-  const failCount = list.step === "error" ? submittedRows.length : 0;
+  // Drive the chunk queue: advance on each success, halt on error so a
+  // single bad batch doesn't burn N more gas attempts.
+  useEffect(() => {
+    if (chunkQueueRef.current.length === 0) return;
+    if (advancingRef.current) return;
+    if (list.step === "success") {
+      advancingRef.current = true;
+      const nextIdx = chunkIndex + 1;
+      setChunksDone((c) => c + 1);
+      if (nextIdx >= chunkQueueRef.current.length) {
+        advancingRef.current = false;
+        return; // queue done
+      }
+      // Tiny breath so wagmi's writeContract state resets cleanly between
+      // back-to-back signings.
+      setTimeout(() => {
+        setChunkIndex(nextIdx);
+        list.reset();
+        list.send(chunkQueueRef.current[nextIdx]);
+        advancingRef.current = false;
+      }, 400);
+    } else if (list.step === "error") {
+      setChunksFailed((c) => c + 1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list.step, chunkIndex]);
+
+  const totalChunks = chunkQueueRef.current.length;
+  const submitDone =
+    totalChunks > 0 &&
+    (chunksDone + chunksFailed >= totalChunks || list.step === "error");
+  // Translate chunk-level success into per-row count for the existing UI.
+  const successCount = chunkQueueRef.current
+    .slice(0, chunksDone)
+    .reduce((n, c) => n + c.length, 0);
+  const failCount =
+    list.step === "error"
+      ? chunkQueueRef.current[chunkIndex]?.length ?? 0
+      : 0;
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-6">
@@ -350,6 +408,9 @@ export default function BulkListPage() {
               successCount={successCount}
               failCount={failCount}
               done={submitDone}
+              chunkIndex={chunkIndex}
+              totalChunks={totalChunks}
+              chunksDone={chunksDone}
               onBack={() => {
                 list.reset();
                 setStep(2);
@@ -774,6 +835,9 @@ function Step3Submit({
   successCount,
   failCount,
   done,
+  chunkIndex,
+  totalChunks,
+  chunksDone,
   onBack,
 }: {
   submittedRows: GotchiRow[];
@@ -783,11 +847,15 @@ function Step3Submit({
   successCount: number;
   failCount: number;
   done: boolean;
+  chunkIndex: number;
+  totalChunks: number;
+  chunksDone: number;
   onBack: () => void;
 }) {
   const submitting = txStep === "submitting";
   const confirming = txStep === "confirming";
   const errored = txStep === "error";
+  const multiChunk = totalChunks > 1;
 
   return (
     <div className="space-y-3">
@@ -795,25 +863,31 @@ function Step3Submit({
         {done && successCount > 0 && (
           <span className="inline-flex items-center gap-2 text-green-600 dark:text-green-400 font-medium">
             <CheckCircle2 className="w-4 h-4" />
-            Done — all {successCount} listings confirmed in one tx
+            {multiChunk
+              ? `Done — ${successCount} listings confirmed across ${chunksDone} tx${chunksDone === 1 ? "" : "s"}`
+              : `Done — all ${successCount} listings confirmed in one tx`}
           </span>
         )}
         {done && errored && (
           <span className="inline-flex items-center gap-2 text-destructive font-medium">
             <XCircle className="w-4 h-4" />
-            Batch failed — {failCount || submittedRows.length} listings did not go through
+            Batch {chunkIndex + 1}/{totalChunks} failed — {failCount} listings in this batch did not go through ({successCount} succeeded in earlier batches)
           </span>
         )}
         {!done && submitting && (
           <span className="inline-flex items-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin" />
-            Sign in your wallet… (one tx for all {submittedRows.length} gotchis)
+            {multiChunk
+              ? `Sign batch ${chunkIndex + 1}/${totalChunks} in your wallet… (${submittedRows.length} total gotchis, chunked to stay under per-tx gas limit)`
+              : `Sign in your wallet… (one tx for all ${submittedRows.length} gotchis)`}
           </span>
         )}
         {!done && confirming && (
           <span className="inline-flex items-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin" />
-            Confirming on-chain… ({submittedRows.length} listings in one tx)
+            {multiChunk
+              ? `Confirming batch ${chunkIndex + 1}/${totalChunks} on-chain…`
+              : `Confirming on-chain… (${submittedRows.length} listings in one tx)`}
           </span>
         )}
       </div>
@@ -836,20 +910,35 @@ function Step3Submit({
       )}
 
       <div className="rounded-lg glass divide-y divide-border/30 max-h-[60vh] overflow-y-auto">
-        {submittedRows.map((r) => {
-          const ok = txStep === "success";
-          const fail = txStep === "error";
+        {submittedRows.map((r, idx) => {
+          // Map this row to its chunk so per-row status reflects actual chunk
+          // state instead of the global tx step (which only reports the
+          // currently-in-flight chunk).
+          const chunkSize = totalChunks > 0
+            ? Math.ceil(submittedRows.length / totalChunks)
+            : submittedRows.length;
+          const myChunk = Math.floor(idx / chunkSize);
+          const myChunkDone = myChunk < chunksDone;
+          const myChunkActive = myChunk === chunkIndex && (txStep === "submitting" || txStep === "confirming");
+          const myChunkFailed = myChunk === chunkIndex && txStep === "error";
+          const ok = myChunkDone || (txStep === "success" && myChunk <= chunkIndex);
+          const fail = myChunkFailed;
+          const pending = !ok && !fail && !myChunkActive;
           return (
             <div key={r.tokenId} className="flex items-center gap-2 px-3 py-2 text-sm">
               <div className="w-5">
                 {ok && <CheckCircle2 className="w-4 h-4 text-green-500" />}
                 {fail && <XCircle className="w-4 h-4 text-destructive" />}
-                {!ok && !fail && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                {myChunkActive && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                {pending && <div className="w-3 h-3 rounded-full border border-border/40" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="truncate text-xs">{r.name}</div>
                 <div className="text-[10px] text-muted-foreground">
                   #{r.tokenId} · BRS {r.modBRS}
+                  {totalChunks > 1 && (
+                    <span className="ml-1.5 opacity-70">· batch {myChunk + 1}/{totalChunks}</span>
+                  )}
                 </div>
               </div>
             </div>
