@@ -55,11 +55,21 @@ export function EscrowSummaryBar() {
       set.set(id, lendingFlag > 0);
     }
     for (const l of lender) {
-      // Any lending record where the user is lender → gotchi is locked
-      // (whether agreed/rented or just listed). Cancelled/completed records
-      // are filtered out upstream by useMyLendings semantics.
       const id = Number(l.gotchiTokenId);
-      if (Number.isFinite(id)) set.set(id, true);
+      if (!Number.isFinite(id)) continue;
+      // CRITICAL: only treat as locked if the lending is truly active
+      // (not cancelled, not completed). The subgraph keeps historical
+      // records around for ended rentals — counting those would falsely
+      // gray out the Withdraw button after a rental ends.
+      const trulyLocked = !l.cancelled && !l.completed;
+      // If the gotchi is already in the map, only escalate from
+      // unlocked → locked (never the other way) so a stale historical
+      // record can't override a fresh "I own this" signal.
+      if (trulyLocked) {
+        set.set(id, true);
+      } else if (!set.has(id)) {
+        set.set(id, false);
+      }
     }
     return {
       allIds: Array.from(set.keys()),

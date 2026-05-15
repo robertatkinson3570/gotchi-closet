@@ -135,19 +135,18 @@ export function BulkReturnAndSweepModal({ rentals, onClose }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [claimEnd.step, phase]);
 
-  // Detect that the user switched to the lender wallet — auto-fire the
-  // sweep tx so they only have to deal with one wallet prompt per phase.
+  // Whether the connected wallet matches the lender (= can sign sweep tx).
+  // We surface this in the UI rather than auto-firing on detection because
+  // some wallets (Rabby, some MM versions) don't emit accountsChanged
+  // reliably on user-initiated switches — auto-fire would silently miss.
   const onLenderWallet =
     Boolean(address) && address?.toLowerCase() === lenderAddr;
 
-  useEffect(() => {
-    if (phase !== "switch-wallet") return;
-    if (!onLenderWallet) return;
-    if (balances.length === 0) return; // nothing to sweep
+  const handleSweep = () => {
+    if (!onLenderWallet || balances.length === 0) return;
     setPhase("sweeping");
     sweep.send(balances, address as `0x${string}`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, onLenderWallet, balances.length]);
+  };
 
   useEffect(() => {
     if (phase === "sweeping" && sweep.step === "success") {
@@ -287,9 +286,11 @@ export function BulkReturnAndSweepModal({ rentals, onClose }: Props) {
             }
             sub={
               phase === "switch-wallet" && !onLenderWallet
-                ? `Open your wallet UI and switch to ${lenderAddr.slice(0, 6)}…${lenderAddr.slice(-4)} (the lender). The sweep tx will auto-fire once detected.`
-                : phase === "switch-wallet" && balances.length === 0
-                ? "Waiting for escrow balances to load…"
+                ? `Open your wallet UI and switch to the lender ${lenderAddr.slice(0, 6)}…${lenderAddr.slice(-4)}. Connected: ${address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "(disconnected)"}.`
+                : phase === "switch-wallet" && onLenderWallet && balances.length === 0
+                ? "Wallet detected. Loading escrow balances…"
+                : phase === "switch-wallet" && onLenderWallet
+                ? "Wallet detected — click Sweep below to fire the second tx."
                 : undefined
             }
           />
@@ -329,6 +330,31 @@ export function BulkReturnAndSweepModal({ rentals, onClose }: Props) {
                 <StopCircle className="w-4 h-4" />
                 Return {rentals.length} & sweep alch
                 <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+            {phase === "switch-wallet" && (
+              <button
+                type="button"
+                onClick={handleSweep}
+                disabled={!onLenderWallet || balances.length === 0 || !isOnBase}
+                data-testid="return-and-sweep-fire-sweep"
+                title={
+                  !onLenderWallet
+                    ? `Switch your wallet to the lender ${lenderAddr.slice(0, 6)}…${lenderAddr.slice(-4)} first.`
+                    : balances.length === 0
+                    ? "Loading escrow balances — give it a few seconds, then click."
+                    : !isOnBase
+                    ? "Switch your wallet to Base."
+                    : "Fire the batchTransferEscrow tx now."
+                }
+                className="w-full inline-flex items-center justify-center gap-1.5 h-11 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold"
+              >
+                <Coins className="w-4 h-4" />
+                {!onLenderWallet
+                  ? `Waiting for ${lenderAddr.slice(0, 6)}…${lenderAddr.slice(-4)}…`
+                  : balances.length === 0
+                  ? "Loading escrow…"
+                  : `Sweep ${balances.length} balance${balances.length === 1 ? "" : "s"} now`}
               </button>
             )}
             {phase === "done" && (
