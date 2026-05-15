@@ -27,6 +27,7 @@ import { UnlistedGotchiList } from "@/components/lending/UnlistedGotchiList";
 import { AutoRenewTab } from "@/components/lending/AutoRenewTab";
 import { BulkEditModal } from "@/components/lending/BulkEditModal";
 import { BulkReturnAndSweepModal } from "@/components/lending/BulkReturnAndSweepModal";
+import { BulkRentDiscoveryModal } from "@/components/lending/BulkRentDiscoveryModal";
 import { EscrowSummaryBar } from "@/components/lending/EscrowSummaryBar";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
@@ -61,6 +62,7 @@ export default function LendingMePage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showBulkEdit, setShowBulkEdit] = useState(false);
   const [showReturnAndSweep, setShowReturnAndSweep] = useState(false);
+  const [showBulkRent, setShowBulkRent] = useState(false);
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -161,6 +163,15 @@ export default function LendingMePage() {
           >
             <ListPlus className="w-3.5 h-3.5" /> Bulk list
           </Link>
+          <button
+            type="button"
+            onClick={() => setShowBulkRent(true)}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors"
+            title="Bulk-rent listings you're whitelisted on (sequential signing — Aavegotchi has no batch agree)"
+            data-testid="bulk-rent-open"
+          >
+            <HandCoins className="w-3.5 h-3.5" /> Bulk rent
+          </button>
           <Link
             to="/lending/analytics"
             className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border/40 bg-background/70 hover:bg-muted/50 text-xs font-medium transition-colors"
@@ -327,6 +338,9 @@ export default function LendingMePage() {
             setBulkMode(false);
           }}
         />
+      )}
+      {showBulkRent && (
+        <BulkRentDiscoveryModal onClose={() => setShowBulkRent(false)} />
       )}
     </div>
   );
