@@ -116,16 +116,6 @@ export default function LandManagementPage() {
             </p>
           )}
         </div>
-        {address && (
-          <a
-            href={`https://www.aadventure.io/lending/lands/owner/${address.toLowerCase()}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border/40 bg-background/70 hover:bg-muted/50 text-xs font-medium transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5" /> View on aadventure
-          </a>
-        )}
       </div>
 
       {!isConnected ? (

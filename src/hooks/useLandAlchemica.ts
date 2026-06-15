@@ -61,8 +61,12 @@ export function useLandAlchemica(claimerGotchiId?: number) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
+  // NOTE: distinct key from useLandParcels' ["land-parcels", owner]. They must
+  // NOT collide — this fetcher returns bigint[] while useLandParcels returns
+  // parcel objects; sharing a key lets one overwrite the other's cache shape
+  // and throws "Cannot convert undefined to a BigInt".
   const parcelsQuery = useQuery({
-    queryKey: ["land-parcels", address?.toLowerCase()],
+    queryKey: ["land-parcel-ids", address?.toLowerCase()],
     queryFn: () => fetchParcelIds(address as string),
     enabled: !!address,
     staleTime: 30_000,
@@ -160,7 +164,8 @@ export function useLandAlchemica(claimerGotchiId?: number) {
       }
       setStep("success");
       refetch();
-      queryClient.invalidateQueries({ queryKey: ["land-parcels", address.toLowerCase()] });
+      queryClient.invalidateQueries({ queryKey: ["land-parcel-ids", address.toLowerCase()] });
+      queryClient.invalidateQueries({ queryKey: ["land-parcels"] });
     } catch (e) {
       setStep("error");
       setErrorMsg(parseRevert(e));
