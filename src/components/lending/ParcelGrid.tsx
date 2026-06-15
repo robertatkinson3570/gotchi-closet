@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Placed } from "@/hooks/useParcelDetail";
 
 // Aavegotchi alchemica palette (gradient stops) for harvesters/reservoirs.
@@ -38,6 +39,8 @@ export function ParcelGrid({
   realmId,
   onRemove,
   busyKey,
+  placing,
+  onPlace,
 }: {
   installations: Placed[];
   tiles: Placed[];
@@ -47,14 +50,33 @@ export function ParcelGrid({
   onRemove?: (item: Placed) => void;
   /** `unequip:<realm>:<id>:<x>:<y>` key currently mid-transaction. */
   busyKey?: string | null;
+  /** Footprint of the item being dragged from the inventory (enables drop). */
+  placing?: { w: number; h: number } | null;
+  /** Called with the snapped top-left cell when a valid drop occurs. */
+  onPlace?: (x: number, y: number) => void;
 }) {
   const items = [...tiles, ...installations]; // tiles under installations
-  if (items.length === 0) {
-    return <div className="text-xs text-muted-foreground">Nothing equipped.</div>;
-  }
+  const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
 
-  const cols = Math.max(8, ...items.map((i) => i.x + i.w));
-  const rows = Math.max(8, ...items.map((i) => i.y + i.h));
+  const cols = Math.max(8, ...items.map((i) => i.x + i.w), 8);
+  const rows = Math.max(8, ...items.map((i) => i.y + i.h), 8);
+
+  // Occupied cells, for collision checks when dropping.
+  const occupied = new Set<string>();
+  for (const it of items) for (let dx = 0; dx < it.w; dx++) for (let dy = 0; dy < it.h; dy++) occupied.add(`${it.x + dx},${it.y + dy}`);
+
+  const fits = (x: number, y: number, w: number, h: number) => {
+    if (x < 0 || y < 0 || x + w > cols || y + h > rows) return false;
+    for (let dx = 0; dx < w; dx++) for (let dy = 0; dy < h; dy++) if (occupied.has(`${x + dx},${y + dy}`)) return false;
+    return true;
+  };
+  const cellFromEvent = (e: React.DragEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.floor(((e.clientX - rect.left) / rect.width) * cols);
+    const y = Math.floor(((e.clientY - rect.top) / rect.height) * rows);
+    return { x, y };
+  };
+  const hoverValid = placing && hover ? fits(hover.x, hover.y, placing.w, placing.h) : false;
 
   const cell = `linear-gradient(to right, rgba(148,163,184,0.12) 1px, transparent 1px), linear-gradient(to bottom, rgba(148,163,184,0.12) 1px, transparent 1px)`;
 
@@ -68,7 +90,39 @@ export function ParcelGrid({
             backgroundImage: cell,
             backgroundSize: `${100 / cols}% ${100 / rows}%`,
           }}
+          onDragOver={
+            placing && onPlace
+              ? (e) => {
+                  e.preventDefault();
+                  setHover(cellFromEvent(e));
+                }
+              : undefined
+          }
+          onDragLeave={placing ? () => setHover(null) : undefined}
+          onDrop={
+            placing && onPlace
+              ? (e) => {
+                  e.preventDefault();
+                  const { x, y } = cellFromEvent(e);
+                  setHover(null);
+                  if (fits(x, y, placing.w, placing.h)) onPlace(x, y);
+                }
+              : undefined
+          }
         >
+          {placing && hover && (
+            <div
+              className="absolute rounded-[3px] ring-2 z-20 pointer-events-none"
+              style={{
+                left: `${(hover.x / cols) * 100}%`,
+                top: `${(hover.y / rows) * 100}%`,
+                width: `${(placing.w / cols) * 100}%`,
+                height: `${(placing.h / rows) * 100}%`,
+                background: hoverValid ? "rgba(16,185,129,0.35)" : "rgba(239,68,68,0.35)",
+                boxShadow: `0 0 0 9999px transparent`,
+              }}
+            />
+          )}
           {items.map((it, idx) => {
             const c = styleFor(it);
             const removable = !!onRemove && it.category !== -1;

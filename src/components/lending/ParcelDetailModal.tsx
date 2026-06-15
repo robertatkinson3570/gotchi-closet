@@ -1,7 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useAccount } from "wagmi";
 import { X, Loader2, MapPin, Zap, Sprout, Package, Lock } from "lucide-react";
 import { useParcelDetail } from "@/hooks/useParcelDetail";
+import { useInstallationInventory, type InventoryItem } from "@/hooks/useInstallationInventory";
 import { PARCEL_SIZE_LABEL } from "@/hooks/useLandParcels";
 import { ParcelGrid } from "@/components/lending/ParcelGrid";
 import type { useRealmActions } from "@/hooks/useRealmActions";
@@ -32,7 +34,11 @@ type Props = {
 
 export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Props) {
   const { detail, isLoading, error } = useParcelDetail(parcelId);
-  const canRemove = !!actions && !!gotchiId && !!actions.isOnBase;
+  const { address } = useAccount();
+  const inventory = useInstallationInventory(address);
+  const [dragItem, setDragItem] = useState<InventoryItem | null>(null);
+  const canBuild = !!actions && !!gotchiId && !!actions.isOnBase;
+  const canRemove = canBuild;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -183,7 +189,55 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                       }
                     : undefined
                 }
+                placing={dragItem ? { w: dragItem.w, h: dragItem.h } : null}
+                onPlace={
+                  canBuild
+                    ? (x, y) => {
+                        if (!dragItem) return;
+                        actions!.equip(
+                          BigInt(detail.tokenId),
+                          BigInt(gotchiId!),
+                          BigInt(dragItem.installationId),
+                          BigInt(x),
+                          BigInt(y)
+                        );
+                        setDragItem(null);
+                      }
+                    : undefined
+                }
               />
+
+              {canBuild && (
+                <div className="mt-3">
+                  <div className="text-xs font-semibold mb-1.5">
+                    Your installations — drag onto the grid to place
+                  </div>
+                  {inventory.isLoading ? (
+                    <div className="text-xs text-muted-foreground">Loading inventory…</div>
+                  ) : inventory.items.length === 0 ? (
+                    <div className="text-xs text-muted-foreground">No unequipped installations in your wallet.</div>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {inventory.items.map((it) => (
+                        <div
+                          key={it.installationId}
+                          draggable
+                          onDragStart={() => setDragItem(it)}
+                          onDragEnd={() => setDragItem(null)}
+                          title={`${it.name} · #${it.installationId} · ${it.w}×${it.h} · you own ${it.balance}`}
+                          className="cursor-grab active:cursor-grabbing inline-flex items-center gap-1 rounded border border-border/40 bg-background/70 px-2 py-1 text-[11px] hover:bg-muted/50"
+                        >
+                          <span className="truncate max-w-[160px]">{it.name}</span>
+                          <span className="text-muted-foreground">×{it.balance}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="text-[10px] text-muted-foreground mt-1">
+                    Green preview = valid slot, red = occupied/out of bounds. Drop to equip (signs in your wallet).
+                  </div>
+                </div>
+              )}
             </section>
           </div>
         )}
