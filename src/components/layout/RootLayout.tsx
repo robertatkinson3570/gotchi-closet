@@ -1,5 +1,5 @@
 import { Outlet, useLocation, Link } from "react-router-dom";
-import { Coins, Search, Shirt } from "lucide-react";
+import { Coins, Search, Shirt, MapPin } from "lucide-react";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { FooterAttribution } from "@/components/FooterAttribution";
@@ -53,6 +53,20 @@ export function RootLayout() {
                   title="Lending"
                 >
                   <Coins className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/lending/lands">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className={`h-8 px-2 ${
+                    location.pathname.startsWith("/lending/lands")
+                      ? "bg-primary/15 text-primary shadow-glow-sm"
+                      : ""
+                  }`}
+                  title="Land Management"
+                >
+                  <MapPin className="h-4 w-4" />
                 </Button>
               </Link>
               <ThemeToggle />

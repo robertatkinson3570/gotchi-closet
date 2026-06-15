@@ -341,6 +341,91 @@ export const REALM_FACET_ABI = [
     ],
     outputs: [],
   },
+  // Claim one parcel's reservoir. On Base/geist the LibSignature backend
+  // check was removed, so an empty `0x` signature is accepted.
+  {
+    name: "claimAvailableAlchemica",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_realmId", type: "uint256" },
+      { name: "_gotchiId", type: "uint256" },
+      { name: "_signature", type: "bytes" },
+    ],
+    outputs: [],
+  },
+  // Channel a parcel's Aaltar. `_lastChanneled` is the GOTCHI's last-channel
+  // timestamp from getLastChanneled(gotchiId). Empty `0x` signature on geist.
+  {
+    name: "channelAlchemica",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_realmId", type: "uint256" },
+      { name: "_gotchiId", type: "uint256" },
+      { name: "_lastChanneled", type: "uint256" },
+      { name: "_signature", type: "bytes" },
+    ],
+    outputs: [],
+  },
+  // Start a new survey round on a depleted parcel (owner-only, no gotchi).
+  {
+    name: "startSurveying",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_realmId", type: "uint256" }],
+    outputs: [],
+  },
+  // Last-channel timestamp for a GOTCHI (channeling cooldown is per gotchi).
+  {
+    name: "getLastChanneled",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_gotchiId", type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
+  // Per-parcel access mode for an action right (0 = channeling, 1 = empty
+  // reservoir). 0 = owner only, higher = more permissive.
+  {
+    name: "getParcelsAccessRights",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "_parcelIds", type: "uint256[]" },
+      { name: "_actionRights", type: "uint256[]" },
+    ],
+    outputs: [{ type: "uint256[]" }],
+  },
+  // Place a level-1 installation on the parcel grid at (x,y). geist accepts 0x.
+  {
+    name: "equipInstallation",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_realmId", type: "uint256" },
+      { name: "_gotchiId", type: "uint256" },
+      { name: "_installationId", type: "uint256" },
+      { name: "_x", type: "uint256" },
+      { name: "_y", type: "uint256" },
+      { name: "_signature", type: "bytes" },
+    ],
+    outputs: [],
+  },
+  // Remove an installation from the parcel grid at its (x,y) origin.
+  {
+    name: "unequipInstallation",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_realmId", type: "uint256" },
+      { name: "_gotchiId", type: "uint256" },
+      { name: "_installationId", type: "uint256" },
+      { name: "_x", type: "uint256" },
+      { name: "_y", type: "uint256" },
+      { name: "_signature", type: "bytes" },
+    ],
+    outputs: [],
+  },
   // Unix timestamp (seconds) a parcel was last channeled. A parcel can be
   // channeled again once CHANNEL_COOLDOWN_SEC has elapsed since this.
   {

@@ -14,6 +14,7 @@ import GotchiPage from "@/pages/GotchiPage";
 import LendingPage from "@/pages/LendingPage";
 import LendingAnalyticsPage from "@/pages/LendingAnalyticsPage";
 import LendingMePage from "@/pages/LendingMePage";
+import LandManagementPage from "@/pages/LandManagementPage";
 import WhitelistsPage from "@/pages/WhitelistsPage";
 import BulkListPage from "@/pages/BulkListPage";
 import { ErrorBoundary } from "./ErrorBoundary";
@@ -84,6 +85,10 @@ export const router = createBrowserRouter([
       {
         path: "lending/me",
         element: <LendingMePage />,
+      },
+      {
+        path: "lending/lands",
+        element: <LandManagementPage />,
       },
       {
         path: "lending/me/list",
