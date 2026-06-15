@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useAccount, useWriteContract, usePublicClient } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
 import { X, Loader2, MapPin, Zap, Sprout, Package, Lock, Trash2 } from "lucide-react";
-import { useParcelDetail } from "@/hooks/useParcelDetail";
+import { useParcelDetail, type Placed } from "@/hooks/useParcelDetail";
 import { useInstallationInventory, type InventoryItem } from "@/hooks/useInstallationInventory";
 import { PARCEL_SIZE_LABEL } from "@/hooks/useLandParcels";
 import { ParcelGrid } from "@/components/lending/ParcelGrid";
@@ -41,8 +41,36 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
   const { address } = useAccount();
   const inventory = useInstallationInventory(address);
   const [dragItem, setDragItem] = useState<InventoryItem | null>(null);
+  const [pending, setPending] = useState<Placed[]>([]);
+  const [saving, setSaving] = useState<{ done: number; total: number } | null>(null);
   const canBuild = !!actions && !!gotchiId && !!actions.isOnBase;
   const canRemove = canBuild;
+
+  async function savePending() {
+    if (!detail || !gotchiId || pending.length === 0) return;
+    setSaving({ done: 0, total: pending.length });
+    try {
+      for (let i = 0; i < pending.length; i++) {
+        const it = pending[i];
+        const hash = await writeContractAsync({
+          chainId: BASE_CHAIN_ID,
+          address: REALM_DIAMOND_BASE,
+          abi: REALM_FACET_ABI,
+          functionName: "equipInstallation",
+          args: [BigInt(detail.tokenId), BigInt(gotchiId), BigInt(it.installationId), BigInt(it.x), BigInt(it.y), "0x"],
+        });
+        await publicClient?.waitForTransactionReceipt({ hash, confirmations: 1 });
+        setSaving({ done: i + 1, total: pending.length });
+      }
+      setPending([]);
+      queryClient.invalidateQueries({ queryKey: ["parcel-detail"] });
+      queryClient.invalidateQueries({ queryKey: ["land-parcels"] });
+    } catch (e) {
+      if (typeof window !== "undefined") window.alert(parseRevert(e).slice(0, 200));
+    } finally {
+      setSaving(null);
+    }
+  }
 
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
@@ -233,23 +261,57 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                   canBuild
                     ? (x, y) => {
                         if (!dragItem) return;
-                        actions!.equip(
-                          BigInt(detail.tokenId),
-                          BigInt(gotchiId!),
-                          BigInt(dragItem.installationId),
-                          BigInt(x),
-                          BigInt(y)
-                        );
+                        setPending((p) => [
+                          ...p,
+                          {
+                            installationId: dragItem.installationId,
+                            name: dragItem.name,
+                            x,
+                            y,
+                            w: dragItem.w,
+                            h: dragItem.h,
+                            category: dragItem.category,
+                            alch: dragItem.alch,
+                            level: dragItem.level,
+                          },
+                        ]);
                         setDragItem(null);
                       }
                     : undefined
                 }
+                pending={pending}
+                onUnstage={(i) => setPending((p) => p.filter((_, idx) => idx !== i))}
+                size={detail.size}
               />
 
               {canBuild && (
                 <div className="mt-3">
-                  <div className="text-xs font-semibold mb-1.5">
-                    Your installations — drag onto the grid to place
+                  <div className="text-xs font-semibold mb-1.5 flex items-center justify-between gap-2 flex-wrap">
+                    <span>Your installations — drag onto the grid (staged, not saved yet)</span>
+                    {pending.length > 0 && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          disabled={!!saving}
+                          onClick={savePending}
+                          className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-emerald-600 text-white hover:bg-emerald-600/90 disabled:opacity-50 text-[11px] font-semibold"
+                        >
+                          {saving ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving {saving.done}/{saving.total}…</>
+                          ) : (
+                            <>Save changes ({pending.length})</>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!!saving}
+                          onClick={() => setPending([])}
+                          className="h-7 px-2 rounded-md border border-border/40 text-[11px] disabled:opacity-50"
+                        >
+                          Discard
+                        </button>
+                      </span>
+                    )}
                   </div>
                   {inventory.isLoading ? (
                     <div className="text-xs text-muted-foreground">Loading inventory…</div>
@@ -257,23 +319,37 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                     <div className="text-xs text-muted-foreground">No unequipped installations in your wallet.</div>
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
-                      {inventory.items.map((it) => (
-                        <div
-                          key={it.installationId}
-                          draggable
-                          onDragStart={() => setDragItem(it)}
-                          onDragEnd={() => setDragItem(null)}
-                          title={`${it.name} · #${it.installationId} · ${it.w}×${it.h} · you own ${it.balance}`}
-                          className="cursor-grab active:cursor-grabbing inline-flex items-center gap-1 rounded border border-border/40 bg-background/70 px-2 py-1 text-[11px] hover:bg-muted/50"
-                        >
-                          <span className="truncate max-w-[160px]">{it.name}</span>
-                          <span className="text-muted-foreground">×{it.balance}</span>
-                        </div>
-                      ))}
+                      {inventory.items.map((it) => {
+                        const used = pending.filter((p) => p.installationId === it.installationId).length;
+                        const left = it.balance - used;
+                        return (
+                          <div
+                            key={it.installationId}
+                            draggable={left > 0}
+                            onDragStart={() => left > 0 && setDragItem(it)}
+                            onDragEnd={() => setDragItem(null)}
+                            title={`${it.name} · #${it.installationId} · ${it.w}×${it.h} · ${left} left`}
+                            className={`inline-flex items-center gap-1 rounded border border-border/40 bg-background/70 px-1.5 py-1 text-[11px] ${
+                              left > 0 ? "cursor-grab active:cursor-grabbing hover:bg-muted/50" : "opacity-40"
+                            }`}
+                          >
+                            <img
+                              src={`/installations/installation_${it.installationId}.png`}
+                              alt=""
+                              className="w-5 h-5 object-contain"
+                              style={{ imageRendering: "pixelated" }}
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+                            />
+                            <span className="truncate max-w-[140px]">{it.name}</span>
+                            <span className="text-muted-foreground">×{left}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                   <div className="text-[10px] text-muted-foreground mt-1">
-                    Green preview = valid slot, red = occupied/out of bounds. Drop to equip (signs in your wallet).
+                    Drop to stage (green = valid, red = occupied). Click a staged tile to unstage. Hit{" "}
+                    <span className="font-medium">Save changes</span> to equip — one wallet signature each (level-1 installs only).
                   </div>
                 </div>
               )}

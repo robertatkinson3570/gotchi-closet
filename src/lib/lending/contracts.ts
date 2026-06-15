@@ -387,6 +387,17 @@ export const REALM_FACET_ABI = [
     inputs: [{ name: "_gotchiId", type: "uint256" }],
     outputs: [{ type: "uint256" }],
   },
+  // Per-round surveyed alchemica [FUD,FOMO,ALPHA,KEK] for a survey round.
+  {
+    name: "getRoundAlchemica",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "_realmId", type: "uint256" },
+      { name: "_roundId", type: "uint256" },
+    ],
+    outputs: [{ type: "uint256[]" }],
+  },
   // Unix timestamp the parcel's reservoirs were last emptied (claimed).
   {
     name: "lastClaimedAlchemica",

@@ -1,6 +1,15 @@
 import { useState } from "react";
 import type { Placed } from "@/hooks/useParcelDetail";
 
+// True parcel grid dimensions (width × height) by size code.
+const PARCEL_DIMS: Record<number, { w: number; h: number }> = {
+  0: { w: 8, h: 8 }, // Humble
+  1: { w: 16, h: 16 }, // Reasonable
+  2: { w: 32, h: 64 }, // Spacious (vertical)
+  3: { w: 64, h: 32 }, // Spacious (horizontal)
+  4: { w: 64, h: 64 }, // Partner
+};
+
 // Aavegotchi alchemica palette (gradient stops) for harvesters/reservoirs.
 const ALCH = [
   { from: "#34d399", to: "#059669", label: "FUD" },
@@ -17,17 +26,6 @@ function styleFor(item: Placed) {
   if (item.alch >= 0 && item.alch <= 3) return ALCH[item.alch];
   return SLATE;
 }
-function tag(item: Placed): string {
-  switch (item.category) {
-    case 0: return "ALTAR";
-    case 1: return "HARV";
-    case 2: return "RESV";
-    case 3: return "LODGE";
-    case 6: return "MAKER";
-    default: return "TILE";
-  }
-}
-
 /**
  * Read-only visual layout of a parcel's equipped installations + tiles, drawn
  * to scale on the coordinate grid (footprint-accurate, colored by alchemica
@@ -41,6 +39,9 @@ export function ParcelGrid({
   busyKey,
   placing,
   onPlace,
+  pending,
+  onUnstage,
+  size,
 }: {
   installations: Placed[];
   tiles: Placed[];
@@ -54,16 +55,28 @@ export function ParcelGrid({
   placing?: { w: number; h: number } | null;
   /** Called with the snapped top-left cell when a valid drop occurs. */
   onPlace?: (x: number, y: number) => void;
+  /** Staged (not-yet-saved) placements, drawn as dashed ghost tiles. */
+  pending?: Placed[];
+  /** Click a staged tile to remove it from the plan. */
+  onUnstage?: (index: number) => void;
+  /** Parcel size code — sets the true grid dimensions. */
+  size?: number;
 }) {
   const items = [...tiles, ...installations]; // tiles under installations
+  const staged = pending ?? [];
   const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
 
-  const cols = Math.max(8, ...items.map((i) => i.x + i.w), 8);
-  const rows = Math.max(8, ...items.map((i) => i.y + i.h), 8);
+  // Use the parcel's true dimensions; never smaller than what's already placed.
+  const dim = size != null ? PARCEL_DIMS[size] : undefined;
+  const bx = Math.max(8, ...items.map((i) => i.x + i.w), ...staged.map((i) => i.x + i.w));
+  const by = Math.max(8, ...items.map((i) => i.y + i.h), ...staged.map((i) => i.y + i.h));
+  const cols = dim ? Math.max(dim.w, bx) : bx;
+  const rows = dim ? Math.max(dim.h, by) : by;
 
-  // Occupied cells, for collision checks when dropping.
+  // Occupied cells (existing + staged), for collision checks when dropping.
   const occupied = new Set<string>();
-  for (const it of items) for (let dx = 0; dx < it.w; dx++) for (let dy = 0; dy < it.h; dy++) occupied.add(`${it.x + dx},${it.y + dy}`);
+  for (const it of [...items, ...staged])
+    for (let dx = 0; dx < it.w; dx++) for (let dy = 0; dy < it.h; dy++) occupied.add(`${it.x + dx},${it.y + dy}`);
 
   const fits = (x: number, y: number, w: number, h: number) => {
     if (x < 0 || y < 0 || x + w > cols || y + h > rows) return false;
@@ -144,20 +157,55 @@ export function ParcelGrid({
                   background: `linear-gradient(135deg, ${c.from}, ${c.to})`,
                 }}
               >
-                <span className="text-[7px] leading-none font-bold text-black/70 truncate max-w-full px-0.5">
-                  {tag(it)}
-                </span>
+                <img
+                  src={`/installations/installation_${it.installationId}.png`}
+                  alt={it.name}
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  style={{ imageRendering: "pixelated" }}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
+                />
                 {it.level > 1 && (
-                  <span className="text-[7px] leading-none font-semibold text-white/90 mt-0.5">L{it.level}</span>
+                  <span
+                    className="absolute top-0 right-0.5 z-10 text-[7px] leading-none font-bold text-white"
+                    style={{ textShadow: "0 0 2px #000" }}
+                  >
+                    {it.level}
+                  </span>
                 )}
                 {removable && (
-                  <span className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-red-600/40 text-white text-[9px] font-bold">
+                  <span className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-red-600/50 text-white text-[10px] font-bold z-20">
                     ✕
                   </span>
                 )}
               </div>
             );
           })}
+          {staged.map((it, i) => (
+            <div
+              key={`pending-${i}`}
+              title={`${it.name} (staged) @ (${it.x},${it.y}) — click to unstage`}
+              onClick={onUnstage ? () => onUnstage(i) : undefined}
+              className="absolute rounded-[3px] z-10 cursor-pointer flex items-center justify-center border-2 border-dashed border-emerald-200"
+              style={{
+                left: `${(it.x / cols) * 100}%`,
+                top: `${(it.y / rows) * 100}%`,
+                width: `${(it.w / cols) * 100}%`,
+                height: `${(it.h / rows) * 100}%`,
+                background: "rgba(16,185,129,0.55)",
+              }}
+            >
+              <img
+                src={`/installations/installation_${it.installationId}.png`}
+                alt={it.name}
+                className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-80"
+                style={{ imageRendering: "pixelated" }}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              />
+              <span className="relative text-[7px] font-bold text-white leading-none z-10" style={{ textShadow: "0 0 2px #000" }}>NEW</span>
+            </div>
+          ))}
         </div>
       </div>
 
