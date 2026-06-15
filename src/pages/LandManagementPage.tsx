@@ -27,6 +27,7 @@ import { BASE_CHAIN_ID } from "@/lib/chains";
 import { useToast } from "@/ui/use-toast";
 
 const PAGE_SIZE = 25;
+const SHOW_FILTERS = false; // hidden for now per request; flip to re-enable
 
 function countdown(sec: number): string {
   if (sec <= 0) return "Now";
@@ -189,15 +190,17 @@ export default function LandManagementPage() {
         <>
           <LandAlchemicaBar />
 
-          {/* Filters */}
-          <div className="rounded-lg border border-border/40 bg-background/60 p-3 mb-3 text-xs space-y-1.5">
-            <label className="inline-flex items-center gap-1.5 cursor-pointer font-medium">
-              <input type="checkbox" checked={onlyChannelable} onChange={(e) => { setOnlyChannelable(e.target.checked); setPage(0); }} />
-              Only Aaltars that can channel now
-            </label>
-            <AccessFilter label="Channeling access" set={chAccess} onToggle={(k) => toggle(chAccess, setChAccess, k)} />
-            <AccessFilter label="Reservoir access" set={rsvAccess} onToggle={(k) => toggle(rsvAccess, setRsvAccess, k)} />
-          </div>
+          {/* Filters (hidden for now) */}
+          {SHOW_FILTERS && (
+            <div className="rounded-lg border border-border/40 bg-background/60 p-3 mb-3 text-xs space-y-1.5">
+              <label className="inline-flex items-center gap-1.5 cursor-pointer font-medium">
+                <input type="checkbox" checked={onlyChannelable} onChange={(e) => { setOnlyChannelable(e.target.checked); setPage(0); }} />
+                Only Aaltars that can channel now
+              </label>
+              <AccessFilter label="Channeling access" set={chAccess} onToggle={(k) => toggle(chAccess, setChAccess, k)} />
+              <AccessFilter label="Reservoir access" set={rsvAccess} onToggle={(k) => toggle(rsvAccess, setRsvAccess, k)} />
+            </div>
+          )}
 
           {error && <div className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm mb-3">{error}</div>}
 
