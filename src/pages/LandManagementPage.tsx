@@ -12,7 +12,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
-  ExternalLink,
+  Info,
   Loader2,
 } from "lucide-react";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
@@ -24,6 +24,7 @@ import { useLandParcels, PARCEL_SIZE_LABEL, type ParcelRow } from "@/hooks/useLa
 import { useParcelInstallations } from "@/hooks/useParcelInstallations";
 import { useRealmActions } from "@/hooks/useRealmActions";
 import { LandAlchemicaBar } from "@/components/lending/LandAlchemicaBar";
+import { ParcelDetailModal } from "@/components/lending/ParcelDetailModal";
 import { REALM_DIAMOND_BASE, REALM_FACET_ABI, CHANNEL_COOLDOWN_SEC } from "@/lib/lending/contracts";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { useToast } from "@/ui/use-toast";
@@ -47,6 +48,7 @@ function countdown(sec: number): string {
 export default function LandManagementPage() {
   const { address, isConnected } = useAccount();
   const { toast } = useToast();
+  const [detailParcel, setDetailParcel] = useState<string | null>(null);
 
   // Pick any Gotchi the wallet controls to act as the claimer/channeler.
   const { lender } = useMyConnectedLendings();
@@ -158,11 +160,16 @@ export default function LandManagementPage() {
                   claimerGotchiId={claimerGotchiId}
                   gotchiLastChanneled={gotchiLastChanneled as bigint | undefined}
                   actions={actions}
+                  onDetails={() => setDetailParcel(r.tokenId)}
                 />
               ))}
             </div>
           )}
         </>
+      )}
+
+      {detailParcel && (
+        <ParcelDetailModal parcelId={detailParcel} onClose={() => setDetailParcel(null)} />
       )}
     </div>
   );
@@ -182,11 +189,13 @@ function ParcelCard({
   claimerGotchiId,
   gotchiLastChanneled,
   actions,
+  onDetails,
 }: {
   row: ParcelRow;
   claimerGotchiId?: number;
   gotchiLastChanneled?: bigint;
   actions: ReturnType<typeof useRealmActions>;
+  onDetails: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const realmId = BigInt(row.tokenId);
@@ -265,15 +274,14 @@ function ParcelCard({
             {open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             Installations
           </button>
-          <a
-            href={`https://www.aadventure.io/citaadel/parcel/${row.tokenId}`}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            onClick={onDetails}
             className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md border border-border/40 bg-background/70 hover:bg-muted/50 text-xs font-medium"
-            title="Open parcel on aadventure"
+            title="View full parcel details"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+            <Info className="w-3.5 h-3.5" /> Details
+          </button>
         </div>
       </div>
 

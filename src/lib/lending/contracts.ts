@@ -384,6 +384,30 @@ export const REALM_FACET_ABI = [
     inputs: [{ name: "_gotchiId", type: "uint256" }],
     outputs: [{ type: "uint256" }],
   },
+  // Per-token harvest rate (alchemica/sec from equipped harvesters).
+  {
+    name: "getHarvestRates",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_realmId", type: "uint256" }],
+    outputs: [{ type: "uint256[]" }],
+  },
+  // Per-token reservoir capacity (max claimable before it stops filling).
+  {
+    name: "getCapacities",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_realmId", type: "uint256" }],
+    outputs: [{ type: "uint256[]" }],
+  },
+  // Per-token alchemica already claimed from this parcel.
+  {
+    name: "getTotalClaimed",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_realmId", type: "uint256" }],
+    outputs: [{ type: "uint256[]" }],
+  },
   // Per-parcel access mode for an action right (0 = channeling, 1 = empty
   // reservoir). 0 = owner only, higher = more permissive.
   {
