@@ -21,7 +21,7 @@ import { useLandParcels, PARCEL_SIZE_LABEL, type ParcelRow } from "@/hooks/useLa
 import { useRealmActions } from "@/hooks/useRealmActions";
 import { LandAlchemicaBar } from "@/components/lending/LandAlchemicaBar";
 import { ParcelDetailModal } from "@/components/lending/ParcelDetailModal";
-import { REALM_DIAMOND_BASE, REALM_FACET_ABI, CHANNEL_COOLDOWN_SEC } from "@/lib/lending/contracts";
+import { REALM_DIAMOND_BASE, REALM_FACET_ABI, CHANNEL_COOLDOWN_SEC, CHANNEL_COOLDOWN_SEC_BY_ALTAR } from "@/lib/lending/contracts";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { useToast } from "@/ui/use-toast";
 
@@ -52,7 +52,7 @@ const accessCat = (m: number): AccessCat =>
   m === 0 ? "owner" : m === 1 ? "borrower" : m === 2 ? "whitelist" : "anyone";
 
 type SortKey =
-  | "id" | "name" | "district" | "size" | "aaltarReady"
+  | "id" | "name" | "district" | "size" | "aaltar" | "aaltarReady" | "cooldown"
   | "lastUsed" | "channelAccess" | "reservoirAccess" | "reservoirsReady" | "lastEmptied";
 
 export default function LandManagementPage() {
@@ -108,8 +108,9 @@ export default function LandManagementPage() {
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "aaltarReady", dir: 1 });
   const [page, setPage] = useState(0);
 
+  const cooldownOf = (r: ParcelRow) => CHANNEL_COOLDOWN_SEC_BY_ALTAR[r.altarLevel] ?? CHANNEL_COOLDOWN_SEC;
   const channelReadyIn = (r: ParcelRow) =>
-    r.lastChanneled > 0 ? Math.max(0, r.lastChanneled + CHANNEL_COOLDOWN_SEC - nowSec) : 0;
+    r.lastChanneled > 0 ? Math.max(0, r.lastChanneled + cooldownOf(r) - nowSec) : 0;
   const reservoirsReady = (r: ParcelRow) => r.available.some((v) => v > 0n);
 
   const filtered = useMemo(() => {
@@ -129,6 +130,8 @@ export default function LandManagementPage() {
         case "name": return (r.name || r.parcelId).toLowerCase();
         case "district": return Number(r.district);
         case "size": return r.size;
+        case "aaltar": return r.altarLevel;
+        case "cooldown": return cooldownOf(r);
         case "aaltarReady": return channelReadyIn(r);
         case "lastUsed": return r.lastChanneled;
         case "channelAccess": return r.channelAccess;
@@ -225,9 +228,11 @@ export default function LandManagementPage() {
                     <Th label="Name" k="name" sort={sort} onSort={sortBy} />
                     <Th label="District" k="district" sort={sort} onSort={sortBy} />
                     <Th label="Size" k="size" sort={sort} onSort={sortBy} />
+                    <Th label="Aaltar" k="aaltar" sort={sort} onSort={sortBy} />
                     <Th label="Aaltar ready" k="aaltarReady" sort={sort} onSort={sortBy} />
                     <Th label="Last channeled" k="lastUsed" sort={sort} onSort={sortBy} />
                     <Th label="Channel access" k="channelAccess" sort={sort} onSort={sortBy} />
+                    <Th label="Cooldown" k="cooldown" sort={sort} onSort={sortBy} />
                     <Th label="Reservoir access" k="reservoirAccess" sort={sort} onSort={sortBy} />
                     <Th label="Reservoirs ready" k="reservoirsReady" sort={sort} onSort={sortBy} />
                     <Th label="Last emptied" k="lastEmptied" sort={sort} onSort={sortBy} />
@@ -303,6 +308,7 @@ function Row({
 }) {
   const realmId = BigInt(r.tokenId);
   const gotchi = claimerGotchiId ? BigInt(claimerGotchiId) : 0n;
+  const cooldownSec = CHANNEL_COOLDOWN_SEC_BY_ALTAR[r.altarLevel] ?? CHANNEL_COOLDOWN_SEC;
   const anyBusy = actions.step === "submitting" || actions.step === "confirming";
   const disabled = anyBusy || !actions.isOnBase || !claimerGotchiId;
   const busy = (key: string) => actions.activeKey === key && anyBusy;
@@ -313,9 +319,11 @@ function Row({
       <td className="px-2 py-1.5">{r.name || <span className="text-muted-foreground">—</span>}</td>
       <td className="px-2 py-1.5">{r.district}</td>
       <td className="px-2 py-1.5">{PARCEL_SIZE_LABEL[r.size] ?? `Size ${r.size}`}</td>
+      <td className="px-2 py-1.5">{r.altarLevel > 0 ? `Aaltar L${r.altarLevel}` : "—"}</td>
       <td className={`px-2 py-1.5 ${readyIn === 0 ? "text-emerald-500 font-medium" : "text-muted-foreground"}`}>{countdown(readyIn)}</td>
       <td className="px-2 py-1.5 text-muted-foreground">{timeAgo(r.lastChanneled, nowSec)}</td>
       <td className="px-2 py-1.5">{ACCESS_LABEL[r.channelAccess] ?? r.channelAccess}</td>
+      <td className="px-2 py-1.5 text-muted-foreground">{r.altarLevel > 0 ? `${Math.round(cooldownSec / 3600)}h` : "—"}</td>
       <td className="px-2 py-1.5">{ACCESS_LABEL[r.reservoirAccess] ?? r.reservoirAccess}</td>
       <td className={`px-2 py-1.5 ${reservoirsReady ? "text-emerald-500 font-medium" : "text-muted-foreground"}`}>{reservoirsReady ? "Now" : "—"}</td>
       <td className="px-2 py-1.5 text-muted-foreground">{timeAgo(r.lastClaimed, nowSec)}</td>

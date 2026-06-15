@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useReadContracts } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-import { REALM_DIAMOND_BASE, REALM_FACET_ABI } from "@/lib/lending/contracts";
+import { REALM_DIAMOND_BASE, REALM_FACET_ABI, altarLevelFromId } from "@/lib/lending/contracts";
 
 const GOTCHIVERSE_SUBGRAPH =
   "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/gotchiverse-base/prod/gn";
@@ -24,6 +24,7 @@ export type ParcelRow = {
   channelAccess: number; // access mode for channeling (0 owner..)
   reservoirAccess: number; // access mode for emptying reservoirs
   lastClaimed: number; // unix seconds reservoirs last emptied (0 = never)
+  altarLevel: number; // 0 = no altar equipped
 };
 
 type RawParcel = {
@@ -126,6 +127,13 @@ export function useLandParcels(owner?: string) {
         args: [id],
         chainId: BASE_CHAIN_ID,
       });
+      out.push({
+        address: REALM_DIAMOND_BASE,
+        abi: REALM_FACET_ABI,
+        functionName: "getAltarId",
+        args: [id],
+        chainId: BASE_CHAIN_ID,
+      });
     }
     return out;
   }, [ids]);
@@ -139,12 +147,13 @@ export function useLandParcels(owner?: string) {
     const accessOf = (r: any): number =>
       r?.status === "success" ? Number((r.result as readonly bigint[])[0] ?? 0n) : 0;
     return raw.map((p, i) => {
-      const avail = chain?.[i * 6];
-      const last = chain?.[i * 6 + 1];
-      const info = chain?.[i * 6 + 2];
-      const accessCh = chain?.[i * 6 + 3];
-      const accessRsv = chain?.[i * 6 + 4];
-      const claimed = chain?.[i * 6 + 5];
+      const avail = chain?.[i * 7];
+      const last = chain?.[i * 7 + 1];
+      const info = chain?.[i * 7 + 2];
+      const accessCh = chain?.[i * 7 + 3];
+      const accessRsv = chain?.[i * 7 + 4];
+      const claimed = chain?.[i * 7 + 5];
+      const altar = chain?.[i * 7 + 6];
       const available =
         avail?.status === "success"
           ? (avail.result as readonly bigint[]).slice()
@@ -162,6 +171,7 @@ export function useLandParcels(owner?: string) {
         channelAccess: accessOf(accessCh),
         reservoirAccess: accessOf(accessRsv),
         lastClaimed: claimed?.status === "success" ? Number(claimed.result as bigint) : 0,
+        altarLevel: altar?.status === "success" ? altarLevelFromId(Number(altar.result as bigint)) : 0,
         district: p.district,
         size: Number(p.size),
         x: p.coordinateX,

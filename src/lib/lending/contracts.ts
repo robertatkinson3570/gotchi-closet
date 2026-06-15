@@ -387,6 +387,14 @@ export const REALM_FACET_ABI = [
     inputs: [{ name: "_gotchiId", type: "uint256" }],
     outputs: [{ type: "uint256" }],
   },
+  // Equipped Aaltar installation id for a parcel (0 = none). Level derives from id.
+  {
+    name: "getAltarId",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_parcelId", type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
   // Whether a parcel is mid-survey (VRF pending) — survey is disabled until done.
   {
     name: "isSurveying",
@@ -536,6 +544,25 @@ export const REALM_FACET_ABI = [
 // an approximation. Defaults to 8h (the common high-altar value); adjust if your
 // parcels differ. Used only to render the "next channel" countdown in the UI.
 export const CHANNEL_COOLDOWN_SEC = 8 * 60 * 60;
+
+// Aaltar installation ids map to levels in two lines: 1–9 and 10–18.
+export const altarLevelFromId = (id: number): number =>
+  id <= 0 ? 0 : id <= 9 ? id : id - 9;
+
+// Channeling cooldown (seconds) by Aaltar level. The on-chain values live in
+// the un-exposed `channelingLimits` mapping; these are best-effort, anchored to
+// the two known points (L6 = 4h, L9 = 1h). Adjust if exact values surface.
+export const CHANNEL_COOLDOWN_SEC_BY_ALTAR: Record<number, number> = {
+  1: 24 * 3600,
+  2: 18 * 3600,
+  3: 12 * 3600,
+  4: 10 * 3600,
+  5: 8 * 3600,
+  6: 4 * 3600,
+  7: 3 * 3600,
+  8: 2 * 3600,
+  9: 1 * 3600,
+};
 
 // Bigint helper: max uint256
 export const MAX_UINT256 = (BigInt(2) ** BigInt(256)) - BigInt(1);
