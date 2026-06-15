@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useAccount } from "wagmi";
-import { X, Loader2, MapPin, Zap, Sprout, Package, Lock } from "lucide-react";
+import { useAccount, useWriteContract, usePublicClient } from "wagmi";
+import { useQueryClient } from "@tanstack/react-query";
+import { X, Loader2, MapPin, Zap, Sprout, Package, Lock, Trash2 } from "lucide-react";
 import { useParcelDetail } from "@/hooks/useParcelDetail";
 import { useInstallationInventory, type InventoryItem } from "@/hooks/useInstallationInventory";
 import { PARCEL_SIZE_LABEL } from "@/hooks/useLandParcels";
 import { ParcelGrid } from "@/components/lending/ParcelGrid";
 import type { useRealmActions } from "@/hooks/useRealmActions";
+import { REALM_DIAMOND_BASE, REALM_FACET_ABI } from "@/lib/lending/contracts";
+import { BASE_CHAIN_ID } from "@/lib/chains";
+import { parseRevert } from "@/lib/lending/parseRevert";
 
 const TOKENS = ["FUD", "FOMO", "ALPHA", "KEK"] as const;
 const DEC = BigInt(10) ** BigInt(18);
@@ -39,6 +43,41 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
   const [dragItem, setDragItem] = useState<InventoryItem | null>(null);
   const canBuild = !!actions && !!gotchiId && !!actions.isOnBase;
   const canRemove = canBuild;
+
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
+  const queryClient = useQueryClient();
+  const [teardown, setTeardown] = useState<{ alch: number; done: number; total: number } | null>(null);
+
+  async function runTeardown(alch: number, group: { installationId: string; x: number; y: number }[]) {
+    if (!detail || !gotchiId) return;
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(`Remove all ${TOKENS[alch]} harvesters & reservoirs (${group.length})? Each is a separate transaction.`)
+    )
+      return;
+    setTeardown({ alch, done: 0, total: group.length });
+    try {
+      for (let i = 0; i < group.length; i++) {
+        const it = group[i];
+        const hash = await writeContractAsync({
+          chainId: BASE_CHAIN_ID,
+          address: REALM_DIAMOND_BASE,
+          abi: REALM_FACET_ABI,
+          functionName: "unequipInstallation",
+          args: [BigInt(detail.tokenId), BigInt(gotchiId), BigInt(it.installationId), BigInt(it.x), BigInt(it.y), "0x"],
+        });
+        await publicClient?.waitForTransactionReceipt({ hash, confirmations: 1 });
+        setTeardown({ alch, done: i + 1, total: group.length });
+      }
+      queryClient.invalidateQueries({ queryKey: ["parcel-detail"] });
+      queryClient.invalidateQueries({ queryKey: ["land-parcels"] });
+    } catch (e) {
+      if (typeof window !== "undefined") window.alert(parseRevert(e).slice(0, 200));
+    } finally {
+      setTeardown(null);
+    }
+  }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -239,6 +278,56 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                 </div>
               )}
             </section>
+
+            {/* Depleted-alchemica teardown */}
+            {canBuild && (() => {
+              const groups = ([0, 1, 2, 3] as const)
+                .map((alch) => ({
+                  alch,
+                  items: detail.installations.filter(
+                    (it) => (it.category === 1 || it.category === 2) && it.alch === alch
+                  ),
+                  depleted: (detail.remaining[alch] ?? 0n) === 0n,
+                }))
+                .filter((g) => g.depleted && g.items.length > 0);
+              if (groups.length === 0) return null;
+              return (
+                <section>
+                  <div className="text-xs font-semibold mb-1.5 inline-flex items-center gap-1.5">
+                    <Trash2 className="w-3.5 h-3.5 text-destructive" /> Depleted teardown
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {groups.map((g) => (
+                      <button
+                        key={g.alch}
+                        type="button"
+                        disabled={!!teardown}
+                        onClick={() =>
+                          runTeardown(
+                            g.alch,
+                            g.items.map((it) => ({ installationId: it.installationId, x: it.x, y: it.y }))
+                          )
+                        }
+                        className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md border border-destructive/40 bg-destructive/10 hover:bg-destructive/20 text-destructive disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold"
+                      >
+                        {teardown && teardown.alch === g.alch ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Removing {teardown.done}/{teardown.total}…
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-3.5 h-3.5" /> Remove all {TOKENS[g.alch]} harvesters & reservoirs ({g.items.length})
+                          </>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground mt-1">
+                    Shown only for alchemica types fully depleted in-ground. Each removal is a separate wallet signature.
+                  </div>
+                </section>
+              );
+            })()}
           </div>
         )}
       </div>
