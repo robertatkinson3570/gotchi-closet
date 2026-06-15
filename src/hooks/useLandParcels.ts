@@ -10,6 +10,7 @@ const GOTCHIVERSE_SUBGRAPH =
 export type ParcelRow = {
   tokenId: string;
   parcelId: string;
+  name: string; // custom on-chain parcelAddress
   district: string;
   size: number;
   x: string;
@@ -94,6 +95,13 @@ export function useLandParcels(owner?: string) {
         args: [id],
         chainId: BASE_CHAIN_ID,
       });
+      out.push({
+        address: REALM_DIAMOND_BASE,
+        abi: REALM_FACET_ABI,
+        functionName: "getParcelInfo",
+        args: [id],
+        chainId: BASE_CHAIN_ID,
+      });
     }
     return out;
   }, [ids]);
@@ -105,17 +113,23 @@ export function useLandParcels(owner?: string) {
 
   const rows = useMemo<ParcelRow[]>(() => {
     return raw.map((p, i) => {
-      const avail = chain?.[i * 2];
-      const last = chain?.[i * 2 + 1];
+      const avail = chain?.[i * 3];
+      const last = chain?.[i * 3 + 1];
+      const info = chain?.[i * 3 + 2];
       const available =
         avail?.status === "success"
           ? (avail.result as readonly bigint[]).slice()
           : [0n, 0n, 0n, 0n];
       const lastChanneled =
         last?.status === "success" ? Number(last.result as bigint) : 0;
+      const name =
+        info?.status === "success"
+          ? ((info.result as { parcelAddress?: string }).parcelAddress ?? "")
+          : "";
       return {
         tokenId: p.tokenId,
         parcelId: p.parcelId,
+        name,
         district: p.district,
         size: Number(p.size),
         x: p.coordinateX,

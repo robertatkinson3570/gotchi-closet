@@ -215,12 +215,13 @@ function ParcelCard({
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
           <div className="font-semibold text-sm inline-flex items-center gap-2 flex-wrap">
-            <span className="font-mono">{row.parcelId}</span>
+            <span>Parcel {row.tokenId}</span>
+            {row.name && <span className="text-emerald-600 dark:text-emerald-400">{row.name}</span>}
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground">
               {PARCEL_SIZE_LABEL[row.size] ?? `Size ${row.size}`}
             </span>
-            <span className="text-[10px] text-muted-foreground">
-              #{row.tokenId} · District {row.district} · ({row.x},{row.y})
+            <span className="text-[10px] text-muted-foreground font-mono">
+              {row.parcelId} · D{row.district} · ({row.x},{row.y})
             </span>
           </div>
           <div className="text-xs text-muted-foreground mt-1">

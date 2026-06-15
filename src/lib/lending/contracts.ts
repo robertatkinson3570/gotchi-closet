@@ -316,6 +316,9 @@ export const WHITELIST_FACET_ABI = [
 // Source: aavegotchi-gotchiverse-skill addresses.md (post-Base migration).
 export const REALM_DIAMOND_BASE = "0x4B0040c3646D3c44B8a28Ad7055cfCF536c05372" as const;
 
+// InstallationDiamond on Base — hosts installation crafting/types/balances.
+export const INSTALLATION_DIAMOND_BASE = "0xebba5b725A2889f7f089a6cAE0246A32cad4E26b" as const;
+
 // Minimal Realm ABI for claiming harvested reservoir alchemica from parcels.
 // getAvailableAlchemica returns the per-parcel reservoir balance [FUD,FOMO,ALPHA,KEK]
 // that harvesters have accumulated and is sweepable now (NOT the in-ground total).
@@ -407,6 +410,46 @@ export const REALM_FACET_ABI = [
     stateMutability: "view",
     inputs: [{ name: "_realmId", type: "uint256" }],
     outputs: [{ type: "uint256[]" }],
+  },
+  // Parcel metadata incl. the custom name (`parcelAddress`, e.g.
+  // "generating-very-closer") vs the coordinate code (`parcelId`, "C-...").
+  {
+    name: "getParcelInfo",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_realmId", type: "uint256" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "parcelId", type: "string" },
+          { name: "parcelAddress", type: "string" },
+          { name: "owner", type: "address" },
+          { name: "coordinateX", type: "uint256" },
+          { name: "coordinateY", type: "uint256" },
+          { name: "size", type: "uint256" },
+          { name: "district", type: "uint256" },
+          { name: "boost", type: "uint256[4]" },
+          { name: "timeRemainingToClaim", type: "uint256" },
+        ],
+      },
+    ],
+  },
+  // Owned (unequipped) installations for an account: [{ installationId, balance }].
+  {
+    name: "installationsBalances",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_account", type: "address" }],
+    outputs: [
+      {
+        type: "tuple[]",
+        components: [
+          { name: "installationId", type: "uint256" },
+          { name: "balance", type: "uint256" },
+        ],
+      },
+    ],
   },
   // Per-parcel access mode for an action right (0 = channeling, 1 = empty
   // reservoir). 0 = owner only, higher = more permissive.

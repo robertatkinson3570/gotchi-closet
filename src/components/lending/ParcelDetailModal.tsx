@@ -78,13 +78,14 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
             <div className="pr-8">
               <div className="text-lg font-bold inline-flex items-center gap-2 flex-wrap">
                 <MapPin className="w-5 h-5 text-emerald-500" />
-                <span className="font-mono">{detail.parcelId}</span>
+                <span>Parcel {detail.tokenId}</span>
+                {detail.name && <span className="text-emerald-500">{detail.name}</span>}
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground">
                   {PARCEL_SIZE_LABEL[detail.size] ?? `Size ${detail.size}`}
                 </span>
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                #{detail.tokenId} · District {detail.district} · coords ({detail.x},{detail.y}) · survey round {detail.surveyRound}
+                <span className="font-mono">{detail.parcelId}</span> · District {detail.district} · coords ({detail.x},{detail.y}) · survey round {detail.surveyRound}
               </div>
             </div>
 

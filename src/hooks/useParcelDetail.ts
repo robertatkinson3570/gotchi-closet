@@ -22,6 +22,7 @@ export type Placed = {
 export type ParcelDetail = {
   tokenId: string;
   parcelId: string;
+  name: string; // custom on-chain parcelAddress, e.g. "generating-very-closer"
   district: string;
   size: number;
   x: string;
@@ -101,6 +102,7 @@ export function useParcelDetail(parcelId: string | null) {
       { ...base, functionName: "getParcelLastChanneled", args: [id] },
       { ...base, functionName: "getParcelsAccessRights", args: [[id], [0n]] },
       { ...base, functionName: "getParcelsAccessRights", args: [[id], [1n]] },
+      { ...base, functionName: "getParcelInfo", args: [id] },
     ];
   }, [parcelId]);
 
@@ -117,6 +119,10 @@ export function useParcelDetail(parcelId: string | null) {
     return {
       tokenId: p.tokenId,
       parcelId: p.parcelId,
+      name:
+        chain?.[7]?.status === "success"
+          ? ((chain[7].result as { parcelAddress?: string }).parcelAddress ?? "")
+          : "",
       district: p.district,
       size: Number(p.size),
       x: p.coordinateX,
