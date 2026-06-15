@@ -312,5 +312,36 @@ export const WHITELIST_FACET_ABI = [
   },
 ] as const;
 
+// RealmFacet diamond on Base — hosts Gotchiverse land/alchemica functions.
+// Source: aavegotchi-gotchiverse-skill addresses.md (post-Base migration).
+export const REALM_DIAMOND_BASE = "0x4B0040c3646D3c44B8a28Ad7055cfCF536c05372" as const;
+
+// Minimal Realm ABI for claiming harvested reservoir alchemica from parcels.
+// getAvailableAlchemica returns the per-parcel reservoir balance [FUD,FOMO,ALPHA,KEK]
+// that harvesters have accumulated and is sweepable now (NOT the in-ground total).
+// claimAllAvailableAlchemica sweeps many parcels' reservoirs to the parcel owner
+// in one tx; _gotchiId must be a gotchi the owner controls (access mode 0 =
+// owner-only here, so any owned gotchi works — locked/lent gotchis are fine).
+export const REALM_FACET_ABI = [
+  {
+    name: "getAvailableAlchemica",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_realmId", type: "uint256" }],
+    outputs: [{ type: "uint256[4]" }],
+  },
+  {
+    name: "claimAllAvailableAlchemica",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_realmIds", type: "uint256[]" },
+      { name: "_gotchiId", type: "uint256" },
+      { name: "_signature", type: "bytes" },
+    ],
+    outputs: [],
+  },
+] as const;
+
 // Bigint helper: max uint256
 export const MAX_UINT256 = (BigInt(2) ** BigInt(256)) - BigInt(1);

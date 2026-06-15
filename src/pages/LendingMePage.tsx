@@ -29,6 +29,7 @@ import { BulkEditModal } from "@/components/lending/BulkEditModal";
 import { BulkReturnAndSweepModal } from "@/components/lending/BulkReturnAndSweepModal";
 import { BulkRentDiscoveryModal } from "@/components/lending/BulkRentDiscoveryModal";
 import { EscrowSummaryBar } from "@/components/lending/EscrowSummaryBar";
+import { LandAlchemicaBar } from "@/components/lending/LandAlchemicaBar";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { ghstFromWei } from "@/lib/lending/transform";
@@ -225,6 +226,10 @@ export default function LendingMePage() {
               per-gotchi escrows on unlocked gotchis. Surfaces a one-tx
               batchTransferEscrow to recover it. */}
           <EscrowSummaryBar />
+
+          {/* Land reservoir claim — sweeps claimable alchemica from the
+              connected wallet's Gotchiverse parcels in one click (batched). */}
+          <LandAlchemicaBar />
 
           {/* Tabs */}
           <div className="flex items-center gap-1 mb-4 border-b border-border/30 overflow-x-auto">

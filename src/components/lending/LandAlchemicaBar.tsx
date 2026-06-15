@@ -1,0 +1,130 @@
+import { useEffect, useMemo } from "react";
+import { Loader2, CheckCircle2, XCircle, Sprout } from "lucide-react";
+import { useAccount } from "wagmi";
+import { useMyConnectedLendings } from "@/hooks/useMyLendings";
+import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
+import { useLandAlchemica } from "@/hooks/useLandAlchemica";
+import { useToast } from "@/ui/use-toast";
+
+const DECIMALS = BigInt(10) ** BigInt(18);
+
+function formatAlch(amount: bigint): string {
+  const whole = amount / DECIMALS;
+  const frac = amount % DECIMALS;
+  if (frac === BigInt(0)) return whole.toLocaleString();
+  const fracStr = ((frac * BigInt(100)) / DECIMALS).toString().padStart(2, "0").replace(/0+$/, "");
+  return fracStr ? `${whole.toLocaleString()}.${fracStr}` : whole.toLocaleString();
+}
+
+/**
+ * Shown on /lending/me. Reads the claimable reservoir alchemica sitting on the
+ * connected wallet's Gotchiverse parcels and offers a one-click batched claim
+ * (claimAllAvailableAlchemica), signed in the browser wallet. This sweeps what
+ * harvesters have accumulated; the larger in-ground reserves release over time.
+ */
+export function LandAlchemicaBar() {
+  const { address } = useAccount();
+  const { toast } = useToast();
+
+  // Any gotchi the connected wallet controls can be the claimer on owner-only
+  // parcels. Lender records expose gotchiTokenIds even while rented/locked;
+  // fall back to directly-owned gotchis.
+  const { lender } = useMyConnectedLendings();
+  const { gotchis } = useGotchisByOwner(address?.toLowerCase() ?? "");
+  const claimerGotchiId = useMemo(() => {
+    const fromLender = lender.find((l) => Number.isFinite(Number(l.gotchiTokenId)));
+    if (fromLender) return Number(fromLender.gotchiTokenId);
+    const g = (gotchis ?? [])[0] as any;
+    const id = g ? Number(g.gotchiId ?? g.id) : NaN;
+    return Number.isFinite(id) ? id : undefined;
+  }, [lender, gotchis]);
+
+  const land = useLandAlchemica(claimerGotchiId);
+
+  useEffect(() => {
+    if (land.step === "success") {
+      toast({
+        title: "Land alchemica claimed",
+        description: "Reservoir balances swept to your wallet.",
+      });
+      land.reset();
+    }
+    if (land.step === "error" && land.errorMsg) {
+      toast({
+        title: "Claim failed",
+        description: land.errorMsg.slice(0, 160),
+        variant: "destructive",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [land.step]);
+
+  if (!address) return null;
+  if (land.isLoading) return null;
+  if (land.claimableCount === 0) return null;
+
+  const summary = ["FUD", "FOMO", "ALPHA", "KEK"]
+    .map((sym) => {
+      const t = land.totalsBySymbol[sym];
+      if (!t || t === BigInt(0)) return null;
+      return `${formatAlch(t)} ${sym}`;
+    })
+    .filter(Boolean)
+    .join(" · ");
+
+  const busy = land.step === "submitting" || land.step === "confirming";
+  const batchNote = land.progress && land.progress.total > 1
+    ? ` (${land.progress.done}/${land.progress.total} batches)`
+    : "";
+
+  return (
+    <div className="mb-4 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 space-y-2">
+      <div className="text-sm font-semibold inline-flex items-center gap-1.5">
+        <Sprout className="w-4 h-4 text-emerald-500" />
+        Claimable alchemica on your land
+      </div>
+      <div className="rounded border border-emerald-500/30 bg-emerald-500/5 p-2.5 flex items-center justify-between gap-3 flex-wrap">
+        <div className="text-xs min-w-0">
+          <div className="font-semibold text-emerald-600 dark:text-emerald-400">
+            Ready to claim
+          </div>
+          <div className="text-muted-foreground break-words">
+            <span className="text-foreground font-medium">{summary}</span>
+            <span className="ml-1">
+              · across {land.claimableCount} parcel{land.claimableCount === 1 ? "" : "s"}
+            </span>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => land.send()}
+          disabled={busy || !land.isOnBase}
+          title={
+            !land.isOnBase
+              ? "Switch to Base to claim"
+              : "Sweep every parcel's reservoir alchemica to your wallet (signed in your wallet; large counts sign in batches)"
+          }
+          data-testid="land-claim-all"
+          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white hover:bg-emerald-600/90 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold transition-colors"
+        >
+          {busy ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {land.step === "submitting" ? `Sign in wallet…${batchNote}` : `Confirming…${batchNote}`}
+            </>
+          ) : land.step === "success" ? (
+            <>
+              <CheckCircle2 className="w-4 h-4" /> Done
+            </>
+          ) : land.step === "error" ? (
+            <>
+              <XCircle className="w-4 h-4" /> Retry
+            </>
+          ) : (
+            <>Claim all land alchemica ({land.claimableCount})</>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
