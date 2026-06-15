@@ -12,6 +12,7 @@ import {
   REALM_DIAMOND_BASE,
   REALM_FACET_ABI,
   ALCHEMICA_TOKENS_BASE,
+  CHANNEL_COOLDOWN_SEC,
 } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 
@@ -85,6 +86,35 @@ export function useLandAlchemica(claimerGotchiId?: number) {
     query: { enabled: availContracts.length > 0 },
   });
 
+  // Per-parcel channeling cooldown: read each parcel's last-channeled
+  // timestamp (Multicall3) and derive when it can next be channeled.
+  const channeledContracts = useMemo(
+    () =>
+      parcelIds.map((id) => ({
+        address: REALM_DIAMOND_BASE,
+        abi: REALM_FACET_ABI,
+        functionName: "getParcelLastChanneled" as const,
+        args: [id] as const,
+        chainId: BASE_CHAIN_ID,
+      })),
+    [parcelIds]
+  );
+  const { data: channeledData } = useReadContracts({
+    contracts: channeledContracts,
+    query: { enabled: channeledContracts.length > 0 },
+  });
+
+  // Unix-seconds timestamp at which each parcel can next be channeled
+  // (lastChanneled + cooldown). 0 / never-channeled parcels are ready now.
+  const nextChannelTimes = useMemo<number[]>(() => {
+    if (!channeledData) return [];
+    return channeledData.map((r) => {
+      if (r.status !== "success") return 0;
+      const last = Number(r.result as bigint);
+      return last > 0 ? last + CHANNEL_COOLDOWN_SEC : 0;
+    });
+  }, [channeledData]);
+
   const { claimable, totalsBySymbol } = useMemo(() => {
     const claimable: bigint[] = [];
     const totals: Record<string, bigint> = {};
@@ -147,6 +177,7 @@ export function useLandAlchemica(claimerGotchiId?: number) {
     parcelCount: parcelIds.length,
     claimableCount: claimable.length,
     totalsBySymbol,
+    nextChannelTimes,
     isLoading: parcelsQuery.isLoading,
     send,
     step,

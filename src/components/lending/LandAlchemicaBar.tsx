@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from "react";
-import { Loader2, CheckCircle2, XCircle, Sprout } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, CheckCircle2, XCircle, Sprout, Timer } from "lucide-react";
 import { useAccount } from "wagmi";
 import { useMyConnectedLendings } from "@/hooks/useMyLendings";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
@@ -14,6 +14,15 @@ function formatAlch(amount: bigint): string {
   if (frac === BigInt(0)) return whole.toLocaleString();
   const fracStr = ((frac * BigInt(100)) / DECIMALS).toString().padStart(2, "0").replace(/0+$/, "");
   return fracStr ? `${whole.toLocaleString()}.${fracStr}` : whole.toLocaleString();
+}
+
+function formatCountdown(seconds: number): string {
+  if (seconds <= 0) return "now";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m`;
+  return "<1m";
 }
 
 /**
@@ -40,6 +49,28 @@ export function LandAlchemicaBar() {
   }, [lender, gotchis]);
 
   const land = useLandAlchemica(claimerGotchiId);
+
+  // Tick every 30s so the channel-cooldown countdown stays live.
+  const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const id = setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const channel = useMemo(() => {
+    const times = land.nextChannelTimes ?? [];
+    let readyCount = 0;
+    let soonest = Infinity;
+    for (const t of times) {
+      if (t <= nowSec) readyCount++;
+      else soonest = Math.min(soonest, t - nowSec);
+    }
+    return {
+      readyCount,
+      total: times.length,
+      soonestIn: soonest === Infinity ? null : soonest,
+    };
+  }, [land.nextChannelTimes, nowSec]);
 
   useEffect(() => {
     if (land.step === "success") {
@@ -125,6 +156,27 @@ export function LandAlchemicaBar() {
           )}
         </button>
       </div>
+
+      {channel.total > 0 && (
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground px-0.5">
+          <Timer className="w-3.5 h-3.5 text-emerald-500/80" />
+          <span>
+            Channeling cooldown:{" "}
+            <span className="text-foreground font-medium">
+              {channel.readyCount}/{channel.total}
+            </span>{" "}
+            parcels ready
+            {channel.soonestIn != null && (
+              <>
+                {" "}· next in{" "}
+                <span className="text-foreground font-medium">
+                  {formatCountdown(channel.soonestIn)}
+                </span>
+              </>
+            )}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

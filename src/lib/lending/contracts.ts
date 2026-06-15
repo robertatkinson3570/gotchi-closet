@@ -341,7 +341,22 @@ export const REALM_FACET_ABI = [
     ],
     outputs: [],
   },
+  // Unix timestamp (seconds) a parcel was last channeled. A parcel can be
+  // channeled again once CHANNEL_COOLDOWN_SEC has elapsed since this.
+  {
+    name: "getParcelLastChanneled",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_parcelId", type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
 ] as const;
+
+// Channeling cooldown in seconds. NOTE: the on-chain cooldown actually scales
+// with the parcel's Aaltar level (higher altar → shorter cooldown), so this is
+// an approximation. Defaults to 8h (the common high-altar value); adjust if your
+// parcels differ. Used only to render the "next channel" countdown in the UI.
+export const CHANNEL_COOLDOWN_SEC = 8 * 60 * 60;
 
 // Bigint helper: max uint256
 export const MAX_UINT256 = (BigInt(2) ** BigInt(256)) - BigInt(1);
