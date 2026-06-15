@@ -10,22 +10,6 @@ const PARCEL_DIMS: Record<number, { w: number; h: number }> = {
   4: { w: 64, h: 64 }, // Partner
 };
 
-// Aavegotchi alchemica palette (gradient stops) for harvesters/reservoirs.
-const ALCH = [
-  { from: "#34d399", to: "#059669", label: "FUD" },
-  { from: "#fb7185", to: "#e11d48", label: "FOMO" },
-  { from: "#60a5fa", to: "#2563eb", label: "ALPHA" },
-  { from: "#c084fc", to: "#9333ea", label: "KEK" },
-];
-const GOLD = { from: "#fbbf24", to: "#d97706" };
-const SLATE = { from: "#94a3b8", to: "#475569" };
-
-function styleFor(item: Placed) {
-  // Altar / lodge / maker → gold regardless of alch; harvester/reservoir → alch color; tiles/other → slate.
-  if (item.category === 0 || item.category === 3 || item.category === 6) return GOLD;
-  if (item.alch >= 0 && item.alch <= 3) return ALCH[item.alch];
-  return SLATE;
-}
 /**
  * Read-only visual layout of a parcel's equipped installations + tiles, drawn
  * to scale on the coordinate grid (footprint-accurate, colored by alchemica
@@ -137,7 +121,6 @@ export function ParcelGrid({
             />
           )}
           {items.map((it, idx) => {
-            const c = styleFor(it);
             const removable = !!onRemove && it.category !== -1;
             const busy = busyKey === `unequip:${realmId}:${it.installationId}:${it.x}:${it.y}`;
             return (
@@ -145,37 +128,24 @@ export function ParcelGrid({
                 key={idx}
                 title={`${it.name} · #${it.installationId} @ (${it.x},${it.y}) · ${it.w}×${it.h}${removable ? " — click to remove" : ""}`}
                 onClick={removable ? () => onRemove!(it) : undefined}
-                className={`group absolute rounded-[3px] shadow-sm ring-1 ring-black/30 flex flex-col items-center justify-center overflow-hidden ${
-                  removable ? "cursor-pointer hover:ring-2 hover:ring-red-400 hover:z-10" : ""
-                } ${busy ? "animate-pulse ring-2 ring-red-500" : ""}`}
+                className={`group absolute flex items-center justify-center ${
+                  removable ? "cursor-pointer rounded-[2px] hover:ring-2 hover:ring-red-400 hover:z-10" : ""
+                } ${busy ? "animate-pulse ring-2 ring-red-500 rounded-[2px]" : ""}`}
                 style={{
                   left: `${(it.x / cols) * 100}%`,
                   top: `${(it.y / rows) * 100}%`,
                   width: `${(it.w / cols) * 100}%`,
                   height: `${(it.h / rows) * 100}%`,
-                  padding: "1px",
-                  background: `linear-gradient(135deg, ${c.from}, ${c.to})`,
                 }}
               >
                 <img
                   src={`/installations/installation_${it.installationId}.png`}
                   alt={it.name}
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  className="w-full h-full object-contain pointer-events-none"
                   style={{ imageRendering: "pixelated" }}
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = "none";
-                  }}
                 />
-                {it.level > 1 && (
-                  <span
-                    className="absolute top-0 right-0.5 z-10 text-[7px] leading-none font-bold text-white"
-                    style={{ textShadow: "0 0 2px #000" }}
-                  >
-                    {it.level}
-                  </span>
-                )}
                 {removable && (
-                  <span className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-red-600/50 text-white text-[10px] font-bold z-20">
+                  <span className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-red-600/50 text-white text-[10px] font-bold z-20 rounded-[2px]">
                     ✕
                   </span>
                 )}
@@ -209,19 +179,8 @@ export function ParcelGrid({
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center gap-2 flex-wrap mt-2 text-[10px] text-muted-foreground">
-        {ALCH.map((a) => (
-          <span key={a.label} className="inline-flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-[2px]" style={{ background: `linear-gradient(135deg, ${a.from}, ${a.to})` }} />
-            {a.label}
-          </span>
-        ))}
-        <span className="inline-flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-[2px]" style={{ background: `linear-gradient(135deg, ${GOLD.from}, ${GOLD.to})` }} />
-          Altar / Maker
-        </span>
-        <span className="ml-auto">{cols}×{rows} grid</span>
+      <div className="flex items-center justify-end mt-2 text-[10px] text-muted-foreground">
+        <span>{cols}×{rows} grid</span>
       </div>
     </div>
   );

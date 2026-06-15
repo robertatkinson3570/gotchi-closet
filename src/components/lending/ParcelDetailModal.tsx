@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAccount, useWriteContract, usePublicClient } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, Loader2, MapPin, Zap, Sprout, Package, Lock, Trash2 } from "lucide-react";
+import { X, Loader2, MapPin, Zap, Sprout, Package, Lock, Trash2, Telescope } from "lucide-react";
 import { useParcelDetail, type Placed } from "@/hooks/useParcelDetail";
 import { useInstallationInventory, type InventoryItem } from "@/hooks/useInstallationInventory";
 import { PARCEL_SIZE_LABEL } from "@/hooks/useLandParcels";
@@ -18,6 +18,8 @@ const DEC = BigInt(10) ** BigInt(18);
 const whole = (b?: bigint) => ((b ?? 0n) / DEC).toLocaleString();
 const perDay = (b?: bigint) => (((b ?? 0n) * 86400n) / DEC).toLocaleString();
 const when = (u: number) => (u > 0 ? new Date(u * 1000).toLocaleString() : "never");
+
+const DIMS: Record<number, string> = { 0: "8×8", 1: "16×16", 2: "32×64", 3: "64×32", 4: "64×64" };
 
 const ACCESS_LABEL: Record<number, string> = {
   0: "Owner only",
@@ -158,8 +160,37 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                 </span>
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                <span className="font-mono">{detail.parcelId}</span> · District {detail.district} · coords ({detail.x},{detail.y}) · survey round {detail.surveyRound}
+                District {detail.district} · ({detail.x},{detail.y}) · {DIMS[detail.size] ?? ""} · {detail.surveyRound} rounds surveyed
               </div>
+              {detail.owner && (
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  Owner: <span className="font-mono">{detail.owner.slice(0, 6)}…{detail.owner.slice(-4)}</span>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard?.writeText(detail.owner)}
+                    className="ml-1.5 text-primary hover:underline"
+                  >
+                    copy
+                  </button>
+                </div>
+              )}
+              {actions && (
+                <button
+                  type="button"
+                  onClick={() => actions.survey(BigInt(detail.tokenId))}
+                  disabled={
+                    !actions.isOnBase ||
+                    detail.surveying ||
+                    actions.step === "submitting" ||
+                    actions.step === "confirming"
+                  }
+                  title={detail.surveying ? "Survey already in progress" : "Start a new survey round"}
+                  className="mt-2 inline-flex items-center gap-1 h-8 px-3 rounded-md border border-border/40 bg-background/70 hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold"
+                >
+                  <Telescope className="w-3.5 h-3.5" />
+                  {detail.surveying ? "Surveying…" : "Survey"}
+                </button>
+              )}
             </div>
 
             {/* Alchemica table */}
@@ -199,6 +230,37 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                 </div>
               )}
             </section>
+
+            {/* Survey history */}
+            {detail.rounds.length > 0 && (
+              <section>
+                <div className="text-xs font-semibold mb-1.5 inline-flex items-center gap-1.5">
+                  <Telescope className="w-3.5 h-3.5 text-emerald-500" /> Survey history · {detail.rounds.length} rounds
+                </div>
+                <div className="overflow-x-auto rounded border border-border/40">
+                  <table className="w-full text-xs">
+                    <thead className="text-muted-foreground">
+                      <tr className="border-b border-border/40">
+                        <th className="text-left font-medium px-2 py-1">Round</th>
+                        {TOKENS.map((t) => (
+                          <th key={t} className="text-right font-medium px-2 py-1">{t}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detail.rounds.map((r) => (
+                        <tr key={r.round} className="border-b border-border/20 last:border-0">
+                          <td className="px-2 py-1">{r.round}</td>
+                          {TOKENS.map((t, i) => (
+                            <td key={t} className="px-2 py-1 text-right">{whole(r.amounts[i] ?? 0n)}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
 
             {/* Channeling + access */}
             <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">

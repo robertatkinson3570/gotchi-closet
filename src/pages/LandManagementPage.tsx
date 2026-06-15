@@ -7,7 +7,6 @@ import {
   MapPin,
   HandCoins,
   Zap,
-  Telescope,
   Info,
   Loader2,
   ChevronUp,
@@ -311,7 +310,7 @@ function Row({
   return (
     <tr className="border-t border-border/20 hover:bg-muted/20">
       <td className="px-2 py-1.5 font-mono">#{r.tokenId}</td>
-      <td className="px-2 py-1.5">{r.name || <span className="text-muted-foreground">{r.parcelId}</span>}</td>
+      <td className="px-2 py-1.5">{r.name || <span className="text-muted-foreground">—</span>}</td>
       <td className="px-2 py-1.5">{r.district}</td>
       <td className="px-2 py-1.5">{PARCEL_SIZE_LABEL[r.size] ?? `Size ${r.size}`}</td>
       <td className={`px-2 py-1.5 ${readyIn === 0 ? "text-emerald-500 font-medium" : "text-muted-foreground"}`}>{countdown(readyIn)}</td>
@@ -324,8 +323,7 @@ function Row({
         <div className="flex items-center gap-1 justify-end">
           <IconBtn title="Claim reservoir" busy={busy(`claim:${realmId}`)} disabled={disabled || !reservoirsReady} onClick={() => actions.claim(realmId, gotchi)}><HandCoins className="w-3.5 h-3.5" /></IconBtn>
           <IconBtn title="Channel" busy={busy(`channel:${realmId}`)} disabled={disabled || readyIn > 0} onClick={() => actions.channel(realmId, gotchi, (gotchiLastChanneled ?? 0n) as bigint)}><Zap className="w-3.5 h-3.5" /></IconBtn>
-          <IconBtn title="Survey" busy={busy(`survey:${realmId}`)} disabled={anyBusy || !actions.isOnBase} onClick={() => actions.survey(realmId)}><Telescope className="w-3.5 h-3.5" /></IconBtn>
-          <IconBtn title="Details & build" onClick={onDetails}><Info className="w-3.5 h-3.5" /></IconBtn>
+          <IconBtn title="Details & build (survey, layout)" onClick={onDetails}><Info className="w-3.5 h-3.5" /></IconBtn>
         </div>
       </td>
     </tr>

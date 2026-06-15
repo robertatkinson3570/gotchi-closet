@@ -37,6 +37,9 @@ export type ParcelDetail = {
   lastChanneled: number;
   accessChanneling: number | null;
   accessReservoir: number | null;
+  owner: string;
+  rounds: { round: number; amounts: bigint[] }[]; // per surveyed round
+  surveying: boolean; // VRF survey in progress
   installations: Placed[];
   tiles: Placed[];
 };
@@ -103,6 +106,8 @@ export function useParcelDetail(parcelId: string | null) {
       { ...base, functionName: "getParcelsAccessRights", args: [[id], [0n]] },
       { ...base, functionName: "getParcelsAccessRights", args: [[id], [1n]] },
       { ...base, functionName: "getParcelInfo", args: [id] },
+      ...Array.from({ length: 10 }, (_, r) => ({ ...base, functionName: "getRoundAlchemica", args: [id, BigInt(r)] })),
+      { ...base, functionName: "isSurveying", args: [id] },
     ];
   }, [parcelId]);
 
@@ -142,6 +147,16 @@ export function useParcelDetail(parcelId: string | null) {
       lastChanneled: chain?.[4]?.status === "success" ? Number(chain[4].result as bigint) : 0,
       accessChanneling: accessOf(chain?.[5]),
       accessReservoir: accessOf(chain?.[6]),
+      owner:
+        chain?.[7]?.status === "success" ? ((chain[7].result as { owner?: string }).owner ?? "") : "",
+      rounds: Array.from({ length: 10 }, (_, r) => {
+        const res = chain?.[8 + r];
+        if (res?.status !== "success") return null;
+        const amounts = (res.result as readonly bigint[]).slice();
+        if (!amounts.some((v) => v > 0n)) return null;
+        return { round: r + 1, amounts };
+      }).filter(Boolean) as { round: number; amounts: bigint[] }[],
+      surveying: chain?.[18]?.status === "success" ? Boolean(chain[18].result) : false,
       installations: toPlaced(graphQuery.data?.installations),
       tiles: toPlaced(graphQuery.data?.tiles),
     };

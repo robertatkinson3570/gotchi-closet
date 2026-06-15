@@ -387,6 +387,14 @@ export const REALM_FACET_ABI = [
     inputs: [{ name: "_gotchiId", type: "uint256" }],
     outputs: [{ type: "uint256" }],
   },
+  // Whether a parcel is mid-survey (VRF pending) — survey is disabled until done.
+  {
+    name: "isSurveying",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_realmId", type: "uint256" }],
+    outputs: [{ type: "bool" }],
+  },
   // Per-round surveyed alchemica [FUD,FOMO,ALPHA,KEK] for a survey round.
   {
     name: "getRoundAlchemica",
