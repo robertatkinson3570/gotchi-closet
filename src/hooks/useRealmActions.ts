@@ -62,6 +62,7 @@ export function useRealmActions() {
   useEffect(() => {
     if (step === "success") {
       queryClient.invalidateQueries({ queryKey: ["land-parcels"] });
+      queryClient.invalidateQueries({ queryKey: ["parcel-detail"] });
     }
   }, [step, queryClient]);
 

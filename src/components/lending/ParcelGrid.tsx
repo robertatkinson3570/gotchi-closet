@@ -35,9 +35,18 @@ function tag(item: Placed): string {
 export function ParcelGrid({
   installations,
   tiles,
+  realmId,
+  onRemove,
+  busyKey,
 }: {
   installations: Placed[];
   tiles: Placed[];
+  /** Parcel token id — used to build the per-item unequip busy key. */
+  realmId?: string;
+  /** When provided, installation tiles become clickable to remove (unequip). */
+  onRemove?: (item: Placed) => void;
+  /** `unequip:<realm>:<id>:<x>:<y>` key currently mid-transaction. */
+  busyKey?: string | null;
 }) {
   const items = [...tiles, ...installations]; // tiles under installations
   if (items.length === 0) {
@@ -62,11 +71,16 @@ export function ParcelGrid({
         >
           {items.map((it, idx) => {
             const c = styleFor(it);
+            const removable = !!onRemove && it.category !== -1;
+            const busy = busyKey === `unequip:${realmId}:${it.installationId}:${it.x}:${it.y}`;
             return (
               <div
                 key={idx}
-                title={`${it.name} · #${it.installationId} @ (${it.x},${it.y}) · ${it.w}×${it.h}`}
-                className="absolute rounded-[3px] shadow-sm ring-1 ring-black/30 flex flex-col items-center justify-center overflow-hidden"
+                title={`${it.name} · #${it.installationId} @ (${it.x},${it.y}) · ${it.w}×${it.h}${removable ? " — click to remove" : ""}`}
+                onClick={removable ? () => onRemove!(it) : undefined}
+                className={`group absolute rounded-[3px] shadow-sm ring-1 ring-black/30 flex flex-col items-center justify-center overflow-hidden ${
+                  removable ? "cursor-pointer hover:ring-2 hover:ring-red-400 hover:z-10" : ""
+                } ${busy ? "animate-pulse ring-2 ring-red-500" : ""}`}
                 style={{
                   left: `${(it.x / cols) * 100}%`,
                   top: `${(it.y / rows) * 100}%`,
@@ -81,6 +95,11 @@ export function ParcelGrid({
                 </span>
                 {it.level > 1 && (
                   <span className="text-[7px] leading-none font-semibold text-white/90 mt-0.5">L{it.level}</span>
+                )}
+                {removable && (
+                  <span className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-red-600/40 text-white text-[9px] font-bold">
+                    ✕
+                  </span>
                 )}
               </div>
             );

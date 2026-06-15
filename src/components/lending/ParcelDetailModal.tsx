@@ -4,6 +4,7 @@ import { X, Loader2, MapPin, Zap, Sprout, Package, Lock } from "lucide-react";
 import { useParcelDetail } from "@/hooks/useParcelDetail";
 import { PARCEL_SIZE_LABEL } from "@/hooks/useLandParcels";
 import { ParcelGrid } from "@/components/lending/ParcelGrid";
+import type { useRealmActions } from "@/hooks/useRealmActions";
 
 const TOKENS = ["FUD", "FOMO", "ALPHA", "KEK"] as const;
 const DEC = BigInt(10) ** BigInt(18);
@@ -22,10 +23,16 @@ const ACCESS_LABEL: Record<number, string> = {
 const accessLabel = (m: number | null) =>
   m == null ? "—" : ACCESS_LABEL[m] ?? `Mode ${m}`;
 
-type Props = { parcelId: string; onClose: () => void };
+type Props = {
+  parcelId: string;
+  onClose: () => void;
+  actions?: ReturnType<typeof useRealmActions>;
+  gotchiId?: number;
+};
 
-export function ParcelDetailModal({ parcelId, onClose }: Props) {
+export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Props) {
   const { detail, isLoading, error } = useParcelDetail(parcelId);
+  const canRemove = !!actions && !!gotchiId && !!actions.isOnBase;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -142,12 +149,40 @@ export function ParcelDetailModal({ parcelId, onClose }: Props) {
               </div>
             </section>
 
-            {/* Visual layout */}
+            {/* Visual layout + building */}
             <section>
-              <div className="text-xs font-semibold mb-1.5 inline-flex items-center gap-1.5">
-                <Package className="w-3.5 h-3.5 text-primary" /> Layout · {detail.installations.length} installations · {detail.tiles.length} tiles
+              <div className="text-xs font-semibold mb-1.5 inline-flex items-center justify-between gap-1.5">
+                <span className="inline-flex items-center gap-1.5">
+                  <Package className="w-3.5 h-3.5 text-primary" /> Layout · {detail.installations.length} installations · {detail.tiles.length} tiles
+                </span>
+                {canRemove && (
+                  <span className="text-[10px] font-normal text-muted-foreground">Click an installation to remove it</span>
+                )}
               </div>
-              <ParcelGrid installations={detail.installations} tiles={detail.tiles} />
+              <ParcelGrid
+                installations={detail.installations}
+                tiles={detail.tiles}
+                realmId={detail.tokenId}
+                busyKey={actions?.activeKey ?? null}
+                onRemove={
+                  canRemove
+                    ? (item) => {
+                        if (
+                          typeof window !== "undefined" &&
+                          !window.confirm(`Remove ${item.name} at (${item.x},${item.y})? This unequips it from the parcel.`)
+                        )
+                          return;
+                        actions!.unequip(
+                          BigInt(detail.tokenId),
+                          BigInt(gotchiId!),
+                          BigInt(item.installationId),
+                          BigInt(item.x),
+                          BigInt(item.y)
+                        );
+                      }
+                    : undefined
+                }
+              />
             </section>
           </div>
         )}

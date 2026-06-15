@@ -8,10 +8,6 @@ import {
   HandCoins,
   Zap,
   Telescope,
-  Plus,
-  Trash2,
-  ChevronDown,
-  ChevronRight,
   Info,
   Loader2,
 } from "lucide-react";
@@ -21,7 +17,6 @@ import { siteUrl } from "@/lib/site";
 import { useMyConnectedLendings } from "@/hooks/useMyLendings";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
 import { useLandParcels, PARCEL_SIZE_LABEL, type ParcelRow } from "@/hooks/useLandParcels";
-import { useParcelInstallations } from "@/hooks/useParcelInstallations";
 import { useRealmActions } from "@/hooks/useRealmActions";
 import { LandAlchemicaBar } from "@/components/lending/LandAlchemicaBar";
 import { ParcelDetailModal } from "@/components/lending/ParcelDetailModal";
@@ -169,7 +164,12 @@ export default function LandManagementPage() {
       )}
 
       {detailParcel && (
-        <ParcelDetailModal parcelId={detailParcel} onClose={() => setDetailParcel(null)} />
+        <ParcelDetailModal
+          parcelId={detailParcel}
+          onClose={() => setDetailParcel(null)}
+          actions={actions}
+          gotchiId={claimerGotchiId}
+        />
       )}
     </div>
   );
@@ -197,7 +197,6 @@ function ParcelCard({
   actions: ReturnType<typeof useRealmActions>;
   onDetails: () => void;
 }) {
-  const [open, setOpen] = useState(false);
   const realmId = BigInt(row.tokenId);
   const gotchi = claimerGotchiId ? BigInt(claimerGotchiId) : 0n;
   const hasClaimable = row.available.some((v) => v > 0n);
@@ -268,143 +267,15 @@ function ParcelCard({
           </ActBtn>
           <button
             type="button"
-            onClick={() => setOpen((o) => !o)}
-            className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md border border-border/40 bg-background/70 hover:bg-muted/50 text-xs font-medium"
-          >
-            {open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-            Installations
-          </button>
-          <button
-            type="button"
             onClick={onDetails}
             className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md border border-border/40 bg-background/70 hover:bg-muted/50 text-xs font-medium"
-            title="View full parcel details"
+            title="View details, layout & build (add/remove installations)"
           >
-            <Info className="w-3.5 h-3.5" /> Details
+            <Info className="w-3.5 h-3.5" /> Details & build
           </button>
         </div>
       </div>
-
-      {open && <InstallationsPanel row={row} gotchi={gotchi} actions={actions} disabled={disabled} />}
     </div>
-  );
-}
-
-function InstallationsPanel({
-  row,
-  gotchi,
-  actions,
-  disabled,
-}: {
-  row: ParcelRow;
-  gotchi: bigint;
-  actions: ReturnType<typeof useRealmActions>;
-  disabled: boolean;
-}) {
-  const realmId = BigInt(row.tokenId);
-  const { installations, isLoading } = useParcelInstallations(row.tokenId);
-  const [addId, setAddId] = useState("");
-  const [addX, setAddX] = useState("");
-  const [addY, setAddY] = useState("");
-
-  const canAdd = addId !== "" && addX !== "" && addY !== "" && !disabled;
-
-  return (
-    <div className="mt-3 border-t border-border/30 pt-3 space-y-3">
-      <div>
-        <div className="text-xs font-semibold mb-1.5">Equipped installations</div>
-        {isLoading ? (
-          <div className="text-xs text-muted-foreground">Loading…</div>
-        ) : installations.length === 0 ? (
-          <div className="text-xs text-muted-foreground">None equipped.</div>
-        ) : (
-          <div className="grid gap-1.5">
-            {installations.map((inst) => {
-              const key = `unequip:${realmId}:${inst.installationId}:${inst.x}:${inst.y}`;
-              const busy = actions.activeKey === key && (actions.step === "submitting" || actions.step === "confirming");
-              return (
-                <div
-                  key={`${inst.installationId}-${inst.x}-${inst.y}`}
-                  className="flex items-center justify-between gap-2 text-xs rounded border border-border/30 bg-background/50 px-2 py-1.5"
-                >
-                  <span className="truncate">
-                    {inst.name}{" "}
-                    <span className="text-muted-foreground">
-                      #{inst.installationId} @ ({inst.x},{inst.y})
-                    </span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      actions.unequip(realmId, gotchi, BigInt(inst.installationId), BigInt(inst.x), BigInt(inst.y))
-                    }
-                    disabled={disabled}
-                    className="inline-flex items-center gap-1 h-7 px-2 rounded border border-destructive/40 bg-destructive/10 hover:bg-destructive/20 text-destructive disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                    title="Unequip (remove) this installation"
-                  >
-                    {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                    Remove
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <div>
-        <div className="text-xs font-semibold mb-1.5">Add installation</div>
-        <div className="flex items-end gap-2 flex-wrap">
-          <Field label="Installation ID" value={addId} onChange={setAddId} placeholder="e.g. 10" />
-          <Field label="X" value={addX} onChange={setAddX} placeholder="x" w="w-16" />
-          <Field label="Y" value={addY} onChange={setAddY} placeholder="y" w="w-16" />
-          <button
-            type="button"
-            disabled={!canAdd}
-            onClick={() => actions.equip(realmId, gotchi, BigInt(addId), BigInt(addX), BigInt(addY))}
-            className="inline-flex items-center gap-1 h-8 px-3 rounded-md bg-emerald-600 text-white hover:bg-emerald-600/90 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold"
-          >
-            {actions.activeKey === `equip:${realmId}` && (actions.step === "submitting" || actions.step === "confirming") ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Plus className="w-3.5 h-3.5" />
-            )}
-            Add
-          </button>
-        </div>
-        <div className="text-[10px] text-muted-foreground mt-1">
-          Must be a level-1 installation you own, placed on a free grid slot. Coordinates are the top-left origin
-          on the parcel grid. Reverts if the slot is occupied or building is frozen.
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-  w = "w-24",
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  w?: string;
-}) {
-  return (
-    <label className="text-[10px] text-muted-foreground">
-      <span className="block mb-0.5">{label}</span>
-      <input
-        inputMode="numeric"
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value.replace(/[^0-9]/g, ""))}
-        className={`${w} h-8 px-2 rounded border border-border/40 bg-background text-xs text-foreground`}
-      />
-    </label>
   );
 }
 
