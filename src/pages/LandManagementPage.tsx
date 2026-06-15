@@ -10,6 +10,8 @@ import {
   Telescope,
   Info,
   Loader2,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { Seo } from "@/components/Seo";
@@ -24,28 +26,40 @@ import { REALM_DIAMOND_BASE, REALM_FACET_ABI, CHANNEL_COOLDOWN_SEC } from "@/lib
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { useToast } from "@/ui/use-toast";
 
-const TOKENS = ["FUD", "FOMO", "ALPHA", "KEK"] as const;
-const DECIMALS = BigInt(10) ** BigInt(18);
+const PAGE_SIZE = 25;
 
-function whole(amount: bigint): string {
-  return (amount / DECIMALS).toLocaleString();
-}
-function alchLine(amts: bigint[]): string {
-  return TOKENS.map((t, i) => `${whole(amts[i] ?? 0n)} ${t}`).join(" · ");
-}
 function countdown(sec: number): string {
-  if (sec <= 0) return "ready";
+  if (sec <= 0) return "Now";
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
   return h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m` : "<1m";
 }
+function timeAgo(unix: number, nowSec: number): string {
+  if (!unix) return "Never";
+  const s = nowSec - unix;
+  if (s < 60) return "just now";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d} day${d === 1 ? "" : "s"} ago`;
+}
+
+const ACCESS_LABEL: Record<number, string> = { 0: "Owner", 1: "Borrower", 2: "Whitelist", 3: "Anyone", 4: "Anyone" };
+type AccessCat = "owner" | "borrower" | "whitelist" | "anyone";
+const accessCat = (m: number): AccessCat =>
+  m === 0 ? "owner" : m === 1 ? "borrower" : m === 2 ? "whitelist" : "anyone";
+
+type SortKey =
+  | "id" | "name" | "district" | "size" | "aaltarReady"
+  | "lastUsed" | "channelAccess" | "reservoirAccess" | "reservoirsReady" | "lastEmptied";
 
 export default function LandManagementPage() {
   const { address, isConnected } = useAccount();
   const { toast } = useToast();
   const [detailParcel, setDetailParcel] = useState<string | null>(null);
 
-  // Pick any Gotchi the wallet controls to act as the claimer/channeler.
   const { lender } = useMyConnectedLendings();
   const { gotchis } = useGotchisByOwner(address?.toLowerCase() ?? "");
   const claimerGotchiId = useMemo(() => {
@@ -59,7 +73,6 @@ export default function LandManagementPage() {
   const { rows, isLoading, error } = useLandParcels(address);
   const actions = useRealmActions();
 
-  // Gotchi's last-channel timestamp (channeling cooldown is per gotchi).
   const { data: gotchiLastChanneled } = useReadContract({
     address: REALM_DIAMOND_BASE,
     abi: REALM_FACET_ABI,
@@ -68,6 +81,13 @@ export default function LandManagementPage() {
     chainId: BASE_CHAIN_ID,
     query: { enabled: !!claimerGotchiId },
   });
+
+  // 30s tick for live "ready / cooldown / ago" columns.
+  const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const id = setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     if (actions.step === "success") {
@@ -81,25 +101,73 @@ export default function LandManagementPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actions.step]);
 
-  const totals = useMemo(() => {
-    const claim = [0n, 0n, 0n, 0n];
-    const ground = [0n, 0n, 0n, 0n];
-    for (const r of rows) {
-      r.available.forEach((v, i) => (claim[i] += v));
-      r.remaining.forEach((v, i) => (ground[i] += v ?? 0n));
-    }
-    return { claim, ground };
-  }, [rows]);
+  // ---- filters / sort / pagination ----
+  const [onlyChannelable, setOnlyChannelable] = useState(false);
+  const [chAccess, setChAccess] = useState<Set<AccessCat>>(new Set(["owner", "borrower", "whitelist", "anyone"]));
+  const [rsvAccess, setRsvAccess] = useState<Set<AccessCat>>(new Set(["owner", "borrower", "whitelist", "anyone"]));
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "aaltarReady", dir: 1 });
+  const [page, setPage] = useState(0);
+
+  const channelReadyIn = (r: ParcelRow) =>
+    r.lastChanneled > 0 ? Math.max(0, r.lastChanneled + CHANNEL_COOLDOWN_SEC - nowSec) : 0;
+  const reservoirsReady = (r: ParcelRow) => r.available.some((v) => v > 0n);
+
+  const filtered = useMemo(() => {
+    return rows.filter((r) => {
+      if (onlyChannelable && channelReadyIn(r) > 0) return false;
+      if (!chAccess.has(accessCat(r.channelAccess))) return false;
+      if (!rsvAccess.has(accessCat(r.reservoirAccess))) return false;
+      return true;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, onlyChannelable, chAccess, rsvAccess, nowSec]);
+
+  const sorted = useMemo(() => {
+    const val = (r: ParcelRow): number | string => {
+      switch (sort.key) {
+        case "id": return Number(r.tokenId);
+        case "name": return (r.name || r.parcelId).toLowerCase();
+        case "district": return Number(r.district);
+        case "size": return r.size;
+        case "aaltarReady": return channelReadyIn(r);
+        case "lastUsed": return r.lastChanneled;
+        case "channelAccess": return r.channelAccess;
+        case "reservoirAccess": return r.reservoirAccess;
+        case "reservoirsReady": return reservoirsReady(r) ? 0 : 1;
+        case "lastEmptied": return r.lastClaimed;
+      }
+    };
+    return [...filtered].sort((a, b) => {
+      const va = val(a), vb = val(b);
+      if (va < vb) return -1 * sort.dir;
+      if (va > vb) return 1 * sort.dir;
+      return 0;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, sort, nowSec]);
+
+  const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const pageRows = sorted.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  useEffect(() => { if (page >= pageCount) setPage(0); }, [page, pageCount]);
+
+  const toggle = (set: Set<AccessCat>, setter: (s: Set<AccessCat>) => void, k: AccessCat) => {
+    const next = new Set(set);
+    next.has(k) ? next.delete(k) : next.add(k);
+    setter(next);
+    setPage(0);
+  };
+  const sortBy = (key: SortKey) =>
+    setSort((s) => (s.key === key ? { key, dir: (s.dir * -1) as 1 | -1 } : { key, dir: 1 }));
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-6">
+    <div className="container mx-auto max-w-[1600px] px-4 py-6">
       <Seo
         title="Land Management — GotchiCloset"
-        description="Manage your Aavegotchi Gotchiverse parcels: claim alchemica, channel, survey, and equip installations."
+        description="Manage your Aavegotchi Gotchiverse parcels: claim, channel, survey, and build."
         canonical={siteUrl("/lending/lands")}
       />
 
-      <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <div>
           <Link to="/lending/me" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-3 h-3" /> Back to my lendings
@@ -107,11 +175,7 @@ export default function LandManagementPage() {
           <h1 className="text-2xl font-bold tracking-tight mt-1 inline-flex items-center gap-2">
             <MapPin className="w-6 h-6 text-emerald-500" /> Land Management
           </h1>
-          {address && (
-            <p className="text-xs text-muted-foreground font-mono">
-              {address.slice(0, 6)}…{address.slice(-4)}
-            </p>
-          )}
+          {address && <p className="text-xs text-muted-foreground font-mono">{address.slice(0, 6)}…{address.slice(-4)}</p>}
         </div>
       </div>
 
@@ -125,192 +189,156 @@ export default function LandManagementPage() {
         <>
           <LandAlchemicaBar />
 
-          {/* Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-            <Stat label="Parcels" value={rows.length.toString()} />
-            <Stat label="Claimable now" value={alchLine(totals.claim)} small />
-            <Stat label="In-ground (remaining)" value={alchLine(totals.ground)} small />
+          {/* Filters */}
+          <div className="rounded-lg border border-border/40 bg-background/60 p-3 mb-3 text-xs space-y-1.5">
+            <label className="inline-flex items-center gap-1.5 cursor-pointer font-medium">
+              <input type="checkbox" checked={onlyChannelable} onChange={(e) => { setOnlyChannelable(e.target.checked); setPage(0); }} />
+              Only Aaltars that can channel now
+            </label>
+            <AccessFilter label="Channeling access" set={chAccess} onToggle={(k) => toggle(chAccess, setChAccess, k)} />
+            <AccessFilter label="Reservoir access" set={rsvAccess} onToggle={(k) => toggle(rsvAccess, setRsvAccess, k)} />
           </div>
 
-          {error && (
-            <div className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm mb-4">{error}</div>
-          )}
+          {error && <div className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm mb-3">{error}</div>}
+
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-2 flex-wrap gap-2">
+            <span>{sorted.length} land{sorted.length === 1 ? "" : "s"}{filtered.length !== rows.length ? ` (of ${rows.length})` : ""}</span>
+            <div className="inline-flex items-center gap-2">
+              <span>Page {page + 1}/{pageCount}</span>
+              <button disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))} className="h-7 px-2 rounded border border-border/40 disabled:opacity-40">‹</button>
+              <button disabled={page >= pageCount - 1} onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))} className="h-7 px-2 rounded border border-border/40 disabled:opacity-40">›</button>
+            </div>
+          </div>
 
           {isLoading && rows.length === 0 ? (
-            <div className="grid gap-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-24 rounded-lg bg-muted/30 animate-pulse" />
-              ))}
-            </div>
+            <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-9 rounded bg-muted/30 animate-pulse" />)}</div>
           ) : rows.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">
-              No parcels found for this wallet.
-            </div>
+            <div className="text-center py-12 text-muted-foreground text-sm">No parcels found for this wallet.</div>
           ) : (
-            <div className="grid gap-3">
-              {rows.map((r) => (
-                <ParcelCard
-                  key={r.tokenId}
-                  row={r}
-                  claimerGotchiId={claimerGotchiId}
-                  gotchiLastChanneled={gotchiLastChanneled as bigint | undefined}
-                  actions={actions}
-                  onDetails={() => setDetailParcel(r.tokenId)}
-                />
-              ))}
+            <div className="overflow-x-auto rounded-lg border border-border/40">
+              <table className="w-full text-xs whitespace-nowrap">
+                <thead className="bg-muted/30 text-muted-foreground">
+                  <tr>
+                    <Th label="ID" k="id" sort={sort} onSort={sortBy} />
+                    <Th label="Name" k="name" sort={sort} onSort={sortBy} />
+                    <Th label="District" k="district" sort={sort} onSort={sortBy} />
+                    <Th label="Size" k="size" sort={sort} onSort={sortBy} />
+                    <Th label="Aaltar ready" k="aaltarReady" sort={sort} onSort={sortBy} />
+                    <Th label="Last channeled" k="lastUsed" sort={sort} onSort={sortBy} />
+                    <Th label="Channel access" k="channelAccess" sort={sort} onSort={sortBy} />
+                    <Th label="Reservoir access" k="reservoirAccess" sort={sort} onSort={sortBy} />
+                    <Th label="Reservoirs ready" k="reservoirsReady" sort={sort} onSort={sortBy} />
+                    <Th label="Last emptied" k="lastEmptied" sort={sort} onSort={sortBy} />
+                    <th className="text-right font-medium px-2 py-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageRows.map((r) => (
+                    <Row
+                      key={r.tokenId}
+                      r={r}
+                      nowSec={nowSec}
+                      readyIn={channelReadyIn(r)}
+                      reservoirsReady={reservoirsReady(r)}
+                      claimerGotchiId={claimerGotchiId}
+                      gotchiLastChanneled={gotchiLastChanneled as bigint | undefined}
+                      actions={actions}
+                      onDetails={() => setDetailParcel(r.tokenId)}
+                    />
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </>
       )}
 
       {detailParcel && (
-        <ParcelDetailModal
-          parcelId={detailParcel}
-          onClose={() => setDetailParcel(null)}
-          actions={actions}
-          gotchiId={claimerGotchiId}
-        />
+        <ParcelDetailModal parcelId={detailParcel} onClose={() => setDetailParcel(null)} actions={actions} gotchiId={claimerGotchiId} />
       )}
     </div>
   );
 }
 
-function Stat({ label, value, small }: { label: string; value: string; small?: boolean }) {
+function AccessFilter({ label, set, onToggle }: { label: string; set: Set<AccessCat>; onToggle: (k: AccessCat) => void }) {
+  const opts: AccessCat[] = ["owner", "borrower", "whitelist", "anyone"];
   return (
-    <div className="rounded-xl glass p-3">
-      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className={`mt-1 font-semibold ${small ? "text-xs break-words" : "text-lg"}`}>{value}</div>
+    <div className="inline-flex items-center gap-3 flex-wrap">
+      <span className="text-muted-foreground">{label}:</span>
+      {opts.map((k) => (
+        <label key={k} className="inline-flex items-center gap-1 cursor-pointer capitalize">
+          <input type="checkbox" checked={set.has(k)} onChange={() => onToggle(k)} />
+          {k}
+        </label>
+      ))}
     </div>
   );
 }
 
-function ParcelCard({
-  row,
-  claimerGotchiId,
-  gotchiLastChanneled,
-  actions,
-  onDetails,
+function Th({ label, k, sort, onSort }: { label: string; k: SortKey; sort: { key: SortKey; dir: 1 | -1 }; onSort: (k: SortKey) => void }) {
+  const active = sort.key === k;
+  return (
+    <th className="text-left font-medium px-2 py-2 select-none">
+      <button type="button" onClick={() => onSort(k)} className="inline-flex items-center gap-0.5 hover:text-foreground">
+        {label}
+        {active && (sort.dir === 1 ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+      </button>
+    </th>
+  );
+}
+
+function Row({
+  r, nowSec, readyIn, reservoirsReady, claimerGotchiId, gotchiLastChanneled, actions, onDetails,
 }: {
-  row: ParcelRow;
+  r: ParcelRow;
+  nowSec: number;
+  readyIn: number;
+  reservoirsReady: boolean;
   claimerGotchiId?: number;
   gotchiLastChanneled?: bigint;
   actions: ReturnType<typeof useRealmActions>;
   onDetails: () => void;
 }) {
-  const realmId = BigInt(row.tokenId);
+  const realmId = BigInt(r.tokenId);
   const gotchi = claimerGotchiId ? BigInt(claimerGotchiId) : 0n;
-  const hasClaimable = row.available.some((v) => v > 0n);
-  const depleted = row.remaining.every((v) => (v ?? 0n) === 0n);
-  const nowSec = Math.floor(Date.now() / 1000);
-  const nextChannel = row.lastChanneled > 0 ? row.lastChanneled + CHANNEL_COOLDOWN_SEC : 0;
-  const channelIn = Math.max(0, nextChannel - nowSec);
-
-  const busy = (key: string) =>
-    actions.activeKey === key && (actions.step === "submitting" || actions.step === "confirming");
   const anyBusy = actions.step === "submitting" || actions.step === "confirming";
   const disabled = anyBusy || !actions.isOnBase || !claimerGotchiId;
+  const busy = (key: string) => actions.activeKey === key && anyBusy;
 
   return (
-    <div className="rounded-lg border border-border/40 bg-background/60 p-3">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="min-w-0">
-          <div className="font-semibold text-sm inline-flex items-center gap-2 flex-wrap">
-            <span>Parcel {row.tokenId}</span>
-            {row.name && <span className="text-emerald-600 dark:text-emerald-400">{row.name}</span>}
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground">
-              {PARCEL_SIZE_LABEL[row.size] ?? `Size ${row.size}`}
-            </span>
-            <span className="text-[10px] text-muted-foreground font-mono">
-              {row.parcelId} · D{row.district} · ({row.x},{row.y})
-            </span>
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            Survey round {row.surveyRound} · {row.installations} installations · {row.tiles} tiles
-          </div>
-          <div className="text-xs mt-1">
-            <span className="text-emerald-600 dark:text-emerald-400 font-medium">Claimable:</span>{" "}
-            <span className="text-foreground">{alchLine(row.available)}</span>
-          </div>
-          <div className="text-[11px] text-muted-foreground mt-0.5">In-ground: {alchLine(row.remaining)}</div>
-          <div className="text-[11px] text-muted-foreground mt-0.5">
-            Channel: {channelIn > 0 ? `cooldown ${countdown(channelIn)}` : "ready"}
-          </div>
+    <tr className="border-t border-border/20 hover:bg-muted/20">
+      <td className="px-2 py-1.5 font-mono">#{r.tokenId}</td>
+      <td className="px-2 py-1.5">{r.name || <span className="text-muted-foreground">{r.parcelId}</span>}</td>
+      <td className="px-2 py-1.5">{r.district}</td>
+      <td className="px-2 py-1.5">{PARCEL_SIZE_LABEL[r.size] ?? `Size ${r.size}`}</td>
+      <td className={`px-2 py-1.5 ${readyIn === 0 ? "text-emerald-500 font-medium" : "text-muted-foreground"}`}>{countdown(readyIn)}</td>
+      <td className="px-2 py-1.5 text-muted-foreground">{timeAgo(r.lastChanneled, nowSec)}</td>
+      <td className="px-2 py-1.5">{ACCESS_LABEL[r.channelAccess] ?? r.channelAccess}</td>
+      <td className="px-2 py-1.5">{ACCESS_LABEL[r.reservoirAccess] ?? r.reservoirAccess}</td>
+      <td className={`px-2 py-1.5 ${reservoirsReady ? "text-emerald-500 font-medium" : "text-muted-foreground"}`}>{reservoirsReady ? "Now" : "—"}</td>
+      <td className="px-2 py-1.5 text-muted-foreground">{timeAgo(r.lastClaimed, nowSec)}</td>
+      <td className="px-2 py-1.5">
+        <div className="flex items-center gap-1 justify-end">
+          <IconBtn title="Claim reservoir" busy={busy(`claim:${realmId}`)} disabled={disabled || !reservoirsReady} onClick={() => actions.claim(realmId, gotchi)}><HandCoins className="w-3.5 h-3.5" /></IconBtn>
+          <IconBtn title="Channel" busy={busy(`channel:${realmId}`)} disabled={disabled || readyIn > 0} onClick={() => actions.channel(realmId, gotchi, (gotchiLastChanneled ?? 0n) as bigint)}><Zap className="w-3.5 h-3.5" /></IconBtn>
+          <IconBtn title="Survey" busy={busy(`survey:${realmId}`)} disabled={anyBusy || !actions.isOnBase} onClick={() => actions.survey(realmId)}><Telescope className="w-3.5 h-3.5" /></IconBtn>
+          <IconBtn title="Details & build" onClick={onDetails}><Info className="w-3.5 h-3.5" /></IconBtn>
         </div>
-
-        <div className="flex items-center gap-1.5 flex-wrap justify-end">
-          <ActBtn
-            onClick={() => actions.claim(realmId, gotchi)}
-            busy={busy(`claim:${realmId}`)}
-            disabled={disabled || !hasClaimable}
-            icon={<HandCoins className="w-3.5 h-3.5" />}
-            title={!hasClaimable ? "Nothing in reservoir to claim" : "Claim this parcel's reservoir alchemica"}
-            variant="primary"
-          >
-            Claim
-          </ActBtn>
-          <ActBtn
-            onClick={() => actions.channel(realmId, gotchi, (gotchiLastChanneled ?? 0n) as bigint)}
-            busy={busy(`channel:${realmId}`)}
-            disabled={disabled || channelIn > 0}
-            icon={<Zap className="w-3.5 h-3.5" />}
-            title={channelIn > 0 ? `On cooldown (${countdown(channelIn)})` : "Channel the Aaltar with your gotchi"}
-          >
-            Channel
-          </ActBtn>
-          <ActBtn
-            onClick={() => actions.survey(realmId)}
-            busy={busy(`survey:${realmId}`)}
-            disabled={anyBusy || !actions.isOnBase}
-            icon={<Telescope className="w-3.5 h-3.5" />}
-            title={depleted ? "Survey for a new alchemica round" : "Survey (usually only when in-ground is depleted)"}
-          >
-            Survey
-          </ActBtn>
-          <button
-            type="button"
-            onClick={onDetails}
-            className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md border border-border/40 bg-background/70 hover:bg-muted/50 text-xs font-medium"
-            title="View details, layout & build (add/remove installations)"
-          >
-            <Info className="w-3.5 h-3.5" /> Details & build
-          </button>
-        </div>
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 }
 
-function ActBtn({
-  onClick,
-  busy,
-  disabled,
-  icon,
-  children,
-  title,
-  variant = "default",
-}: {
-  onClick: () => void;
-  busy?: boolean;
-  disabled?: boolean;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  title?: string;
-  variant?: "default" | "primary";
-}) {
-  const cls =
-    variant === "primary"
-      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-      : "border border-border/40 bg-background/70 hover:bg-muted/50";
+function IconBtn({ children, onClick, busy, disabled, title }: { children: React.ReactNode; onClick: () => void; busy?: boolean; disabled?: boolean; title: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled || busy}
       title={title}
-      className={`inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${cls}`}
+      className="inline-flex items-center justify-center h-7 w-7 rounded border border-border/40 bg-background/70 hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed"
     >
-      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : icon}
-      {children}
+      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : children}
     </button>
   );
 }

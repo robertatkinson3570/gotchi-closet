@@ -387,6 +387,14 @@ export const REALM_FACET_ABI = [
     inputs: [{ name: "_gotchiId", type: "uint256" }],
     outputs: [{ type: "uint256" }],
   },
+  // Unix timestamp the parcel's reservoirs were last emptied (claimed).
+  {
+    name: "lastClaimedAlchemica",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_realmId", type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
   // Per-token harvest rate (alchemica/sec from equipped harvesters).
   {
     name: "getHarvestRates",

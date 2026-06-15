@@ -21,6 +21,9 @@ export type ParcelRow = {
   remaining: bigint[]; // in-ground [FUD,FOMO,ALPHA,KEK]
   available: bigint[]; // claimable-now reservoir [FUD,FOMO,ALPHA,KEK]
   lastChanneled: number; // unix seconds (0 = never)
+  channelAccess: number; // access mode for channeling (0 owner..)
+  reservoirAccess: number; // access mode for emptying reservoirs
+  lastClaimed: number; // unix seconds reservoirs last emptied (0 = never)
 };
 
 type RawParcel = {
@@ -102,6 +105,27 @@ export function useLandParcels(owner?: string) {
         args: [id],
         chainId: BASE_CHAIN_ID,
       });
+      out.push({
+        address: REALM_DIAMOND_BASE,
+        abi: REALM_FACET_ABI,
+        functionName: "getParcelsAccessRights",
+        args: [[id], [0n]], // channeling
+        chainId: BASE_CHAIN_ID,
+      });
+      out.push({
+        address: REALM_DIAMOND_BASE,
+        abi: REALM_FACET_ABI,
+        functionName: "getParcelsAccessRights",
+        args: [[id], [1n]], // empty reservoir
+        chainId: BASE_CHAIN_ID,
+      });
+      out.push({
+        address: REALM_DIAMOND_BASE,
+        abi: REALM_FACET_ABI,
+        functionName: "lastClaimedAlchemica",
+        args: [id],
+        chainId: BASE_CHAIN_ID,
+      });
     }
     return out;
   }, [ids]);
@@ -112,10 +136,15 @@ export function useLandParcels(owner?: string) {
   });
 
   const rows = useMemo<ParcelRow[]>(() => {
+    const accessOf = (r: any): number =>
+      r?.status === "success" ? Number((r.result as readonly bigint[])[0] ?? 0n) : 0;
     return raw.map((p, i) => {
-      const avail = chain?.[i * 3];
-      const last = chain?.[i * 3 + 1];
-      const info = chain?.[i * 3 + 2];
+      const avail = chain?.[i * 6];
+      const last = chain?.[i * 6 + 1];
+      const info = chain?.[i * 6 + 2];
+      const accessCh = chain?.[i * 6 + 3];
+      const accessRsv = chain?.[i * 6 + 4];
+      const claimed = chain?.[i * 6 + 5];
       const available =
         avail?.status === "success"
           ? (avail.result as readonly bigint[]).slice()
@@ -130,6 +159,9 @@ export function useLandParcels(owner?: string) {
         tokenId: p.tokenId,
         parcelId: p.parcelId,
         name,
+        channelAccess: accessOf(accessCh),
+        reservoirAccess: accessOf(accessRsv),
+        lastClaimed: claimed?.status === "success" ? Number(claimed.result as bigint) : 0,
         district: p.district,
         size: Number(p.size),
         x: p.coordinateX,
