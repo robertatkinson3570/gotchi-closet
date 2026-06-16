@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { useAccount, useReadContracts } from "wagmi";
+import { useAccount, useReadContracts, usePublicClient, useWriteContract } from "wagmi";
 import { Link } from "react-router-dom";
-import { User, Coins, MapPin, Activity as ActivityIcon, Loader2 } from "lucide-react";
+import { User, Coins, MapPin, Activity as ActivityIcon, Loader2, Tag, X } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
@@ -9,7 +9,13 @@ import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { GotchiManageModal, type ManageGotchi } from "@/components/explorer/GotchiActionsPanel";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-import { GHST_TOKEN_BASE, ALCHEMICA_TOKENS_BASE, ERC20_ABI } from "@/lib/lending/contracts";
+import { GHST_TOKEN_BASE, ALCHEMICA_TOKENS_BASE, ERC20_ABI, AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
+import { parseRevert } from "@/lib/lending/parseRevert";
+import { useToast } from "@/ui/use-toast";
+
+const ADD_LISTING_ABI = [
+  { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
+] as const;
 
 const TOKENS = [
   { symbol: "GHST", address: GHST_TOKEN_BASE, color: "text-purple-400" },
@@ -28,6 +34,49 @@ export default function ProfilePage() {
   const { gotchis, isLoading } = useGotchisByOwner(address?.toLowerCase() ?? "");
   const [filter, setFilter] = useState<Filter>("all");
   const [manage, setManage] = useState<ManageGotchi | null>(null);
+  const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
+  const { writeContractAsync } = useWriteContract();
+  const { toast } = useToast();
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkPrice, setBulkPrice] = useState("");
+  const [listing, setListing] = useState<{ done: number; total: number } | null>(null);
+
+  const toggleSel = (gid: string) =>
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(gid)) n.delete(gid);
+      else n.add(gid);
+      return n;
+    });
+
+  // Bulk-list selected gotchis on the Baazaar (one wallet signature each — the
+  // diamond has no batch add). Skips failures so one bad item won't strand the
+  // rest.
+  const doBulkList = async () => {
+    const price = Number(bulkPrice);
+    if (!publicClient || !(price > 0) || selected.size === 0) return;
+    const wei = BigInt(Math.floor(price * 1e18));
+    const ids = [...selected];
+    setListing({ done: 0, total: ids.length });
+    let ok = 0;
+    let failed = 0;
+    for (const gid of ids) {
+      try {
+        const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ADD_LISTING_ABI, functionName: "addERC721Listing", args: [AAVEGOTCHI_DIAMOND_BASE, BigInt(gid), wei] });
+        await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+        ok++;
+      } catch (e) {
+        failed++;
+        if (failed === 1) toast({ title: "A listing failed", description: parseRevert(e).slice(0, 140), variant: "destructive" });
+      }
+      setListing((p) => (p ? { ...p, done: p.done + 1 } : p));
+    }
+    toast({ title: "Bulk list complete", description: `Listed ${ok}/${ids.length}${failed ? `, ${failed} failed` : ""} at ${price} GHST.` });
+    setListing(null);
+    setSelected(new Set());
+    setSelectMode(false);
+  };
 
   const { data: balData } = useReadContracts({
     contracts: TOKENS.map((t) => ({ address: t.address as `0x${string}`, abi: ERC20_ABI, functionName: "balanceOf" as const, args: [address as `0x${string}`], chainId: BASE_CHAIN_ID })),
@@ -95,6 +144,12 @@ export default function ProfilePage() {
               {f === "lent" ? "Lent out" : f}
             </button>
           ))}
+          <button
+            onClick={() => { setSelectMode((s) => !s); setSelected(new Set()); }}
+            className={`h-7 px-2.5 rounded-md text-[11px] font-semibold border inline-flex items-center gap-1 ${selectMode ? "bg-emerald-600 text-white border-emerald-600" : "border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"}`}
+          >
+            <Tag className="w-3 h-3" /> {selectMode ? "Cancel" : "List for sale"}
+          </button>
         </div>
       </div>
 
@@ -110,9 +165,15 @@ export default function ProfilePage() {
               <button
                 key={gid}
                 type="button"
-                onClick={() => setManage({ gotchiId: gid, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables })}
-                title="Manage gotchi"
-                className="text-left rounded-lg border border-border/40 bg-background/60 p-1.5 hover:ring-1 hover:ring-primary/40 hover:-translate-y-0.5 transition-all"
+                onClick={() =>
+                  selectMode
+                    ? toggleSel(gid)
+                    : setManage({ gotchiId: gid, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables })
+                }
+                title={selectMode ? "Select to list" : "Manage gotchi"}
+                className={`text-left rounded-lg border bg-background/60 p-1.5 hover:-translate-y-0.5 transition-all ${
+                  selectMode && selected.has(gid) ? "border-primary ring-2 ring-primary/50" : "border-border/40 hover:ring-1 hover:ring-primary/40"
+                }`}
               >
                 <span className="block aspect-square rounded bg-muted/30 overflow-hidden">
                   <GotchiSvg gotchiId={gid} hauntId={g.hauntId} collateral={g.collateral} numericTraits={g.numericTraits} equippedWearables={g.equippedWearables} mode="preview" useBlobUrl className="w-full h-full object-contain" />
@@ -129,6 +190,31 @@ export default function ProfilePage() {
       )}
 
       {manage && <GotchiManageModal gotchi={manage} onClose={() => setManage(null)} />}
+
+      {selectMode && selected.size > 0 && (
+        <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full border border-border bg-background/95 backdrop-blur px-4 py-2 shadow-lg">
+          <span className="text-xs font-semibold">{selected.size} selected</span>
+          <input
+            type="number"
+            value={bulkPrice}
+            onChange={(e) => setBulkPrice(e.target.value)}
+            placeholder="Price each (GHST)"
+            className="h-8 w-36 rounded border border-border bg-background px-2 text-xs"
+          />
+          <button
+            disabled={!!listing || !(Number(bulkPrice) > 0)}
+            onClick={doBulkList}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-emerald-600 text-white text-xs font-semibold disabled:opacity-50"
+          >
+            {listing ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Listing {listing.done}/{listing.total}…</>
+            ) : (
+              <><Tag className="w-4 h-4" /> List {selected.size}</>
+            )}
+          </button>
+          <button onClick={() => setSelected(new Set())} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+        </div>
+      )}
     </div>
   );
 }
