@@ -20,6 +20,7 @@ import { getActiveFilterCount } from "@/lib/explorer/filters";
 import { defaultBaazaarSort } from "@/lib/explorer/sorts";
 import type { AssetType } from "@/lib/explorer/wearableTypes";
 import { MarketGrid } from "@/components/explorer/MarketGrid";
+import { AuctionGrid } from "@/components/explorer/AuctionGrid";
 import { BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import setsData from "../../data/setsByTraitDirection.json";
@@ -307,6 +308,8 @@ export default function ExplorerPage() {
             <MarketGrid kind="erc1155" category={BAAZAAR_CATEGORY.INSTALLATION} contract={INSTALLATION_DIAMOND_BASE} itemKind="installation" />
           ) : assetType === "tile" ? (
             <MarketGrid kind="erc1155" category={BAAZAAR_CATEGORY.TILE} contract={TILE_DIAMOND_BASE} itemKind="tile" />
+          ) : assetType === "auction" ? (
+            <AuctionGrid />
           ) : assetType === "gotchi" ? (
             viewMode === "family" && mode === "mine" ? (
               <div>

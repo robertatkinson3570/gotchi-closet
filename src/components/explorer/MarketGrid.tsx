@@ -5,7 +5,7 @@ import { BuyButton } from "./BuyButton";
 import { useMarketplaceBuy, type BuyParams } from "@/hooks/useMarketplaceBuy";
 import { useToast } from "@/ui/use-toast";
 import { CORE_SUBGRAPH_URL } from "@/lib/lending/contracts";
-import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
+import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates } from "./AssetImage";
 
 type Listing = { listingId: string; tokenId: string; priceWei: string; quantity: number };
 
@@ -109,21 +109,11 @@ export function MarketGrid({
               </div>
               <div className="h-14 flex items-center justify-center bg-black/10 rounded overflow-hidden">
                 {itemKind === "item" ? (
-                  <img
-                    src={getWearableIconUrlCandidates(Number(l.tokenId))[0]}
-                    alt={`#${l.tokenId}`}
-                    className="max-h-12 max-w-12 object-contain"
-                    loading="lazy"
-                    onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
-                  />
+                  <AssetImage candidates={itemImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-12 max-w-12 object-contain" />
                 ) : itemKind === "installation" ? (
-                  <img
-                    src={`/installations/installation_${l.tokenId}.png`}
-                    alt={`#${l.tokenId}`}
-                    className="max-h-12 max-w-12 object-contain [image-rendering:pixelated]"
-                    loading="lazy"
-                    onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
-                  />
+                  <AssetImage candidates={installationImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-12 max-w-12 object-contain" />
+                ) : itemKind === "tile" ? (
+                  <AssetImage candidates={tileImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-12 max-w-12 object-contain" />
                 ) : (
                   <MapPin className="w-6 h-6 text-emerald-500/70" />
                 )}

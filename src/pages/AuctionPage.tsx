@@ -43,16 +43,20 @@ type Auction = {
 };
 
 async function fetchAuctions(): Promise<Auction[]> {
+  // Only auctions that haven't ended yet (ordered soonest-ending). Querying
+  // without this returned the oldest/long-ended auctions first and live ones
+  // fell off the page — hence "loads nothing".
+  const now = Math.floor(Date.now() / 1000);
   const query = `
-    query LiveAuctions {
-      auctions(first: 200, where: { cancelled: false, claimed: false }, orderBy: endsAt, orderDirection: asc) {
+    query LiveAuctions($now: BigInt!) {
+      auctions(first: 200, where: { cancelled: false, claimed: false, endsAt_gt: $now }, orderBy: endsAt, orderDirection: asc) {
         id type tokenId highestBid highestBidder startsAt endsAt cancelled claimed
       }
     }`;
   const res = await fetch(GBM_BAAZAAR_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ query, variables: { now: String(now) } }),
   });
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");

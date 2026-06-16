@@ -1,0 +1,98 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Aavegotchi Logo" [ref=e7]:
+          - /url: /
+          - img "Aavegotchi Logo" [ref=e8]
+        - generic [ref=e11]:
+          - button "Trade" [ref=e13]:
+            - heading "Trade" [level=5] [ref=e14]
+          - button "Play and Earn" [ref=e16]:
+            - heading "Play and Earn" [level=5] [ref=e17]
+          - button "GHST" [ref=e19]:
+            - heading "GHST" [level=5] [ref=e20]
+          - button "Community" [ref=e22]:
+            - heading "Community" [level=5] [ref=e23]
+          - button "About" [ref=e25]:
+            - heading "About" [level=5] [ref=e26]
+          - link "Announcements" [ref=e28]:
+            - /url: /announcements
+            - heading "Announcements" [level=5] [ref=e29]
+      - generic [ref=e32]:
+        - button "Sign in to play" [ref=e33]:
+          - generic [ref=e34]: Sign in to play
+          - img [ref=e36]
+          - img [ref=e40]
+          - img [ref=e44]
+          - img [ref=e48]
+          - img [ref=e52]
+          - img [ref=e56]
+          - img [ref=e60]
+          - img [ref=e64]
+          - img [ref=e68]
+          - img [ref=e72]
+          - img [ref=e76]
+          - img [ref=e80]
+          - img [ref=e84]
+          - img [ref=e88]
+          - img [ref=e92]
+          - img [ref=e96]
+          - img [ref=e100]
+          - img [ref=e104]
+          - img [ref=e108]
+          - img [ref=e112]
+        - button [ref=e117]:
+          - img [ref=e122]
+    - generic [ref=e124]:
+      - heading "Marketplace Tiles" [level=1] [ref=e125]
+      - generic [ref=e126]:
+        - generic [ref=e127]:
+          - generic [ref=e130]:
+            - link "Baazaar" [ref=e132]:
+              - /url: /baazaar/tiles?chainId=8453
+              - paragraph [ref=e134]: Baazaar
+            - link "Auctions" [ref=e137]:
+              - /url: /auction?status=live&itemType=all&chainId=8453
+              - paragraph [ref=e139]: Auctions
+            - link "Activity" [ref=e141]:
+              - /url: /activity?p=baazaar&itemType=all&chainId=8453&type=purchases
+              - paragraph [ref=e143]: Activity
+            - link "Stats" [ref=e145]:
+              - /url: /stats?chainId=8453
+              - paragraph [ref=e147]: Stats
+          - generic [ref=e151]:
+            - button "categories Filters" [ref=e153]:
+              - img "categories" [ref=e154]
+              - generic [ref=e155]: Filters
+            - generic [ref=e157]:
+              - button [ref=e158]:
+                - img [ref=e159]
+              - textbox "Enter Name/ID" [ref=e161]
+        - generic [ref=e165]:
+          - generic [ref=e169]:
+            - paragraph [ref=e170]: Category
+            - generic [ref=e171]:
+              - button "Switch to detailed view" [ref=e172]:
+                - img [ref=e174]
+              - button [ref=e176]:
+                - img [ref=e177]
+          - button "price" [ref=e186]:
+            - paragraph [ref=e187]: price
+          - button "tile style" [ref=e190]:
+            - paragraph [ref=e191]: tile style
+          - button "Clear All" [disabled] [ref=e193]
+        - generic [ref=e200]:
+          - generic [ref=e204]:
+            - paragraph [ref=e205]: Category
+            - generic [ref=e206]:
+              - button "Switch to detailed view" [ref=e207]:
+                - img [ref=e209]
+              - button [ref=e211]:
+                - img [ref=e212]
+          - button "price" [ref=e221]:
+            - paragraph [ref=e222]: price
+          - button "tile style" [ref=e225]:
+            - paragraph [ref=e226]: tile style
+          - button "Clear All" [disabled] [ref=e228]
+  - button [ref=e229]

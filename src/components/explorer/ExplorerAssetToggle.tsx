@@ -1,5 +1,5 @@
 import type { AssetType } from "@/lib/explorer/wearableTypes";
-import { Ghost, Shirt, Sparkles, MapPin, Hammer, Grid3x3 } from "lucide-react";
+import { Ghost, Shirt, Sparkles, MapPin, Hammer, Grid3x3, Gavel } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface Props {
@@ -14,6 +14,7 @@ const TABS: { key: AssetType; label: string; icon: LucideIcon }[] = [
   { key: "parcel", label: "Parcels", icon: MapPin },
   { key: "installation", label: "Installations", icon: Hammer },
   { key: "tile", label: "Tiles", icon: Grid3x3 },
+  { key: "auction", label: "Auctions", icon: Gavel },
 ];
 
 export function ExplorerAssetToggle({ value, onChange }: Props) {

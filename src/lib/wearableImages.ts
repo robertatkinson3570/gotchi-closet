@@ -14,6 +14,8 @@ export type WearableCandidateFields = {
 };
 
 const CANONICAL_ICON_BASES = [
+  // Verified live source (the dapp's marketplace loads item art from here).
+  "https://dapp.aavegotchi.com/brand/items",
   "https://aavegotchi.com/images/items",
   "https://app.aavegotchi.com/images/items",
   "https://wiki.aavegotchi.com/wearables",
