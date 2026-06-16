@@ -1,17 +1,17 @@
 import { Suspense } from "react";
 import { Outlet, useLocation, Link } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { Coins, Search, Shirt, MapPin, Activity, Gavel, User } from "lucide-react";
+import { Coins, Search, Shirt, MapPin, Activity, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { FooterAttribution } from "@/components/FooterAttribution";
 
 // Every page shows the full nav so all sections are reachable everywhere.
 const NAV: { to: string; title: string; icon: LucideIcon }[] = [
   { to: "/explorer", title: "Explorer / Baazaar", icon: Search },
   { to: "/dress", title: "Dress", icon: Shirt },
-  { to: "/auction", title: "Auctions", icon: Gavel },
   { to: "/activity", title: "Activity", icon: Activity },
   { to: "/lending", title: "Lending", icon: Coins },
   { to: "/lending/lands", title: "Land Management", icon: MapPin },
@@ -47,6 +47,9 @@ export function RootLayout() {
                 </Button>
               </Link>
             ))}
+            <div className="ml-0.5 hidden sm:block">
+              <ConnectButton />
+            </div>
             <ThemeToggle />
           </div>
         </div>

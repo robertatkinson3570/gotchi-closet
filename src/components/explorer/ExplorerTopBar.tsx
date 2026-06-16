@@ -1,14 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { Search, X, ArrowUpDown, Shirt, LayoutGrid, Users, ChevronDown, Check, Coins } from "lucide-react";
+import { Search, X, ArrowUpDown, LayoutGrid, Users, ChevronDown, Check } from "lucide-react";
 import type { DataMode, ExplorerSort } from "@/lib/explorer/types";
 import type { AssetType, WearableSort, WearableSortField } from "@/lib/explorer/wearableTypes";
 import { sortOptions, getSortLabel } from "@/lib/explorer/sorts";
-import { shortenAddress } from "@/lib/address";
-import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { ExplorerAssetToggle } from "./ExplorerAssetToggle";
 import type { ViewMode } from "@/pages/ExplorerPage";
 
@@ -65,8 +61,6 @@ export function ExplorerTopBar({
   sort,
   onSortChange,
   onOpenSort,
-  connectedAddress,
-  isConnected,
   viewMode,
   onViewModeChange,
   assetType = "gotchi",
@@ -100,42 +94,7 @@ export function ExplorerTopBar({
   const marketOptions = sortOptions.filter((o) => o.category === "market");
 
   return (
-    <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b">
-      <div className="flex items-center justify-between px-4 h-12 border-b">
-        <div className="flex items-center gap-1.5 min-w-0 shrink-0">
-          <Link to="/" className="hover:opacity-80 transition-opacity">
-            <img src="/logo.png" alt="GotchiCloset" className="h-12 w-12 object-contain -my-2" />
-          </Link>
-          <div className="text-lg font-semibold tracking-tight hidden sm:block">
-            Gotchi<span className="font-normal text-muted-foreground">Closet</span>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-1 flex-1 justify-center min-w-0">
-          {isConnected && connectedAddress && (
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/30 text-[10px] text-green-600 dark:text-green-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-              <span className="hidden md:inline">Connected</span>
-              {shortenAddress(connectedAddress)}
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1.5 shrink-0">
-          <Link to="/dress">
-            <Button size="sm" variant="ghost" className="h-8 px-2" title="Dress">
-              <Shirt className="h-4 w-4" />
-            </Button>
-          </Link>
-          <Link to="/lending">
-            <Button size="sm" variant="ghost" className="h-8 px-2" title="Lending">
-              <Coins className="h-4 w-4" />
-            </Button>
-          </Link>
-          {!isConnected && <ConnectButton />}
-          <ThemeToggle />
-        </div>
-      </div>
+    <div className="bg-background/95 backdrop-blur border-b">
       <div className="flex flex-col gap-2 p-2 md:p-3">
         <div className="flex items-center gap-2 overflow-x-auto md:overflow-visible pb-1 md:pb-0 scrollbar-none">
           {onAssetTypeChange && (

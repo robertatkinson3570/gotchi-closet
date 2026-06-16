@@ -24,7 +24,6 @@ const LandManagementPage = lazy(() => import("@/pages/LandManagementPage"));
 const WhitelistsPage = lazy(() => import("@/pages/WhitelistsPage"));
 const BulkListPage = lazy(() => import("@/pages/BulkListPage"));
 const ActivityPage = lazy(() => import("@/pages/ActivityPage"));
-const AuctionPage = lazy(() => import("@/pages/AuctionPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 
 export const router = createBrowserRouter([
@@ -46,7 +45,6 @@ export const router = createBrowserRouter([
       { path: "wardrobe-lab", element: <WardrobeLabPage /> },
       { path: "explorer", element: <ExplorerPage /> },
       { path: "baazaar", element: <ExplorerPage /> },
-      { path: "auction", element: <AuctionPage /> },
       { path: "me", element: <ProfilePage /> },
       { path: "activity", element: <ActivityPage /> },
       { path: "lending", element: <LendingPage /> },
