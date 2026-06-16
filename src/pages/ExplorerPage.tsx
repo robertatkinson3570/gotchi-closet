@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { ExplorerTopBar } from "@/components/explorer/ExplorerTopBar";
 import { ExplorerFilters } from "@/components/explorer/ExplorerFilters";
 import { ExplorerGrid } from "@/components/explorer/ExplorerGrid";
@@ -142,6 +142,20 @@ export default function ExplorerPage() {
     ownedCounts,
     pricesMap,
   } = useWearableExplorerData(mode);
+
+  // Deep link: /explorer?owner=0x… (e.g. from an auction's seller/bidder link)
+  // jumps to that owner's gotchis. Applied once on mount.
+  const appliedOwnerRef = useRef(false);
+  useEffect(() => {
+    if (appliedOwnerRef.current) return;
+    const owner = new URLSearchParams(window.location.search).get("owner");
+    if (owner && /^0x[a-fA-F0-9]{40}$/.test(owner)) {
+      appliedOwnerRef.current = true;
+      setAssetType("gotchi");
+      setMode("all");
+      setGotchiFilters({ ...gotchiFilters, nameContains: "", ownerAddress: owner.toLowerCase() });
+    }
+  }, [gotchiFilters, setGotchiFilters]);
 
   const handleModeChange = useCallback((newMode: DataMode) => {
     setMode(newMode);
