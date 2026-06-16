@@ -90,7 +90,7 @@ export function ExplorerTopBar({
 
   // Item/Parcel tabs are pure marketplace grids — the All/Owned/Baazaar scope
   // and the gotchi/wearable search+sort don't apply, so hide them there.
-  const isMarket = assetType === "item" || assetType === "parcel";
+  const isMarket = assetType === "item" || assetType === "parcel" || assetType === "installation" || assetType === "tile";
   const currentKey = `${sort.field}:${sort.direction}`;
   const sortLabel = getSortLabel(sort);
   

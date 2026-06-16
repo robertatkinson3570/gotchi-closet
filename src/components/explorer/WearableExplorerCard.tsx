@@ -5,7 +5,7 @@ import { formatTraitValue } from "@/lib/format";
 import { getSlotName, getWearableRarityTier } from "@/lib/explorer/wearableTypes";
 import type { ExplorerWearable } from "@/lib/explorer/wearableTypes";
 import { BuyButton } from "./BuyButton";
-import { WEARABLE_DIAMOND_BASE } from "@/lib/lending/contracts";
+import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
 
 interface WearableExplorerCardProps {
   wearable: ExplorerWearable;
@@ -151,7 +151,7 @@ export function WearableExplorerCard({
             tokenId={String(wearable.id)}
             priceInWei={listing.minPriceWei.toString()}
             kind="erc1155"
-            contractAddress={WEARABLE_DIAMOND_BASE}
+            contractAddress={AAVEGOTCHI_DIAMOND_BASE}
             quantity={1}
             label={wearable.name}
             className="inline-flex items-center justify-center gap-1 h-6 w-full px-1 rounded bg-emerald-600 text-white hover:bg-emerald-600/90 disabled:opacity-50 text-[9px] font-semibold"

@@ -42,7 +42,7 @@ export function MarketGrid({
   kind: "erc721" | "erc1155";
   category: number;
   contract: `0x${string}`;
-  itemKind: "item" | "parcel";
+  itemKind: "item" | "parcel" | "installation" | "tile";
 }) {
   const [cart, setCart] = useState<Record<string, Listing>>({});
   const { bulkBuy, bulkStep, bulkProgress, resetBulk, isConnected } = useMarketplaceBuy();
@@ -109,6 +109,14 @@ export function MarketGrid({
                     src={getWearableIconUrlCandidates(Number(l.tokenId))[0]}
                     alt={`#${l.tokenId}`}
                     className="max-h-12 max-w-12 object-contain"
+                    loading="lazy"
+                    onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+                  />
+                ) : itemKind === "installation" ? (
+                  <img
+                    src={`/installations/installation_${l.tokenId}.png`}
+                    alt={`#${l.tokenId}`}
+                    className="max-h-12 max-w-12 object-contain [image-rendering:pixelated]"
                     loading="lazy"
                     onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
                   />

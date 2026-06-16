@@ -20,7 +20,7 @@ import { getActiveFilterCount } from "@/lib/explorer/filters";
 import { defaultBaazaarSort } from "@/lib/explorer/sorts";
 import type { AssetType } from "@/lib/explorer/wearableTypes";
 import { MarketGrid } from "@/components/explorer/MarketGrid";
-import { BAAZAAR_CATEGORY, REALM_DIAMOND_BASE, WEARABLE_DIAMOND_BASE } from "@/lib/lending/contracts";
+import { BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import setsData from "../../data/setsByTraitDirection.json";
 
@@ -300,9 +300,13 @@ export default function ExplorerPage() {
           )}
 
           {assetType === "item" ? (
-            <MarketGrid kind="erc1155" category={BAAZAAR_CATEGORY.CONSUMABLE} contract={WEARABLE_DIAMOND_BASE} itemKind="item" />
+            <MarketGrid kind="erc1155" category={BAAZAAR_CATEGORY.CONSUMABLE} contract={AAVEGOTCHI_DIAMOND_BASE} itemKind="item" />
           ) : assetType === "parcel" ? (
             <MarketGrid kind="erc721" category={BAAZAAR_CATEGORY.REALM} contract={REALM_DIAMOND_BASE} itemKind="parcel" />
+          ) : assetType === "installation" ? (
+            <MarketGrid kind="erc1155" category={BAAZAAR_CATEGORY.INSTALLATION} contract={INSTALLATION_DIAMOND_BASE} itemKind="installation" />
+          ) : assetType === "tile" ? (
+            <MarketGrid kind="erc1155" category={BAAZAAR_CATEGORY.TILE} contract={TILE_DIAMOND_BASE} itemKind="tile" />
           ) : assetType === "gotchi" ? (
             viewMode === "family" && mode === "mine" ? (
               <div>

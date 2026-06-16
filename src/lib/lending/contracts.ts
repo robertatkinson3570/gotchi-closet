@@ -665,13 +665,21 @@ export const CORE_SUBGRAPH_URL =
 // GBM auction contract on Base.
 export const GBM_DIAMOND_BASE = "0x80320A0000C7A6a34086E2ACAD6915Ff57FfDA31" as const;
 
-// erc721Listings.category / erc1155Listings.category values in the core subgraph.
-// 0 = wearable, 2 = consumable/item, 3 = aavegotchi, 4 = realm/parcel.
+// Baazaar listing category numbers (verified against the dapp's queries +
+// live listing data). NOTE: numbers differ by entity — erc721 uses 3=gotchi,
+// 4=realm/parcel; erc1155 uses 0=wearable, 2=consumable, 4=installation,
+// 5=tile. The erc1155 token lives on the contract in the comment, which is the
+// `_contractAddress` the buy tx requires:
+//   wearable/consumable -> Aavegotchi diamond (0xA99c…)
+//   installation        -> installation diamond (0xebba5b…)
+//   tile                -> tile diamond (0x617fdB…)
 export const BAAZAAR_CATEGORY = {
   WEARABLE: 0,
   CONSUMABLE: 2,
   AAVEGOTCHI: 3,
   REALM: 4,
+  INSTALLATION: 4,
+  TILE: 5,
 } as const;
 
 // ERC721 Baazaar (gotchis, parcels). The "ToRecipient" variants carry price +
