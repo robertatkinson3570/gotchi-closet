@@ -29,6 +29,17 @@ export type ViewMode = "cards" | "family";
 const VIEW_MODE_KEY = "gc_explorer_viewMode";
 const ASSET_TYPE_KEY = "gc_explorer_assetType";
 
+// Registry of buyable Baazaar tabs -> the MarketGrid props that drive them.
+// Adding a market category is now a one-line entry instead of another render
+// branch (and a missing entry simply isn't a market tab).
+type MarketTab = { kind: "erc721" | "erc1155"; category: number; contract: `0x${string}`; itemKind: "item" | "parcel" | "installation" | "tile" };
+const MARKET_TABS: Record<string, MarketTab> = {
+  item: { kind: "erc1155", category: BAAZAAR_CATEGORY.CONSUMABLE, contract: AAVEGOTCHI_DIAMOND_BASE, itemKind: "item" },
+  parcel: { kind: "erc721", category: BAAZAAR_CATEGORY.REALM, contract: REALM_DIAMOND_BASE, itemKind: "parcel" },
+  installation: { kind: "erc1155", category: BAAZAAR_CATEGORY.INSTALLATION, contract: INSTALLATION_DIAMOND_BASE, itemKind: "installation" },
+  tile: { kind: "erc1155", category: BAAZAAR_CATEGORY.TILE, contract: TILE_DIAMOND_BASE, itemKind: "tile" },
+};
+
 export default function ExplorerPage() {
   const { connectedAddress, isConnected } = useAddressState();
   const setWearables = useAppStore((s) => s.setWearables);
@@ -314,14 +325,8 @@ export default function ExplorerPage() {
             </div>
           )}
 
-          {assetType === "item" ? (
-            <MarketGrid kind="erc1155" category={BAAZAAR_CATEGORY.CONSUMABLE} contract={AAVEGOTCHI_DIAMOND_BASE} itemKind="item" />
-          ) : assetType === "parcel" ? (
-            <MarketGrid kind="erc721" category={BAAZAAR_CATEGORY.REALM} contract={REALM_DIAMOND_BASE} itemKind="parcel" />
-          ) : assetType === "installation" ? (
-            <MarketGrid kind="erc1155" category={BAAZAAR_CATEGORY.INSTALLATION} contract={INSTALLATION_DIAMOND_BASE} itemKind="installation" />
-          ) : assetType === "tile" ? (
-            <MarketGrid kind="erc1155" category={BAAZAAR_CATEGORY.TILE} contract={TILE_DIAMOND_BASE} itemKind="tile" />
+          {MARKET_TABS[assetType] ? (
+            <MarketGrid {...MARKET_TABS[assetType]} />
           ) : assetType === "auction" ? (
             <AuctionGrid />
           ) : assetType === "gotchi" ? (
