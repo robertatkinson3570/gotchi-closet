@@ -1,4 +1,4 @@
-import { previewGotchiSvg, getPlaceholderSvg } from "../_lib/aavegotchi.js";
+import { previewGotchiSvg } from "../_lib/aavegotchi.js";
 import { readJson } from "../_lib/readJson.js";
 import { badRequest, sendError, sendJson, sendOk, upstreamError } from "../_lib/http.js";
 import { requireEnv } from "../_lib/env.js";

@@ -4,7 +4,7 @@ import { sendError, sendOk, upstreamError } from "../_lib/http.js";
 
 export const config = { runtime: "nodejs" };
 
-export default async function handler(req: any, res: any) {
+export default async function handler(_req: any, res: any) {
   const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
   try {
     requireEnv("VITE_GOTCHI_DIAMOND_ADDRESS");

@@ -1,4 +1,4 @@
-import { getGotchiBaseTraits, getPlaceholderSvg } from "../_lib/aavegotchi.js";
+import { getGotchiBaseTraits } from "../_lib/aavegotchi.js";
 
 export const config = { runtime: "nodejs" };
 
