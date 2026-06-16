@@ -33,13 +33,15 @@ const FILTERS: { key: string; label: string; categories: number[] | null }[] = [
 ];
 
 async function fetchActivity(): Promise<Sale[]> {
+  // NOTE: erc1155Listings has no `buyer`/`timePurchased` — it uses `sold` +
+  // `timeLastPurchased`. erc721Listings has buyer + timePurchased.
   const query = `
     query Activity {
       erc721Listings(first: 100, where: { timePurchased_gt: "0" }, orderBy: timePurchased, orderDirection: desc) {
-        id category tokenId priceInWei seller buyer timePurchased
+        id category tokenId priceInWei seller buyer recipient timePurchased
       }
-      erc1155Listings(first: 100, where: { timePurchased_gt: "0" }, orderBy: timePurchased, orderDirection: desc) {
-        id category erc1155TypeId quantity priceInWei seller buyer timePurchased
+      erc1155Listings(first: 100, where: { sold: true }, orderBy: timeLastPurchased, orderDirection: desc) {
+        id category erc1155TypeId quantity priceInWei seller timeLastPurchased
       }
     }`;
   const res = await fetch(CORE_SUBGRAPH_URL, {
@@ -57,7 +59,7 @@ async function fetchActivity(): Promise<Sale[]> {
     quantity: 1,
     priceWei: l.priceInWei,
     seller: l.seller,
-    buyer: l.buyer,
+    buyer: l.recipient || l.buyer,
     timePurchased: Number(l.timePurchased),
   }));
   const e1155: Sale[] = (json.data?.erc1155Listings ?? []).map((l: any) => ({
@@ -68,8 +70,8 @@ async function fetchActivity(): Promise<Sale[]> {
     quantity: Number(l.quantity) || 1,
     priceWei: l.priceInWei,
     seller: l.seller,
-    buyer: l.buyer,
-    timePurchased: Number(l.timePurchased),
+    buyer: "",
+    timePurchased: Number(l.timeLastPurchased),
   }));
   return [...e721, ...e1155].sort((a, b) => b.timePurchased - a.timePurchased);
 }
