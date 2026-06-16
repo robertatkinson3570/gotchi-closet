@@ -593,6 +593,14 @@ export const REALM_FACET_ABI = [
 // parcels differ. Used only to render the "next channel" countdown in the UI.
 export const CHANNEL_COOLDOWN_SEC = 8 * 60 * 60;
 
+// Reservoir emptying cooldown in seconds. After a parcel's reservoirs are
+// claimed/emptied they can't be emptied again for this long, regardless of how
+// fast getAvailableAlchemica re-accumulates. Confirmed at 8h against the live
+// "Reservoirs ready" timer (emptied 2h ago → ready in 6h; 3h ago → in 5h),
+// independent of Aaltar level. A reservoir is "ready" when
+// lastClaimed + RESERVOIR_COOLDOWN_SEC <= now (or it was never emptied).
+export const RESERVOIR_COOLDOWN_SEC = 8 * 60 * 60;
+
 // Aaltar installation ids map to levels in two lines: 1–9 and 10–18.
 export const altarLevelFromId = (id: number): number =>
   id <= 0 ? 0 : id <= 9 ? id : id - 9;

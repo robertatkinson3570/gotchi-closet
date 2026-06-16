@@ -19,7 +19,7 @@ import { useLandParcels, PARCEL_SIZE_LABEL, type ParcelRow } from "@/hooks/useLa
 import { useRealmActions } from "@/hooks/useRealmActions";
 import { LandAlchemicaBar } from "@/components/lending/LandAlchemicaBar";
 import { ParcelDetailModal } from "@/components/lending/ParcelDetailModal";
-import { REALM_DIAMOND_BASE, REALM_FACET_ABI, CHANNEL_COOLDOWN_SEC, CHANNEL_COOLDOWN_SEC_BY_ALTAR, CLAIM_DUST_MIN } from "@/lib/lending/contracts";
+import { REALM_DIAMOND_BASE, REALM_FACET_ABI, CHANNEL_COOLDOWN_SEC, CHANNEL_COOLDOWN_SEC_BY_ALTAR, RESERVOIR_COOLDOWN_SEC } from "@/lib/lending/contracts";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { useToast } from "@/ui/use-toast";
 
@@ -109,7 +109,13 @@ export default function LandManagementPage() {
   const cooldownOf = (r: ParcelRow) => CHANNEL_COOLDOWN_SEC_BY_ALTAR[r.altarLevel] ?? CHANNEL_COOLDOWN_SEC;
   const channelReadyIn = (r: ParcelRow) =>
     r.lastChanneled > 0 ? Math.max(0, r.lastChanneled + cooldownOf(r) - nowSec) : 0;
-  const reservoirsReady = (r: ParcelRow) => r.available.some((v) => v > CLAIM_DUST_MIN);
+  // Reservoirs can only be emptied once per cooldown; "ready" = cooldown elapsed
+  // (lastClaimed + 8h) AND there's a balance to take. Balance alone is wrong —
+  // it re-accumulates the instant you claim, so every parcel would look ready.
+  const reservoirReadyIn = (r: ParcelRow) =>
+    r.lastClaimed > 0 ? Math.max(0, r.lastClaimed + RESERVOIR_COOLDOWN_SEC - nowSec) : 0;
+  const reservoirsReady = (r: ParcelRow) =>
+    reservoirReadyIn(r) === 0 && r.available.some((v) => v > 0n);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -242,6 +248,7 @@ export default function LandManagementPage() {
                       nowSec={nowSec}
                       readyIn={channelReadyIn(r)}
                       reservoirsReady={reservoirsReady(r)}
+                      reservoirReadyIn={reservoirReadyIn(r)}
                       claimerGotchiId={claimerGotchiId}
                       gotchiLastChanneled={gotchiLastChanneled as bigint | undefined}
                       actions={actions}
@@ -290,12 +297,13 @@ function Th({ label, k, sort, onSort }: { label: string; k: SortKey; sort: { key
 }
 
 function Row({
-  r, nowSec, readyIn, reservoirsReady, claimerGotchiId, gotchiLastChanneled, actions, onDetails,
+  r, nowSec, readyIn, reservoirsReady, reservoirReadyIn, claimerGotchiId, gotchiLastChanneled, actions, onDetails,
 }: {
   r: ParcelRow;
   nowSec: number;
   readyIn: number;
   reservoirsReady: boolean;
+  reservoirReadyIn: number;
   claimerGotchiId?: number;
   gotchiLastChanneled?: bigint;
   actions: ReturnType<typeof useRealmActions>;
@@ -320,7 +328,7 @@ function Row({
       <td className="px-2 py-1.5">{ACCESS_LABEL[r.channelAccess] ?? r.channelAccess}</td>
       <td className="px-2 py-1.5 text-muted-foreground">{r.altarLevel > 0 ? `${Math.round(cooldownSec / 3600)}h` : "—"}</td>
       <td className="px-2 py-1.5">{ACCESS_LABEL[r.reservoirAccess] ?? r.reservoirAccess}</td>
-      <td className={`px-2 py-1.5 ${reservoirsReady ? "text-emerald-500 font-medium" : "text-muted-foreground"}`}>{reservoirsReady ? "Now" : "—"}</td>
+      <td className={`px-2 py-1.5 ${reservoirsReady ? "text-emerald-500 font-medium" : "text-muted-foreground"}`}>{reservoirsReady ? "Now" : reservoirReadyIn > 0 ? `in ${countdown(reservoirReadyIn)}` : "—"}</td>
       <td className="px-2 py-1.5 text-muted-foreground">{timeAgo(r.lastClaimed, nowSec)}</td>
       <td className="px-2 py-1.5">
         <div className="flex items-center gap-1 justify-end">

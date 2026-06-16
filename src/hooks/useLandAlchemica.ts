@@ -13,7 +13,7 @@ import {
   REALM_FACET_ABI,
   ALCHEMICA_TOKENS_BASE,
   CHANNEL_COOLDOWN_SEC,
-  CLAIM_DUST_MIN,
+  RESERVOIR_COOLDOWN_SEC,
 } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 
@@ -28,18 +28,23 @@ const CLAIM_BATCH = 20;
 
 export type TxStep = "idle" | "submitting" | "confirming" | "success" | "error";
 
-async function fetchParcelIds(owner: string): Promise<bigint[]> {
+type ParcelClaimInfo = { id: bigint; lastClaimed: number };
+
+async function fetchParcelIds(owner: string): Promise<ParcelClaimInfo[]> {
   const res = await fetch(GOTCHIVERSE_SUBGRAPH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      query: `query($o:Bytes!){parcels(first:500,where:{owner:$o}){tokenId}}`,
+      query: `query($o:Bytes!){parcels(first:500,where:{owner:$o}){tokenId lastClaimedAlchemica}}`,
       variables: { o: owner.toLowerCase() },
     }),
   });
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");
-  return (json.data?.parcels ?? []).map((p: { tokenId: string }) => BigInt(p.tokenId));
+  return (json.data?.parcels ?? []).map((p: { tokenId: string; lastClaimedAlchemica: string }) => ({
+    id: BigInt(p.tokenId),
+    lastClaimed: Number(p.lastClaimedAlchemica) || 0,
+  }));
 }
 
 /**
@@ -75,7 +80,8 @@ export function useLandAlchemica(claimerGotchiId?: number) {
     enabled: !!address,
     staleTime: 30_000,
   });
-  const parcelIds = parcelsQuery.data ?? [];
+  const parcelInfo = useMemo(() => parcelsQuery.data ?? [], [parcelsQuery.data]);
+  const parcelIds = useMemo(() => parcelInfo.map((p) => p.id), [parcelInfo]);
 
   // Multicall getAvailableAlchemica for every parcel (Base has Multicall3).
   const availContracts = useMemo(
@@ -126,18 +132,30 @@ export function useLandAlchemica(claimerGotchiId?: number) {
   const { claimable, totalsBySymbol } = useMemo(() => {
     const claimable: bigint[] = [];
     const totals: Record<string, bigint> = {};
+    const nowSec = Math.floor(Date.now() / 1000);
     if (availData) {
       availData.forEach((r, i) => {
         if (r.status !== "success") return;
         const amounts = r.result as readonly bigint[];
-        if (amounts.some((v) => v > CLAIM_DUST_MIN)) claimable.push(parcelIds[i]);
+        // A reservoir can only be emptied once per RESERVOIR_COOLDOWN_SEC.
+        // Re-claiming a parcel still on cooldown reverts, and the balance
+        // re-accumulates the instant you claim — so gate on the cooldown
+        // (lastClaimed + cooldown), NOT on the balance, or every parcel looks
+        // "ready" forever and claim-all mostly reverts.
+        const lc = parcelInfo[i]?.lastClaimed ?? 0;
+        const cooldownReady = lc === 0 || lc + RESERVOIR_COOLDOWN_SEC <= nowSec;
+        if (!cooldownReady) return;
+        if (!amounts.some((v) => v > 0n)) return;
+        claimable.push(parcelIds[i]);
+        // Sum only what's actually claimable now, so the headline total matches
+        // what clicking "Claim all" will sweep.
         ALCHEMICA_TOKENS_BASE.forEach((tk, j) => {
           totals[tk.symbol] = (totals[tk.symbol] ?? 0n) + (amounts[j] ?? 0n);
         });
       });
     }
     return { claimable, totalsBySymbol: totals };
-  }, [availData, parcelIds]);
+  }, [availData, parcelIds, parcelInfo]);
 
   const send = useCallback(async () => {
     if (!isConnected || !address || claimable.length === 0) return;
