@@ -46,6 +46,8 @@ export function useMarketplaceBuy() {
   const [step, setStep] = useState<BuyStep>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [bulkStep, setBulkStep] = useState<BuyStep>("idle");
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
 
   const reset = useCallback(() => {
     setStep("idle");
@@ -125,5 +127,81 @@ export function useMarketplaceBuy() {
     [isConnected, address, isOnBase, publicClient, writeContractAsync, queryClient]
   );
 
-  return { buy, step, errorMsg, activeKey, reset, isOnBase, isConnected };
+  // Buy many listings in one flow: approve GHST once for the total, then execute
+  // each sequentially (the diamond has no mixed-category batch buy). Bad items
+  // are skipped so one failure doesn't strand the rest.
+  const bulkBuy = useCallback(
+    async (items: BuyParams[]) => {
+      if (!isConnected || !address || !publicClient || items.length === 0) return;
+      if (!isOnBase) {
+        setBulkStep("error");
+        setErrorMsg("Switch to Base to buy.");
+        return;
+      }
+      setErrorMsg(null);
+      setBulkStep("approving");
+      setBulkProgress({ done: 0, total: items.length });
+      try {
+        const total = items.reduce((s, i) => s + i.priceInWei, 0n);
+        const allowance = (await publicClient.readContract({
+          address: GHST_TOKEN_BASE,
+          abi: ERC20_ABI,
+          functionName: "allowance",
+          args: [address, AAVEGOTCHI_DIAMOND_BASE],
+        })) as bigint;
+        if (allowance < total) {
+          const ah = await writeContractAsync({
+            chainId: BASE_CHAIN_ID,
+            address: GHST_TOKEN_BASE,
+            abi: ERC20_ABI,
+            functionName: "approve",
+            args: [AAVEGOTCHI_DIAMOND_BASE, MAX_UINT256],
+          });
+          await publicClient.waitForTransactionReceipt({ hash: ah, confirmations: 1 });
+        }
+        setBulkStep("submitting");
+        let done = 0;
+        let failed = 0;
+        for (const p of items) {
+          try {
+            const hash =
+              p.kind === "erc721"
+                ? await writeContractAsync({
+                    chainId: BASE_CHAIN_ID,
+                    address: AAVEGOTCHI_DIAMOND_BASE,
+                    abi: ERC721_MARKETPLACE_ABI,
+                    functionName: "executeERC721ListingToRecipient",
+                    args: [BigInt(p.listingId), p.contractAddress, p.priceInWei, BigInt(p.tokenId), address],
+                  })
+                : await writeContractAsync({
+                    chainId: BASE_CHAIN_ID,
+                    address: AAVEGOTCHI_DIAMOND_BASE,
+                    abi: ERC1155_MARKETPLACE_ABI,
+                    functionName: "executeERC1155ListingToRecipient",
+                    args: [BigInt(p.listingId), p.contractAddress, BigInt(p.tokenId), BigInt(p.quantity ?? 1), p.priceInWei, address],
+                  });
+            await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+          } catch {
+            failed++;
+          }
+          done++;
+          setBulkProgress({ done, total: items.length });
+        }
+        setBulkStep(failed >= items.length ? "error" : "success");
+        if (failed > 0 && failed < items.length) setErrorMsg(`Bought ${items.length - failed}/${items.length}; ${failed} failed.`);
+        queryClient.invalidateQueries({ queryKey: ["baazaar"] });
+      } catch (e) {
+        setBulkStep("error");
+        setErrorMsg(parseRevert(e));
+      }
+    },
+    [isConnected, address, isOnBase, publicClient, writeContractAsync, queryClient]
+  );
+
+  const resetBulk = useCallback(() => {
+    setBulkStep("idle");
+    setBulkProgress(null);
+  }, []);
+
+  return { buy, step, errorMsg, activeKey, reset, isOnBase, isConnected, bulkBuy, bulkStep, bulkProgress, resetBulk };
 }

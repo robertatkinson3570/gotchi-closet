@@ -19,6 +19,7 @@ import WhitelistsPage from "@/pages/WhitelistsPage";
 import BulkListPage from "@/pages/BulkListPage";
 import ActivityPage from "@/pages/ActivityPage";
 import AuctionPage from "@/pages/AuctionPage";
+import BaazaarPage from "@/pages/BaazaarPage";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { RootLayout } from "@/components/layout/RootLayout";
 
@@ -75,6 +76,10 @@ export const router = createBrowserRouter([
       {
         path: "explorer",
         element: <ExplorerPage />,
+      },
+      {
+        path: "baazaar",
+        element: <BaazaarPage />,
       },
       {
         path: "activity",

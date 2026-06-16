@@ -15,14 +15,23 @@ const traitsFacet = new Interface(TRAITS_FACET_ABI);
 const RPC_TIMEOUT_MS = 8000;
 const MAX_RPC_ATTEMPTS = 3;
 
+// Reliable public Base RPCs tried first, so a rate-limited configured endpoint
+// (e.g. a 1rpc.io "usage limit reached" response) can't take down SVG rendering.
+const FALLBACK_RPCS = [
+  "https://base-rpc.publicnode.com",
+  "https://base.llamarpc.com",
+  "https://mainnet.base.org",
+];
+
 function getRpcUrls(): string[] {
-  const list = process.env.VITE_BASE_RPC_URLS || "";
-  const urls = list
+  const fromList = (process.env.VITE_BASE_RPC_URLS || "")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
-  if (urls.length > 0) return urls;
-  return [requireEnv("VITE_BASE_RPC_URL")];
+  const single = (process.env.VITE_BASE_RPC_URL || "").trim();
+  // Public fallbacks first, then any configured endpoints — de-duplicated.
+  const all = [...FALLBACK_RPCS, ...fromList, ...(single ? [single] : [])];
+  return [...new Set(all)];
 }
 
 function getDiamondAddress() {
