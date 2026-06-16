@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAccount, useReadContract } from "wagmi";
 import {
   Wallet,
@@ -19,6 +19,7 @@ import { useLandParcels, PARCEL_SIZE_LABEL, type ParcelRow } from "@/hooks/useLa
 import { useRealmActions } from "@/hooks/useRealmActions";
 import { LandAlchemicaBar } from "@/components/lending/LandAlchemicaBar";
 import { ParcelDetailModal } from "@/components/lending/ParcelDetailModal";
+import { GotchiChannelSelect } from "@/components/lending/GotchiChannelSelect";
 import { REALM_DIAMOND_BASE, REALM_FACET_ABI, CHANNEL_COOLDOWN_SEC, CHANNEL_COOLDOWN_SEC_BY_ALTAR, RESERVOIR_COOLDOWN_SEC } from "@/lib/lending/contracts";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { useToast } from "@/ui/use-toast";
@@ -60,13 +61,40 @@ export default function LandManagementPage() {
 
   const { lender } = useMyConnectedLendings();
   const { gotchis } = useGotchisByOwner(address?.toLowerCase() ?? "");
+
+  // Only directly-owned (unlocked) gotchis can channel. Let the user pick which
+  // one — channel yield scales with kinship — and persist the choice per wallet
+  // so it sticks across both per-parcel channel and Channel-all.
+  const ownedGotchis = useMemo(
+    () => (gotchis ?? []).filter((g) => Number.isFinite(Number(g.gotchiId ?? g.id))),
+    [gotchis]
+  );
+  const [selectedGotchiId, setSelectedGotchiId] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    if (selectedGotchiId != null || ownedGotchis.length === 0) return;
+    const key = address ? `channelGotchi:${address.toLowerCase()}` : "";
+    const saved = key ? Number(localStorage.getItem(key)) : NaN;
+    if (Number.isFinite(saved) && ownedGotchis.some((g) => Number(g.gotchiId ?? g.id) === saved)) {
+      setSelectedGotchiId(saved);
+      return;
+    }
+    const best = [...ownedGotchis].sort((a, b) => (b.kinship ?? 0) - (a.kinship ?? 0))[0];
+    setSelectedGotchiId(Number(best.gotchiId ?? best.id));
+  }, [ownedGotchis, selectedGotchiId, address]);
+
+  const pickGotchi = useCallback(
+    (id: number) => {
+      setSelectedGotchiId(id);
+      if (address) localStorage.setItem(`channelGotchi:${address.toLowerCase()}`, String(id));
+    },
+    [address]
+  );
+
   const claimerGotchiId = useMemo(() => {
+    if (selectedGotchiId != null) return selectedGotchiId;
     const fromLender = lender.find((l) => Number.isFinite(Number(l.gotchiTokenId)));
-    if (fromLender) return Number(fromLender.gotchiTokenId);
-    const g = (gotchis ?? [])[0] as any;
-    const id = g ? Number(g.gotchiId ?? g.id) : NaN;
-    return Number.isFinite(id) ? id : undefined;
-  }, [lender, gotchis]);
+    return fromLender ? Number(fromLender.gotchiTokenId) : undefined;
+  }, [selectedGotchiId, lender]);
 
   const { rows, isLoading, error } = useLandParcels(address);
   const actions = useRealmActions();
@@ -181,6 +209,9 @@ export default function LandManagementPage() {
           </h1>
           {address && <p className="text-xs text-muted-foreground font-mono">{address.slice(0, 6)}…{address.slice(-4)}</p>}
         </div>
+        {isConnected && ownedGotchis.length > 0 && (
+          <GotchiChannelSelect gotchis={ownedGotchis} value={selectedGotchiId} onChange={pickGotchi} />
+        )}
       </div>
 
       {!isConnected ? (
@@ -191,7 +222,7 @@ export default function LandManagementPage() {
         </div>
       ) : (
         <>
-          <LandAlchemicaBar />
+          <LandAlchemicaBar gotchiId={claimerGotchiId} />
 
           {/* Filters (hidden for now) */}
           {SHOW_FILTERS && (

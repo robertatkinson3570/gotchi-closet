@@ -31,7 +31,7 @@ function formatCountdown(seconds: number): string {
  * (claimAllAvailableAlchemica), signed in the browser wallet. This sweeps what
  * harvesters have accumulated; the larger in-ground reserves release over time.
  */
-export function LandAlchemicaBar() {
+export function LandAlchemicaBar({ gotchiId }: { gotchiId?: number } = {}) {
   const { address } = useAccount();
   const { toast } = useToast();
 
@@ -41,12 +41,15 @@ export function LandAlchemicaBar() {
   const { lender } = useMyConnectedLendings();
   const { gotchis } = useGotchisByOwner(address?.toLowerCase() ?? "");
   const claimerGotchiId = useMemo(() => {
+    // Prefer the gotchi the user picked on the page (drives channel yield via
+    // kinship); fall back to a lender/owned gotchi when used without a prop.
+    if (gotchiId != null) return gotchiId;
     const fromLender = lender.find((l) => Number.isFinite(Number(l.gotchiTokenId)));
     if (fromLender) return Number(fromLender.gotchiTokenId);
     const g = (gotchis ?? [])[0] as any;
     const id = g ? Number(g.gotchiId ?? g.id) : NaN;
     return Number.isFinite(id) ? id : undefined;
-  }, [lender, gotchis]);
+  }, [gotchiId, lender, gotchis]);
 
   const land = useLandAlchemica(claimerGotchiId);
 
