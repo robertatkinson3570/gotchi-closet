@@ -15,6 +15,9 @@ export default async function handler(req: any, res: any) {
       return;
     }
     const svg = await getGotchiSvg(id);
+    // Gotchi SVGs change only when wearables/traits change (rare). Cache at the
+    // CDN so repeat views don't re-hit RPC — the main cost/abuse vector.
+    res.setHeader("Cache-Control", "public, s-maxage=86400, stale-while-revalidate=604800");
     res.status(200).json({ svg });
   } catch (error) {
     console.error("GET /api/gotchis/:id/svg failed", error);
