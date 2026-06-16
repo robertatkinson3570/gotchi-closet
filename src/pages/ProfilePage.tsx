@@ -6,6 +6,7 @@ import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
+import { GotchiManageModal, type ManageGotchi } from "@/components/explorer/GotchiActionsPanel";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { GHST_TOKEN_BASE, ALCHEMICA_TOKENS_BASE, ERC20_ABI } from "@/lib/lending/contracts";
@@ -26,6 +27,7 @@ export default function ProfilePage() {
   const { address, isConnected } = useAccount();
   const { gotchis, isLoading } = useGotchisByOwner(address?.toLowerCase() ?? "");
   const [filter, setFilter] = useState<Filter>("all");
+  const [manage, setManage] = useState<ManageGotchi | null>(null);
 
   const { data: balData } = useReadContracts({
     contracts: TOKENS.map((t) => ({ address: t.address as `0x${string}`, abi: ERC20_ABI, functionName: "balanceOf" as const, args: [address as `0x${string}`], chainId: BASE_CHAIN_ID })),
@@ -105,7 +107,13 @@ export default function ProfilePage() {
           {filtered.map((g: any) => {
             const gid = String(g.gotchiId ?? g.id);
             return (
-              <Link key={gid} to={`/gotchi/${gid}`} className="rounded-lg border border-border/40 bg-background/60 p-1.5 hover:ring-1 hover:ring-primary/40">
+              <button
+                key={gid}
+                type="button"
+                onClick={() => setManage({ gotchiId: gid, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables })}
+                title="Manage gotchi"
+                className="text-left rounded-lg border border-border/40 bg-background/60 p-1.5 hover:ring-1 hover:ring-primary/40 hover:-translate-y-0.5 transition-all"
+              >
                 <span className="block aspect-square rounded bg-muted/30 overflow-hidden">
                   <GotchiSvg gotchiId={gid} hauntId={g.hauntId} collateral={g.collateral} numericTraits={g.numericTraits} equippedWearables={g.equippedWearables} mode="preview" useBlobUrl className="w-full h-full object-contain" />
                 </span>
@@ -114,11 +122,13 @@ export default function ProfilePage() {
                   <span>#{gid}</span>
                   {isLent(g) && <span className="text-amber-500">Lent</span>}
                 </div>
-              </Link>
+              </button>
             );
           })}
         </div>
       )}
+
+      {manage && <GotchiManageModal gotchi={manage} onClose={() => setManage(null)} />}
     </div>
   );
 }
