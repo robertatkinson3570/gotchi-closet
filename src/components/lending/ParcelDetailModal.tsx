@@ -5,6 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { X, Loader2, MapPin, Zap, Sprout, Package, Lock, Trash2, Telescope } from "lucide-react";
 import { useParcelDetail, type Placed } from "@/hooks/useParcelDetail";
 import { useInstallationInventory, type InventoryItem } from "@/hooks/useInstallationInventory";
+import { useCraft } from "@/hooks/useCraft";
+import { CRAFTABLE_L1 } from "@/lib/lending/contracts";
 import { PARCEL_SIZE_LABEL } from "@/hooks/useLandParcels";
 import { ParcelGrid } from "@/components/lending/ParcelGrid";
 import type { useRealmActions } from "@/hooks/useRealmActions";
@@ -42,6 +44,7 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
   const { detail, isLoading, error } = useParcelDetail(parcelId);
   const { address } = useAccount();
   const inventory = useInstallationInventory(address);
+  const craftHook = useCraft(address);
   const [dragItem, setDragItem] = useState<InventoryItem | null>(null);
   const [pending, setPending] = useState<Placed[]>([]);
   const [moving, setMoving] = useState<{ index: number; w: number; h: number } | null>(null);
@@ -436,6 +439,40 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                   <div className="text-[10px] text-muted-foreground mt-1">
                     Drop to stage (green = valid, red = occupied). Click a staged tile to unstage. Hit{" "}
                     <span className="font-medium">Save changes</span> to equip — one wallet signature each (level-1 installs only).
+                  </div>
+
+                  <div className="mt-3 border-t border-border/30 pt-3">
+                    <div className="text-xs font-semibold mb-1.5">Craft farming installations (spends alchemica)</div>
+                    {craftHook.error && (
+                      <div className="text-[10px] text-destructive mb-1">{craftHook.error.slice(0, 140)}</div>
+                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                      {CRAFTABLE_L1.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          disabled={!!craftHook.busyId}
+                          onClick={() => craftHook.craft(c.id)}
+                          title={`Cost: ${c.cost.map((v, i) => (v ? `${v} ${TOKENS[i]}` : null)).filter(Boolean).join(", ")}`}
+                          className="inline-flex items-center gap-1 rounded border border-border/40 bg-background/70 hover:bg-muted/50 px-1.5 py-1 text-[11px] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <img
+                            src={`/installations/installation_${c.id}.png`}
+                            alt=""
+                            className="w-5 h-5 object-contain"
+                            style={{ imageRendering: "pixelated" }}
+                          />
+                          {craftHook.busyId === c.id
+                            ? craftHook.step === "approving"
+                              ? "Approving…"
+                              : "Crafting…"
+                            : c.name}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-1">
+                      First craft approves alchemica spending. L1 installs mint instantly and appear in your inventory above.
+                    </div>
                   </div>
                 </div>
               )}

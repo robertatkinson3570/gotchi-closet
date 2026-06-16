@@ -577,5 +577,19 @@ export const CHANNEL_COOLDOWN_SEC_BY_ALTAR: Record<number, number> = {
   9: 1 * 3600,
 };
 
+// Craftable level-1 farming installations (craftTime 0 → minted instantly).
+// `cost` is display units [FUD,FOMO,ALPHA,KEK]; the chain charges the exact
+// on-chain cost, so we approve max and don't pass cost in the tx.
+export const CRAFTABLE_L1: { id: number; name: string; cost: number[] }[] = [
+  { id: 56, name: "FUD Harvester", cost: [125, 63, 0, 0] },
+  { id: 65, name: "FOMO Harvester", cost: [104, 83, 0, 0] },
+  { id: 74, name: "ALPHA Harvester", cost: [94, 63, 5, 0] },
+  { id: 83, name: "KEK Harvester", cost: [115, 73, 0, 3] },
+  { id: 92, name: "FUD Reservoir", cost: [290, 100, 0, 0] },
+  { id: 101, name: "FOMO Reservoir", cost: [260, 130, 0, 0] },
+  { id: 110, name: "ALPHA Reservoir", cost: [225, 90, 10, 0] },
+  { id: 119, name: "KEK Reservoir", cost: [275, 110, 0, 5] },
+];
+
 // Bigint helper: max uint256
 export const MAX_UINT256 = (BigInt(2) ** BigInt(256)) - BigInt(1);
