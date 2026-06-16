@@ -643,3 +643,107 @@ export const CLAIM_DUST_MIN = BigInt(10) ** BigInt(18);
 
 // Bigint helper: max uint256
 export const MAX_UINT256 = (BigInt(2) ** BigInt(256)) - BigInt(1);
+
+// ---------------------------------------------------------------------------
+// Marketplace (Baazaar) + auctions
+// ---------------------------------------------------------------------------
+
+// NFT contract addresses used as the `_contractAddress` arg when buying. Gotchis
+// and parcels live on their respective diamonds; wearables/items on the wearable
+// diamond; installations/tiles on theirs.
+export const WEARABLE_DIAMOND_BASE = "0x052e6c114a166B0e91C2340370d72D4C33752B4b" as const;
+export const TILE_DIAMOND_BASE = "0x617fdB8093b309e4699107F48812b407A7c37938" as const;
+
+// GBM auction subgraph on Base (the dapp's /auction source). Indexes the
+// `auctions` entity (id, type, tokenId, highestBid, highestBidder, startsAt,
+// endsAt, cancelled, claimed) — GBMFacet has no on-chain enumeration.
+export const GBM_BAAZAAR_SUBGRAPH_URL =
+  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-gbm-baazaar-base/prod/gn";
+export const CORE_SUBGRAPH_URL =
+  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn";
+
+// GBM auction contract on Base.
+export const GBM_DIAMOND_BASE = "0x80320A0000C7A6a34086E2ACAD6915Ff57FfDA31" as const;
+
+// erc721Listings.category / erc1155Listings.category values in the core subgraph.
+// 0 = wearable, 2 = consumable/item, 3 = aavegotchi, 4 = realm/parcel.
+export const BAAZAAR_CATEGORY = {
+  WEARABLE: 0,
+  CONSUMABLE: 2,
+  AAVEGOTCHI: 3,
+  REALM: 4,
+} as const;
+
+// ERC721 Baazaar (gotchis, parcels). The "ToRecipient" variants carry price +
+// tokenId so the tx reverts if the listing changed (front-run protection).
+// MarketplaceFacet is hosted on the Aavegotchi diamond.
+export const ERC721_MARKETPLACE_ABI = [
+  {
+    name: "executeERC721ListingToRecipient",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_listingId", type: "uint256" },
+      { name: "_contractAddress", type: "address" },
+      { name: "_priceInWei", type: "uint256" },
+      { name: "_tokenId", type: "uint256" },
+      { name: "_recipient", type: "address" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "addERC721Listing",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_erc721TokenAddress", type: "address" },
+      { name: "_erc721TokenId", type: "uint256" },
+      { name: "_priceInWei", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "cancelERC721Listing",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_listingId", type: "uint256" }],
+    outputs: [],
+  },
+] as const;
+
+// ERC1155 Baazaar (wearables, consumables, installations, tiles).
+export const ERC1155_MARKETPLACE_ABI = [
+  {
+    name: "executeERC1155ListingToRecipient",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_listingId", type: "uint256" },
+      { name: "_contractAddress", type: "address" },
+      { name: "_itemId", type: "uint256" },
+      { name: "_quantity", type: "uint256" },
+      { name: "_priceInWei", type: "uint256" },
+      { name: "_recipient", type: "address" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "setERC1155Listing",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_erc1155TokenAddress", type: "address" },
+      { name: "_erc1155TypeId", type: "uint256" },
+      { name: "_quantity", type: "uint256" },
+      { name: "_priceInWei", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "cancelERC1155Listing",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_listingId", type: "uint256" }],
+    outputs: [],
+  },
+] as const;

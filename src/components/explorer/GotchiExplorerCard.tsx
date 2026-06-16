@@ -3,6 +3,8 @@ import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { getRarityTier } from "@/lib/explorer/filters";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { GotchiInfoOverlay } from "./GotchiInfoOverlay";
+import { BuyButton } from "./BuyButton";
+import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { Info } from "lucide-react";
 import { prefetchGotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { isGotchiRenderReady } from "@/lib/explorer/gotchiReady";
@@ -302,11 +304,23 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
         </div>
 
         {priceGhst !== null && (
-          <div className="flex items-center justify-between pt-1 border-t border-border/30">
-            <span className="text-[9px] text-muted-foreground">PRICE</span>
-            <span className="text-[10px] text-green-500 font-semibold">
-              {priceGhst.toLocaleString(undefined, { maximumFractionDigits: 0 })} GHST
-            </span>
+          <div className="pt-1 border-t border-border/30 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] text-muted-foreground">PRICE</span>
+              <span className="text-[10px] text-green-500 font-semibold">
+                {priceGhst.toLocaleString(undefined, { maximumFractionDigits: 0 })} GHST
+              </span>
+            </div>
+            {gotchi.listing?.id && (
+              <BuyButton
+                listingId={gotchi.listing.id}
+                tokenId={gotchi.tokenId}
+                priceInWei={gotchi.listing.priceInWei}
+                kind="erc721"
+                contractAddress={AAVEGOTCHI_DIAMOND_BASE}
+                label={`#${gotchi.tokenId}`}
+              />
+            )}
           </div>
         )}
       </div>
