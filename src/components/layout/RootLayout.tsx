@@ -1,11 +1,13 @@
 import { Suspense } from "react";
 import { Outlet, useLocation, Link } from "react-router-dom";
+import { useAccount, useDisconnect } from "wagmi";
 import { Loader2 } from "lucide-react";
 import { Coins, Search, Shirt, MapPin, Activity, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
+import { shortenAddress } from "@/lib/address";
 import { FooterAttribution } from "@/components/FooterAttribution";
 
 // Every page shows the full nav so all sections are reachable everywhere.
@@ -25,6 +27,8 @@ function isActive(pathname: string, to: string): boolean {
 
 export function RootLayout() {
   const location = useLocation();
+  const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -48,7 +52,19 @@ export function RootLayout() {
               </Link>
             ))}
             <div className="ml-0.5 hidden sm:block">
-              <ConnectButton />
+              {isConnected && address ? (
+                <button
+                  type="button"
+                  onClick={() => disconnect()}
+                  title="Click to disconnect"
+                  className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full bg-green-500/10 border border-green-500/30 text-[11px] font-medium text-green-600 dark:text-green-400 hover:bg-green-500/20"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                  {shortenAddress(address)}
+                </button>
+              ) : (
+                <ConnectButton />
+              )}
             </div>
             <ThemeToggle />
           </div>

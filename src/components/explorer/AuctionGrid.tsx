@@ -17,7 +17,7 @@ import {
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "./AssetImage";
-import { GotchiSvgById } from "./GotchiSvgById";
+import { GotchiSvgById, FakeGotchiImage } from "./GotchiSvgById";
 import { Gavel } from "lucide-react";
 
 const GBM_ABI = [
@@ -79,7 +79,7 @@ function AuctionItemImage({ a }: { a: Auction }) {
       ? <AssetImage candidates={itemImageCandidates(a.tokenId)} alt={`#${a.tokenId}`} className={cls} />
       : <GotchiSvgById id={a.tokenId} className="w-full h-full [&>svg]:w-full [&>svg]:h-full" />;
   }
-  return <Gavel className="w-7 h-7 text-primary/60" />;
+  return <FakeGotchiImage id={a.tokenId} className="max-h-full max-w-full object-contain" fallback={<Gavel className="w-7 h-7 text-primary/60" />} />;
 }
 
 const ghst = (wei: string) => (Number(wei) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 2 });

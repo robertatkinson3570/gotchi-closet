@@ -5,7 +5,7 @@ import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
-import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
+import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "@/components/explorer/AssetImage";
 
 type GotchiArt = { numericTraits: number[]; equippedWearables: number[]; hauntId?: number; collateral?: string };
 type Sale = {
@@ -118,13 +118,18 @@ function ItemImage({ s }: { s: Sale }) {
       </span>
     );
   }
+  const wrap = "inline-flex w-9 h-9 rounded bg-black/20 items-center justify-center overflow-hidden align-middle";
+  const imgCls = "max-w-8 max-h-8 object-contain";
+  // Parcels (erc721 category 4) -> S3 map render.
+  if (s.kind === "erc721" && s.category === BAAZAAR_CATEGORY.REALM) {
+    return <span className={wrap}><AssetImage candidates={parcelImageCandidates(s.tokenId)} alt={`#${s.tokenId}`} className={imgCls} /></span>;
+  }
   if (s.kind === "erc1155") {
-    const src = getWearableIconUrlCandidates(Number(s.tokenId))[0];
-    return (
-      <span className="inline-flex w-9 h-9 rounded bg-black/20 items-center justify-center overflow-hidden align-middle">
-        <img src={src} alt={`#${s.tokenId}`} className="max-w-8 max-h-8 object-contain" loading="lazy" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
-      </span>
-    );
+    const cands =
+      s.category === BAAZAAR_CATEGORY.INSTALLATION ? installationImageCandidates(s.tokenId)
+      : s.category === BAAZAAR_CATEGORY.TILE ? tileImageCandidates(s.tokenId)
+      : itemImageCandidates(s.tokenId); // wearables (0) + consumables (2)
+    return <span className={wrap}><AssetImage candidates={cands} alt={`#${s.tokenId}`} className={imgCls} /></span>;
   }
   return (
     <span className="inline-flex w-9 h-9 rounded bg-emerald-500/10 items-center justify-center align-middle">
