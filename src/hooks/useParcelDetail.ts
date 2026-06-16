@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { qk } from "@/lib/queryKeys";
 import { useReadContracts } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import { BASE_CHAIN_ID } from "@/lib/chains";
@@ -103,14 +104,14 @@ const arr4 = (r: any): bigint[] =>
  */
 export function useParcelDetail(parcelId: string | null) {
   const graphQuery = useQuery({
-    queryKey: ["parcel-detail", parcelId],
+    queryKey: qk.parcelDetail(parcelId),
     queryFn: () => fetchParcelGraph(parcelId as string),
     enabled: !!parcelId,
     staleTime: 20_000,
   });
 
   const saleQuery = useQuery({
-    queryKey: ["parcel-last-sale", parcelId],
+    queryKey: qk.parcelLastSale(parcelId),
     queryFn: () => fetchLastSale(parcelId as string),
     enabled: !!parcelId,
     staleTime: 60_000,

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import {
   useAccount,
   useChainId,
@@ -166,7 +167,7 @@ export function useBatchTransferEscrow() {
     if (step === "success") {
       invalidateLendingsCache();
       invalidateMyLendings();
-      queryClient.invalidateQueries({ queryKey: ["gotchis"] });
+      queryClient.invalidateQueries({ queryKey: qk.gotchis() });
     }
   }, [step, queryClient]);
 

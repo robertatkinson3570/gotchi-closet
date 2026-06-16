@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import { useWriteContract, usePublicClient } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
 import { BASE_CHAIN_ID } from "@/lib/chains";
@@ -74,8 +75,8 @@ export function useUpgrade(owner?: string) {
           args: [queue, gotchiId, "0x", gltr],
         });
         await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
-        queryClient.invalidateQueries({ queryKey: ["parcel-detail"] });
-        queryClient.invalidateQueries({ queryKey: ["land-parcels"] });
+        queryClient.invalidateQueries({ queryKey: qk.parcelDetail() });
+        queryClient.invalidateQueries({ queryKey: qk.landParcels() });
       } catch (e) {
         setError(parseRevert(e));
       } finally {
@@ -101,7 +102,7 @@ export function useUpgrade(owner?: string) {
           args: [[parcelId]],
         });
         await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
-        queryClient.invalidateQueries({ queryKey: ["parcel-detail"] });
+        queryClient.invalidateQueries({ queryKey: qk.parcelDetail() });
       } catch (e) {
         setError(parseRevert(e));
       } finally {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import { Link } from "react-router-dom";
 import { useAccount } from "wagmi";
 import {
@@ -71,7 +72,7 @@ export default function BulkListPage() {
 
   const ownerQueries = useQueries({
     queries: allOwners.map((owner) => ({
-      queryKey: ["gotchis", owner],
+      queryKey: qk.gotchis(owner),
       queryFn: () => fetchGotchisByOwner(owner),
       enabled: !!owner,
       staleTime: 30_000,

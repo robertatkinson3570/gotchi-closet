@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { qk } from "@/lib/queryKeys";
 import { useQuery } from "@tanstack/react-query";
 
 // The svg subgraph stores each gotchi's fully-rendered SVG by token id — used
@@ -17,7 +18,7 @@ async function fetchGotchiSvg(id: string): Promise<string | null> {
 
 export function GotchiSvgById({ id, className }: { id: string; className?: string }) {
   const { data } = useQuery({
-    queryKey: ["gotchi-svg-base", id],
+    queryKey: qk.gotchiSvg(id),
     queryFn: () => fetchGotchiSvg(id),
     staleTime: 10 * 60_000,
   });
@@ -45,7 +46,7 @@ async function fetchFakeGotchiImage(id: string): Promise<string | null> {
 
 export function FakeGotchiImage({ id, className, fallback }: { id: string; className?: string; fallback?: ReactNode }) {
   const { data, isLoading } = useQuery({
-    queryKey: ["fake-gotchi-img", id],
+    queryKey: qk.fakeGotchiImg(id),
     queryFn: () => fetchFakeGotchiImage(id),
     staleTime: 10 * 60_000,
   });

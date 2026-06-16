@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import { createPortal } from "react-dom";
 import { useAccount, useWriteContract, usePublicClient } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
@@ -72,8 +73,8 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
         setSaving({ done: i + 1, total: pending.length });
       }
       setPending([]);
-      queryClient.invalidateQueries({ queryKey: ["parcel-detail"] });
-      queryClient.invalidateQueries({ queryKey: ["land-parcels"] });
+      queryClient.invalidateQueries({ queryKey: qk.parcelDetail() });
+      queryClient.invalidateQueries({ queryKey: qk.landParcels() });
     } catch (e) {
       if (typeof window !== "undefined") window.alert(parseRevert(e).slice(0, 200));
     } finally {
@@ -107,8 +108,8 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
         await publicClient?.waitForTransactionReceipt({ hash, confirmations: 1 });
         setTeardown({ alch, done: i + 1, total: group.length });
       }
-      queryClient.invalidateQueries({ queryKey: ["parcel-detail"] });
-      queryClient.invalidateQueries({ queryKey: ["land-parcels"] });
+      queryClient.invalidateQueries({ queryKey: qk.parcelDetail() });
+      queryClient.invalidateQueries({ queryKey: qk.landParcels() });
     } catch (e) {
       if (typeof window !== "undefined") window.alert(parseRevert(e).slice(0, 200));
     } finally {

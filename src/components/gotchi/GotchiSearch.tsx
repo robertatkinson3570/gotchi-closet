@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { qk } from "@/lib/queryKeys";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { Search, ChevronDown, ChevronUp, X, Loader2 } from "lucide-react";
@@ -43,7 +44,7 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
 
   // For gotchis found by name search, check if they have Baazaar listings
   const { data: nameMatchListings = [], isLoading: nameMatchLoading } = useQuery({
-    queryKey: ["baazaar-name-match", baazaarNameResults.map(g => g.id).join(",")],
+    queryKey: qk.baazaarNameMatch(baazaarNameResults.map(g => g.id).join(",")),
     queryFn: async () => {
       if (baazaarNameResults.length === 0) return [];
       

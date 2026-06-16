@@ -1,4 +1,5 @@
 import { searchGotchis } from "@/graphql/fetchers";
+import { qk } from "@/lib/queryKeys";
 import type { Gotchi } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 
@@ -20,7 +21,7 @@ export function useGotchiSearch(search: string, enabled: boolean = true): Gotchi
   const trimmed = search.trim();
   
   const query = useQuery<Gotchi[]>({
-    queryKey: ["gotchi-search", trimmed],
+    queryKey: qk.gotchiSearch(trimmed),
     queryFn: () => searchGotchis(trimmed, 10),
     enabled: enabled && trimmed.length >= 2,
     staleTime: 30_000,

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { qk } from "@/lib/queryKeys";
 
 import { GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
 
@@ -35,7 +36,7 @@ async function fetchInstallations(parcelId: string): Promise<EquippedInstallatio
  */
 export function useParcelInstallations(parcelId: string | null) {
   const query = useQuery({
-    queryKey: ["parcel-installations", parcelId],
+    queryKey: qk.parcelInstallations(parcelId),
     queryFn: () => fetchInstallations(parcelId as string),
     enabled: !!parcelId,
     staleTime: 20_000,

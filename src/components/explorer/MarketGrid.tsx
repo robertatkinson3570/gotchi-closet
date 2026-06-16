@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, ShoppingCart, MapPin, SlidersHorizontal } from "lucide-react";
 import { BuyButton } from "./BuyButton";
@@ -84,7 +85,7 @@ export function MarketGrid({
   const [showFilters, setShowFilters] = useState(false);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["baazaar", "market", kind, category],
+    queryKey: qk.baazaarMarket(kind, category),
     queryFn: () => fetchListings(kind, category),
     staleTime: 30_000,
   });
@@ -94,7 +95,7 @@ export function MarketGrid({
   // Parcel metadata for size/district filtering, loaded once listings arrive.
   const parcelIds = useMemo(() => (itemKind === "parcel" ? all.map((l) => l.tokenId) : []), [itemKind, all]);
   const { data: parcelMeta } = useQuery({
-    queryKey: ["baazaar", "parcel-meta", parcelIds],
+    queryKey: qk.baazaarParcelMeta(parcelIds),
     queryFn: () => fetchParcelMeta(parcelIds),
     enabled: itemKind === "parcel" && parcelIds.length > 0,
     staleTime: 5 * 60_000,

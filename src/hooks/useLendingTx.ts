@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import {
   useAccount,
   useChainId,
@@ -43,7 +44,7 @@ export type ListingParams = {
  * (immediate, 6s, 20s) to cover indexer lag.
  */
 function scheduleGotchiInvalidation(queryClient: ReturnType<typeof useQueryClient>) {
-  const fire = () => queryClient.invalidateQueries({ queryKey: ["gotchis"] });
+  const fire = () => queryClient.invalidateQueries({ queryKey: qk.gotchis() });
   fire();
   setTimeout(fire, 6_000);
   setTimeout(fire, 20_000);

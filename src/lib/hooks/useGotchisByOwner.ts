@@ -1,4 +1,5 @@
 import { fetchGotchisByOwner } from "@/graphql/fetchers";
+import { qk } from "@/lib/queryKeys";
 import type { Gotchi } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 
@@ -12,7 +13,7 @@ const EMPTY_GOTCHIS: Gotchi[] = [];
 
 export function useGotchisByOwner(owner?: string): GotchiFetchState {
   const query = useQuery<Gotchi[]>({
-    queryKey: ["gotchis", owner],
+    queryKey: qk.gotchis(owner),
     queryFn: () => fetchGotchisByOwner(owner as string),
     enabled: !!owner,
     staleTime: 10_000,

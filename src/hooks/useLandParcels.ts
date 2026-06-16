@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { qk } from "@/lib/queryKeys";
 import { useReadContracts } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import { BASE_CHAIN_ID } from "@/lib/chains";
@@ -76,7 +77,7 @@ async function fetchParcels(owner: string): Promise<RawParcel[]> {
  */
 export function useLandParcels(owner?: string) {
   const parcelsQuery = useQuery({
-    queryKey: ["land-parcels", owner?.toLowerCase()],
+    queryKey: qk.landParcels(owner?.toLowerCase()),
     queryFn: () => fetchParcels(owner as string),
     enabled: !!owner,
     staleTime: 30_000,

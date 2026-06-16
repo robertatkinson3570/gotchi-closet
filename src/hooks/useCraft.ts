@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import { useWriteContract, usePublicClient } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
 import { BASE_CHAIN_ID } from "@/lib/chains";
@@ -62,7 +63,7 @@ export function useCraft(owner?: string) {
           args: [[typeId], [0]],
         });
         await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
-        queryClient.invalidateQueries({ queryKey: ["installation-types"] });
+        queryClient.invalidateQueries({ queryKey: qk.installationTypes() });
       } catch (e) {
         setError(parseRevert(e));
       } finally {

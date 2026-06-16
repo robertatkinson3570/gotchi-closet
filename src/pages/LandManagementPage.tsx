@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import { useAccount, useReadContracts, usePublicClient } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -122,7 +123,7 @@ export default function LandManagementPage() {
   // that simulates OK is genuinely free; everything else is on cooldown.
   const ownedIdsKey = ownedGotchis.map((g) => g.gotchiId ?? g.id).join(",");
   const { data: channelableIds, isFetching: channelableChecking } = useQuery({
-    queryKey: ["channelable", address, readyParcel?.tokenId, ownedIdsKey, Math.floor(nowSec / 120)],
+    queryKey: qk.channelable(address, readyParcel?.tokenId, ownedIdsKey, Math.floor(nowSec / 120)),
     enabled: !!publicClient && !!readyParcel && !!address && ownedGotchis.length > 0,
     staleTime: 60_000,
     queryFn: async () => {

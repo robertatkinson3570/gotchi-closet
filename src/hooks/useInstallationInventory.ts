@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { qk } from "@/lib/queryKeys";
 import { useReadContract } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import { BASE_CHAIN_ID } from "@/lib/chains";
@@ -58,7 +59,7 @@ export function useInstallationInventory(owner?: string) {
   const ids = useMemo(() => owned.map((o) => o.id), [owned]);
 
   const { data: types, isLoading: typeLoading } = useQuery({
-    queryKey: ["installation-types", ids],
+    queryKey: qk.installationTypes(ids),
     queryFn: () => fetchTypes(ids),
     enabled: ids.length > 0,
     staleTime: 60_000,

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import {
   useAccount,
   useChainId,
@@ -167,7 +168,7 @@ export function useSequentialAgreeLending() {
         setRunning(false);
         invalidateLendingsCache();
         invalidateMyLendings();
-        queryClient.invalidateQueries({ queryKey: ["gotchis"] });
+        queryClient.invalidateQueries({ queryKey: qk.gotchis() });
         advancingRef.current = false;
         return;
       }

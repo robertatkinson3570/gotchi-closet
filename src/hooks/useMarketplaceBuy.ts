@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
 import { BASE_CHAIN_ID } from "@/lib/chains";
@@ -117,8 +118,8 @@ export function useMarketplaceBuy() {
 
         setStep("success");
         // Listings move to purchased; refresh anything listing-derived.
-        queryClient.invalidateQueries({ queryKey: ["baazaar"] });
-        queryClient.invalidateQueries({ queryKey: ["gotchis"] });
+        queryClient.invalidateQueries({ queryKey: qk.baazaar() });
+        queryClient.invalidateQueries({ queryKey: qk.gotchis() });
       } catch (e) {
         setStep("error");
         setErrorMsg(parseRevert(e));
@@ -189,7 +190,7 @@ export function useMarketplaceBuy() {
         }
         setBulkStep(failed >= items.length ? "error" : "success");
         if (failed > 0 && failed < items.length) setErrorMsg(`Bought ${items.length - failed}/${items.length}; ${failed} failed.`);
-        queryClient.invalidateQueries({ queryKey: ["baazaar"] });
+        queryClient.invalidateQueries({ queryKey: qk.baazaar() });
       } catch (e) {
         setBulkStep("error");
         setErrorMsg(parseRevert(e));

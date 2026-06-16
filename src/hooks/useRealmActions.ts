@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import {
   useAccount,
   useChainId,
@@ -63,8 +64,8 @@ export function useRealmActions() {
 
   useEffect(() => {
     if (step === "success") {
-      queryClient.invalidateQueries({ queryKey: ["land-parcels"] });
-      queryClient.invalidateQueries({ queryKey: ["parcel-detail"] });
+      queryClient.invalidateQueries({ queryKey: qk.landParcels() });
+      queryClient.invalidateQueries({ queryKey: qk.parcelDetail() });
     }
   }, [step, queryClient]);
 

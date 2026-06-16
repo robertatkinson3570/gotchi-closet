@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, Loader2, ArrowRightLeft, MapPin } from "lucide-react";
 import { Seo } from "@/components/Seo";
@@ -141,7 +142,7 @@ function ItemImage({ s }: { s: Sale }) {
 export default function ActivityPage() {
   const [filter, setFilter] = useState("all");
   const { data, isLoading, error } = useQuery({
-    queryKey: ["baazaar-activity"],
+    queryKey: qk.baazaarActivity(),
     queryFn: fetchActivity,
     staleTime: 30_000,
   });

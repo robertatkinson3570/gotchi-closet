@@ -1,4 +1,5 @@
 import { useQuery, useQueries } from "@tanstack/react-query";
+import { qk } from "@/lib/queryKeys";
 import { fetchBaazaarListings } from "@/lib/baazaarListings";
 
 export type ListingPriceMap = Record<string, string>;
@@ -71,7 +72,7 @@ async function fetchOwnerListingPrices(owner: string): Promise<ListingPriceMap> 
 
 export function useOwnerListings(owner: string | null | undefined) {
   return useQuery<ListingPriceMap>({
-    queryKey: ["owner-listings", owner],
+    queryKey: qk.ownerListings(owner),
     queryFn: () => fetchOwnerListingPrices(owner as string),
     enabled: !!owner,
     staleTime: 30_000,
@@ -82,7 +83,7 @@ export function useOwnerListings(owner: string | null | undefined) {
 export function useGotchiListingPrices(tokenIds: string[]): ListingPriceMap {
   const queries = useQueries({
     queries: tokenIds.map((tokenId) => ({
-      queryKey: ["gotchi-listing", tokenId],
+      queryKey: qk.gotchiListing(tokenId),
       queryFn: () => fetchListingByTokenId(tokenId),
       staleTime: 60_000,
       gcTime: 5 * 60_000,

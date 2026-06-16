@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
@@ -132,7 +133,7 @@ export function AuctionGrid() {
   const [bidValue, setBidValue] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const { data, isLoading, error, refetch } = useQuery({ queryKey: ["gbm-auctions"], queryFn: fetchAuctions, staleTime: 30_000 });
+  const { data, isLoading, error, refetch } = useQuery({ queryKey: qk.gbmAuctions(), queryFn: fetchAuctions, staleTime: 30_000 });
   const rows = useMemo(() => (data ?? []).filter((a) => a.startsAt <= nowSec), [data, nowSec]);
 
   const placeBid = async (a: Auction) => {

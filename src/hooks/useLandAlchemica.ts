@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import {
   useAccount,
   useChainId,
@@ -75,7 +76,7 @@ export function useLandAlchemica(claimerGotchiId?: number, channelGotchiIds: num
   // parcel objects; sharing a key lets one overwrite the other's cache shape
   // and throws "Cannot convert undefined to a BigInt".
   const parcelsQuery = useQuery({
-    queryKey: ["land-parcel-ids", address?.toLowerCase()],
+    queryKey: qk.landParcelIds(address?.toLowerCase()),
     queryFn: () => fetchParcelIds(address as string),
     enabled: !!address,
     staleTime: 30_000,
@@ -223,8 +224,8 @@ export function useLandAlchemica(claimerGotchiId?: number, channelGotchiIds: num
       setProgress({ done: b + 1, total: batches.length });
     }
     refetch();
-    queryClient.invalidateQueries({ queryKey: ["land-parcel-ids", address.toLowerCase()] });
-    queryClient.invalidateQueries({ queryKey: ["land-parcels"] });
+    queryClient.invalidateQueries({ queryKey: qk.landParcelIds(address.toLowerCase()) });
+    queryClient.invalidateQueries({ queryKey: qk.landParcels() });
     if (failed >= batches.length) {
       setStep("error");
       setErrorMsg(parseRevert(lastErr));
@@ -317,8 +318,8 @@ export function useLandAlchemica(claimerGotchiId?: number, channelGotchiIds: num
       setErrorMsg("No parcels channeled — every owned gotchi is on cooldown (each gotchi can channel once per cooldown). Try again later.");
     }
     refetch();
-    queryClient.invalidateQueries({ queryKey: ["land-parcel-ids", address.toLowerCase()] });
-    queryClient.invalidateQueries({ queryKey: ["land-parcels"] });
+    queryClient.invalidateQueries({ queryKey: qk.landParcelIds(address.toLowerCase()) });
+    queryClient.invalidateQueries({ queryKey: qk.landParcels() });
   }, [isConnected, address, publicClient, channelGotchiIds, claimerGotchiId, parcelIds, nextChannelTimes, altarLevels, writeContractAsync, refetch, queryClient]);
 
   const reset = useCallback(() => {

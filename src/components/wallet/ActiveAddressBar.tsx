@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { qk } from "@/lib/queryKeys";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { useAddressState } from "@/lib/addressState";
@@ -29,14 +30,14 @@ export function ActiveAddressBar() {
     }
     setError("");
     setManualAddress(input);
-    queryClient.cancelQueries({ queryKey: ["gotchis"] });
+    queryClient.cancelQueries({ queryKey: qk.gotchis() });
   };
 
   const handleUseConnected = () => {
     if (!connectedAddress) return;
     setError("");
     applyConnectedAddress();
-    queryClient.cancelQueries({ queryKey: ["gotchis"] });
+    queryClient.cancelQueries({ queryKey: qk.gotchis() });
   };
 
   return (
