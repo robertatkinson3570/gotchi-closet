@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Loader2, ArrowRightLeft } from "lucide-react";
+import { Activity, Loader2, ArrowRightLeft, MapPin } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
+import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
+import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
 
+type GotchiArt = { numericTraits: number[]; equippedWearables: number[]; hauntId?: number; collateral?: string };
 type Sale = {
   id: string;
   kind: "erc721" | "erc1155";
@@ -15,6 +18,7 @@ type Sale = {
   seller: string;
   buyer: string;
   timePurchased: number;
+  gotchi?: GotchiArt;
 };
 
 const CATEGORY_LABEL: Record<number, string> = {
@@ -39,6 +43,7 @@ async function fetchActivity(): Promise<Sale[]> {
     query Activity {
       erc721Listings(first: 100, where: { timePurchased_gt: "0" }, orderBy: timePurchased, orderDirection: desc) {
         id category tokenId priceInWei seller buyer recipient timePurchased
+        gotchi { numericTraits withSetsNumericTraits equippedWearables hauntId collateral }
       }
       erc1155Listings(first: 100, where: { sold: true }, orderBy: timeLastPurchased, orderDirection: desc) {
         id category erc1155TypeId quantity priceInWei seller timeLastPurchased
@@ -61,6 +66,14 @@ async function fetchActivity(): Promise<Sale[]> {
     seller: l.seller,
     buyer: l.recipient || l.buyer,
     timePurchased: Number(l.timePurchased),
+    gotchi: l.gotchi
+      ? {
+          numericTraits: (l.gotchi.withSetsNumericTraits ?? l.gotchi.numericTraits ?? []).map((n: any) => Number(n)),
+          equippedWearables: (l.gotchi.equippedWearables ?? []).map((n: any) => Number(n)),
+          hauntId: l.gotchi.hauntId != null ? Number(l.gotchi.hauntId) : undefined,
+          collateral: l.gotchi.collateral,
+        }
+      : undefined,
   }));
   const e1155: Sale[] = (json.data?.erc1155Listings ?? []).map((l: any) => ({
     id: `1155-${l.id}`,
@@ -86,6 +99,38 @@ function ago(unix: number): string {
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
+}
+
+function ItemImage({ s }: { s: Sale }) {
+  if (s.category === BAAZAAR_CATEGORY.AAVEGOTCHI && s.gotchi) {
+    return (
+      <span className="inline-block w-9 h-9 rounded bg-muted/40 overflow-hidden align-middle">
+        <GotchiSvg
+          gotchiId={s.tokenId}
+          hauntId={s.gotchi.hauntId}
+          collateral={s.gotchi.collateral}
+          numericTraits={s.gotchi.numericTraits}
+          equippedWearables={s.gotchi.equippedWearables}
+          mode="preview"
+          useBlobUrl
+          className="w-full h-full object-contain"
+        />
+      </span>
+    );
+  }
+  if (s.kind === "erc1155") {
+    const src = getWearableIconUrlCandidates(Number(s.tokenId))[0];
+    return (
+      <span className="inline-flex w-9 h-9 rounded bg-black/20 items-center justify-center overflow-hidden align-middle">
+        <img src={src} alt={`#${s.tokenId}`} className="max-w-8 max-h-8 object-contain" loading="lazy" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex w-9 h-9 rounded bg-emerald-500/10 items-center justify-center align-middle">
+      <MapPin className="w-4 h-4 text-emerald-500/70" />
+    </span>
+  );
 }
 
 export default function ActivityPage() {
@@ -133,6 +178,7 @@ export default function ActivityPage() {
           <table className="w-full text-xs whitespace-nowrap">
             <thead className="bg-muted/30 text-muted-foreground">
               <tr>
+                <th className="text-left font-medium px-3 py-2"></th>
                 <th className="text-left font-medium px-3 py-2">Type</th>
                 <th className="text-left font-medium px-3 py-2">Item</th>
                 <th className="text-right font-medium px-3 py-2">Price</th>
@@ -143,6 +189,7 @@ export default function ActivityPage() {
             <tbody>
               {rows.map((s) => (
                 <tr key={s.id} className="border-t border-border/20 hover:bg-muted/20">
+                  <td className="px-3 py-1.5"><ItemImage s={s} /></td>
                   <td className="px-3 py-1.5">{CATEGORY_LABEL[s.category] ?? `Cat ${s.category}`}</td>
                   <td className="px-3 py-1.5 font-mono">#{s.tokenId}{s.quantity > 1 ? ` ×${s.quantity}` : ""}</td>
                   <td className="px-3 py-1.5 text-right text-emerald-500 font-semibold">{ghst(s.priceWei)} GHST</td>
