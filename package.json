@@ -14,7 +14,8 @@
     "preview": "vite preview",
     "start": "vite preview",
     "test:unit": "vitest run",
-    "test:e2e": "playwright test tests/e2e/smoke.spec.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:live": "playwright test tests/e2e/live",
     "mommy:regression": "vitest run tests/mommy-regression.test.ts",
     "lint": "eslint . --ext ts,tsx --max-warnings 0"
   },

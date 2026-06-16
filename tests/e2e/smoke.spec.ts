@@ -1,33 +1,11 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
+import { stubNetwork, trackPageErrors } from "./_helpers";
 
 // Deterministic smoke suite for the critical user journeys. All external calls
-// (subgraphs, RPC, SVG API) are stubbed so the tests never depend on live data
-// or third-party uptime — they assert the app shell, navigation, and the
-// marketplace tab structure render and don't crash.
+// (subgraphs, RPC, SVG API) are stubbed (see _helpers) so the tests never
+// depend on live data or third-party uptime — they assert the app shell,
+// navigation, and the marketplace tab structure render and don't crash.
 test.use({ headless: true });
-
-async function stubNetwork(page: Page) {
-  // Subgraphs (Goldsky) -> empty but well-formed GraphQL responses.
-  await page.route("**/api.goldsky.com/**", (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: {} }) })
-  );
-  // SVG/thumbs API -> empty svg.
-  await page.route("**/api/**", (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ svg: "<svg/>" }) })
-  );
-  // Any other third-party (RPC, image CDNs, walletconnect) -> abort cheaply.
-  await page.route(/^https?:\/\/(?!localhost)/, (route) => {
-    const u = route.request().url();
-    if (u.includes("goldsky.com") || u.includes("/api/")) return route.fallback();
-    return route.abort();
-  });
-}
-
-function trackPageErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on("pageerror", (e) => errors.push(String(e)));
-  return errors;
-}
 
 test("app shell + global nav load", async ({ page }) => {
   await stubNetwork(page);
