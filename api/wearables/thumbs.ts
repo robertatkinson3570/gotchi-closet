@@ -36,7 +36,7 @@ export default async function handler(req: any, res: any) {
     if (body.numericTraits && !Array.isArray(body.numericTraits)) {
       throw badRequest("INVALID_NUMERIC_TRAITS", "numericTraits must be an array");
     }
-    const { hauntId, collateral, numericTraits, wearableIds } = body || {};
+    const { hauntId, collateral, numericTraits } = body || {};
     const ids = Array.isArray(rawIds)
       ? rawIds
           .map((value: number | string) => Number(value))
