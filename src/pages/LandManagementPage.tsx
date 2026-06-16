@@ -96,10 +96,10 @@ export default function LandManagementPage() {
     return fromLender ? Number(fromLender.gotchiTokenId) : undefined;
   }, [selectedGotchiId, lender]);
 
-  const { rows, isLoading, error } = useLandParcels(address);
+  const { rows, isLoading, error, refetch } = useLandParcels(address);
   const actions = useRealmActions();
 
-  const { data: gotchiLastChanneled } = useReadContract({
+  const { data: gotchiLastChanneled, refetch: refetchGotchi } = useReadContract({
     address: REALM_DIAMOND_BASE,
     abi: REALM_FACET_ABI,
     functionName: "getLastChanneled",
@@ -107,6 +107,13 @@ export default function LandManagementPage() {
     chainId: BASE_CHAIN_ID,
     query: { enabled: !!claimerGotchiId },
   });
+
+  // Optimistic channel state for instant feedback before the refetch lands:
+  // parcel -> unix sec it was channeled, plus a window where the picked gotchi
+  // is on cooldown (one gotchi can only channel once per cooldown, so every
+  // channel button greys out until it's free again).
+  const [justChanneled, setJustChanneled] = useState<Record<string, number>>({});
+  const [gotchiBusyUntil, setGotchiBusyUntil] = useState(0);
 
   // 30s tick for live "ready / cooldown / ago" columns.
   const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
@@ -116,9 +123,20 @@ export default function LandManagementPage() {
   }, []);
 
   useEffect(() => {
+    const key = actions.activeKey;
     if (actions.step === "success") {
+      if (key?.startsWith("channel:")) {
+        const id = key.slice("channel:".length);
+        const row = rows.find((r) => r.tokenId === id);
+        const cd = row ? CHANNEL_COOLDOWN_SEC_BY_ALTAR[row.altarLevel] ?? CHANNEL_COOLDOWN_SEC : CHANNEL_COOLDOWN_SEC;
+        const now = Math.floor(Date.now() / 1000);
+        setJustChanneled((m) => ({ ...m, [id]: now }));
+        setGotchiBusyUntil(now + cd);
+      }
       toast({ title: "Transaction confirmed", description: "On-chain state updated." });
       actions.reset();
+      refetch();
+      refetchGotchi();
     }
     if (actions.step === "error" && actions.errorMsg) {
       toast({ title: "Transaction failed", description: actions.errorMsg.slice(0, 180), variant: "destructive" });
@@ -135,8 +153,13 @@ export default function LandManagementPage() {
   const [page, setPage] = useState(0);
 
   const cooldownOf = (r: ParcelRow) => CHANNEL_COOLDOWN_SEC_BY_ALTAR[r.altarLevel] ?? CHANNEL_COOLDOWN_SEC;
-  const channelReadyIn = (r: ParcelRow) =>
-    r.lastChanneled > 0 ? Math.max(0, r.lastChanneled + cooldownOf(r) - nowSec) : 0;
+  const channelReadyIn = (r: ParcelRow) => {
+    const last = Math.max(r.lastChanneled, justChanneled[r.tokenId] ?? 0);
+    return last > 0 ? Math.max(0, last + cooldownOf(r) - nowSec) : 0;
+  };
+  // The picked gotchi can't channel again until its cooldown clears, so every
+  // channel button is held until then (not just the one just channeled).
+  const gotchiBusyFor = Math.max(0, gotchiBusyUntil - nowSec);
   // Reservoirs can only be emptied once per cooldown; "ready" = cooldown elapsed
   // (lastClaimed + 8h) AND there's a balance to take. Balance alone is wrong —
   // it re-accumulates the instant you claim, so every parcel would look ready.
@@ -222,7 +245,15 @@ export default function LandManagementPage() {
         </div>
       ) : (
         <>
-          <LandAlchemicaBar gotchiId={claimerGotchiId} />
+          <LandAlchemicaBar
+            gotchiId={claimerGotchiId}
+            onChanneled={() => {
+              const now = Math.floor(Date.now() / 1000);
+              setGotchiBusyUntil(now + CHANNEL_COOLDOWN_SEC);
+              refetch();
+              refetchGotchi();
+            }}
+          />
 
           {/* Filters (hidden for now) */}
           {SHOW_FILTERS && (
@@ -278,6 +309,7 @@ export default function LandManagementPage() {
                       r={r}
                       nowSec={nowSec}
                       readyIn={channelReadyIn(r)}
+                      gotchiBusy={gotchiBusyFor > 0}
                       reservoirsReady={reservoirsReady(r)}
                       reservoirReadyIn={reservoirReadyIn(r)}
                       claimerGotchiId={claimerGotchiId}
@@ -328,11 +360,12 @@ function Th({ label, k, sort, onSort }: { label: string; k: SortKey; sort: { key
 }
 
 function Row({
-  r, nowSec, readyIn, reservoirsReady, reservoirReadyIn, claimerGotchiId, gotchiLastChanneled, actions, onDetails,
+  r, nowSec, readyIn, gotchiBusy, reservoirsReady, reservoirReadyIn, claimerGotchiId, gotchiLastChanneled, actions, onDetails,
 }: {
   r: ParcelRow;
   nowSec: number;
   readyIn: number;
+  gotchiBusy: boolean;
   reservoirsReady: boolean;
   reservoirReadyIn: number;
   claimerGotchiId?: number;
@@ -364,7 +397,7 @@ function Row({
       <td className="px-2 py-1.5">
         <div className="flex items-center gap-1 justify-end">
           <IconBtn title="Claim reservoir" busy={busy(`claim:${realmId}`)} disabled={disabled || !reservoirsReady} onClick={() => actions.claim(realmId, gotchi)}><HandCoins className="w-3.5 h-3.5" /></IconBtn>
-          <IconBtn title="Channel" busy={busy(`channel:${realmId}`)} disabled={disabled || readyIn > 0} onClick={() => actions.channel(realmId, gotchi, (gotchiLastChanneled ?? 0n) as bigint)}><Zap className="w-3.5 h-3.5" /></IconBtn>
+          <IconBtn title={readyIn > 0 ? "On cooldown" : gotchiBusy ? "Gotchi on cooldown — channel again after it clears or pick another gotchi" : "Channel"} busy={busy(`channel:${realmId}`)} disabled={disabled || readyIn > 0 || gotchiBusy} onClick={() => actions.channel(realmId, gotchi, (gotchiLastChanneled ?? 0n) as bigint)}><Zap className="w-3.5 h-3.5" /></IconBtn>
           <IconBtn title="Details & build (survey, layout)" onClick={onDetails}><Info className="w-3.5 h-3.5" /></IconBtn>
         </div>
       </td>

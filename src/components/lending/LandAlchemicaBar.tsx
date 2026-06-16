@@ -31,7 +31,10 @@ function formatCountdown(seconds: number): string {
  * (claimAllAvailableAlchemica), signed in the browser wallet. This sweeps what
  * harvesters have accumulated; the larger in-ground reserves release over time.
  */
-export function LandAlchemicaBar({ gotchiId }: { gotchiId?: number } = {}) {
+export function LandAlchemicaBar({
+  gotchiId,
+  onChanneled,
+}: { gotchiId?: number; onChanneled?: () => void } = {}) {
   const { address } = useAccount();
   const { toast } = useToast();
 
@@ -105,6 +108,7 @@ export function LandAlchemicaBar({ gotchiId }: { gotchiId?: number } = {}) {
   useEffect(() => {
     if (land.channelStep === "success") {
       toast({ title: "Channeling done", description: `Channeled ${land.channelDone} parcel${land.channelDone === 1 ? "" : "s"}.` });
+      onChanneled?.();
       land.reset();
     }
     if (land.channelStep === "error" && land.errorMsg) {

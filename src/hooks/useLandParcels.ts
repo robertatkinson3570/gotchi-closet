@@ -102,6 +102,16 @@ export function useLandParcels(owner?: string) {
         args: [id],
         chainId: BASE_CHAIN_ID,
       });
+      // On-chain last-channeled (per parcel). The subgraph lags after a channel
+      // so the cooldown/button wouldn't update; the chain value flips in the
+      // same tx and refetches on invalidation.
+      out.push({
+        address: REALM_DIAMOND_BASE,
+        abi: REALM_FACET_ABI,
+        functionName: "getParcelLastChanneled",
+        args: [id],
+        chainId: BASE_CHAIN_ID,
+      });
     }
     return out;
   }, [ids]);
@@ -135,14 +145,19 @@ export function useLandParcels(owner?: string) {
 
   const rows = useMemo<ParcelRow[]>(() => {
     return raw.map((p, i) => {
-      const avail = chain?.[i * 2];
-      const altar = chain?.[i * 2 + 1];
+      const avail = chain?.[i * 3];
+      const altar = chain?.[i * 3 + 1];
+      const channeled = chain?.[i * 3 + 2];
       const info = names?.[i];
       const available =
         avail?.status === "success"
           ? (avail.result as readonly bigint[]).slice()
           : [0n, 0n, 0n, 0n];
-      const lastChanneled = Number(p.lastChanneledAlchemica) || 0;
+      // Prefer the on-chain value (fresh after a channel); fall back to subgraph.
+      const lastChanneled =
+        channeled?.status === "success"
+          ? Number(channeled.result as bigint)
+          : Number(p.lastChanneledAlchemica) || 0;
       const name =
         info?.status === "success"
           ? ((info.result as { parcelAddress?: string }).parcelAddress ?? "")
