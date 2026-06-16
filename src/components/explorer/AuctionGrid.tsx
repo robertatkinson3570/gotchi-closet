@@ -3,9 +3,22 @@ import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { Loader2 } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-import { GBM_BAAZAAR_SUBGRAPH_URL, GBM_DIAMOND_BASE, GHST_TOKEN_BASE, ERC20_ABI, MAX_UINT256 } from "@/lib/lending/contracts";
+import {
+  GBM_BAAZAAR_SUBGRAPH_URL,
+  GBM_DIAMOND_BASE,
+  GHST_TOKEN_BASE,
+  ERC20_ABI,
+  MAX_UINT256,
+  AAVEGOTCHI_DIAMOND_BASE,
+  REALM_DIAMOND_BASE,
+  INSTALLATION_DIAMOND_BASE,
+  TILE_DIAMOND_BASE,
+} from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
+import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "./AssetImage";
+import { GotchiSvgById } from "./GotchiSvgById";
+import { Gavel } from "lucide-react";
 
 const GBM_ABI = [
   {
@@ -26,6 +39,7 @@ type Auction = {
   id: string;
   type: string;
   tokenId: string;
+  contract: string;
   highestBid: string;
   startsAt: number;
   endsAt: number;
@@ -33,7 +47,7 @@ type Auction = {
 
 async function fetchAuctions(): Promise<Auction[]> {
   const now = Math.floor(Date.now() / 1000);
-  const query = `query Live($now: BigInt!){ auctions(first: 200, where: { cancelled: false, claimed: false, endsAt_gt: $now }, orderBy: endsAt, orderDirection: asc){ id type tokenId highestBid startsAt endsAt } }`;
+  const query = `query Live($now: BigInt!){ auctions(first: 200, where: { cancelled: false, claimed: false, endsAt_gt: $now }, orderBy: endsAt, orderDirection: asc){ id type tokenId contractAddress highestBid startsAt endsAt } }`;
   const res = await fetch(GBM_BAAZAAR_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -45,10 +59,27 @@ async function fetchAuctions(): Promise<Auction[]> {
     id: a.id,
     type: a.type,
     tokenId: a.tokenId,
+    contract: (a.contractAddress ?? "").toLowerCase(),
     highestBid: a.highestBid ?? "0",
     startsAt: Number(a.startsAt),
     endsAt: Number(a.endsAt),
   }));
+}
+
+// Auction items span many contracts; render the known ones, fall back for the
+// rest (exotic NFTs whose art lives in off-chain metadata we can't derive).
+function AuctionItemImage({ a }: { a: Auction }) {
+  const c = a.contract;
+  const cls = "max-h-full max-w-full object-contain";
+  if (c === REALM_DIAMOND_BASE.toLowerCase()) return <AssetImage candidates={parcelImageCandidates(a.tokenId)} alt={`#${a.tokenId}`} className="max-h-full max-w-full object-contain rounded" />;
+  if (c === INSTALLATION_DIAMOND_BASE.toLowerCase()) return <AssetImage candidates={installationImageCandidates(a.tokenId)} alt={`#${a.tokenId}`} className={cls} />;
+  if (c === TILE_DIAMOND_BASE.toLowerCase()) return <AssetImage candidates={tileImageCandidates(a.tokenId)} alt={`#${a.tokenId}`} className={cls} />;
+  if (c === AAVEGOTCHI_DIAMOND_BASE.toLowerCase()) {
+    return a.type === "erc1155"
+      ? <AssetImage candidates={itemImageCandidates(a.tokenId)} alt={`#${a.tokenId}`} className={cls} />
+      : <GotchiSvgById id={a.tokenId} className="w-full h-full [&>svg]:w-full [&>svg]:h-full" />;
+  }
+  return <Gavel className="w-7 h-7 text-primary/60" />;
 }
 
 const ghst = (wei: string) => (Number(wei) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -124,6 +155,9 @@ export function AuctionGrid() {
             <div className="flex items-center justify-between text-xs">
               <span className="font-mono text-muted-foreground">#{a.tokenId}</span>
               <span className="uppercase text-[9px] bg-muted/50 px-1 rounded">{a.type}</span>
+            </div>
+            <div className="h-24 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
+              <AuctionItemImage a={a} />
             </div>
             <div className="text-[11px] text-muted-foreground">
               Top bid <span className="text-emerald-500 font-semibold">{ghst(a.highestBid)} GHST</span>

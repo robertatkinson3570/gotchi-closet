@@ -12,6 +12,10 @@ export const tileImageCandidates = (id: string | number) => [
   `${BRAND}/tiles/${id}.png`,
   `${BRAND}/tiles/${id}.svg`,
 ];
+// Parcels are rendered map snapshots hosted per tokenId on the Gotchiverse S3.
+export const parcelImageCandidates = (id: string | number) => [
+  `https://gotchiverse.s3.ap-northeast-1.amazonaws.com/${id}.png`,
+];
 
 /**
  * <img> that cycles through candidate URLs on error and renders nothing if all

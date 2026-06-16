@@ -5,7 +5,7 @@ import { BuyButton } from "./BuyButton";
 import { useMarketplaceBuy, type BuyParams } from "@/hooks/useMarketplaceBuy";
 import { useToast } from "@/ui/use-toast";
 import { CORE_SUBGRAPH_URL } from "@/lib/lending/contracts";
-import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates } from "./AssetImage";
+import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "./AssetImage";
 
 type Listing = { listingId: string; tokenId: string; priceWei: string; quantity: number };
 
@@ -119,6 +119,8 @@ export function MarketGrid({
                   <AssetImage candidates={installationImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-16 max-w-16 object-contain" />
                 ) : itemKind === "tile" ? (
                   <AssetImage candidates={tileImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-16 max-w-16 object-contain" />
+                ) : itemKind === "parcel" ? (
+                  <AssetImage candidates={parcelImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-full max-w-full object-contain rounded" />
                 ) : (
                   <MapPin className="w-6 h-6 text-emerald-500/70" />
                 )}
