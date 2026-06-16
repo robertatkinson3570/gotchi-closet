@@ -8,10 +8,15 @@ export type BaazaarPriceMap = Record<
   {
     minPriceWei: bigint;
     minPriceGHST: string;
+    /** Subgraph id of the cheapest open listing (for one-click buy). */
+    listingId: string;
+    /** Quantity available on that cheapest listing. */
+    quantity: number;
   }
 >;
 
 interface ERC1155Listing {
+  id: string;
   erc1155TypeId: string;
   priceInWei: string;
   quantity: string;
@@ -31,6 +36,7 @@ const BAAZAAR_QUERY = `
       orderBy: priceInWei
       orderDirection: asc
     ) {
+      id
       erc1155TypeId
       priceInWei
       quantity
@@ -94,6 +100,8 @@ function buildPriceMap(listings: ERC1155Listing[]): BaazaarPriceMap {
       map[wearableId] = {
         minPriceWei: priceWei,
         minPriceGHST: formatUnits(priceWei, 18),
+        listingId: listing.id,
+        quantity: parseInt(listing.quantity, 10) || 1,
       };
     }
   }

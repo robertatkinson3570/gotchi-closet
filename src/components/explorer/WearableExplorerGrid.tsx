@@ -3,6 +3,7 @@ import { WearableExplorerCard } from "./WearableExplorerCard";
 import { Loader2 } from "lucide-react";
 import type { ExplorerWearable } from "@/lib/explorer/wearableTypes";
 import type { DataMode } from "@/lib/explorer/types";
+import { useAppStore } from "@/state/useAppStore";
 
 interface WearableExplorerGridProps {
   wearables: ExplorerWearable[];
@@ -26,6 +27,8 @@ export function WearableExplorerGrid({
   onCardClick,
 }: WearableExplorerGridProps) {
   const loaderRef = useRef<HTMLDivElement>(null);
+  // Full cheapest-listing map (listingId/priceWei/quantity) for one-click buy.
+  const baazaarPrices = useAppStore((s) => s.baazaarPrices);
 
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -64,6 +67,7 @@ export function WearableExplorerGrid({
             wearable={wearable}
             quantity={mode === "mine" ? quantities[wearable.id] : undefined}
             price={mode === "baazaar" ? prices[wearable.id] : undefined}
+            listing={mode === "baazaar" ? baazaarPrices[wearable.id] : undefined}
             onClick={() => onCardClick?.(wearable)}
           />
         ))}

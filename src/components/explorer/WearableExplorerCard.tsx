@@ -4,11 +4,15 @@ import { placeholderSvg } from "@/lib/placeholderSvg";
 import { formatTraitValue } from "@/lib/format";
 import { getSlotName, getWearableRarityTier } from "@/lib/explorer/wearableTypes";
 import type { ExplorerWearable } from "@/lib/explorer/wearableTypes";
+import { BuyButton } from "./BuyButton";
+import { WEARABLE_DIAMOND_BASE } from "@/lib/lending/contracts";
 
 interface WearableExplorerCardProps {
   wearable: ExplorerWearable;
   quantity?: number;
   price?: string;
+  /** Cheapest open listing for one-click buy (Baazaar mode). */
+  listing?: { listingId: string; minPriceWei: bigint; quantity: number };
   onClick?: () => void;
 }
 
@@ -34,6 +38,7 @@ export function WearableExplorerCard({
   wearable,
   quantity,
   price,
+  listing,
   onClick,
 }: WearableExplorerCardProps) {
   const imageUrls = getWearableIconUrlCandidates(wearable.id);
@@ -136,6 +141,21 @@ export function WearableExplorerCard({
           <span className="text-[9px] font-medium text-emerald-400">
             {parseFloat(price).toFixed(0)} GHST
           </span>
+        </div>
+      )}
+
+      {listing && (
+        <div className="mt-1" onClick={(e) => e.stopPropagation()}>
+          <BuyButton
+            listingId={listing.listingId}
+            tokenId={String(wearable.id)}
+            priceInWei={listing.minPriceWei.toString()}
+            kind="erc1155"
+            contractAddress={WEARABLE_DIAMOND_BASE}
+            quantity={1}
+            label={wearable.name}
+            className="inline-flex items-center justify-center gap-1 h-6 w-full px-1 rounded bg-emerald-600 text-white hover:bg-emerald-600/90 disabled:opacity-50 text-[9px] font-semibold"
+          />
         </div>
       )}
 
