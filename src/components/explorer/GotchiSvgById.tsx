@@ -2,8 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 // The svg subgraph stores each gotchi's fully-rendered SVG by token id — used
 // where we have a gotchi id but not its traits (e.g. auction listings).
-const SVG_SUBGRAPH_URL =
-  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-svg-base/prod/gn";
+import { SVG_SUBGRAPH as SVG_SUBGRAPH_URL } from "@/lib/subgraph";
 
 async function fetchGotchiSvg(id: string): Promise<string | null> {
   const res = await fetch(SVG_SUBGRAPH_URL, {

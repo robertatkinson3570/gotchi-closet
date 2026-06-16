@@ -3,8 +3,7 @@ import { fetchBaazaarListings } from "@/lib/baazaarListings";
 
 export type ListingPriceMap = Record<string, string>;
 
-const BAAZAAR_SUBGRAPH_URL =
-  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn";
+import { CORE_SUBGRAPH as BAAZAAR_SUBGRAPH_URL } from "@/lib/subgraph";
 
 async function fetchListingByTokenId(tokenId: string): Promise<{ tokenId: string; price: string | null }> {
   const query = `

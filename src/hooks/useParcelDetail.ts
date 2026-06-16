@@ -4,10 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { REALM_DIAMOND_BASE, REALM_FACET_ABI } from "@/lib/lending/contracts";
 
-const GOTCHIVERSE_SUBGRAPH =
-  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/gotchiverse-base/prod/gn";
-const CORE_SUBGRAPH =
-  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn";
+import { GOTCHIVERSE_SUBGRAPH, CORE_SUBGRAPH } from "@/lib/subgraph";
 
 // Last Baazaar sale of the parcel (ERC721 category 4 = realm).
 async function fetchLastSale(tokenId: string): Promise<{ priceGhst: number; time: number } | null> {

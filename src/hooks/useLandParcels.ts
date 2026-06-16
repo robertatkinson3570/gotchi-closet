@@ -4,8 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { REALM_DIAMOND_BASE, REALM_FACET_ABI, altarLevelFromId } from "@/lib/lending/contracts";
 
-const GOTCHIVERSE_SUBGRAPH =
-  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/gotchiverse-base/prod/gn";
+import { GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
 
 export type ParcelRow = {
   tokenId: string;

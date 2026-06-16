@@ -7,8 +7,7 @@
 
 import type { Gotchi } from "@/types";
 
-const BAAZAAR_SUBGRAPH_URL =
-  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn";
+import { CORE_SUBGRAPH as BAAZAAR_SUBGRAPH_URL } from "@/lib/subgraph";
 
 // Entity names (adjust if schema differs)
 const LISTING_ENTITY = "erc721Listings";

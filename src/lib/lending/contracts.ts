@@ -1,3 +1,5 @@
+import { CORE_SUBGRAPH, GBM_SUBGRAPH } from "@/lib/subgraph";
+
 // Aavegotchi diamond on Base (hosts LendingFacet, WhitelistFacet, etc.)
 // Source: Aavegotchi wiki (post-Base migration)
 export const AAVEGOTCHI_DIAMOND_BASE = "0xA99c4B08201F2913Db8D28e71d020c4298F29dBF" as const;
@@ -657,10 +659,8 @@ export const TILE_DIAMOND_BASE = "0x617fdB8093b309e4699107F48812b407A7c37938" as
 // GBM auction subgraph on Base (the dapp's /auction source). Indexes the
 // `auctions` entity (id, type, tokenId, highestBid, highestBidder, startsAt,
 // endsAt, cancelled, claimed) — GBMFacet has no on-chain enumeration.
-export const GBM_BAAZAAR_SUBGRAPH_URL =
-  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-gbm-baazaar-base/prod/gn";
-export const CORE_SUBGRAPH_URL =
-  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn";
+export const GBM_BAAZAAR_SUBGRAPH_URL = GBM_SUBGRAPH;
+export const CORE_SUBGRAPH_URL = CORE_SUBGRAPH;
 
 // GBM auction contract on Base.
 export const GBM_DIAMOND_BASE = "0x80320A0000C7A6a34086E2ACAD6915Ff57FfDA31" as const;

@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-const GOTCHIVERSE_SUBGRAPH =
-  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/gotchiverse-base/prod/gn";
+import { GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
 
 export type EquippedInstallation = {
   installationId: string;

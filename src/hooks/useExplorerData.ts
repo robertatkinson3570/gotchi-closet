@@ -212,8 +212,7 @@ const GOTCHIS_BY_OWNER_EXPLORER = gql`
   }
 `;
 
-const BAAZAAR_SUBGRAPH_URL =
-  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn";
+import { CORE_SUBGRAPH as BAAZAAR_SUBGRAPH_URL } from "@/lib/subgraph";
 
 const BAAZAAR_GOTCHI_LISTINGS_QUERY = `
   query BaazaarGotchiListings($first: Int!, $skip: Int!, $orderBy: String!, $orderDirection: String!) {
@@ -514,7 +513,7 @@ export function useExplorerData(
         // Build where clause from filters for server-side filtering
         const whereClause = buildWhereClause(filters);
         const queryStr = buildGotchisQuery(whereClause);
-        const response = await fetch("https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn", {
+        const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -603,7 +602,7 @@ export function useExplorerData(
         const whereClause = buildWhereClause(filters);
         const queryStr = buildGotchisQuery(whereClause);
         
-        const response = await fetch("https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn", {
+        const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

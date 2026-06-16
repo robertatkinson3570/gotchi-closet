@@ -1,7 +1,6 @@
 import { formatUnits } from "viem";
 
-const BAAZAAR_SUBGRAPH_URL =
-  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn";
+import { CORE_SUBGRAPH as BAAZAAR_SUBGRAPH_URL } from "@/lib/subgraph";
 
 export type BaazaarPriceMap = Record<
   number,

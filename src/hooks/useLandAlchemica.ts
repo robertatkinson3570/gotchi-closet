@@ -20,8 +20,7 @@ import { parseRevert } from "@/lib/lending/parseRevert";
 
 // Gotchiverse (land) subgraph on Base. The app's urql client points at the
 // core subgraph, which doesn't index parcels — so query this one directly.
-const GOTCHIVERSE_SUBGRAPH =
-  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/gotchiverse-base/prod/gn";
+import { GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
 
 // claimAllAvailableAlchemica with the full parcel set can exceed the block gas
 // limit, so claims are sent in batches. Each batch is one wallet signature.
