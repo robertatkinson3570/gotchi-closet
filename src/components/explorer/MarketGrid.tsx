@@ -102,18 +102,23 @@ export function MarketGrid({
         {rows.map((l) => {
           const selected = !!cart[l.listingId];
           return (
-            <div key={l.listingId} className={`rounded-lg border p-2 space-y-1.5 ${selected ? "border-primary/60 bg-primary/5" : "border-border/40 bg-background/60"}`}>
+            <div
+              key={l.listingId}
+              className={`group rounded-xl border p-2 space-y-1.5 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg ${
+                selected ? "border-primary/60 bg-primary/10 ring-1 ring-primary/40" : "border-border/40 bg-background/60 hover:border-primary/40"
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono text-muted-foreground">#{l.tokenId}{l.quantity > 1 ? ` ×${l.quantity}` : ""}</span>
-                <input type="checkbox" checked={selected} onChange={() => toggle(l)} className="cursor-pointer" />
+                <input type="checkbox" checked={selected} onChange={() => toggle(l)} className="cursor-pointer accent-primary" />
               </div>
-              <div className="h-14 flex items-center justify-center bg-black/10 rounded overflow-hidden">
+              <div className="h-20 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 group-hover:from-primary/5 group-hover:to-primary/15 transition-colors">
                 {itemKind === "item" ? (
-                  <AssetImage candidates={itemImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-12 max-w-12 object-contain" />
+                  <AssetImage candidates={itemImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-16 max-w-16 object-contain" />
                 ) : itemKind === "installation" ? (
-                  <AssetImage candidates={installationImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-12 max-w-12 object-contain" />
+                  <AssetImage candidates={installationImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-16 max-w-16 object-contain" />
                 ) : itemKind === "tile" ? (
-                  <AssetImage candidates={tileImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-12 max-w-12 object-contain" />
+                  <AssetImage candidates={tileImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-16 max-w-16 object-contain" />
                 ) : (
                   <MapPin className="w-6 h-6 text-emerald-500/70" />
                 )}
