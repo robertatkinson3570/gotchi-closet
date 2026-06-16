@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useAccount } from "wagmi";
 import { Copy, Check, X } from "lucide-react";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
+import { GotchiActionsPanel } from "./GotchiActionsPanel";
 import wearablesData from "../../../data/wearables.json";
 
 type WearableData = {
@@ -87,6 +89,7 @@ type Props = {
 
 export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
   const [copied, setCopied] = useState(false);
+  const { isConnected } = useAccount();
 
   const equippedWearableIds = gotchi.equippedWearables.filter((id) => id > 0);
   const equippedWearables = equippedWearableIds.map((id) => getWearable(id)).filter(Boolean) as WearableData[];
@@ -202,6 +205,8 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
             No wearables equipped
           </div>
         )}
+
+        {isConnected && <GotchiActionsPanel gotchiId={gotchi.tokenId} currentName={gotchi.name} />}
       </div>
     </div>
   );
