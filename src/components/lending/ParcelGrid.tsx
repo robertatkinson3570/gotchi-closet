@@ -16,6 +16,7 @@ export function ParcelGrid({
   onPlace,
   pending,
   onUnstage,
+  onMoveStart,
   size,
 }: {
   installations: Placed[];
@@ -34,6 +35,8 @@ export function ParcelGrid({
   pending?: Placed[];
   /** Click a staged tile to remove it from the plan. */
   onUnstage?: (index: number) => void;
+  /** Begin dragging a staged tile to reposition it. */
+  onMoveStart?: (index: number) => void;
   /** Parcel size code — sets the true grid dimensions. */
   size?: number;
 }) {
@@ -148,9 +151,11 @@ export function ParcelGrid({
           {staged.map((it, i) => (
             <div
               key={`pending-${i}`}
-              title={`${it.name} (staged) @ (${it.x},${it.y}) — click to unstage`}
+              title={`${it.name} (staged) @ (${it.x},${it.y}) — drag to move, click to remove`}
+              draggable={!!onMoveStart}
+              onDragStart={onMoveStart ? () => onMoveStart(i) : undefined}
               onClick={onUnstage ? () => onUnstage(i) : undefined}
-              className="absolute rounded-[3px] z-10 cursor-pointer flex items-center justify-center border-2 border-dashed border-emerald-200"
+              className="absolute rounded-[3px] z-10 cursor-move flex items-center justify-center border-2 border-dashed border-emerald-200"
               style={{
                 left: `${(it.x / cols) * 100}%`,
                 top: `${(it.y / rows) * 100}%`,

@@ -44,6 +44,7 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
   const inventory = useInstallationInventory(address);
   const [dragItem, setDragItem] = useState<InventoryItem | null>(null);
   const [pending, setPending] = useState<Placed[]>([]);
+  const [moving, setMoving] = useState<{ index: number; w: number; h: number } | null>(null);
   const [saving, setSaving] = useState<{ done: number; total: number } | null>(null);
   const canBuild = !!actions && !!gotchiId && !!actions.isOnBase;
   const canRemove = canBuild;
@@ -331,31 +332,41 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                       }
                     : undefined
                 }
-                placing={dragItem ? { w: dragItem.w, h: dragItem.h } : null}
+                placing={
+                  dragItem ? { w: dragItem.w, h: dragItem.h } : moving ? { w: moving.w, h: moving.h } : null
+                }
                 onPlace={
                   canBuild
                     ? (x, y) => {
-                        if (!dragItem) return;
-                        setPending((p) => [
-                          ...p,
-                          {
-                            installationId: dragItem.installationId,
-                            name: dragItem.name,
-                            x,
-                            y,
-                            w: dragItem.w,
-                            h: dragItem.h,
-                            category: dragItem.category,
-                            alch: dragItem.alch,
-                            level: dragItem.level,
-                          },
-                        ]);
-                        setDragItem(null);
+                        if (moving) {
+                          setPending((p) => p.map((it, idx) => (idx === moving.index ? { ...it, x, y } : it)));
+                          setMoving(null);
+                        } else if (dragItem) {
+                          setPending((p) => [
+                            ...p,
+                            {
+                              installationId: dragItem.installationId,
+                              name: dragItem.name,
+                              x,
+                              y,
+                              w: dragItem.w,
+                              h: dragItem.h,
+                              category: dragItem.category,
+                              alch: dragItem.alch,
+                              level: dragItem.level,
+                            },
+                          ]);
+                          setDragItem(null);
+                        }
                       }
                     : undefined
                 }
                 pending={pending}
                 onUnstage={(i) => setPending((p) => p.filter((_, idx) => idx !== i))}
+                onMoveStart={(i) => {
+                  setMoving({ index: i, w: pending[i].w, h: pending[i].h });
+                  setDragItem(null);
+                }}
                 size={detail.size}
               />
 
