@@ -33,8 +33,9 @@ function formatCountdown(seconds: number): string {
  */
 export function LandAlchemicaBar({
   gotchiId,
+  channelGotchiIds,
   onChanneled,
-}: { gotchiId?: number; onChanneled?: () => void } = {}) {
+}: { gotchiId?: number; channelGotchiIds?: number[]; onChanneled?: () => void } = {}) {
   const { address } = useAccount();
   const { toast } = useToast();
 
@@ -54,7 +55,7 @@ export function LandAlchemicaBar({
     return Number.isFinite(id) ? id : undefined;
   }, [gotchiId, lender, gotchis]);
 
-  const land = useLandAlchemica(claimerGotchiId);
+  const land = useLandAlchemica(claimerGotchiId, channelGotchiIds ?? []);
 
   // Tick every 30s so the channel-cooldown countdown stays live.
   const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));

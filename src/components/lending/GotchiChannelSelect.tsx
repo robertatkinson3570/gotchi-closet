@@ -5,17 +5,17 @@ import type { Gotchi } from "@/types";
 
 const gid = (g: Gotchi) => Number(g.gotchiId ?? g.id);
 
-function Icon({ g, size = 24 }: { g: Gotchi; size?: number }) {
+function Icon({ g, size = 26 }: { g: Gotchi; size?: number }) {
   return (
     <span
-      className="inline-block shrink-0 rounded bg-muted/40 overflow-hidden"
+      className="inline-flex items-center justify-center shrink-0 rounded bg-muted/40 overflow-hidden"
       style={{ width: size, height: size }}
     >
       <GotchiSvg
         gotchiId={String(gid(g))}
         hauntId={g.hauntId}
         collateral={g.collateral}
-        numericTraits={g.withSetsNumericTraits ?? g.numericTraits}
+        numericTraits={g.numericTraits}
         equippedWearables={g.equippedWearables}
         mode="preview"
         useBlobUrl

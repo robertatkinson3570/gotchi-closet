@@ -14,6 +14,7 @@ import {
   ALCHEMICA_TOKENS_BASE,
   CHANNEL_COOLDOWN_SEC,
   RESERVOIR_COOLDOWN_SEC,
+  altarLevelFromId,
 } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 
@@ -55,7 +56,7 @@ async function fetchParcelIds(owner: string): Promise<ParcelClaimInfo[]> {
  * `claimerGotchiId` must be a gotchi the owner controls; on owner-only parcels
  * any owned gotchi works, including ones currently locked in a rental.
  */
-export function useLandAlchemica(claimerGotchiId?: number) {
+export function useLandAlchemica(claimerGotchiId?: number, channelGotchiIds: number[] = []) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const isOnBase = chainId === BASE_CHAIN_ID;
@@ -117,6 +118,30 @@ export function useLandAlchemica(claimerGotchiId?: number) {
     contracts: channeledContracts,
     query: { enabled: channeledContracts.length > 0 },
   });
+
+  // Altar level per parcel, so Channel-all can prioritise the highest Aaltars.
+  const altarContracts = useMemo(
+    () =>
+      parcelIds.map((id) => ({
+        address: REALM_DIAMOND_BASE,
+        abi: REALM_FACET_ABI,
+        functionName: "getAltarId" as const,
+        args: [id] as const,
+        chainId: BASE_CHAIN_ID,
+      })),
+    [parcelIds]
+  );
+  const { data: altarData } = useReadContracts({
+    contracts: altarContracts,
+    query: { enabled: altarContracts.length > 0 },
+  });
+  const altarLevels = useMemo<number[]>(
+    () =>
+      (altarData ?? []).map((r) =>
+        r.status === "success" ? altarLevelFromId(Number(r.result as bigint)) : 0
+      ),
+    [altarData]
+  );
 
   // Unix-seconds timestamp at which each parcel can next be channeled
   // (lastChanneled + cooldown). 0 / never-channeled parcels are ready now.
@@ -212,48 +237,90 @@ export function useLandAlchemica(claimerGotchiId?: number) {
     }
   }, [isConnected, address, claimable, claimerGotchiId, writeContractAsync, publicClient, refetch, queryClient]);
 
-  // Channel every parcel whose cooldown is ready, using the claimer gotchi.
-  // Re-reads the gotchi's last-channel before each (its own cooldown updates
-  // after a channel), and skips parcels that revert (gotchi on cooldown / lent).
+  // Channel ready parcels, ROTATING through the wallet's gotchis. The contract
+  // enforces one channel per gotchi per cooldown ("Gotchi can't channel yet"),
+  // so a single gotchi can only do one parcel — we assign a different gotchi to
+  // each parcel and simulate first, so we never prompt a signature for a tx
+  // that would revert. Channels at most (number of off-cooldown gotchis).
   const channelAll = useCallback(async () => {
-    if (!isConnected || !address || !claimerGotchiId || !publicClient) return;
+    if (!isConnected || !address || !publicClient) return;
+    const pool = channelGotchiIds.length ? channelGotchiIds : claimerGotchiId ? [claimerGotchiId] : [];
+    if (pool.length === 0) return;
     const nowSec = Math.floor(Date.now() / 1000);
-    const ready = parcelIds.filter((_, i) => (nextChannelTimes[i] || 0) <= nowSec);
+    // Channel the highest-Aaltar parcels first — channels per cooldown are
+    // capped by how many gotchis you have, so spend them on the best altars.
+    const ready = parcelIds
+      .map((id, i) => ({ id, altar: altarLevels[i] ?? 0, next: nextChannelTimes[i] || 0 }))
+      .filter((p) => p.next <= nowSec)
+      .sort((a, b) => b.altar - a.altar)
+      .map((p) => p.id);
     if (ready.length === 0) return;
+
     setErrorMsg(null);
     setChannelStep("submitting");
-    setChannelProgress({ done: 0, total: ready.length });
+    const maxChannels = Math.min(ready.length, pool.length);
+    setChannelProgress({ done: 0, total: maxChannels });
+
+    const used = new Set<number>();
     let ok = 0;
-    for (let i = 0; i < ready.length; i++) {
-      try {
-        const last = (await publicClient.readContract({
-          address: REALM_DIAMOND_BASE,
-          abi: REALM_FACET_ABI,
-          functionName: "getLastChanneled",
-          args: [BigInt(claimerGotchiId)],
-        })) as bigint;
-        const hash = await writeContractAsync({
-          chainId: BASE_CHAIN_ID,
-          address: REALM_DIAMOND_BASE,
-          abi: REALM_FACET_ABI,
-          functionName: "channelAlchemica",
-          args: [ready[i], BigInt(claimerGotchiId), last, "0x"],
-        });
-        await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
-        ok++;
-      } catch {
-        /* gotchi on cooldown / lent / no access — skip and continue */
+    let rejected = false;
+    for (const parcel of ready) {
+      if (used.size >= pool.length) break; // every gotchi has channeled
+      for (const gid of pool) {
+        if (used.has(gid)) continue;
+        let last: bigint;
+        try {
+          last = (await publicClient.readContract({
+            address: REALM_DIAMOND_BASE,
+            abi: REALM_FACET_ABI,
+            functionName: "getLastChanneled",
+            args: [BigInt(gid)],
+          })) as bigint;
+        } catch {
+          continue;
+        }
+        // Dry-run: skip this gotchi if it can't channel this parcel (cooldown).
+        try {
+          await publicClient.simulateContract({
+            address: REALM_DIAMOND_BASE,
+            abi: REALM_FACET_ABI,
+            functionName: "channelAlchemica",
+            args: [parcel, BigInt(gid), last, "0x"],
+            account: address,
+          });
+        } catch {
+          continue;
+        }
+        try {
+          const hash = await writeContractAsync({
+            chainId: BASE_CHAIN_ID,
+            address: REALM_DIAMOND_BASE,
+            abi: REALM_FACET_ABI,
+            functionName: "channelAlchemica",
+            args: [parcel, BigInt(gid), last, "0x"],
+          });
+          await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+          used.add(gid);
+          ok++;
+          setChannelProgress({ done: ok, total: maxChannels });
+        } catch {
+          // User rejected in wallet, or the tx failed — stop prompting further.
+          rejected = true;
+        }
+        break; // move to next parcel (this gotchi is now spent or rejected)
       }
-      setChannelProgress({ done: i + 1, total: ready.length });
+      if (rejected) break;
     }
+
     setChannelDone(ok);
     setChannelStep(ok > 0 ? "success" : "error");
-    if (ok === 0) {
-      setErrorMsg("No parcels channeled — your gotchi is likely on cooldown or lent/locked (a gotchi can channel once per cooldown).");
+    if (ok === 0 && !rejected) {
+      setErrorMsg("No parcels channeled — every owned gotchi is on cooldown (each gotchi can channel once per cooldown). Try again later.");
     }
     refetch();
     queryClient.invalidateQueries({ queryKey: ["land-parcel-ids", address.toLowerCase()] });
-  }, [isConnected, address, claimerGotchiId, publicClient, parcelIds, nextChannelTimes, writeContractAsync, refetch, queryClient]);
+    queryClient.invalidateQueries({ queryKey: ["land-parcels"] });
+  }, [isConnected, address, publicClient, channelGotchiIds, claimerGotchiId, parcelIds, nextChannelTimes, altarLevels, writeContractAsync, refetch, queryClient]);
 
   const reset = useCallback(() => {
     setStep("idle");

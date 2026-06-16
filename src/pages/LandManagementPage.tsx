@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useAccount, useReadContract } from "wagmi";
+import { useAccount, useReadContracts } from "wagmi";
 import {
   Wallet,
   MapPin,
@@ -61,26 +61,84 @@ export default function LandManagementPage() {
 
   const { lender } = useMyConnectedLendings();
   const { gotchis } = useGotchisByOwner(address?.toLowerCase() ?? "");
+  const { rows, isLoading, error, refetch } = useLandParcels(address);
+  const actions = useRealmActions();
 
-  // Only directly-owned (unlocked) gotchis can channel. Let the user pick which
-  // one — channel yield scales with kinship — and persist the choice per wallet
-  // so it sticks across both per-parcel channel and Channel-all.
+  // 30s tick for live "ready / cooldown / ago" columns + gotchi availability.
+  const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const id = setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Only directly-owned (unlocked) gotchis can channel.
   const ownedGotchis = useMemo(
     () => (gotchis ?? []).filter((g) => Number.isFinite(Number(g.gotchiId ?? g.id))),
     [gotchis]
   );
+
+  // Read each owned gotchi's last-channel time so the picker can list ONLY
+  // gotchis that can still channel — a gotchi that just channeled is on cooldown
+  // and drops out until it's free again.
+  const gotchiReads = useMemo(
+    () =>
+      ownedGotchis.map((g) => ({
+        address: REALM_DIAMOND_BASE,
+        abi: REALM_FACET_ABI,
+        functionName: "getLastChanneled" as const,
+        args: [BigInt(Number(g.gotchiId ?? g.id))] as const,
+        chainId: BASE_CHAIN_ID,
+      })),
+    [ownedGotchis]
+  );
+  const { data: gotchiChannelData, refetch: refetchGotchi } = useReadContracts({
+    contracts: gotchiReads as any,
+    query: { enabled: gotchiReads.length > 0 },
+  });
+  const lastChanneledById = useMemo(() => {
+    const m: Record<number, number> = {};
+    ownedGotchis.forEach((g, i) => {
+      const r = gotchiChannelData?.[i];
+      m[Number(g.gotchiId ?? g.id)] = r?.status === "success" ? Number(r.result as bigint) : 0;
+    });
+    return m;
+  }, [ownedGotchis, gotchiChannelData]);
+
+  // Shortest channel cooldown across the wallet's altars (its highest-level
+  // Aaltar) — a gotchi counts as free to channel once this has elapsed since
+  // its last channel. (Cooldown is per-altar; this is the optimistic floor.)
+  const channelCooldownSec = useMemo(() => {
+    const cds = rows
+      .filter((r) => r.altarLevel > 0)
+      .map((r) => CHANNEL_COOLDOWN_SEC_BY_ALTAR[r.altarLevel] ?? CHANNEL_COOLDOWN_SEC);
+    return cds.length ? Math.min(...cds) : CHANNEL_COOLDOWN_SEC;
+  }, [rows]);
+
+  // Gotchis that can channel right now (off cooldown), highest-kinship first.
+  const availableGotchis = useMemo(
+    () =>
+      [...ownedGotchis]
+        .filter((g) => {
+          const lc = lastChanneledById[Number(g.gotchiId ?? g.id)] ?? 0;
+          return lc === 0 || nowSec - lc >= channelCooldownSec;
+        })
+        .sort((a, b) => (b.kinship ?? 0) - (a.kinship ?? 0)),
+    [ownedGotchis, lastChanneledById, nowSec, channelCooldownSec]
+  );
+
+  // Channel with a still-available gotchi; repair the choice when the selected
+  // one channels (drops off the list) and restore a saved pick if still free.
   const [selectedGotchiId, setSelectedGotchiId] = useState<number | undefined>(undefined);
   useEffect(() => {
-    if (selectedGotchiId != null || ownedGotchis.length === 0) return;
+    if (availableGotchis.length === 0) return;
+    const inList = (id?: number) =>
+      id != null && availableGotchis.some((g) => Number(g.gotchiId ?? g.id) === id);
+    if (inList(selectedGotchiId)) return;
     const key = address ? `channelGotchi:${address.toLowerCase()}` : "";
     const saved = key ? Number(localStorage.getItem(key)) : NaN;
-    if (Number.isFinite(saved) && ownedGotchis.some((g) => Number(g.gotchiId ?? g.id) === saved)) {
-      setSelectedGotchiId(saved);
-      return;
-    }
-    const best = [...ownedGotchis].sort((a, b) => (b.kinship ?? 0) - (a.kinship ?? 0))[0];
-    setSelectedGotchiId(Number(best.gotchiId ?? best.id));
-  }, [ownedGotchis, selectedGotchiId, address]);
+    const next = inList(saved) ? saved : Number(availableGotchis[0].gotchiId ?? availableGotchis[0].id);
+    setSelectedGotchiId(next);
+  }, [availableGotchis, selectedGotchiId, address]);
 
   const pickGotchi = useCallback(
     (id: number) => {
@@ -96,42 +154,20 @@ export default function LandManagementPage() {
     return fromLender ? Number(fromLender.gotchiTokenId) : undefined;
   }, [selectedGotchiId, lender]);
 
-  const { rows, isLoading, error, refetch } = useLandParcels(address);
-  const actions = useRealmActions();
-
-  const { data: gotchiLastChanneled, refetch: refetchGotchi } = useReadContract({
-    address: REALM_DIAMOND_BASE,
-    abi: REALM_FACET_ABI,
-    functionName: "getLastChanneled",
-    args: claimerGotchiId ? [BigInt(claimerGotchiId)] : undefined,
-    chainId: BASE_CHAIN_ID,
-    query: { enabled: !!claimerGotchiId },
-  });
+  const gotchiLastChanneled =
+    claimerGotchiId != null ? BigInt(lastChanneledById[claimerGotchiId] ?? 0) : undefined;
 
   // Optimistic channel state for instant feedback before the refetch lands:
   // parcel -> unix sec it was channeled, plus a window where the picked gotchi
-  // is on cooldown (one gotchi can only channel once per cooldown, so every
-  // channel button greys out until it's free again).
+  // is on cooldown (one gotchi can only channel once per cooldown).
   const [justChanneled, setJustChanneled] = useState<Record<string, number>>({});
-  const [gotchiBusyUntil, setGotchiBusyUntil] = useState(0);
-
-  // 30s tick for live "ready / cooldown / ago" columns.
-  const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
-  useEffect(() => {
-    const id = setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 30_000);
-    return () => clearInterval(id);
-  }, []);
 
   useEffect(() => {
     const key = actions.activeKey;
     if (actions.step === "success") {
       if (key?.startsWith("channel:")) {
         const id = key.slice("channel:".length);
-        const row = rows.find((r) => r.tokenId === id);
-        const cd = row ? CHANNEL_COOLDOWN_SEC_BY_ALTAR[row.altarLevel] ?? CHANNEL_COOLDOWN_SEC : CHANNEL_COOLDOWN_SEC;
-        const now = Math.floor(Date.now() / 1000);
-        setJustChanneled((m) => ({ ...m, [id]: now }));
-        setGotchiBusyUntil(now + cd);
+        setJustChanneled((m) => ({ ...m, [id]: Math.floor(Date.now() / 1000) }));
       }
       toast({ title: "Transaction confirmed", description: "On-chain state updated." });
       actions.reset();
@@ -157,9 +193,9 @@ export default function LandManagementPage() {
     const last = Math.max(r.lastChanneled, justChanneled[r.tokenId] ?? 0);
     return last > 0 ? Math.max(0, last + cooldownOf(r) - nowSec) : 0;
   };
-  // The picked gotchi can't channel again until its cooldown clears, so every
-  // channel button is held until then (not just the one just channeled).
-  const gotchiBusyFor = Math.max(0, gotchiBusyUntil - nowSec);
+  // If no owned gotchi is off cooldown, there's nothing to channel with, so
+  // every channel button is held until one frees up (or you pick another).
+  const canChannel = availableGotchis.length > 0;
   // Reservoirs can only be emptied once per cooldown; "ready" = cooldown elapsed
   // (lastClaimed + 8h) AND there's a balance to take. Balance alone is wrong —
   // it re-accumulates the instant you claim, so every parcel would look ready.
@@ -232,9 +268,11 @@ export default function LandManagementPage() {
           </h1>
           {address && <p className="text-xs text-muted-foreground font-mono">{address.slice(0, 6)}…{address.slice(-4)}</p>}
         </div>
-        {isConnected && ownedGotchis.length > 0 && (
-          <GotchiChannelSelect gotchis={ownedGotchis} value={selectedGotchiId} onChange={pickGotchi} />
-        )}
+        {isConnected && availableGotchis.length > 0 ? (
+          <GotchiChannelSelect gotchis={availableGotchis} value={selectedGotchiId} onChange={pickGotchi} />
+        ) : isConnected && ownedGotchis.length > 0 ? (
+          <p className="text-[11px] text-muted-foreground self-end">All gotchis on channeling cooldown</p>
+        ) : null}
       </div>
 
       {!isConnected ? (
@@ -247,9 +285,8 @@ export default function LandManagementPage() {
         <>
           <LandAlchemicaBar
             gotchiId={claimerGotchiId}
+            channelGotchiIds={availableGotchis.map((g) => Number(g.gotchiId ?? g.id))}
             onChanneled={() => {
-              const now = Math.floor(Date.now() / 1000);
-              setGotchiBusyUntil(now + CHANNEL_COOLDOWN_SEC);
               refetch();
               refetchGotchi();
             }}
@@ -309,7 +346,7 @@ export default function LandManagementPage() {
                       r={r}
                       nowSec={nowSec}
                       readyIn={channelReadyIn(r)}
-                      gotchiBusy={gotchiBusyFor > 0}
+                      gotchiBusy={!canChannel}
                       reservoirsReady={reservoirsReady(r)}
                       reservoirReadyIn={reservoirReadyIn(r)}
                       claimerGotchiId={claimerGotchiId}
