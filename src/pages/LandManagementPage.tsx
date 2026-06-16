@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { useAccount, useReadContract } from "wagmi";
 import {
-  ArrowLeft,
   Wallet,
   MapPin,
   HandCoins,
@@ -172,10 +170,7 @@ export default function LandManagementPage() {
 
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <div>
-          <Link to="/lending/me" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-3 h-3" /> Back to my lendings
-          </Link>
-          <h1 className="text-2xl font-bold tracking-tight mt-1 inline-flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight inline-flex items-center gap-2">
             <MapPin className="w-6 h-6 text-emerald-500" /> Land Management
           </h1>
           {address && <p className="text-xs text-muted-foreground font-mono">{address.slice(0, 6)}…{address.slice(-4)}</p>}

@@ -1,4 +1,5 @@
 import { createConfig, http } from "wagmi";
+import { fallback } from "viem";
 import { base } from "wagmi/chains";
 import { injected, walletConnect } from "wagmi/connectors";
 import { BASE_RPC_URL, WALLETCONNECT_PROJECT_ID } from "@/lib/config";
@@ -32,8 +33,18 @@ const connectors = [
 export const wagmiConfig = createConfig({
   chains: [base],
   connectors,
+  // Multi-RPC fallback: the configured RPC (often the rate-limited public
+  // mainnet.base.org) can't handle the land page's 79-parcel multicalls, which
+  // left data blank and claim-all partial. Fall back across lenient public RPCs
+  // so reads/writes survive any single endpoint rate-limiting.
   transports: {
-    [base.id]: http(rpcUrl),
+    [base.id]: fallback([
+      http("https://base-rpc.publicnode.com"),
+      http("https://base.llamarpc.com"),
+      http("https://base.drpc.org"),
+      http(rpcUrl),
+      http("https://mainnet.base.org"),
+    ]),
   },
 });
 

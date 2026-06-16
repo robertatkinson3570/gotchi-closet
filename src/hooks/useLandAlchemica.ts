@@ -148,9 +148,11 @@ export function useLandAlchemica(claimerGotchiId?: number) {
     }
     setErrorMsg(null);
     setProgress({ done: 0, total: batches.length });
-    try {
-      for (let b = 0; b < batches.length; b++) {
-        setStep("submitting");
+    let failed = 0;
+    let lastErr: unknown = null;
+    for (let b = 0; b < batches.length; b++) {
+      setStep(b === 0 ? "submitting" : "confirming");
+      try {
         const hash = await writeContractAsync({
           chainId: BASE_CHAIN_ID,
           address: REALM_DIAMOND_BASE,
@@ -158,17 +160,25 @@ export function useLandAlchemica(claimerGotchiId?: number) {
           functionName: "claimAllAvailableAlchemica",
           args: [batches[b], BigInt(claimerGotchiId), "0x"],
         });
-        setStep("confirming");
         await publicClient?.waitForTransactionReceipt({ hash, confirmations: 1 });
-        setProgress({ done: b + 1, total: batches.length });
+      } catch (e) {
+        // Don't abort the whole claim — one bad batch shouldn't strand the rest.
+        failed++;
+        lastErr = e;
       }
-      setStep("success");
-      refetch();
-      queryClient.invalidateQueries({ queryKey: ["land-parcel-ids", address.toLowerCase()] });
-      queryClient.invalidateQueries({ queryKey: ["land-parcels"] });
-    } catch (e) {
+      setProgress({ done: b + 1, total: batches.length });
+    }
+    refetch();
+    queryClient.invalidateQueries({ queryKey: ["land-parcel-ids", address.toLowerCase()] });
+    queryClient.invalidateQueries({ queryKey: ["land-parcels"] });
+    if (failed >= batches.length) {
       setStep("error");
-      setErrorMsg(parseRevert(e));
+      setErrorMsg(parseRevert(lastErr));
+    } else if (failed > 0) {
+      setStep("error");
+      setErrorMsg(`Claimed ${batches.length - failed}/${batches.length} batches; ${failed} failed (RPC/cooldown) — click again to retry the rest.`);
+    } else {
+      setStep("success");
     }
   }, [isConnected, address, claimable, claimerGotchiId, writeContractAsync, publicClient, refetch, queryClient]);
 
