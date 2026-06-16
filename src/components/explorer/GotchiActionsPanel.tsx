@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
-import { Heart, Pencil, Sparkles, Send, Flame, Loader2 } from "lucide-react";
+import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
@@ -13,6 +13,7 @@ const ACTIONS_ABI = [
   { name: "spendSkillPoints", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_tokenId", type: "uint256" }, { name: "_values", type: "int16[4]" }], outputs: [] },
   { name: "decreaseAndDestroy", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_tokenId", type: "uint256" }, { name: "_toId", type: "uint256" }], outputs: [] },
   { name: "safeTransferFrom", type: "function", stateMutability: "nonpayable", inputs: [{ name: "from", type: "address" }, { name: "to", type: "address" }, { name: "tokenId", type: "uint256" }], outputs: [] },
+  { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
 ] as const;
 
 type Props = { gotchiId: string; currentName?: string };
@@ -39,6 +40,8 @@ export function GotchiActionsPanel({ gotchiId, currentName }: Props) {
   const [sp, setSp] = useState<[string, string, string, string]>(["0", "0", "0", "0"]);
   const [showXfer, setShowXfer] = useState(false);
   const [to, setTo] = useState("");
+  const [showList, setShowList] = useState(false);
+  const [listPrice, setListPrice] = useState("");
 
   const run = async (key: string, fn: () => Promise<`0x${string}`>, okMsg: string) => {
     if (!isConnected || !address || !publicClient) {
@@ -57,6 +60,7 @@ export function GotchiActionsPanel({ gotchiId, currentName }: Props) {
       setShowName(false);
       setShowSkill(false);
       setShowXfer(false);
+      setShowList(false);
     } catch (e) {
       toast({ title: "Action failed", description: parseRevert(e).slice(0, 160), variant: "destructive" });
     } finally {
@@ -90,6 +94,7 @@ export function GotchiActionsPanel({ gotchiId, currentName }: Props) {
         <Btn k="name" icon={<Pencil className="w-3.5 h-3.5" />} label="Rename" onClick={() => setShowName((s) => !s)} />
         <Btn k="skill" icon={<Sparkles className="w-3.5 h-3.5" />} label="Skill pts" onClick={() => setShowSkill((s) => !s)} />
         <Btn k="xfer" icon={<Send className="w-3.5 h-3.5" />} label="Transfer" onClick={() => setShowXfer((s) => !s)} />
+        <Btn k="list" icon={<Tag className="w-3.5 h-3.5" />} label="List" onClick={() => setShowList((s) => !s)} />
         <Btn
           k="sac"
           danger
@@ -145,6 +150,31 @@ export function GotchiActionsPanel({ gotchiId, currentName }: Props) {
             className="h-7 px-2 rounded bg-primary text-primary-foreground text-[11px] font-semibold disabled:opacity-50"
           >
             Send
+          </button>
+        </div>
+      )}
+
+      {showList && (
+        <div className="flex items-center gap-1">
+          <input
+            type="number"
+            value={listPrice}
+            onChange={(e) => setListPrice(e.target.value)}
+            placeholder="Price (GHST)"
+            className="h-7 flex-1 min-w-0 rounded border border-border bg-background px-1.5 text-xs"
+          />
+          <button
+            disabled={busy !== null || !(Number(listPrice) > 0)}
+            onClick={() =>
+              run(
+                "list",
+                () => w("addERC721Listing", [AAVEGOTCHI_DIAMOND_BASE, id, BigInt(Math.floor(Number(listPrice) * 1e18))]),
+                "Listed on Baazaar"
+              )
+            }
+            className="h-7 px-2 rounded bg-emerald-600 text-white text-[11px] font-semibold disabled:opacity-50"
+          >
+            List
           </button>
         </div>
       )}
