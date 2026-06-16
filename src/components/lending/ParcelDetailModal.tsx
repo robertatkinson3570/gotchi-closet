@@ -174,6 +174,12 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                   </button>
                 </div>
               )}
+              {detail.lastSale && (
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  Last Baazaar sale: <span className="text-foreground">{detail.lastSale.priceGhst.toLocaleString()} GHST</span>{" "}
+                  ({new Date(detail.lastSale.time * 1000).toLocaleDateString()})
+                </div>
+              )}
               {actions && (
                 <button
                   type="button"
@@ -181,14 +187,21 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                   disabled={
                     !actions.isOnBase ||
                     detail.surveying ||
+                    detail.surveyRound >= 10 ||
                     actions.step === "submitting" ||
                     actions.step === "confirming"
                   }
-                  title={detail.surveying ? "Survey already in progress" : "Start a new survey round"}
+                  title={
+                    detail.surveyRound >= 10
+                      ? "All 10 survey rounds complete (max)"
+                      : detail.surveying
+                      ? "Survey already in progress"
+                      : "Start a new survey round"
+                  }
                   className="mt-2 inline-flex items-center gap-1 h-8 px-3 rounded-md border border-border/40 bg-background/70 hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold"
                 >
                   <Telescope className="w-3.5 h-3.5" />
-                  {detail.surveying ? "Surveying…" : "Survey"}
+                  {detail.surveyRound >= 10 ? "Surveys maxed (10/10)" : detail.surveying ? "Surveying…" : "Survey"}
                 </button>
               )}
             </div>

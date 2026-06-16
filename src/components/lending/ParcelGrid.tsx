@@ -1,15 +1,6 @@
 import { useState } from "react";
 import type { Placed } from "@/hooks/useParcelDetail";
 
-// True parcel grid dimensions (width × height) by size code.
-const PARCEL_DIMS: Record<number, { w: number; h: number }> = {
-  0: { w: 8, h: 8 }, // Humble
-  1: { w: 16, h: 16 }, // Reasonable
-  2: { w: 32, h: 64 }, // Spacious (vertical)
-  3: { w: 64, h: 32 }, // Spacious (horizontal)
-  4: { w: 64, h: 64 }, // Partner
-};
-
 /**
  * Read-only visual layout of a parcel's equipped installations + tiles, drawn
  * to scale on the coordinate grid (footprint-accurate, colored by alchemica
@@ -50,12 +41,14 @@ export function ParcelGrid({
   const staged = pending ?? [];
   const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
 
-  // Use the parcel's true dimensions; never smaller than what's already placed.
-  const dim = size != null ? PARCEL_DIMS[size] : undefined;
-  const bx = Math.max(8, ...items.map((i) => i.x + i.w), ...staged.map((i) => i.x + i.w));
-  const by = Math.max(8, ...items.map((i) => i.y + i.h), ...staged.map((i) => i.y + i.h));
-  const cols = dim ? Math.max(dim.w, bx) : bx;
-  const rows = dim ? Math.max(dim.h, by) : by;
+  // Pack the grid to the installation bounding box (like aadventure) so tiles
+  // sit side-by-side and fill the frame, with 1 cell of padding for dropping.
+  // We intentionally do NOT stretch to full parcel dims (PARCEL_DIMS by `size`),
+  // which left installations floating in a mostly-empty grid.
+  void size;
+  const all = [...items, ...staged];
+  const cols = Math.max(6, ...all.map((i) => i.x + i.w)) + 1;
+  const rows = Math.max(6, ...all.map((i) => i.y + i.h)) + 1;
 
   // Occupied cells (existing + staged), for collision checks when dropping.
   const occupied = new Set<string>();

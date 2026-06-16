@@ -38,6 +38,8 @@ type RawParcel = {
   remainingAlchemica: string[];
   equippedInstallationsBalance: string;
   equippedTilesBalance: string;
+  lastChanneledAlchemica: string;
+  lastClaimedAlchemica: string;
 };
 
 // Parcel size code -> human label.
@@ -55,7 +57,8 @@ async function fetchParcels(owner: string): Promise<RawParcel[]> {
     body: JSON.stringify({
       query: `query($o:Bytes!){ parcels(first:500, orderBy: tokenId, where:{owner:$o}){
         tokenId parcelId district size coordinateX coordinateY surveyRound
-        remainingAlchemica equippedInstallationsBalance equippedTilesBalance } }`,
+        remainingAlchemica equippedInstallationsBalance equippedTilesBalance
+        lastChanneledAlchemica lastClaimedAlchemica } }`,
       variables: { o: owner.toLowerCase() },
     }),
   });
@@ -95,13 +98,6 @@ export function useLandParcels(owner?: string) {
       out.push({
         address: REALM_DIAMOND_BASE,
         abi: REALM_FACET_ABI,
-        functionName: "getParcelLastChanneled",
-        args: [id],
-        chainId: BASE_CHAIN_ID,
-      });
-      out.push({
-        address: REALM_DIAMOND_BASE,
-        abi: REALM_FACET_ABI,
         functionName: "getParcelInfo",
         args: [id],
         chainId: BASE_CHAIN_ID,
@@ -118,13 +114,6 @@ export function useLandParcels(owner?: string) {
         abi: REALM_FACET_ABI,
         functionName: "getParcelsAccessRights",
         args: [[id], [1n]], // empty reservoir
-        chainId: BASE_CHAIN_ID,
-      });
-      out.push({
-        address: REALM_DIAMOND_BASE,
-        abi: REALM_FACET_ABI,
-        functionName: "lastClaimedAlchemica",
-        args: [id],
         chainId: BASE_CHAIN_ID,
       });
       out.push({
@@ -147,19 +136,16 @@ export function useLandParcels(owner?: string) {
     const accessOf = (r: any): number =>
       r?.status === "success" ? Number((r.result as readonly bigint[])[0] ?? 0n) : 0;
     return raw.map((p, i) => {
-      const avail = chain?.[i * 7];
-      const last = chain?.[i * 7 + 1];
-      const info = chain?.[i * 7 + 2];
-      const accessCh = chain?.[i * 7 + 3];
-      const accessRsv = chain?.[i * 7 + 4];
-      const claimed = chain?.[i * 7 + 5];
-      const altar = chain?.[i * 7 + 6];
+      const avail = chain?.[i * 5];
+      const info = chain?.[i * 5 + 1];
+      const accessCh = chain?.[i * 5 + 2];
+      const accessRsv = chain?.[i * 5 + 3];
+      const altar = chain?.[i * 5 + 4];
       const available =
         avail?.status === "success"
           ? (avail.result as readonly bigint[]).slice()
           : [0n, 0n, 0n, 0n];
-      const lastChanneled =
-        last?.status === "success" ? Number(last.result as bigint) : 0;
+      const lastChanneled = Number(p.lastChanneledAlchemica) || 0;
       const name =
         info?.status === "success"
           ? ((info.result as { parcelAddress?: string }).parcelAddress ?? "")
@@ -170,7 +156,7 @@ export function useLandParcels(owner?: string) {
         name,
         channelAccess: accessOf(accessCh),
         reservoirAccess: accessOf(accessRsv),
-        lastClaimed: claimed?.status === "success" ? Number(claimed.result as bigint) : 0,
+        lastClaimed: Number(p.lastClaimedAlchemica) || 0,
         altarLevel: altar?.status === "success" ? altarLevelFromId(Number(altar.result as bigint)) : 0,
         district: p.district,
         size: Number(p.size),

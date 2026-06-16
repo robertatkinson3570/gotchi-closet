@@ -6,6 +6,24 @@ import { REALM_DIAMOND_BASE, REALM_FACET_ABI } from "@/lib/lending/contracts";
 
 const GOTCHIVERSE_SUBGRAPH =
   "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/gotchiverse-base/prod/gn";
+const CORE_SUBGRAPH =
+  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn";
+
+// Last Baazaar sale of the parcel (ERC721 category 4 = realm).
+async function fetchLastSale(tokenId: string): Promise<{ priceGhst: number; time: number } | null> {
+  const res = await fetch(CORE_SUBGRAPH, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: `query($t:String!){ erc721Listings(first:1, where:{tokenId:$t, category:4, timePurchased_gt:0}, orderBy:timePurchased, orderDirection:desc){ priceInWei timePurchased } }`,
+      variables: { t: tokenId },
+    }),
+  });
+  const json = await res.json();
+  const l = json.data?.erc721Listings?.[0];
+  if (!l) return null;
+  return { priceGhst: Number(BigInt(l.priceInWei) / 10n ** 18n), time: Number(l.timePurchased) };
+}
 
 export type Placed = {
   installationId: string;
@@ -40,6 +58,7 @@ export type ParcelDetail = {
   owner: string;
   rounds: { round: number; amounts: bigint[] }[]; // per surveyed round
   surveying: boolean; // VRF survey in progress
+  lastSale: { priceGhst: number; time: number } | null;
   installations: Placed[];
   tiles: Placed[];
 };
@@ -91,6 +110,13 @@ export function useParcelDetail(parcelId: string | null) {
     queryFn: () => fetchParcelGraph(parcelId as string),
     enabled: !!parcelId,
     staleTime: 20_000,
+  });
+
+  const saleQuery = useQuery({
+    queryKey: ["parcel-last-sale", parcelId],
+    queryFn: () => fetchLastSale(parcelId as string),
+    enabled: !!parcelId,
+    staleTime: 60_000,
   });
 
   const reads = useMemo(() => {
@@ -157,10 +183,11 @@ export function useParcelDetail(parcelId: string | null) {
         return { round: r + 1, amounts };
       }).filter(Boolean) as { round: number; amounts: bigint[] }[],
       surveying: chain?.[18]?.status === "success" ? Boolean(chain[18].result) : false,
+      lastSale: saleQuery.data ?? null,
       installations: toPlaced(graphQuery.data?.installations),
       tiles: toPlaced(graphQuery.data?.tiles),
     };
-  }, [graphQuery.data, chain]);
+  }, [graphQuery.data, chain, saleQuery.data]);
 
   return {
     detail,
