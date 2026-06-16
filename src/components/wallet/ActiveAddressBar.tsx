@@ -12,7 +12,7 @@ export function ActiveAddressBar() {
     connectedAddress,
     isConnected,
     setManualAddress,
-    useConnectedAddress,
+    applyConnectedAddress,
   } = useAddressState();
   const queryClient = useQueryClient();
   const [input, setInput] = useState(activeAddress || "");
@@ -35,7 +35,7 @@ export function ActiveAddressBar() {
   const handleUseConnected = () => {
     if (!connectedAddress) return;
     setError("");
-    useConnectedAddress();
+    applyConnectedAddress();
     queryClient.cancelQueries({ queryKey: ["gotchis"] });
   };
 

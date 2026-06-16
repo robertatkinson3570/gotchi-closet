@@ -28,7 +28,7 @@ export function WalletHeader({
     connectedAddress,
     isConnected,
     isOnBase,
-    useConnectedAddress,
+    applyConnectedAddress,
   } = useAddressState();
 
   const handleSwitch = async () => {
@@ -138,7 +138,7 @@ export function WalletHeader({
                       variant="ghost"
                       size="sm"
                       className="w-full justify-start"
-                      onClick={useConnectedAddress}
+                      onClick={applyConnectedAddress}
                     >
                       Use connected address
                     </Button>

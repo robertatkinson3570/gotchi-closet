@@ -15,7 +15,7 @@
     "start": "vite preview",
     "test:unit": "vitest run",
     "mommy:regression": "vitest run tests/mommy-regression.test.ts",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext ts,tsx --max-warnings 0"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",

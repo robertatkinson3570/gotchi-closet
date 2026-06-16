@@ -13,7 +13,7 @@ type AddressState = {
   activeAddress: string;
   source: AddressSource;
   setManualAddress: (address: string) => void;
-  useConnectedAddress: () => void;
+  applyConnectedAddress: () => void;
 };
 
 const STORAGE_ACTIVE = "gc_activeAddress";
@@ -98,7 +98,7 @@ export function AddressProvider({ children }: { children: React.ReactNode }) {
     setSource("manual");
   };
 
-  const useConnectedAddress = () => {
+  const applyConnectedAddress = () => {
     if (!address) return;
     setActiveAddress(normalizeAddress(address));
     setSource("connected");
@@ -113,7 +113,7 @@ export function AddressProvider({ children }: { children: React.ReactNode }) {
       activeAddress,
       source,
       setManualAddress,
-      useConnectedAddress,
+      applyConnectedAddress,
     }),
     [
       address,
