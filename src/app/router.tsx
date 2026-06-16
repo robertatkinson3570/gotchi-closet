@@ -17,6 +17,8 @@ import LendingMePage from "@/pages/LendingMePage";
 import LandManagementPage from "@/pages/LandManagementPage";
 import WhitelistsPage from "@/pages/WhitelistsPage";
 import BulkListPage from "@/pages/BulkListPage";
+import ActivityPage from "@/pages/ActivityPage";
+import AuctionPage from "@/pages/AuctionPage";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { RootLayout } from "@/components/layout/RootLayout";
 
@@ -73,6 +75,14 @@ export const router = createBrowserRouter([
       {
         path: "explorer",
         element: <ExplorerPage />,
+      },
+      {
+        path: "activity",
+        element: <ActivityPage />,
+      },
+      {
+        path: "auction",
+        element: <AuctionPage />,
       },
       {
         path: "lending",

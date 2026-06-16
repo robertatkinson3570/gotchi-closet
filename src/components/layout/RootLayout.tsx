@@ -1,5 +1,5 @@
 import { Outlet, useLocation, Link } from "react-router-dom";
-import { Coins, Search, Shirt, MapPin } from "lucide-react";
+import { Coins, Search, Shirt, MapPin, Activity, Gavel } from "lucide-react";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { FooterAttribution } from "@/components/FooterAttribution";
@@ -67,6 +67,30 @@ export function RootLayout() {
                   title="Land Management"
                 >
                   <MapPin className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/auction">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className={`h-8 px-2 ${
+                    location.pathname.startsWith("/auction") ? "bg-primary/15 text-primary shadow-glow-sm" : ""
+                  }`}
+                  title="Auctions"
+                >
+                  <Gavel className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/activity">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className={`h-8 px-2 ${
+                    location.pathname.startsWith("/activity") ? "bg-primary/15 text-primary shadow-glow-sm" : ""
+                  }`}
+                  title="Activity"
+                >
+                  <Activity className="h-4 w-4" />
                 </Button>
               </Link>
               <ThemeToggle />
