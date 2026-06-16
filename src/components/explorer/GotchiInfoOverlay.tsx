@@ -206,7 +206,16 @@ export function GotchiInfoOverlay({ gotchi, onClose }: Props) {
           </div>
         )}
 
-        {isConnected && <GotchiActionsPanel gotchiId={gotchi.tokenId} currentName={gotchi.name} />}
+        {isConnected && (
+          <GotchiActionsPanel
+            gotchiId={gotchi.tokenId}
+            name={gotchi.name}
+            hauntId={gotchi.hauntId}
+            collateral={gotchi.collateral}
+            numericTraits={gotchi.numericTraits}
+            equippedWearables={gotchi.equippedWearables}
+          />
+        )}
       </div>
     </div>
   );
