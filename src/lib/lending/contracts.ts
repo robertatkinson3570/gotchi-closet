@@ -470,6 +470,41 @@ export const REALM_FACET_ABI = [
       },
     ],
   },
+  // Upgrade an equipped installation to its next level (Installation diamond).
+  // Pays alchemica; queued by readyBlock (use finalizeUpgradesForParcels when
+  // ready, or pass GLTR to skip the wait). geist accepts an empty signature.
+  {
+    name: "upgradeInstallation",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      {
+        name: "_upgradeQueue",
+        type: "tuple",
+        components: [
+          { name: "owner", type: "address" },
+          { name: "coordinateX", type: "uint16" },
+          { name: "coordinateY", type: "uint16" },
+          { name: "readyBlock", type: "uint40" },
+          { name: "claimed", type: "bool" },
+          { name: "parcelId", type: "uint256" },
+          { name: "installationId", type: "uint256" },
+        ],
+      },
+      { name: "_gotchiId", type: "uint256" },
+      { name: "_signature", type: "bytes" },
+      { name: "_gltr", type: "uint40" },
+    ],
+    outputs: [],
+  },
+  // Finalize any ready (readyBlock reached) installation upgrades on parcels.
+  {
+    name: "finalizeUpgradesForParcels",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_parcelIds", type: "uint256[]" }],
+    outputs: [],
+  },
   // Craft L1 installations on the Installation diamond. Pays alchemica from the
   // caller (approve the 4 alchemica tokens to the diamond first). L1 farming
   // installs have craftTime 0 → minted instantly. _gltr can be all zeros.

@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAccount, useWriteContract, usePublicClient } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, Loader2, MapPin, Zap, Sprout, Package, Lock, Trash2, Telescope } from "lucide-react";
+import { X, Loader2, MapPin, Zap, Sprout, Package, Lock, Trash2, Telescope, ArrowUpCircle } from "lucide-react";
 import { useParcelDetail, type Placed } from "@/hooks/useParcelDetail";
 import { useInstallationInventory, type InventoryItem } from "@/hooks/useInstallationInventory";
 import { useCraft } from "@/hooks/useCraft";
+import { useUpgrade } from "@/hooks/useUpgrade";
 import { CRAFTABLE_L1 } from "@/lib/lending/contracts";
 import { PARCEL_SIZE_LABEL } from "@/hooks/useLandParcels";
 import { ParcelGrid } from "@/components/lending/ParcelGrid";
@@ -45,6 +46,7 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
   const { address } = useAccount();
   const inventory = useInstallationInventory(address);
   const craftHook = useCraft(address);
+  const upgradeHook = useUpgrade(address);
   const [dragItem, setDragItem] = useState<InventoryItem | null>(null);
   const [pending, setPending] = useState<Placed[]>([]);
   const [moving, setMoving] = useState<{ index: number; w: number; h: number } | null>(null);
@@ -523,6 +525,68 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                   </div>
                   <div className="text-[10px] text-muted-foreground mt-1">
                     Shown only for alchemica types fully depleted in-ground. Each removal is a separate wallet signature.
+                  </div>
+                </section>
+              );
+            })()}
+
+            {/* Upgrade installations */}
+            {canBuild && (() => {
+              const ups = detail.installations.filter((i) => i.category >= 0 && i.category <= 2 && i.level < 9);
+              return (
+                <section>
+                  <div className="text-xs font-semibold mb-1.5 flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5">
+                      <ArrowUpCircle className="w-3.5 h-3.5 text-primary" /> Upgrade installations (spends alchemica)
+                    </span>
+                    <button
+                      type="button"
+                      disabled={!!upgradeHook.busyKey}
+                      onClick={() => upgradeHook.finalize(BigInt(detail.tokenId))}
+                      className="h-7 px-2 rounded-md border border-border/40 bg-background/70 hover:bg-muted/50 disabled:opacity-50 text-[11px] font-medium"
+                    >
+                      {upgradeHook.busyKey === `fin:${detail.tokenId}` ? "Finalizing…" : "Finalize ready"}
+                    </button>
+                  </div>
+                  {upgradeHook.error && (
+                    <div className="text-[10px] text-destructive mb-1">{upgradeHook.error.slice(0, 140)}</div>
+                  )}
+                  {ups.length === 0 ? (
+                    <div className="text-xs text-muted-foreground">All installations at max level (L9).</div>
+                  ) : (
+                    <div className="grid gap-1.5 max-h-48 overflow-y-auto">
+                      {ups.map((i, idx) => {
+                        const busy = upgradeHook.busyKey === `upg:${detail.tokenId}:${i.installationId}:${i.x}:${i.y}`;
+                        return (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between gap-2 text-[11px] rounded border border-border/30 bg-background/50 px-2 py-1.5"
+                          >
+                            <span className="truncate">
+                              {i.name} <span className="text-muted-foreground">@ ({i.x},{i.y})</span>
+                            </span>
+                            <button
+                              type="button"
+                              disabled={!!upgradeHook.busyKey}
+                              onClick={() =>
+                                upgradeHook.upgrade(BigInt(detail.tokenId), BigInt(i.installationId), i.x, i.y, BigInt(gotchiId!))
+                              }
+                              className="h-7 px-2 rounded border border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary disabled:opacity-50 disabled:cursor-not-allowed font-medium shrink-0"
+                            >
+                              {busy
+                                ? upgradeHook.step === "approving"
+                                  ? "Approving…"
+                                  : "Upgrading…"
+                                : `Upgrade → L${i.level + 1}`}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="text-[10px] text-muted-foreground mt-1">
+                    Upgrades cost alchemica and queue for a block delay — hit <span className="font-medium">Finalize ready</span>{" "}
+                    once the timer passes (or pass GLTR to skip, not wired here).
                   </div>
                 </section>
               );
