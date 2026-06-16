@@ -616,6 +616,7 @@ export const CHANNEL_COOLDOWN_SEC_BY_ALTAR: Record<number, number> = {
 // `cost` is display units [FUD,FOMO,ALPHA,KEK]; the chain charges the exact
 // on-chain cost, so we approve max and don't pass cost in the tx.
 export const CRAFTABLE_L1: { id: number; name: string; cost: number[] }[] = [
+  { id: 10, name: "Aaltar", cost: [0, 0, 0, 0] },
   { id: 56, name: "FUD Harvester", cost: [125, 63, 0, 0] },
   { id: 65, name: "FOMO Harvester", cost: [104, 83, 0, 0] },
   { id: 74, name: "ALPHA Harvester", cost: [94, 63, 5, 0] },

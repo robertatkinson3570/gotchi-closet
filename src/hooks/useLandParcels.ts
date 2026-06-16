@@ -98,20 +98,6 @@ export function useLandParcels(owner?: string) {
       out.push({
         address: REALM_DIAMOND_BASE,
         abi: REALM_FACET_ABI,
-        functionName: "getParcelsAccessRights",
-        args: [[id], [0n]], // channeling
-        chainId: BASE_CHAIN_ID,
-      });
-      out.push({
-        address: REALM_DIAMOND_BASE,
-        abi: REALM_FACET_ABI,
-        functionName: "getParcelsAccessRights",
-        args: [[id], [1n]], // empty reservoir
-        chainId: BASE_CHAIN_ID,
-      });
-      out.push({
-        address: REALM_DIAMOND_BASE,
-        abi: REALM_FACET_ABI,
         functionName: "getAltarId",
         args: [id],
         chainId: BASE_CHAIN_ID,
@@ -143,18 +129,14 @@ export function useLandParcels(owner?: string) {
 
   const { data: chain, refetch, isLoading: chainLoading } = useReadContracts({
     contracts: reads,
-    batchSize: 2048,
+    batchSize: 512,
     query: { enabled: reads.length > 0 },
   });
 
   const rows = useMemo<ParcelRow[]>(() => {
-    const accessOf = (r: any): number =>
-      r?.status === "success" ? Number((r.result as readonly bigint[])[0] ?? 0n) : 0;
     return raw.map((p, i) => {
-      const avail = chain?.[i * 4];
-      const accessCh = chain?.[i * 4 + 1];
-      const accessRsv = chain?.[i * 4 + 2];
-      const altar = chain?.[i * 4 + 3];
+      const avail = chain?.[i * 2];
+      const altar = chain?.[i * 2 + 1];
       const info = names?.[i];
       const available =
         avail?.status === "success"
@@ -169,8 +151,8 @@ export function useLandParcels(owner?: string) {
         tokenId: p.tokenId,
         parcelId: p.parcelId,
         name,
-        channelAccess: accessOf(accessCh),
-        reservoirAccess: accessOf(accessRsv),
+        channelAccess: 0,
+        reservoirAccess: 0,
         lastClaimed: Number(p.lastClaimedAlchemica) || 0,
         altarLevel: altar?.status === "success" ? altarLevelFromId(Number(altar.result as bigint)) : 0,
         district: p.district,
