@@ -19,7 +19,7 @@ import { useLandParcels, PARCEL_SIZE_LABEL, type ParcelRow } from "@/hooks/useLa
 import { useRealmActions } from "@/hooks/useRealmActions";
 import { LandAlchemicaBar } from "@/components/lending/LandAlchemicaBar";
 import { ParcelDetailModal } from "@/components/lending/ParcelDetailModal";
-import { REALM_DIAMOND_BASE, REALM_FACET_ABI, CHANNEL_COOLDOWN_SEC, CHANNEL_COOLDOWN_SEC_BY_ALTAR } from "@/lib/lending/contracts";
+import { REALM_DIAMOND_BASE, REALM_FACET_ABI, CHANNEL_COOLDOWN_SEC, CHANNEL_COOLDOWN_SEC_BY_ALTAR, CLAIM_DUST_MIN } from "@/lib/lending/contracts";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { useToast } from "@/ui/use-toast";
 
@@ -109,7 +109,7 @@ export default function LandManagementPage() {
   const cooldownOf = (r: ParcelRow) => CHANNEL_COOLDOWN_SEC_BY_ALTAR[r.altarLevel] ?? CHANNEL_COOLDOWN_SEC;
   const channelReadyIn = (r: ParcelRow) =>
     r.lastChanneled > 0 ? Math.max(0, r.lastChanneled + cooldownOf(r) - nowSec) : 0;
-  const reservoirsReady = (r: ParcelRow) => r.available.some((v) => v > 0n);
+  const reservoirsReady = (r: ParcelRow) => r.available.some((v) => v > CLAIM_DUST_MIN);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {

@@ -1,0 +1,205 @@
+- generic [ref=e2]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - button [ref=e387] [cursor=pointer]:
+          - img [ref=e8]
+        - link [ref=e388] [cursor=pointer]:
+          - /url: ./search-console?resource_id=sc-domain%3Aotdcheck.com
+          - img [ref=e13]
+      - generic [ref=e14]:
+        - search [ref=e16]:
+          - generic [ref=e22]:
+            - textbox [disabled] [ref=e23]: Inspect any URL in "otdcheck.com"
+            - combobox [ref=e389]
+          - button [ref=e390] [cursor=pointer]:
+            - img [ref=e26]
+        - generic [ref=e29]:
+          - generic [ref=e31]:
+            - button [ref=e391] [cursor=pointer]:
+              - generic [ref=e36]: 
+            - button [ref=e392] [cursor=pointer]:
+              - img [ref=e41]
+          - button [ref=e393] [cursor=pointer]:
+            - generic [ref=e47]:
+              - generic [ref=e48]: 
+              - generic [ref=e50]: "11"
+      - generic [ref=e52]:
+        - button [ref=e394] [cursor=pointer]:
+          - img [ref=e57]
+        - button [ref=e395] [cursor=pointer]:
+          - img [ref=e64]
+  - dialog [ref=e396]:
+    - navigation [ref=e397]:
+      - button [ref=e398] [cursor=pointer]:
+        - img [ref=e399]
+        - combobox [ref=e400]: otdcheck.com
+        - generic [ref=e85]: 
+      - generic [ref=e86]:
+        - generic [ref=e87]:
+          - generic [ref=e88]:
+            - link [ref=e401] [cursor=pointer]:
+              - /url: ./search-console?resource_id=sc-domain%3Aotdcheck.com
+              - generic [ref=e92]: home
+              - generic [ref=e94]: Overview
+            - link [ref=e402] [cursor=pointer]:
+              - /url: ./search-console/performance/insights?resource_id=sc-domain%3Aotdcheck.com
+              - generic [ref=e99]: lightbulb_2
+              - generic [ref=e101]: Insights
+            - link [ref=e403] [cursor=pointer]:
+              - /url: ./search-console/performance/search-analytics?resource_id=sc-domain%3Aotdcheck.com
+              - generic [ref=e106]: trending_up
+              - generic [ref=e108]: Performance
+            - button [ref=e404] [cursor=pointer]:
+              - generic [ref=e113]: search
+              - generic [ref=e115]: URL inspection
+          - generic [ref=e119]:
+            - generic [ref=e121]:
+              - generic [ref=e124]: Indexing
+              - button [expanded] [ref=e405] [cursor=pointer]:
+                - generic [ref=e128]: keyboard_arrow_up
+            - generic [ref=e132]:
+              - link [ref=e406] [cursor=pointer]:
+                - /url: ./search-console/index?resource_id=sc-domain%3Aotdcheck.com
+                - generic [ref=e136]: file_copy
+                - generic [ref=e138]: Pages
+              - link [ref=e407] [cursor=pointer]:
+                - /url: ./search-console/sitemaps?resource_id=sc-domain%3Aotdcheck.com
+                - generic [ref=e143]: account_tree
+                - generic [ref=e145]: Sitemaps
+              - link [ref=e408] [cursor=pointer]:
+                - /url: ./search-console/removals?resource_id=sc-domain%3Aotdcheck.com
+                - generic [ref=e150]: visibility_off
+                - generic [ref=e152]: Removals
+          - generic [ref=e156]:
+            - generic [ref=e158]:
+              - generic [ref=e161]: Experience
+              - button [expanded] [ref=e409] [cursor=pointer]:
+                - generic [ref=e165]: keyboard_arrow_up
+            - generic [ref=e169]:
+              - link [ref=e410] [cursor=pointer]:
+                - /url: ./search-console/core-web-vitals?resource_id=sc-domain%3Aotdcheck.com
+                - generic [ref=e173]: speed
+                - generic [ref=e175]: Core Web Vitals
+              - link [ref=e411] [cursor=pointer]:
+                - /url: ./search-console/https?resource_id=sc-domain%3Aotdcheck.com
+                - generic [ref=e180]: lock
+                - generic [ref=e182]: HTTPS
+          - generic [ref=e186]:
+            - generic [ref=e188]:
+              - generic [ref=e191]: Enhancements
+              - button [expanded] [ref=e412] [cursor=pointer]:
+                - generic [ref=e195]: keyboard_arrow_up
+            - generic [ref=e199]:
+              - link [ref=e413] [cursor=pointer]:
+                - /url: ./search-console/r/breadcrumbs?resource_id=sc-domain%3Aotdcheck.com
+                - generic [ref=e203]: layers
+                - generic [ref=e205]: Breadcrumbs
+              - link [ref=e414] [cursor=pointer]:
+                - /url: ./search-console/r/faq?resource_id=sc-domain%3Aotdcheck.com
+                - generic [ref=e210]: layers
+                - generic [ref=e212]: FAQ
+          - generic [ref=e218]:
+            - generic [ref=e221]: Security & Manual Actions
+            - button [ref=e415] [cursor=pointer]:
+              - generic [ref=e225]: keyboard_arrow_down
+          - generic [ref=e226]:
+            - link [ref=e416] [cursor=pointer]:
+              - /url: ./search-console/links?resource_id=sc-domain%3Aotdcheck.com
+              - generic [ref=e230]: link_2
+              - generic [ref=e232]: Links
+            - link [ref=e417] [cursor=pointer]:
+              - /url: ./search-console/achievements?resource_id=sc-domain%3Aotdcheck.com
+              - generic [ref=e237]: trophy
+              - generic [ref=e239]: Achievements
+            - link [ref=e418] [cursor=pointer]:
+              - /url: ./search-console/settings?resource_id=sc-domain%3Aotdcheck.com
+              - generic [ref=e244]: settings
+              - generic [ref=e246]: Settings
+        - generic [ref=e248]:
+          - generic [ref=e250]:
+            - button [ref=e419] [cursor=pointer]:
+              - generic [ref=e254]: feedback
+              - generic [ref=e256]: Submit feedback
+            - button [ref=e420] [cursor=pointer]:
+              - generic [ref=e261]: info
+              - generic [ref=e263]: About Search Console
+          - generic [ref=e267]:
+            - link [ref=e421] [cursor=pointer]:
+              - /url: https://myaccount.google.com/privacypolicy?hl=en
+              - text: Privacy
+            - link [ref=e422] [cursor=pointer]:
+              - /url: https://myaccount.google.com/termsofservice?hl=en
+              - text: Terms
+  - generic [ref=e271]:
+    - navigation [ref=e423]:
+      - heading [level=1] [ref=e424]: Sitemaps
+    - main [ref=e283]:
+      - generic [ref=e286]:
+        - generic [ref=e287]: Add a new sitemap
+        - generic [ref=e288]:
+          - textbox [ref=e425]: sitemap.xml
+          - button [ref=e426] [cursor=pointer]:
+            - generic [ref=e302]: Submit
+      - generic [ref=e306]:
+        - generic [ref=e307]:
+          - heading [level=1] [ref=e427]:
+            - generic [ref=e309]: Submitted sitemaps
+          - button [ref=e428] [cursor=pointer]:
+            - generic [ref=e315]: 
+        - table [ref=e317]:
+          - rowgroup [ref=e318]:
+            - row [ref=e429]:
+              - columnheader [ref=e430]:
+                - text: Sitemap
+                - img [ref=e322] [cursor=pointer]
+              - columnheader [ref=e431]:
+                - text: Type
+                - img [ref=e326] [cursor=pointer]
+              - columnheader [ref=e432]:
+                - text: Submitted
+                - img [ref=e330] [cursor=pointer]
+              - columnheader [ref=e433]:
+                - text: Last read
+                - img [ref=e334] [cursor=pointer]
+              - columnheader [ref=e434]:
+                - text: Status
+                - img [ref=e338] [cursor=pointer]
+              - columnheader [ref=e435]:
+                - img [ref=e342] [cursor=pointer]
+                - text: Discovered pages
+              - columnheader [ref=e436]:
+                - img [ref=e346] [cursor=pointer]
+                - text: Discovered videos
+              - columnheader [ref=e348]
+          - rowgroup [ref=e349]:
+            - row [ref=e437] [cursor=pointer]:
+              - cell [ref=e438]: https://otdcheck.com/sitemap.xml
+              - cell [ref=e439]: Sitemap
+              - cell [ref=e440]: Mar 27, 2026
+              - cell [ref=e441]: Mar 27, 2026
+              - cell [ref=e442]:
+                - generic [ref=e356]: Success
+              - cell [ref=e443]: "396"
+              - cell [ref=e444]: "0"
+              - cell [ref=e359]:
+                - button [ref=e361]:
+                  - generic [ref=e364]: 
+        - generic [ref=e367]:
+          - generic [ref=e369]:
+            - generic [ref=e370]: "Rows per page:"
+            - listbox [ref=e445] [cursor=pointer]:
+              - text: "5"
+              - option [selected] [ref=e446]: "10"
+              - text: 25 50 100 250 500
+          - generic [ref=e373]:
+            - generic [ref=e374]: 1-1 of 1
+            - generic [ref=e375]:
+              - generic [ref=e377]: 
+              - generic [ref=e379]: 
+  - alertdialog "Invalid sitemap address" [ref=e448]:
+    - heading "Invalid sitemap address" [level=2] [ref=e449]:
+      - generic [ref=e450]: Invalid sitemap address
+    - generic [ref=e452]: Please enter a valid path to a sitemap in your site.
+    - button "Dismiss" [active] [ref=e455] [cursor=pointer]:
+      - generic [ref=e457]: Dismiss

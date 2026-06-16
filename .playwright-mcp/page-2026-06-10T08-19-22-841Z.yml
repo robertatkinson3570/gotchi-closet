@@ -1,0 +1,470 @@
+- generic [ref=e2]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - button "Main menu" [ref=e7] [cursor=pointer]:
+          - img [ref=e8]
+        - link "Google Search Console" [ref=e12] [cursor=pointer]:
+          - /url: ./search-console?resource_id=sc-domain%3Acoipulse.com
+          - img [ref=e13]
+      - generic [ref=e14]:
+        - search [ref=e16]:
+          - generic [ref=e22]:
+            - textbox [disabled] [ref=e23]: Inspect any URL in "coipulse.com"
+            - combobox "Inspect any URL in coipulse.com" [ref=e24]
+          - button "Search" [ref=e25] [cursor=pointer]:
+            - img [ref=e26]
+        - generic [ref=e29]:
+          - generic [ref=e31]:
+            - button "Help" [ref=e33] [cursor=pointer]:
+              - generic [ref=e36]: 
+            - button "User settings" [ref=e38] [cursor=pointer]:
+              - img [ref=e41]
+          - 'button "Unread messages: 9" [ref=e45] [cursor=pointer]':
+            - generic [ref=e47]:
+              - generic [ref=e48]: 
+              - generic [ref=e50]: "9"
+      - generic [ref=e52]:
+        - button "Google apps" [ref=e56] [cursor=pointer]:
+          - img [ref=e57]
+        - 'button "Google Account: Grim R (ratkinson701@gmail.com)" [ref=e62] [cursor=pointer]':
+          - img [ref=e64]
+  - dialog "navigational drawer" [ref=e68]:
+    - navigation "Primary" [ref=e71]:
+      - button "Search property" [expanded] [ref=e75] [cursor=pointer]:
+        - generic [ref=e83]:
+          - combobox "coipulse.com" [expanded] [active] [ref=e84]:
+            - listbox [ref=e662]:
+              - generic [ref=e663]:
+                - generic [ref=e664]: agentergon.com
+                - option "sc-domain:agentergon.com" [ref=e665]:
+                  - generic [ref=e667]:
+                    - img "favicon" [ref=e668]
+                    - generic [ref=e669]:
+                      - text: agentergon.com
+                      - generic [ref=e670]: Domain property
+                - generic [ref=e671]: auditkit.dev
+                - option "sc-domain:auditkit.dev" [ref=e672]:
+                  - generic [ref=e674]:
+                    - img "favicon" [ref=e675]
+                    - generic [ref=e676]:
+                      - text: auditkit.dev
+                      - generic [ref=e677]: Domain property
+                - option "https://auditkit.dev/" [ref=e678]:
+                  - generic [ref=e680]:
+                    - img "favicon" [ref=e681]
+                    - generic [ref=e682]: https://auditkit.dev/
+                - generic [ref=e683]: chirpreply.com
+                - option "sc-domain:chirpreply.com" [ref=e684]:
+                  - generic [ref=e686]:
+                    - img "favicon" [ref=e687]
+                    - generic [ref=e688]:
+                      - text: chirpreply.com
+                      - generic [ref=e689]: Domain property
+                - generic [ref=e690]: cloakshare.dev
+                - option "sc-domain:cloakshare.dev" [ref=e691]:
+                  - generic [ref=e693]:
+                    - img "favicon" [ref=e694]
+                    - generic [ref=e695]:
+                      - text: cloakshare.dev
+                      - generic [ref=e696]: Domain property
+                - option "https://www.cloakshare.dev/" [ref=e697]:
+                  - generic [ref=e699]:
+                    - img "favicon" [ref=e700]
+                    - generic [ref=e701]: https://www.cloakshare.dev/
+                - generic [ref=e702]: coipulse.com
+                - option "sc-domain:coipulse.com" [selected] [ref=e703]:
+                  - generic [ref=e705]:
+                    - img "favicon" [ref=e706]
+                    - generic [ref=e707]:
+                      - text: coipulse.com
+                      - generic [ref=e708]: Domain property
+                - generic [ref=e709]: cringeclinic.com
+                - option "sc-domain:cringeclinic.com" [ref=e710]:
+                  - generic [ref=e712]:
+                    - img "favicon" [ref=e713]
+                    - generic [ref=e714]:
+                      - text: cringeclinic.com
+                      - generic [ref=e715]: Domain property
+                - generic [ref=e716]: datareconiq.com
+                - option "sc-domain:datareconiq.com" [ref=e717]:
+                  - generic [ref=e719]:
+                    - img "favicon" [ref=e720]
+                    - generic [ref=e721]:
+                      - text: datareconiq.com
+                      - generic [ref=e722]: Domain property
+                - generic [ref=e723]: docducky.com
+                - option "sc-domain:docducky.com" [ref=e724]:
+                  - generic [ref=e726]:
+                    - img "favicon" [ref=e727]
+                    - generic [ref=e728]:
+                      - text: docducky.com
+                      - generic [ref=e729]: Domain property
+                - generic [ref=e730]: docopsiq.com
+                - option "sc-domain:docopsiq.com" [ref=e731]:
+                  - generic [ref=e733]:
+                    - img "favicon" [ref=e734]
+                    - generic [ref=e735]:
+                      - text: docopsiq.com
+                      - generic [ref=e736]: Domain property
+                - generic [ref=e737]: marquiq.com
+                - option "sc-domain:marquiq.com" [ref=e738]:
+                  - generic [ref=e740]:
+                    - img "favicon" [ref=e741]
+                    - generic [ref=e742]:
+                      - text: marquiq.com
+                      - generic [ref=e743]: Domain property
+                - generic [ref=e744]: otdcheck.com
+                - option "sc-domain:otdcheck.com" [ref=e745]:
+                  - generic [ref=e747]:
+                    - img "favicon" [ref=e748]
+                    - generic [ref=e749]:
+                      - text: otdcheck.com
+                      - generic [ref=e750]: Domain property
+                - generic [ref=e751]: rivalbeam.com
+                - option "sc-domain:rivalbeam.com" [ref=e752]:
+                  - generic [ref=e754]:
+                    - img "favicon" [ref=e755]
+                    - generic [ref=e756]:
+                      - text: rivalbeam.com
+                      - generic [ref=e757]: Domain property
+                - generic [ref=e758]: signalixiq.com
+                - option "sc-domain:signalixiq.com" [ref=e759]:
+                  - generic [ref=e761]:
+                    - img "favicon" [ref=e762]
+                    - generic [ref=e763]:
+                      - text: signalixiq.com
+                      - generic [ref=e764]: Domain property
+                - generic [ref=e765]: sitecrawliq.com
+                - option "sc-domain:sitecrawliq.com" [ref=e766]:
+                  - generic [ref=e768]:
+                    - img "favicon" [ref=e769]
+                    - generic [ref=e770]:
+                      - text: sitecrawliq.com
+                      - generic [ref=e771]: Domain property
+                - separator [ref=e772]
+                - generic [ref=e773]: Not verified
+                - option "https://www.gotchicloset.com/" [ref=e774]:
+                  - generic [ref=e776]:
+                    - img "favicon" [ref=e777]
+                    - generic [ref=e778]: https://www.gotchicloset.com/
+              - generic [ref=e779]:
+                - separator [ref=e781]
+                - option "Add property" [ref=e782]:
+                  - generic [ref=e784]:
+                    - generic [ref=e785]: 
+                    - generic [ref=e787]: Add property
+          - generic: Search property
+      - generic [ref=e86]:
+        - generic [ref=e87]:
+          - generic [ref=e88]:
+            - link "Overview" [ref=e90] [cursor=pointer]:
+              - /url: ./search-console?resource_id=sc-domain%3Acoipulse.com
+              - generic [ref=e92]: home
+              - generic [ref=e94]: Overview
+            - link "Insights" [ref=e97] [cursor=pointer]:
+              - /url: ./search-console/performance/insights?resource_id=sc-domain%3Acoipulse.com
+              - generic [ref=e99]: lightbulb_2
+              - generic [ref=e101]: Insights
+            - link "Performance" [ref=e104] [cursor=pointer]:
+              - /url: ./search-console/performance/search-analytics?resource_id=sc-domain%3Acoipulse.com
+              - generic [ref=e106]: trending_up
+              - generic [ref=e108]: Performance
+            - button "URL inspection" [ref=e111] [cursor=pointer]:
+              - generic [ref=e113]: search
+              - generic [ref=e115]: URL inspection
+          - generic [ref=e119]:
+            - generic [ref=e121]:
+              - generic [ref=e124]: Indexing
+              - button "Indexing report section" [expanded] [ref=e126] [cursor=pointer]:
+                - generic [ref=e128]: keyboard_arrow_up
+            - generic [ref=e132]:
+              - link "Pages" [ref=e134] [cursor=pointer]:
+                - /url: ./search-console/index?resource_id=sc-domain%3Acoipulse.com
+                - generic [ref=e136]: file_copy
+                - generic [ref=e138]: Pages
+              - link "Sitemaps" [ref=e141] [cursor=pointer]:
+                - /url: ./search-console/sitemaps?resource_id=sc-domain%3Acoipulse.com
+                - generic [ref=e143]: account_tree
+                - generic [ref=e145]: Sitemaps
+              - link "Removals" [ref=e148] [cursor=pointer]:
+                - /url: ./search-console/removals?resource_id=sc-domain%3Acoipulse.com
+                - generic [ref=e150]: visibility_off
+                - generic [ref=e152]: Removals
+          - generic [ref=e156]:
+            - generic [ref=e158]:
+              - generic [ref=e161]: Experience
+              - button "Experience report section" [expanded] [ref=e163] [cursor=pointer]:
+                - generic [ref=e165]: keyboard_arrow_up
+            - generic [ref=e169]:
+              - link "Core Web Vitals" [ref=e171] [cursor=pointer]:
+                - /url: ./search-console/core-web-vitals?resource_id=sc-domain%3Acoipulse.com
+                - generic [ref=e173]: speed
+                - generic [ref=e175]: Core Web Vitals
+              - link "HTTPS" [ref=e178] [cursor=pointer]:
+                - /url: ./search-console/https?resource_id=sc-domain%3Acoipulse.com
+                - generic [ref=e180]: lock
+                - generic [ref=e182]: HTTPS
+          - generic [ref=e186]:
+            - generic [ref=e188]:
+              - generic [ref=e191]: Shopping
+              - button "Shopping report section" [expanded] [ref=e193] [cursor=pointer]:
+                - generic [ref=e195]: keyboard_arrow_up
+            - generic [ref=e199]:
+              - link "Product snippets" [ref=e201] [cursor=pointer]:
+                - /url: ./search-console/r/product?resource_id=sc-domain%3Acoipulse.com
+                - generic [ref=e203]: layers
+                - generic [ref=e205]: Product snippets
+              - link "Merchant listings" [ref=e208] [cursor=pointer]:
+                - /url: ./search-console/r/merchant-listings?resource_id=sc-domain%3Acoipulse.com
+                - generic [ref=e210]: layers
+                - generic [ref=e212]: Merchant listings
+          - generic [ref=e216]:
+            - generic [ref=e218]:
+              - generic [ref=e221]: Enhancements
+              - button "Enhancements report section" [expanded] [ref=e223] [cursor=pointer]:
+                - generic [ref=e225]: keyboard_arrow_up
+            - generic [ref=e229]:
+              - link "Breadcrumbs" [ref=e231] [cursor=pointer]:
+                - /url: ./search-console/r/breadcrumbs?resource_id=sc-domain%3Acoipulse.com
+                - generic [ref=e233]: layers
+                - generic [ref=e235]: Breadcrumbs
+              - link "FAQ" [ref=e238] [cursor=pointer]:
+                - /url: ./search-console/r/faq?resource_id=sc-domain%3Acoipulse.com
+                - generic [ref=e240]: layers
+                - generic [ref=e242]: FAQ
+              - link "Review snippets" [ref=e245] [cursor=pointer]:
+                - /url: ./search-console/r/review-snippet?resource_id=sc-domain%3Acoipulse.com
+                - generic [ref=e247]: layers
+                - generic [ref=e249]: Review snippets
+          - generic [ref=e255]:
+            - generic [ref=e258]: Security & Manual Actions
+            - button "Security & Manual Actions report section" [ref=e260] [cursor=pointer]:
+              - generic [ref=e262]: keyboard_arrow_down
+          - generic [ref=e263]:
+            - link "Links report" [ref=e265] [cursor=pointer]:
+              - /url: ./search-console/links?resource_id=sc-domain%3Acoipulse.com
+              - generic [ref=e267]: link_2
+              - generic [ref=e269]: Links
+            - link "Achievements" [ref=e272] [cursor=pointer]:
+              - /url: ./search-console/achievements?resource_id=sc-domain%3Acoipulse.com
+              - generic [ref=e274]: trophy
+              - generic [ref=e276]: Achievements
+            - link "Settings" [ref=e279] [cursor=pointer]:
+              - /url: ./search-console/settings?resource_id=sc-domain%3Acoipulse.com
+              - generic [ref=e281]: settings
+              - generic [ref=e283]: Settings
+        - generic [ref=e285]:
+          - generic [ref=e287]:
+            - button "Submit feedback" [ref=e289] [cursor=pointer]:
+              - generic [ref=e291]: feedback
+              - generic [ref=e293]: Submit feedback
+            - button "About Search Console" [ref=e296] [cursor=pointer]:
+              - generic [ref=e298]: info
+              - generic [ref=e300]: About Search Console
+          - generic [ref=e304]:
+            - link "Privacy" [ref=e305] [cursor=pointer]:
+              - /url: https://myaccount.google.com/privacypolicy?hl=en
+            - link "Terms" [ref=e306] [cursor=pointer]:
+              - /url: https://myaccount.google.com/termsofservice?hl=en
+  - generic [ref=e308]:
+    - navigation "Breadcrumbs" [ref=e313]:
+      - heading "Overview" [level=1] [ref=e316]
+    - main [ref=e320]:
+      - generic [ref=e321]:
+        - generic [ref=e326]:
+          - generic [ref=e327]:
+            - generic [ref=e328]: lightbulb_outline
+            - generic [ref=e329]: Get insights into your site's Search performance
+          - generic [ref=e332]:
+            - generic [ref=e334]: chevron_right
+            - generic [ref=e335]: Explore your insights
+            - link "Explore your insights" [ref=e336] [cursor=pointer]:
+              - /url: ./search-console/performance/insights?resource_id=sc-domain%3Acoipulse.com
+        - generic [ref=e338]:
+          - generic [ref=e339]:
+            - generic [ref=e340]: Performance
+            - generic [ref=e343]:
+              - generic [ref=e345]: chevron_right
+              - generic [ref=e346]: Full report
+              - link "Full report" [ref=e347] [cursor=pointer]:
+                - /url: ./search-console/performance/search-analytics?resource_id=sc-domain%3Acoipulse.com
+          - generic [ref=e350]:
+            - generic [ref=e355]: 79 total web search clicks
+            - img [ref=e359]:
+              - generic [ref=e360]:
+                - generic [ref=e361]:
+                  - generic [ref=e363]: 4/2/26
+                  - generic [ref=e365]: 4/15/26
+                  - generic [ref=e367]: 4/28/26
+                  - generic [ref=e369]: 5/11/26
+                  - generic [ref=e371]: 5/24/26
+                  - generic [ref=e373]: 6/6/26
+                - generic [ref=e374]:
+                  - generic [ref=e376]: "6"
+                  - generic [ref=e378]: "4"
+                  - generic [ref=e380]: "2"
+                  - generic [ref=e382]: "0"
+        - generic [ref=e391]:
+          - generic [ref=e392]:
+            - generic [ref=e393]: Indexing
+            - generic [ref=e396]:
+              - generic [ref=e398]: chevron_right
+              - generic [ref=e399]: Full report
+              - link "Full report" [ref=e400] [cursor=pointer]:
+                - /url: ./search-console/index?resource_id=sc-domain%3Acoipulse.com
+          - generic [ref=e403]:
+            - generic [ref=e405]:
+              - generic [ref=e408]: 1,056 not indexed pages
+              - generic [ref=e411]: 1,117 indexed pages
+            - img [ref=e415]:
+              - generic [ref=e416]:
+                - generic [ref=e417]:
+                  - generic [ref=e419]: 3/11/26
+                  - generic [ref=e421]: 3/27/26
+                  - generic [ref=e423]: 4/12/26
+                  - generic [ref=e425]: 4/28/26
+                  - generic [ref=e427]: 5/14/26
+                  - generic [ref=e429]: 5/30/26
+                - generic [ref=e430]:
+                  - generic [ref=e432]: 1.2K
+                  - generic [ref=e434]: "800"
+                  - generic [ref=e436]: "400"
+                  - generic [ref=e438]: "0"
+        - generic [ref=e459]:
+          - generic [ref=e461]: Experience
+          - table [ref=e465]:
+            - rowgroup [ref=e466]:
+              - row "Type Good Needs improvement Poor Trend" [ref=e467]:
+                - columnheader "Type" [ref=e468]
+                - columnheader [ref=e469]
+                - columnheader "Good" [ref=e470]
+                - columnheader "Needs improvement" [ref=e471]
+                - columnheader "Poor" [ref=e472]
+                - columnheader "Trend" [ref=e473]
+                - columnheader [ref=e474]
+            - rowgroup [ref=e475]:
+              - row "Core Web Vitals Mobile Desktop No data No data No data No data No data No data" [ref=e476]:
+                - cell "Core Web Vitals" [ref=e477]:
+                  - generic [ref=e479]: Core Web Vitals
+                - cell "Mobile Desktop" [ref=e480]:
+                  - generic [ref=e482]:
+                    - generic [ref=e483]: Mobile
+                    - generic [ref=e484]: Desktop
+                - cell "No data No data" [ref=e485]:
+                  - generic [ref=e486]:
+                    - generic [ref=e487]: No data
+                    - generic [ref=e488]: No data
+                - cell "No data No data" [ref=e489]:
+                  - generic [ref=e490]:
+                    - generic [ref=e491]: No data
+                    - generic [ref=e492]: No data
+                - cell "No data No data" [ref=e493]:
+                  - generic [ref=e494]:
+                    - generic [ref=e495]: No data
+                    - generic [ref=e496]: No data
+                - cell [ref=e497]
+              - row "HTTPS Non HTTPS" [ref=e498]:
+                - columnheader [ref=e499]
+                - columnheader [ref=e500]
+                - columnheader "HTTPS" [ref=e501]
+                - columnheader [ref=e502]
+                - columnheader "Non HTTPS" [ref=e503]
+                - columnheader [ref=e504]
+                - columnheader [ref=e505]
+              - row "HTTPS 19 0 Open report" [ref=e506]:
+                - cell "HTTPS" [ref=e507]:
+                  - generic [ref=e509]: HTTPS
+                - cell [ref=e510]
+                - cell "19" [ref=e511]:
+                  - generic [ref=e513]: "19"
+                - cell [ref=e514]
+                - cell "0" [ref=e515]:
+                  - generic [ref=e517]: "0"
+                - cell [ref=e518]:
+                  - img [ref=e521]
+                - cell "Open report" [ref=e523]:
+                  - button "Open report" [ref=e526] [cursor=pointer]:
+                    - generic [ref=e527]: chevron_right
+        - generic [ref=e529]:
+          - generic [ref=e531]: Shopping
+          - table [ref=e535]:
+            - rowgroup [ref=e536]:
+              - row "Type Valid Invalid Trend" [ref=e537]:
+                - columnheader "Type" [ref=e538]
+                - columnheader "Valid" [ref=e539]
+                - columnheader "Invalid" [ref=e540]
+                - columnheader "Trend" [ref=e541]
+                - columnheader [ref=e542]
+            - rowgroup [ref=e543]:
+              - row "Product snippets 4 0 Open report" [ref=e544]:
+                - cell "Product snippets" [ref=e545]:
+                  - generic [ref=e547]: Product snippets
+                - cell "4" [ref=e548]:
+                  - generic [ref=e550]: "4"
+                - cell "0" [ref=e551]:
+                  - generic [ref=e553]: "0"
+                - cell [ref=e554]:
+                  - img [ref=e557]
+                - cell "Open report" [ref=e559]:
+                  - button "Open report" [ref=e562] [cursor=pointer]:
+                    - generic [ref=e563]: chevron_right
+              - row "Merchant listings 0 4 Open report" [ref=e564]:
+                - cell "Merchant listings" [ref=e565]:
+                  - generic [ref=e567]: Merchant listings
+                - cell "0" [ref=e568]:
+                  - generic [ref=e570]: "0"
+                - cell "4" [ref=e571]:
+                  - generic [ref=e573]: "4"
+                - cell [ref=e574]:
+                  - img [ref=e577]
+                - cell "Open report" [ref=e579]:
+                  - button "Open report" [ref=e582] [cursor=pointer]:
+                    - generic [ref=e583]: chevron_right
+        - generic [ref=e585]:
+          - generic [ref=e587]: Enhancements
+          - table [ref=e591]:
+            - rowgroup [ref=e592]:
+              - row "Type Valid Invalid Trend" [ref=e593]:
+                - columnheader "Type" [ref=e594]
+                - columnheader "Valid" [ref=e595]
+                - columnheader "Invalid" [ref=e596]
+                - columnheader "Trend" [ref=e597]
+                - columnheader [ref=e598]
+            - rowgroup [ref=e599]:
+              - row "Breadcrumbs 19 0 Open report" [ref=e600]:
+                - cell "Breadcrumbs" [ref=e601]:
+                  - generic [ref=e603]: Breadcrumbs
+                - cell "19" [ref=e604]:
+                  - generic [ref=e606]: "19"
+                - cell "0" [ref=e607]:
+                  - generic [ref=e609]: "0"
+                - cell [ref=e610]:
+                  - img [ref=e613]
+                - cell "Open report" [ref=e615]:
+                  - button "Open report" [ref=e618] [cursor=pointer]:
+                    - generic [ref=e619]: chevron_right
+              - row "FAQ 8 2 Open report" [ref=e620]:
+                - cell "FAQ" [ref=e621]:
+                  - generic [ref=e623]: FAQ
+                - cell "8" [ref=e624]:
+                  - generic [ref=e626]: "8"
+                - cell "2" [ref=e627]:
+                  - generic [ref=e629]: "2"
+                - cell [ref=e630]:
+                  - img [ref=e633]
+                - cell "Open report" [ref=e636]:
+                  - button "Open report" [ref=e639] [cursor=pointer]:
+                    - generic [ref=e640]: chevron_right
+              - row "Review snippets 1 0 Open report" [ref=e641]:
+                - cell "Review snippets" [ref=e642]:
+                  - generic [ref=e644]: Review snippets
+                - cell "1" [ref=e645]:
+                  - generic [ref=e647]: "1"
+                - cell "0" [ref=e648]:
+                  - generic [ref=e650]: "0"
+                - cell [ref=e651]:
+                  - img [ref=e654]
+                - cell "Open report" [ref=e656]:
+                  - button "Open report" [ref=e659] [cursor=pointer]:
+                    - generic [ref=e660]: chevron_right

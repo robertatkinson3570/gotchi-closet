@@ -1,0 +1,738 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - banner [ref=e4]:
+        - generic [ref=e5]:
+          - link "GotchiCloset GotchiCloset" [ref=e6] [cursor=pointer]:
+            - /url: /
+            - img "GotchiCloset" [ref=e7]
+            - generic [ref=e8]: GotchiCloset
+          - generic [ref=e9]:
+            - link [ref=e10] [cursor=pointer]:
+              - /url: /explorer
+              - button "Explorer" [ref=e11]:
+                - img [ref=e12]
+            - link [ref=e15] [cursor=pointer]:
+              - /url: /dress
+              - button "Dress" [ref=e16]:
+                - img [ref=e17]
+            - link [ref=e19] [cursor=pointer]:
+              - /url: /lending
+              - button "Lending" [ref=e20]:
+                - img [ref=e21]
+            - link [ref=e26] [cursor=pointer]:
+              - /url: /lending/lands
+              - button "Land Management" [ref=e27]:
+                - img [ref=e28]
+            - button "Toggle theme" [ref=e31] [cursor=pointer]:
+              - img [ref=e32]
+      - main [ref=e38]:
+        - generic [ref=e39]:
+          - generic [ref=e41]:
+            - link "Back to my lendings" [ref=e42] [cursor=pointer]:
+              - /url: /lending/me
+              - img [ref=e43]
+              - text: Back to my lendings
+            - heading "Land Management" [level=1] [ref=e45]:
+              - img [ref=e46]
+              - text: Land Management
+            - paragraph [ref=e49]: 0xe0d4…A3c2
+          - generic [ref=e50]:
+            - generic [ref=e51]: 79 lands
+            - generic [ref=e52]:
+              - generic [ref=e53]: Page 1/4
+              - button "‹" [disabled] [ref=e54]
+              - button "›" [ref=e55] [cursor=pointer]
+          - table [ref=e68]:
+            - rowgroup [ref=e69]:
+              - row "ID Name District Size Aaltar ready Last channeled Channel access Reservoir access Reservoirs ready Last emptied Actions" [ref=e70]:
+                - columnheader "ID" [ref=e71]:
+                  - button "ID" [ref=e72] [cursor=pointer]
+                - columnheader "Name" [ref=e73]:
+                  - button "Name" [ref=e74] [cursor=pointer]
+                - columnheader "District" [ref=e75]:
+                  - button "District" [ref=e76] [cursor=pointer]
+                - columnheader "Size" [ref=e77]:
+                  - button "Size" [ref=e78] [cursor=pointer]
+                - columnheader "Aaltar ready" [ref=e79]:
+                  - button "Aaltar ready" [ref=e80] [cursor=pointer]:
+                    - text: Aaltar ready
+                    - img [ref=e81]
+                - columnheader "Last channeled" [ref=e83]:
+                  - button "Last channeled" [ref=e84] [cursor=pointer]
+                - columnheader "Channel access" [ref=e85]:
+                  - button "Channel access" [ref=e86] [cursor=pointer]
+                - columnheader "Reservoir access" [ref=e87]:
+                  - button "Reservoir access" [ref=e88] [cursor=pointer]
+                - columnheader "Reservoirs ready" [ref=e89]:
+                  - button "Reservoirs ready" [ref=e90] [cursor=pointer]
+                - columnheader "Last emptied" [ref=e91]:
+                  - button "Last emptied" [ref=e92] [cursor=pointer]
+                - columnheader "Actions" [ref=e93]
+            - rowgroup [ref=e94]:
+              - row "#6103 although-realize-store 1 Reasonable Now 1306 days ago Owner Owner Now 13m ago" [ref=e95]:
+                - cell "#6103" [ref=e96]
+                - cell "although-realize-store" [ref=e97]
+                - cell "1" [ref=e98]
+                - cell "Reasonable" [ref=e99]
+                - cell "Now" [ref=e100]
+                - cell "1306 days ago" [ref=e101]
+                - cell "Owner" [ref=e102]
+                - cell "Owner" [ref=e103]
+                - cell "Now" [ref=e104]
+                - cell "13m ago" [ref=e105]
+                - cell [ref=e106]:
+                  - generic [ref=e107]:
+                    - button "Claim reservoir" [ref=e108] [cursor=pointer]:
+                      - img [ref=e109]
+                    - button "Channel" [ref=e115] [cursor=pointer]:
+                      - img [ref=e116]
+                    - button "Details & build (survey, layout)" [active] [ref=e118] [cursor=pointer]:
+                      - img [ref=e119]
+              - row "#6184 one-ravaged-reduce 1 Reasonable Now 1306 days ago Owner Owner Now 14h ago" [ref=e121]:
+                - cell "#6184" [ref=e122]
+                - cell "one-ravaged-reduce" [ref=e123]
+                - cell "1" [ref=e124]
+                - cell "Reasonable" [ref=e125]
+                - cell "Now" [ref=e126]
+                - cell "1306 days ago" [ref=e127]
+                - cell "Owner" [ref=e128]
+                - cell "Owner" [ref=e129]
+                - cell "Now" [ref=e130]
+                - cell "14h ago" [ref=e131]
+                - cell [ref=e132]:
+                  - generic [ref=e133]:
+                    - button "Claim reservoir" [ref=e134] [cursor=pointer]:
+                      - img [ref=e135]
+                    - button "Channel" [ref=e141] [cursor=pointer]:
+                      - img [ref=e142]
+                    - button "Details & build (survey, layout)" [ref=e144] [cursor=pointer]:
+                      - img [ref=e145]
+              - row "#6206 made-points-amounts 1 Reasonable Now 1306 days ago Owner Owner Now 14h ago" [ref=e147]:
+                - cell "#6206" [ref=e148]
+                - cell "made-points-amounts" [ref=e149]
+                - cell "1" [ref=e150]
+                - cell "Reasonable" [ref=e151]
+                - cell "Now" [ref=e152]
+                - cell "1306 days ago" [ref=e153]
+                - cell "Owner" [ref=e154]
+                - cell "Owner" [ref=e155]
+                - cell "Now" [ref=e156]
+                - cell "14h ago" [ref=e157]
+                - cell [ref=e158]:
+                  - generic [ref=e159]:
+                    - button "Claim reservoir" [ref=e160] [cursor=pointer]:
+                      - img [ref=e161]
+                    - button "Channel" [ref=e167] [cursor=pointer]:
+                      - img [ref=e168]
+                    - button "Details & build (survey, layout)" [ref=e170] [cursor=pointer]:
+                      - img [ref=e171]
+              - row "#6210 can-limited-chainlink 1 Reasonable Now 1305 days ago Owner Owner Now 14h ago" [ref=e173]:
+                - cell "#6210" [ref=e174]
+                - cell "can-limited-chainlink" [ref=e175]
+                - cell "1" [ref=e176]
+                - cell "Reasonable" [ref=e177]
+                - cell "Now" [ref=e178]
+                - cell "1305 days ago" [ref=e179]
+                - cell "Owner" [ref=e180]
+                - cell "Owner" [ref=e181]
+                - cell "Now" [ref=e182]
+                - cell "14h ago" [ref=e183]
+                - cell [ref=e184]:
+                  - generic [ref=e185]:
+                    - button "Claim reservoir" [ref=e186] [cursor=pointer]:
+                      - img [ref=e187]
+                    - button "Channel" [ref=e193] [cursor=pointer]:
+                      - img [ref=e194]
+                    - button "Details & build (survey, layout)" [ref=e196] [cursor=pointer]:
+                      - img [ref=e197]
+              - row "#6222 order-please-be 1 Reasonable Now 1305 days ago Owner Owner Now 14h ago" [ref=e199]:
+                - cell "#6222" [ref=e200]
+                - cell "order-please-be" [ref=e201]
+                - cell "1" [ref=e202]
+                - cell "Reasonable" [ref=e203]
+                - cell "Now" [ref=e204]
+                - cell "1305 days ago" [ref=e205]
+                - cell "Owner" [ref=e206]
+                - cell "Owner" [ref=e207]
+                - cell "Now" [ref=e208]
+                - cell "14h ago" [ref=e209]
+                - cell [ref=e210]:
+                  - generic [ref=e211]:
+                    - button "Claim reservoir" [ref=e212] [cursor=pointer]:
+                      - img [ref=e213]
+                    - button "Channel" [ref=e219] [cursor=pointer]:
+                      - img [ref=e220]
+                    - button "Details & build (survey, layout)" [ref=e222] [cursor=pointer]:
+                      - img [ref=e223]
+              - row "#6240 magical-overview-existed 1 Reasonable Now 1305 days ago Owner Owner Now 14h ago" [ref=e225]:
+                - cell "#6240" [ref=e226]
+                - cell "magical-overview-existed" [ref=e227]
+                - cell "1" [ref=e228]
+                - cell "Reasonable" [ref=e229]
+                - cell "Now" [ref=e230]
+                - cell "1305 days ago" [ref=e231]
+                - cell "Owner" [ref=e232]
+                - cell "Owner" [ref=e233]
+                - cell "Now" [ref=e234]
+                - cell "14h ago" [ref=e235]
+                - cell [ref=e236]:
+                  - generic [ref=e237]:
+                    - button "Claim reservoir" [ref=e238] [cursor=pointer]:
+                      - img [ref=e239]
+                    - button "Channel" [ref=e245] [cursor=pointer]:
+                      - img [ref=e246]
+                    - button "Details & build (survey, layout)" [ref=e248] [cursor=pointer]:
+                      - img [ref=e249]
+              - row "#6268 trading-proximity-others 1 Reasonable Now 1306 days ago Owner Owner Now 14h ago" [ref=e251]:
+                - cell "#6268" [ref=e252]
+                - cell "trading-proximity-others" [ref=e253]
+                - cell "1" [ref=e254]
+                - cell "Reasonable" [ref=e255]
+                - cell "Now" [ref=e256]
+                - cell "1306 days ago" [ref=e257]
+                - cell "Owner" [ref=e258]
+                - cell "Owner" [ref=e259]
+                - cell "Now" [ref=e260]
+                - cell "14h ago" [ref=e261]
+                - cell [ref=e262]:
+                  - generic [ref=e263]:
+                    - button "Claim reservoir" [ref=e264] [cursor=pointer]:
+                      - img [ref=e265]
+                    - button "Channel" [ref=e271] [cursor=pointer]:
+                      - img [ref=e272]
+                    - button "Details & build (survey, layout)" [ref=e274] [cursor=pointer]:
+                      - img [ref=e275]
+              - row "#6360 citaadel-exert-primary 1 Reasonable Now 1305 days ago Owner Owner Now 14h ago" [ref=e277]:
+                - cell "#6360" [ref=e278]
+                - cell "citaadel-exert-primary" [ref=e279]
+                - cell "1" [ref=e280]
+                - cell "Reasonable" [ref=e281]
+                - cell "Now" [ref=e282]
+                - cell "1305 days ago" [ref=e283]
+                - cell "Owner" [ref=e284]
+                - cell "Owner" [ref=e285]
+                - cell "Now" [ref=e286]
+                - cell "14h ago" [ref=e287]
+                - cell [ref=e288]:
+                  - generic [ref=e289]:
+                    - button "Claim reservoir" [ref=e290] [cursor=pointer]:
+                      - img [ref=e291]
+                    - button "Channel" [ref=e297] [cursor=pointer]:
+                      - img [ref=e298]
+                    - button "Details & build (survey, layout)" [ref=e300] [cursor=pointer]:
+                      - img [ref=e301]
+              - row "#6399 drop-very-liquidating 1 Reasonable Now 1168 days ago Owner Owner Now 14h ago" [ref=e303]:
+                - cell "#6399" [ref=e304]
+                - cell "drop-very-liquidating" [ref=e305]
+                - cell "1" [ref=e306]
+                - cell "Reasonable" [ref=e307]
+                - cell "Now" [ref=e308]
+                - cell "1168 days ago" [ref=e309]
+                - cell "Owner" [ref=e310]
+                - cell "Owner" [ref=e311]
+                - cell "Now" [ref=e312]
+                - cell "14h ago" [ref=e313]
+                - cell [ref=e314]:
+                  - generic [ref=e315]:
+                    - button "Claim reservoir" [ref=e316] [cursor=pointer]:
+                      - img [ref=e317]
+                    - button "Channel" [ref=e323] [cursor=pointer]:
+                      - img [ref=e324]
+                    - button "Details & build (survey, layout)" [ref=e326] [cursor=pointer]:
+                      - img [ref=e327]
+              - row "#6504 generating-in-why 1 Reasonable Now 1306 days ago Owner Owner Now 14h ago" [ref=e329]:
+                - cell "#6504" [ref=e330]
+                - cell "generating-in-why" [ref=e331]
+                - cell "1" [ref=e332]
+                - cell "Reasonable" [ref=e333]
+                - cell "Now" [ref=e334]
+                - cell "1306 days ago" [ref=e335]
+                - cell "Owner" [ref=e336]
+                - cell "Owner" [ref=e337]
+                - cell "Now" [ref=e338]
+                - cell "14h ago" [ref=e339]
+                - cell [ref=e340]:
+                  - generic [ref=e341]:
+                    - button "Claim reservoir" [ref=e342] [cursor=pointer]:
+                      - img [ref=e343]
+                    - button "Channel" [ref=e349] [cursor=pointer]:
+                      - img [ref=e350]
+                    - button "Details & build (survey, layout)" [ref=e352] [cursor=pointer]:
+                      - img [ref=e353]
+              - row "#6510 all-powerful-high 1 Reasonable Now 1306 days ago Owner Owner Now 14h ago" [ref=e355]:
+                - cell "#6510" [ref=e356]
+                - cell "all-powerful-high" [ref=e357]
+                - cell "1" [ref=e358]
+                - cell "Reasonable" [ref=e359]
+                - cell "Now" [ref=e360]
+                - cell "1306 days ago" [ref=e361]
+                - cell "Owner" [ref=e362]
+                - cell "Owner" [ref=e363]
+                - cell "Now" [ref=e364]
+                - cell "14h ago" [ref=e365]
+                - cell [ref=e366]:
+                  - generic [ref=e367]:
+                    - button "Claim reservoir" [ref=e368] [cursor=pointer]:
+                      - img [ref=e369]
+                    - button "Channel" [ref=e375] [cursor=pointer]:
+                      - img [ref=e376]
+                    - button "Details & build (survey, layout)" [ref=e378] [cursor=pointer]:
+                      - img [ref=e379]
+              - row "#6548 social-fortunes-crafted 1 Reasonable Now 1306 days ago Owner Owner Now 14h ago" [ref=e381]:
+                - cell "#6548" [ref=e382]
+                - cell "social-fortunes-crafted" [ref=e383]
+                - cell "1" [ref=e384]
+                - cell "Reasonable" [ref=e385]
+                - cell "Now" [ref=e386]
+                - cell "1306 days ago" [ref=e387]
+                - cell "Owner" [ref=e388]
+                - cell "Owner" [ref=e389]
+                - cell "Now" [ref=e390]
+                - cell "14h ago" [ref=e391]
+                - cell [ref=e392]:
+                  - generic [ref=e393]:
+                    - button "Claim reservoir" [ref=e394] [cursor=pointer]:
+                      - img [ref=e395]
+                    - button "Channel" [ref=e401] [cursor=pointer]:
+                      - img [ref=e402]
+                    - button "Details & build (survey, layout)" [ref=e404] [cursor=pointer]:
+                      - img [ref=e405]
+              - row "#6635 announce-market-statistics 1 Reasonable Now 1306 days ago Owner Owner Now 14h ago" [ref=e407]:
+                - cell "#6635" [ref=e408]
+                - cell "announce-market-statistics" [ref=e409]
+                - cell "1" [ref=e410]
+                - cell "Reasonable" [ref=e411]
+                - cell "Now" [ref=e412]
+                - cell "1306 days ago" [ref=e413]
+                - cell "Owner" [ref=e414]
+                - cell "Owner" [ref=e415]
+                - cell "Now" [ref=e416]
+                - cell "14h ago" [ref=e417]
+                - cell [ref=e418]:
+                  - generic [ref=e419]:
+                    - button "Claim reservoir" [ref=e420] [cursor=pointer]:
+                      - img [ref=e421]
+                    - button "Channel" [ref=e427] [cursor=pointer]:
+                      - img [ref=e428]
+                    - button "Details & build (survey, layout)" [ref=e430] [cursor=pointer]:
+                      - img [ref=e431]
+              - row "#6649 dare-released-reached 1 Reasonable Now 1306 days ago Owner Owner Now 14h ago" [ref=e433]:
+                - cell "#6649" [ref=e434]
+                - cell "dare-released-reached" [ref=e435]
+                - cell "1" [ref=e436]
+                - cell "Reasonable" [ref=e437]
+                - cell "Now" [ref=e438]
+                - cell "1306 days ago" [ref=e439]
+                - cell "Owner" [ref=e440]
+                - cell "Owner" [ref=e441]
+                - cell "Now" [ref=e442]
+                - cell "14h ago" [ref=e443]
+                - cell [ref=e444]:
+                  - generic [ref=e445]:
+                    - button "Claim reservoir" [ref=e446] [cursor=pointer]:
+                      - img [ref=e447]
+                    - button "Channel" [ref=e453] [cursor=pointer]:
+                      - img [ref=e454]
+                    - button "Details & build (survey, layout)" [ref=e456] [cursor=pointer]:
+                      - img [ref=e457]
+              - row "#6766 ancient-crafted-prophecy 1 Reasonable Now 1306 days ago Owner Owner Now 14h ago" [ref=e459]:
+                - cell "#6766" [ref=e460]
+                - cell "ancient-crafted-prophecy" [ref=e461]
+                - cell "1" [ref=e462]
+                - cell "Reasonable" [ref=e463]
+                - cell "Now" [ref=e464]
+                - cell "1306 days ago" [ref=e465]
+                - cell "Owner" [ref=e466]
+                - cell "Owner" [ref=e467]
+                - cell "Now" [ref=e468]
+                - cell "14h ago" [ref=e469]
+                - cell [ref=e470]:
+                  - generic [ref=e471]:
+                    - button "Claim reservoir" [ref=e472] [cursor=pointer]:
+                      - img [ref=e473]
+                    - button "Channel" [ref=e479] [cursor=pointer]:
+                      - img [ref=e480]
+                    - button "Details & build (survey, layout)" [ref=e482] [cursor=pointer]:
+                      - img [ref=e483]
+              - row "#6880 until-crypto-lodge 1 Reasonable Now 1306 days ago Owner Owner Now 14h ago" [ref=e485]:
+                - cell "#6880" [ref=e486]
+                - cell "until-crypto-lodge" [ref=e487]
+                - cell "1" [ref=e488]
+                - cell "Reasonable" [ref=e489]
+                - cell "Now" [ref=e490]
+                - cell "1306 days ago" [ref=e491]
+                - cell "Owner" [ref=e492]
+                - cell "Owner" [ref=e493]
+                - cell "Now" [ref=e494]
+                - cell "14h ago" [ref=e495]
+                - cell [ref=e496]:
+                  - generic [ref=e497]:
+                    - button "Claim reservoir" [ref=e498] [cursor=pointer]:
+                      - img [ref=e499]
+                    - button "Channel" [ref=e505] [cursor=pointer]:
+                      - img [ref=e506]
+                    - button "Details & build (survey, layout)" [ref=e508] [cursor=pointer]:
+                      - img [ref=e509]
+              - row "#7120 discover-relying-became 1 Reasonable Now 1306 days ago Owner Owner Now 14h ago" [ref=e511]:
+                - cell "#7120" [ref=e512]
+                - cell "discover-relying-became" [ref=e513]
+                - cell "1" [ref=e514]
+                - cell "Reasonable" [ref=e515]
+                - cell "Now" [ref=e516]
+                - cell "1306 days ago" [ref=e517]
+                - cell "Owner" [ref=e518]
+                - cell "Owner" [ref=e519]
+                - cell "Now" [ref=e520]
+                - cell "14h ago" [ref=e521]
+                - cell [ref=e522]:
+                  - generic [ref=e523]:
+                    - button "Claim reservoir" [ref=e524] [cursor=pointer]:
+                      - img [ref=e525]
+                    - button "Channel" [ref=e531] [cursor=pointer]:
+                      - img [ref=e532]
+                    - button "Details & build (survey, layout)" [ref=e534] [cursor=pointer]:
+                      - img [ref=e535]
+              - row "#7173 announce-exact-prove 1 Reasonable Now 1306 days ago Owner Owner Now 14h ago" [ref=e537]:
+                - cell "#7173" [ref=e538]
+                - cell "announce-exact-prove" [ref=e539]
+                - cell "1" [ref=e540]
+                - cell "Reasonable" [ref=e541]
+                - cell "Now" [ref=e542]
+                - cell "1306 days ago" [ref=e543]
+                - cell "Owner" [ref=e544]
+                - cell "Owner" [ref=e545]
+                - cell "Now" [ref=e546]
+                - cell "14h ago" [ref=e547]
+                - cell [ref=e548]:
+                  - generic [ref=e549]:
+                    - button "Claim reservoir" [ref=e550] [cursor=pointer]:
+                      - img [ref=e551]
+                    - button "Channel" [ref=e557] [cursor=pointer]:
+                      - img [ref=e558]
+                    - button "Details & build (survey, layout)" [ref=e560] [cursor=pointer]:
+                      - img [ref=e561]
+              - row "#7849 creators-completing-please 1 Reasonable Now 1306 days ago Owner Owner Now 14h ago" [ref=e563]:
+                - cell "#7849" [ref=e564]
+                - cell "creators-completing-please" [ref=e565]
+                - cell "1" [ref=e566]
+                - cell "Reasonable" [ref=e567]
+                - cell "Now" [ref=e568]
+                - cell "1306 days ago" [ref=e569]
+                - cell "Owner" [ref=e570]
+                - cell "Owner" [ref=e571]
+                - cell "Now" [ref=e572]
+                - cell "14h ago" [ref=e573]
+                - cell [ref=e574]:
+                  - generic [ref=e575]:
+                    - button "Claim reservoir" [ref=e576] [cursor=pointer]:
+                      - img [ref=e577]
+                    - button "Channel" [ref=e583] [cursor=pointer]:
+                      - img [ref=e584]
+                    - button "Details & build (survey, layout)" [ref=e586] [cursor=pointer]:
+                      - img [ref=e587]
+              - row "#7897 aadepts-smart-bridging 5 Reasonable Now 1108 days ago Owner Owner Now 14h ago" [ref=e589]:
+                - cell "#7897" [ref=e590]
+                - cell "aadepts-smart-bridging" [ref=e591]
+                - cell "5" [ref=e592]
+                - cell "Reasonable" [ref=e593]
+                - cell "Now" [ref=e594]
+                - cell "1108 days ago" [ref=e595]
+                - cell "Owner" [ref=e596]
+                - cell "Owner" [ref=e597]
+                - cell "Now" [ref=e598]
+                - cell "14h ago" [ref=e599]
+                - cell [ref=e600]:
+                  - generic [ref=e601]:
+                    - button "Claim reservoir" [ref=e602] [cursor=pointer]:
+                      - img [ref=e603]
+                    - button "Channel" [ref=e609] [cursor=pointer]:
+                      - img [ref=e610]
+                    - button "Details & build (survey, layout)" [ref=e612] [cursor=pointer]:
+                      - img [ref=e613]
+              - row "#8212 every-before-level 1 Reasonable Now 1306 days ago Owner Owner Now 14h ago" [ref=e615]:
+                - cell "#8212" [ref=e616]
+                - cell "every-before-level" [ref=e617]
+                - cell "1" [ref=e618]
+                - cell "Reasonable" [ref=e619]
+                - cell "Now" [ref=e620]
+                - cell "1306 days ago" [ref=e621]
+                - cell "Owner" [ref=e622]
+                - cell "Owner" [ref=e623]
+                - cell "Now" [ref=e624]
+                - cell "14h ago" [ref=e625]
+                - cell [ref=e626]:
+                  - generic [ref=e627]:
+                    - button "Claim reservoir" [ref=e628] [cursor=pointer]:
+                      - img [ref=e629]
+                    - button "Channel" [ref=e635] [cursor=pointer]:
+                      - img [ref=e636]
+                    - button "Details & build (survey, layout)" [ref=e638] [cursor=pointer]:
+                      - img [ref=e639]
+              - row "#8395 frens-bounds-freely 1 Reasonable Now 177 days ago Owner Owner Now 14h ago" [ref=e641]:
+                - cell "#8395" [ref=e642]
+                - cell "frens-bounds-freely" [ref=e643]
+                - cell "1" [ref=e644]
+                - cell "Reasonable" [ref=e645]
+                - cell "Now" [ref=e646]
+                - cell "177 days ago" [ref=e647]
+                - cell "Owner" [ref=e648]
+                - cell "Owner" [ref=e649]
+                - cell "Now" [ref=e650]
+                - cell "14h ago" [ref=e651]
+                - cell [ref=e652]:
+                  - generic [ref=e653]:
+                    - button "Claim reservoir" [ref=e654] [cursor=pointer]:
+                      - img [ref=e655]
+                    - button "Channel" [ref=e661] [cursor=pointer]:
+                      - img [ref=e662]
+                    - button "Details & build (survey, layout)" [ref=e664] [cursor=pointer]:
+                      - img [ref=e665]
+              - row "#8965 harvesting-others-these 7 Spacious Now 177 days ago Owner Owner Now 14h ago" [ref=e667]:
+                - cell "#8965" [ref=e668]
+                - cell "harvesting-others-these" [ref=e669]
+                - cell "7" [ref=e670]
+                - cell "Spacious" [ref=e671]
+                - cell "Now" [ref=e672]
+                - cell "177 days ago" [ref=e673]
+                - cell "Owner" [ref=e674]
+                - cell "Owner" [ref=e675]
+                - cell "Now" [ref=e676]
+                - cell "14h ago" [ref=e677]
+                - cell [ref=e678]:
+                  - generic [ref=e679]:
+                    - button "Claim reservoir" [ref=e680] [cursor=pointer]:
+                      - img [ref=e681]
+                    - button "Channel" [ref=e687] [cursor=pointer]:
+                      - img [ref=e688]
+                    - button "Details & build (survey, layout)" [ref=e690] [cursor=pointer]:
+                      - img [ref=e691]
+              - row "#9665 reward-liquidating-baaddies 7 Reasonable Now 1114 days ago Owner Owner Now 14h ago" [ref=e693]:
+                - cell "#9665" [ref=e694]
+                - cell "reward-liquidating-baaddies" [ref=e695]
+                - cell "7" [ref=e696]
+                - cell "Reasonable" [ref=e697]
+                - cell "Now" [ref=e698]
+                - cell "1114 days ago" [ref=e699]
+                - cell "Owner" [ref=e700]
+                - cell "Owner" [ref=e701]
+                - cell "Now" [ref=e702]
+                - cell "14h ago" [ref=e703]
+                - cell [ref=e704]:
+                  - generic [ref=e705]:
+                    - button "Claim reservoir" [ref=e706] [cursor=pointer]:
+                      - img [ref=e707]
+                    - button "Channel" [ref=e713] [cursor=pointer]:
+                      - img [ref=e714]
+                    - button "Details & build (survey, layout)" [ref=e716] [cursor=pointer]:
+                      - img [ref=e717]
+              - row "#10699 with-building-earned 7 Reasonable Now 1353 days ago Owner Owner Now 1h ago" [ref=e719]:
+                - cell "#10699" [ref=e720]
+                - cell "with-building-earned" [ref=e721]
+                - cell "7" [ref=e722]
+                - cell "Reasonable" [ref=e723]
+                - cell "Now" [ref=e724]
+                - cell "1353 days ago" [ref=e725]
+                - cell "Owner" [ref=e726]
+                - cell "Owner" [ref=e727]
+                - cell "Now" [ref=e728]
+                - cell "1h ago" [ref=e729]
+                - cell [ref=e730]:
+                  - generic [ref=e731]:
+                    - button "Claim reservoir" [ref=e732] [cursor=pointer]:
+                      - img [ref=e733]
+                    - button "Channel" [ref=e739] [cursor=pointer]:
+                      - img [ref=e740]
+                    - button "Details & build (survey, layout)" [ref=e742] [cursor=pointer]:
+                      - img [ref=e743]
+      - contentinfo [ref=e65]:
+        - generic [ref=e66]:
+          - text: Built by
+          - link "GrimLabs" [ref=e67] [cursor=pointer]:
+            - /url: https://grimlabs.xyz
+    - region "Notifications (F8)":
+      - list
+  - generic [ref=e746]:
+    - button "Close" [ref=e747] [cursor=pointer]:
+      - img [ref=e748]
+    - generic [ref=e751]:
+      - generic [ref=e752]:
+        - generic [ref=e753]:
+          - img [ref=e754]
+          - generic [ref=e757]: Parcel 6103
+          - generic [ref=e758]: although-realize-store
+          - generic [ref=e759]: Reasonable
+        - generic [ref=e760]: District 1 · (5504,4184) · 16×16 · 10 rounds surveyed
+        - generic [ref=e761]:
+          - text: "Owner:"
+          - generic [ref=e762]: 0xe0d4…A3c2
+          - button "copy" [ref=e763] [cursor=pointer]
+        - button "Survey" [ref=e764] [cursor=pointer]:
+          - img [ref=e765]
+          - text: Survey
+      - generic [ref=e773]:
+        - generic [ref=e774]:
+          - img [ref=e775]
+          - text: Alchemica
+        - table [ref=e780]:
+          - rowgroup [ref=e781]:
+            - row "Token Claimable In-ground Harvest/day Capacity Claimed" [ref=e782]:
+              - columnheader "Token" [ref=e783]
+              - columnheader "Claimable" [ref=e784]
+              - columnheader "In-ground" [ref=e785]
+              - columnheader "Harvest/day" [ref=e786]
+              - columnheader "Capacity" [ref=e787]
+              - columnheader "Claimed" [ref=e788]
+          - rowgroup [ref=e789]:
+            - row "FUD 1 22,276 14,688,000 160 73,288" [ref=e790]:
+              - cell "FUD" [ref=e791]
+              - cell "1" [ref=e792]
+              - cell "22,276" [ref=e793]
+              - cell "14,688,000" [ref=e794]
+              - cell "160" [ref=e795]
+              - cell "73,288" [ref=e796]
+            - row "FOMO 0 18,426 6,566,400 80 33,113" [ref=e797]:
+              - cell "FOMO" [ref=e798]
+              - cell "0" [ref=e799]
+              - cell "18,426" [ref=e800]
+              - cell "6,566,400" [ref=e801]
+              - cell "80" [ref=e802]
+              - cell "33,113" [ref=e803]
+            - row "ALPHA 0 10,453 3,801,600 48 19,189" [ref=e804]:
+              - cell "ALPHA" [ref=e805]
+              - cell "0" [ref=e806]
+              - cell "10,453" [ref=e807]
+              - cell "3,801,600" [ref=e808]
+              - cell "48" [ref=e809]
+              - cell "19,189" [ref=e810]
+            - row "KEK 0 3,183 1,209,600 13 6,023" [ref=e811]:
+              - cell "KEK" [ref=e812]
+              - cell "0" [ref=e813]
+              - cell "3,183" [ref=e814]
+              - cell "1,209,600" [ref=e815]
+              - cell "13" [ref=e816]
+              - cell "6,023" [ref=e817]
+      - generic [ref=e818]:
+        - generic [ref=e819]:
+          - img [ref=e820]
+          - text: Survey history · 10 rounds
+        - table [ref=e829]:
+          - rowgroup [ref=e830]:
+            - row "Round FUD FOMO ALPHA KEK" [ref=e831]:
+              - columnheader "Round" [ref=e832]
+              - columnheader "FUD" [ref=e833]
+              - columnheader "FOMO" [ref=e834]
+              - columnheader "ALPHA" [ref=e835]
+              - columnheader "KEK" [ref=e836]
+          - rowgroup [ref=e837]:
+            - row "1 21,607 15,352 7,676 2,369" [ref=e838]:
+              - cell "1" [ref=e839]
+              - cell "21,607" [ref=e840]
+              - cell "15,352" [ref=e841]
+              - cell "7,676" [ref=e842]
+              - cell "2,369" [ref=e843]
+            - row "2 8,871 5,117 2,217 635" [ref=e844]:
+              - cell "2" [ref=e845]
+              - cell "8,871" [ref=e846]
+              - cell "5,117" [ref=e847]
+              - cell "2,217" [ref=e848]
+              - cell "635" [ref=e849]
+            - row "3 7,898 3,048 1,974 887" [ref=e850]:
+              - cell "3" [ref=e851]
+              - cell "7,898" [ref=e852]
+              - cell "3,048" [ref=e853]
+              - cell "1,974" [ref=e854]
+              - cell "887" [ref=e855]
+            - row "4 6,705 3,949 3,703 720" [ref=e856]:
+              - cell "4" [ref=e857]
+              - cell "6,705" [ref=e858]
+              - cell "3,949" [ref=e859]
+              - cell "3,703" [ref=e860]
+              - cell "720" [ref=e861]
+            - row "5 7,898 3,949 1,974 720" [ref=e862]:
+              - cell "5" [ref=e863]
+              - cell "7,898" [ref=e864]
+              - cell "3,949" [ref=e865]
+              - cell "1,974" [ref=e866]
+              - cell "720" [ref=e867]
+            - row "6 8,871 3,352 2,217 720" [ref=e868]:
+              - cell "6" [ref=e869]
+              - cell "8,871" [ref=e870]
+              - cell "3,352" [ref=e871]
+              - cell "2,217" [ref=e872]
+              - cell "720" [ref=e873]
+            - row "7 10,235 3,949 1,676 1,023" [ref=e874]:
+              - cell "7" [ref=e875]
+              - cell "10,235" [ref=e876]
+              - cell "3,949" [ref=e877]
+              - cell "1,676" [ref=e878]
+              - cell "1,023" [ref=e879]
+            - row "8 8,871 4,436 1,974 670" [ref=e880]:
+              - cell "8" [ref=e881]
+              - cell "8,871" [ref=e882]
+              - cell "4,436" [ref=e883]
+              - cell "1,974" [ref=e884]
+              - cell "670" [ref=e885]
+            - row "9 6,705 4,436 1,587 670" [ref=e886]:
+              - cell "9" [ref=e887]
+              - cell "6,705" [ref=e888]
+              - cell "4,436" [ref=e889]
+              - cell "1,587" [ref=e890]
+              - cell "670" [ref=e891]
+            - row "10 7,898 3,949 4,639 789" [ref=e892]:
+              - cell "10" [ref=e893]
+              - cell "7,898" [ref=e894]
+              - cell "3,949" [ref=e895]
+              - cell "4,639" [ref=e896]
+              - cell "789" [ref=e897]
+      - generic [ref=e898]:
+        - generic [ref=e899]:
+          - generic [ref=e900]:
+            - img [ref=e901]
+            - text: Channeling
+          - generic [ref=e903]: "Last channeled: 11/17/2022, 5:57:53 PM"
+        - generic [ref=e904]:
+          - generic [ref=e905]:
+            - img [ref=e906]
+            - text: Access rights
+          - generic [ref=e909]: "Channeling: Owner only"
+          - generic [ref=e910]: "Empty reservoir: Owner only"
+      - generic [ref=e911]:
+        - generic [ref=e912]:
+          - generic [ref=e913]:
+            - img [ref=e914]
+            - text: Layout · 13 installations · 0 tiles
+          - generic [ref=e918]: Click an installation to remove it
+        - generic [ref=e919]:
+          - generic [ref=e921]:
+            - 'generic "FOMO Reservoir Level 6 · #106 @ (6,7) · 2×2 — click to remove" [ref=e922] [cursor=pointer]':
+              - img "FOMO Reservoir Level 6"
+            - 'generic "ALPHA Reservoir Level 6 · #115 @ (8,7) · 2×2 — click to remove" [ref=e923] [cursor=pointer]':
+              - img "ALPHA Reservoir Level 6"
+            - 'generic "KEK Reservoir Level 6 · #124 @ (10,7) · 2×2 — click to remove" [ref=e924] [cursor=pointer]':
+              - img "KEK Reservoir Level 6"
+            - 'generic "Alchemical Aaltar Level 6 · #15 @ (7,5) · 2×2 — click to remove" [ref=e925] [cursor=pointer]':
+              - img "Alchemical Aaltar Level 6"
+            - 'generic "FUD Harvester Level 6 · #61 @ (4,11) · 2×2 — click to remove" [ref=e926] [cursor=pointer]':
+              - img "FUD Harvester Level 6"
+            - 'generic "FUD Harvester Level 6 · #61 @ (4,9) · 2×2 — click to remove" [ref=e927] [cursor=pointer]':
+              - img "FUD Harvester Level 6"
+            - 'generic "FOMO Harvester Level 6 · #70 @ (6,11) · 2×2 — click to remove" [ref=e928] [cursor=pointer]':
+              - img "FOMO Harvester Level 6"
+            - 'generic "FOMO Harvester Level 6 · #70 @ (6,9) · 2×2 — click to remove" [ref=e929] [cursor=pointer]':
+              - img "FOMO Harvester Level 6"
+            - 'generic "ALPHA Harvester Level 6 · #79 @ (8,11) · 2×2 — click to remove" [ref=e930] [cursor=pointer]':
+              - img "ALPHA Harvester Level 6"
+            - 'generic "ALPHA Harvester Level 6 · #79 @ (8,9) · 2×2 — click to remove" [ref=e931] [cursor=pointer]':
+              - img "ALPHA Harvester Level 6"
+            - 'generic "KEK Harvester Level 6 · #88 @ (10,11) · 2×2 — click to remove" [ref=e932] [cursor=pointer]':
+              - img "KEK Harvester Level 6"
+            - 'generic "KEK Harvester Level 6 · #88 @ (10,9) · 2×2 — click to remove" [ref=e933] [cursor=pointer]':
+              - img "KEK Harvester Level 6"
+            - 'generic "FUD Reservoir Level 6 · #97 @ (4,7) · 2×2 — click to remove" [ref=e934] [cursor=pointer]':
+              - img "FUD Reservoir Level 6"
+          - generic [ref=e936]: 16×16 grid
+        - generic [ref=e937]:
+          - generic [ref=e939]: Your installations — drag onto the grid (staged, not saved yet)
+          - generic [ref=e940]: No unequipped installations in your wallet.
+          - generic [ref=e941]: Drop to stage (green = valid, red = occupied). Click a staged tile to unstage. Hit Save changes to equip — one wallet signature each (level-1 installs only).

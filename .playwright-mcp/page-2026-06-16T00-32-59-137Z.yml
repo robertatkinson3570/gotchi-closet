@@ -1,0 +1,1129 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - banner [ref=e4]:
+        - generic [ref=e5]:
+          - link "GotchiCloset GotchiCloset" [ref=e6] [cursor=pointer]:
+            - /url: /
+            - img "GotchiCloset" [ref=e7]
+            - generic [ref=e8]: GotchiCloset
+          - generic [ref=e9]:
+            - link [ref=e10] [cursor=pointer]:
+              - /url: /explorer
+              - button "Explorer" [ref=e11]:
+                - img [ref=e12]
+            - link [ref=e15] [cursor=pointer]:
+              - /url: /dress
+              - button "Dress" [ref=e16]:
+                - img [ref=e17]
+            - link [ref=e19] [cursor=pointer]:
+              - /url: /lending
+              - button "Lending" [ref=e20]:
+                - img [ref=e21]
+            - link [ref=e26] [cursor=pointer]:
+              - /url: /lending/lands
+              - button "Land Management" [ref=e27]:
+                - img [ref=e28]
+            - button "Toggle theme" [ref=e31] [cursor=pointer]:
+              - img [ref=e32]
+      - main [ref=e38]:
+        - generic [ref=e39]:
+          - generic [ref=e41]:
+            - link "Back to my lendings" [ref=e42] [cursor=pointer]:
+              - /url: /lending/me
+              - img [ref=e43]
+              - text: Back to my lendings
+            - heading "Land Management" [level=1] [ref=e45]:
+              - img [ref=e46]
+              - text: Land Management
+            - paragraph [ref=e49]: 0xe0d4…A3c2
+          - generic [ref=e50]:
+            - generic [ref=e51]: 79 lands
+            - generic [ref=e52]:
+              - generic [ref=e53]: Page 1/4
+              - button "‹" [disabled] [ref=e54]
+              - button "›" [ref=e55] [cursor=pointer]
+          - table [ref=e68]:
+            - rowgroup [ref=e69]:
+              - row "ID Name District Size Aaltar Aaltar ready Last channeled Channel access Cooldown Reservoir access Reservoirs ready Last emptied Actions" [ref=e70]:
+                - columnheader "ID" [ref=e71]:
+                  - button "ID" [ref=e72] [cursor=pointer]
+                - columnheader "Name" [ref=e73]:
+                  - button "Name" [ref=e74] [cursor=pointer]
+                - columnheader "District" [ref=e75]:
+                  - button "District" [ref=e76] [cursor=pointer]
+                - columnheader "Size" [ref=e77]:
+                  - button "Size" [ref=e78] [cursor=pointer]
+                - columnheader "Aaltar" [ref=e79]:
+                  - button "Aaltar" [ref=e80] [cursor=pointer]
+                - columnheader "Aaltar ready" [ref=e81]:
+                  - button "Aaltar ready" [ref=e82] [cursor=pointer]:
+                    - text: Aaltar ready
+                    - img [ref=e83]
+                - columnheader "Last channeled" [ref=e85]:
+                  - button "Last channeled" [ref=e86] [cursor=pointer]
+                - columnheader "Channel access" [ref=e87]:
+                  - button "Channel access" [ref=e88] [cursor=pointer]
+                - columnheader "Cooldown" [ref=e89]:
+                  - button "Cooldown" [ref=e90] [cursor=pointer]
+                - columnheader "Reservoir access" [ref=e91]:
+                  - button "Reservoir access" [ref=e92] [cursor=pointer]
+                - columnheader "Reservoirs ready" [ref=e93]:
+                  - button "Reservoirs ready" [ref=e94] [cursor=pointer]
+                - columnheader "Last emptied" [ref=e95]:
+                  - button "Last emptied" [ref=e96] [cursor=pointer]
+                - columnheader "Actions" [ref=e97]
+            - rowgroup [ref=e98]:
+              - row "#4267 that-litepaper-amounts 1 Spacious Aaltar L8 Now 2h ago Owner 2h Owner Now 1h ago" [ref=e99]:
+                - cell "#4267" [ref=e100]
+                - cell "that-litepaper-amounts" [ref=e101]
+                - cell "1" [ref=e102]
+                - cell "Spacious" [ref=e103]
+                - cell "Aaltar L8" [ref=e104]
+                - cell "Now" [ref=e105]
+                - cell "2h ago" [ref=e106]
+                - cell "Owner" [ref=e107]
+                - cell "2h" [ref=e108]
+                - cell "Owner" [ref=e109]
+                - cell "Now" [ref=e110]
+                - cell "1h ago" [ref=e111]
+                - cell [ref=e112]:
+                  - generic [ref=e113]:
+                    - button "Claim reservoir" [ref=e114] [cursor=pointer]:
+                      - img [ref=e115]
+                    - button "Channel" [ref=e121] [cursor=pointer]:
+                      - img [ref=e122]
+                    - button "Details & build (survey, layout)" [active] [ref=e124] [cursor=pointer]:
+                      - img [ref=e125]
+              - row "#6103 although-realize-store 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 1h ago" [ref=e127]:
+                - cell "#6103" [ref=e128]
+                - cell "although-realize-store" [ref=e129]
+                - cell "1" [ref=e130]
+                - cell "Reasonable" [ref=e131]
+                - cell "Aaltar L6" [ref=e132]
+                - cell "Now" [ref=e133]
+                - cell "1306 days ago" [ref=e134]
+                - cell "Owner" [ref=e135]
+                - cell "4h" [ref=e136]
+                - cell "Owner" [ref=e137]
+                - cell "Now" [ref=e138]
+                - cell "1h ago" [ref=e139]
+                - cell [ref=e140]:
+                  - generic [ref=e141]:
+                    - button "Claim reservoir" [ref=e142] [cursor=pointer]:
+                      - img [ref=e143]
+                    - button "Channel" [ref=e149] [cursor=pointer]:
+                      - img [ref=e150]
+                    - button "Details & build (survey, layout)" [ref=e152] [cursor=pointer]:
+                      - img [ref=e153]
+              - row "#6184 one-ravaged-reduce 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 15h ago" [ref=e155]:
+                - cell "#6184" [ref=e156]
+                - cell "one-ravaged-reduce" [ref=e157]
+                - cell "1" [ref=e158]
+                - cell "Reasonable" [ref=e159]
+                - cell "Aaltar L6" [ref=e160]
+                - cell "Now" [ref=e161]
+                - cell "1306 days ago" [ref=e162]
+                - cell "Owner" [ref=e163]
+                - cell "4h" [ref=e164]
+                - cell "Owner" [ref=e165]
+                - cell "Now" [ref=e166]
+                - cell "15h ago" [ref=e167]
+                - cell [ref=e168]:
+                  - generic [ref=e169]:
+                    - button "Claim reservoir" [ref=e170] [cursor=pointer]:
+                      - img [ref=e171]
+                    - button "Channel" [ref=e177] [cursor=pointer]:
+                      - img [ref=e178]
+                    - button "Details & build (survey, layout)" [ref=e180] [cursor=pointer]:
+                      - img [ref=e181]
+              - row "#6206 made-points-amounts 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 15h ago" [ref=e183]:
+                - cell "#6206" [ref=e184]
+                - cell "made-points-amounts" [ref=e185]
+                - cell "1" [ref=e186]
+                - cell "Reasonable" [ref=e187]
+                - cell "Aaltar L6" [ref=e188]
+                - cell "Now" [ref=e189]
+                - cell "1306 days ago" [ref=e190]
+                - cell "Owner" [ref=e191]
+                - cell "4h" [ref=e192]
+                - cell "Owner" [ref=e193]
+                - cell "Now" [ref=e194]
+                - cell "15h ago" [ref=e195]
+                - cell [ref=e196]:
+                  - generic [ref=e197]:
+                    - button "Claim reservoir" [ref=e198] [cursor=pointer]:
+                      - img [ref=e199]
+                    - button "Channel" [ref=e205] [cursor=pointer]:
+                      - img [ref=e206]
+                    - button "Details & build (survey, layout)" [ref=e208] [cursor=pointer]:
+                      - img [ref=e209]
+              - row "#6210 can-limited-chainlink 1 Reasonable Aaltar L6 Now 1305 days ago Owner 4h Owner Now 15h ago" [ref=e211]:
+                - cell "#6210" [ref=e212]
+                - cell "can-limited-chainlink" [ref=e213]
+                - cell "1" [ref=e214]
+                - cell "Reasonable" [ref=e215]
+                - cell "Aaltar L6" [ref=e216]
+                - cell "Now" [ref=e217]
+                - cell "1305 days ago" [ref=e218]
+                - cell "Owner" [ref=e219]
+                - cell "4h" [ref=e220]
+                - cell "Owner" [ref=e221]
+                - cell "Now" [ref=e222]
+                - cell "15h ago" [ref=e223]
+                - cell [ref=e224]:
+                  - generic [ref=e225]:
+                    - button "Claim reservoir" [ref=e226] [cursor=pointer]:
+                      - img [ref=e227]
+                    - button "Channel" [ref=e233] [cursor=pointer]:
+                      - img [ref=e234]
+                    - button "Details & build (survey, layout)" [ref=e236] [cursor=pointer]:
+                      - img [ref=e237]
+              - row "#6222 order-please-be 1 Reasonable Aaltar L6 Now 1305 days ago Owner 4h Owner Now 15h ago" [ref=e239]:
+                - cell "#6222" [ref=e240]
+                - cell "order-please-be" [ref=e241]
+                - cell "1" [ref=e242]
+                - cell "Reasonable" [ref=e243]
+                - cell "Aaltar L6" [ref=e244]
+                - cell "Now" [ref=e245]
+                - cell "1305 days ago" [ref=e246]
+                - cell "Owner" [ref=e247]
+                - cell "4h" [ref=e248]
+                - cell "Owner" [ref=e249]
+                - cell "Now" [ref=e250]
+                - cell "15h ago" [ref=e251]
+                - cell [ref=e252]:
+                  - generic [ref=e253]:
+                    - button "Claim reservoir" [ref=e254] [cursor=pointer]:
+                      - img [ref=e255]
+                    - button "Channel" [ref=e261] [cursor=pointer]:
+                      - img [ref=e262]
+                    - button "Details & build (survey, layout)" [ref=e264] [cursor=pointer]:
+                      - img [ref=e265]
+              - row "#6240 magical-overview-existed 1 Reasonable Aaltar L6 Now 1305 days ago Owner 4h Owner Now 15h ago" [ref=e267]:
+                - cell "#6240" [ref=e268]
+                - cell "magical-overview-existed" [ref=e269]
+                - cell "1" [ref=e270]
+                - cell "Reasonable" [ref=e271]
+                - cell "Aaltar L6" [ref=e272]
+                - cell "Now" [ref=e273]
+                - cell "1305 days ago" [ref=e274]
+                - cell "Owner" [ref=e275]
+                - cell "4h" [ref=e276]
+                - cell "Owner" [ref=e277]
+                - cell "Now" [ref=e278]
+                - cell "15h ago" [ref=e279]
+                - cell [ref=e280]:
+                  - generic [ref=e281]:
+                    - button "Claim reservoir" [ref=e282] [cursor=pointer]:
+                      - img [ref=e283]
+                    - button "Channel" [ref=e289] [cursor=pointer]:
+                      - img [ref=e290]
+                    - button "Details & build (survey, layout)" [ref=e292] [cursor=pointer]:
+                      - img [ref=e293]
+              - row "#6268 trading-proximity-others 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 15h ago" [ref=e295]:
+                - cell "#6268" [ref=e296]
+                - cell "trading-proximity-others" [ref=e297]
+                - cell "1" [ref=e298]
+                - cell "Reasonable" [ref=e299]
+                - cell "Aaltar L6" [ref=e300]
+                - cell "Now" [ref=e301]
+                - cell "1306 days ago" [ref=e302]
+                - cell "Owner" [ref=e303]
+                - cell "4h" [ref=e304]
+                - cell "Owner" [ref=e305]
+                - cell "Now" [ref=e306]
+                - cell "15h ago" [ref=e307]
+                - cell [ref=e308]:
+                  - generic [ref=e309]:
+                    - button "Claim reservoir" [ref=e310] [cursor=pointer]:
+                      - img [ref=e311]
+                    - button "Channel" [ref=e317] [cursor=pointer]:
+                      - img [ref=e318]
+                    - button "Details & build (survey, layout)" [ref=e320] [cursor=pointer]:
+                      - img [ref=e321]
+              - row "#6360 citaadel-exert-primary 1 Reasonable Aaltar L7 Now 1305 days ago Owner 3h Owner Now 15h ago" [ref=e323]:
+                - cell "#6360" [ref=e324]
+                - cell "citaadel-exert-primary" [ref=e325]
+                - cell "1" [ref=e326]
+                - cell "Reasonable" [ref=e327]
+                - cell "Aaltar L7" [ref=e328]
+                - cell "Now" [ref=e329]
+                - cell "1305 days ago" [ref=e330]
+                - cell "Owner" [ref=e331]
+                - cell "3h" [ref=e332]
+                - cell "Owner" [ref=e333]
+                - cell "Now" [ref=e334]
+                - cell "15h ago" [ref=e335]
+                - cell [ref=e336]:
+                  - generic [ref=e337]:
+                    - button "Claim reservoir" [ref=e338] [cursor=pointer]:
+                      - img [ref=e339]
+                    - button "Channel" [ref=e345] [cursor=pointer]:
+                      - img [ref=e346]
+                    - button "Details & build (survey, layout)" [ref=e348] [cursor=pointer]:
+                      - img [ref=e349]
+              - row "#6399 drop-very-liquidating 1 Reasonable Aaltar L6 Now 1168 days ago Owner 4h Owner Now 15h ago" [ref=e351]:
+                - cell "#6399" [ref=e352]
+                - cell "drop-very-liquidating" [ref=e353]
+                - cell "1" [ref=e354]
+                - cell "Reasonable" [ref=e355]
+                - cell "Aaltar L6" [ref=e356]
+                - cell "Now" [ref=e357]
+                - cell "1168 days ago" [ref=e358]
+                - cell "Owner" [ref=e359]
+                - cell "4h" [ref=e360]
+                - cell "Owner" [ref=e361]
+                - cell "Now" [ref=e362]
+                - cell "15h ago" [ref=e363]
+                - cell [ref=e364]:
+                  - generic [ref=e365]:
+                    - button "Claim reservoir" [ref=e366] [cursor=pointer]:
+                      - img [ref=e367]
+                    - button "Channel" [ref=e373] [cursor=pointer]:
+                      - img [ref=e374]
+                    - button "Details & build (survey, layout)" [ref=e376] [cursor=pointer]:
+                      - img [ref=e377]
+              - row "#6504 generating-in-why 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 15h ago" [ref=e379]:
+                - cell "#6504" [ref=e380]
+                - cell "generating-in-why" [ref=e381]
+                - cell "1" [ref=e382]
+                - cell "Reasonable" [ref=e383]
+                - cell "Aaltar L6" [ref=e384]
+                - cell "Now" [ref=e385]
+                - cell "1306 days ago" [ref=e386]
+                - cell "Owner" [ref=e387]
+                - cell "4h" [ref=e388]
+                - cell "Owner" [ref=e389]
+                - cell "Now" [ref=e390]
+                - cell "15h ago" [ref=e391]
+                - cell [ref=e392]:
+                  - generic [ref=e393]:
+                    - button "Claim reservoir" [ref=e394] [cursor=pointer]:
+                      - img [ref=e395]
+                    - button "Channel" [ref=e401] [cursor=pointer]:
+                      - img [ref=e402]
+                    - button "Details & build (survey, layout)" [ref=e404] [cursor=pointer]:
+                      - img [ref=e405]
+              - row "#6510 all-powerful-high 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 15h ago" [ref=e407]:
+                - cell "#6510" [ref=e408]
+                - cell "all-powerful-high" [ref=e409]
+                - cell "1" [ref=e410]
+                - cell "Reasonable" [ref=e411]
+                - cell "Aaltar L6" [ref=e412]
+                - cell "Now" [ref=e413]
+                - cell "1306 days ago" [ref=e414]
+                - cell "Owner" [ref=e415]
+                - cell "4h" [ref=e416]
+                - cell "Owner" [ref=e417]
+                - cell "Now" [ref=e418]
+                - cell "15h ago" [ref=e419]
+                - cell [ref=e420]:
+                  - generic [ref=e421]:
+                    - button "Claim reservoir" [ref=e422] [cursor=pointer]:
+                      - img [ref=e423]
+                    - button "Channel" [ref=e429] [cursor=pointer]:
+                      - img [ref=e430]
+                    - button "Details & build (survey, layout)" [ref=e432] [cursor=pointer]:
+                      - img [ref=e433]
+              - row "#6548 social-fortunes-crafted 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 15h ago" [ref=e435]:
+                - cell "#6548" [ref=e436]
+                - cell "social-fortunes-crafted" [ref=e437]
+                - cell "1" [ref=e438]
+                - cell "Reasonable" [ref=e439]
+                - cell "Aaltar L6" [ref=e440]
+                - cell "Now" [ref=e441]
+                - cell "1306 days ago" [ref=e442]
+                - cell "Owner" [ref=e443]
+                - cell "4h" [ref=e444]
+                - cell "Owner" [ref=e445]
+                - cell "Now" [ref=e446]
+                - cell "15h ago" [ref=e447]
+                - cell [ref=e448]:
+                  - generic [ref=e449]:
+                    - button "Claim reservoir" [ref=e450] [cursor=pointer]:
+                      - img [ref=e451]
+                    - button "Channel" [ref=e457] [cursor=pointer]:
+                      - img [ref=e458]
+                    - button "Details & build (survey, layout)" [ref=e460] [cursor=pointer]:
+                      - img [ref=e461]
+              - row "#6635 announce-market-statistics 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 15h ago" [ref=e463]:
+                - cell "#6635" [ref=e464]
+                - cell "announce-market-statistics" [ref=e465]
+                - cell "1" [ref=e466]
+                - cell "Reasonable" [ref=e467]
+                - cell "Aaltar L6" [ref=e468]
+                - cell "Now" [ref=e469]
+                - cell "1306 days ago" [ref=e470]
+                - cell "Owner" [ref=e471]
+                - cell "4h" [ref=e472]
+                - cell "Owner" [ref=e473]
+                - cell "Now" [ref=e474]
+                - cell "15h ago" [ref=e475]
+                - cell [ref=e476]:
+                  - generic [ref=e477]:
+                    - button "Claim reservoir" [ref=e478] [cursor=pointer]:
+                      - img [ref=e479]
+                    - button "Channel" [ref=e485] [cursor=pointer]:
+                      - img [ref=e486]
+                    - button "Details & build (survey, layout)" [ref=e488] [cursor=pointer]:
+                      - img [ref=e489]
+              - row "#6649 dare-released-reached 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 15h ago" [ref=e491]:
+                - cell "#6649" [ref=e492]
+                - cell "dare-released-reached" [ref=e493]
+                - cell "1" [ref=e494]
+                - cell "Reasonable" [ref=e495]
+                - cell "Aaltar L6" [ref=e496]
+                - cell "Now" [ref=e497]
+                - cell "1306 days ago" [ref=e498]
+                - cell "Owner" [ref=e499]
+                - cell "4h" [ref=e500]
+                - cell "Owner" [ref=e501]
+                - cell "Now" [ref=e502]
+                - cell "15h ago" [ref=e503]
+                - cell [ref=e504]:
+                  - generic [ref=e505]:
+                    - button "Claim reservoir" [ref=e506] [cursor=pointer]:
+                      - img [ref=e507]
+                    - button "Channel" [ref=e513] [cursor=pointer]:
+                      - img [ref=e514]
+                    - button "Details & build (survey, layout)" [ref=e516] [cursor=pointer]:
+                      - img [ref=e517]
+              - row "#6766 ancient-crafted-prophecy 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 15h ago" [ref=e519]:
+                - cell "#6766" [ref=e520]
+                - cell "ancient-crafted-prophecy" [ref=e521]
+                - cell "1" [ref=e522]
+                - cell "Reasonable" [ref=e523]
+                - cell "Aaltar L6" [ref=e524]
+                - cell "Now" [ref=e525]
+                - cell "1306 days ago" [ref=e526]
+                - cell "Owner" [ref=e527]
+                - cell "4h" [ref=e528]
+                - cell "Owner" [ref=e529]
+                - cell "Now" [ref=e530]
+                - cell "15h ago" [ref=e531]
+                - cell [ref=e532]:
+                  - generic [ref=e533]:
+                    - button "Claim reservoir" [ref=e534] [cursor=pointer]:
+                      - img [ref=e535]
+                    - button "Channel" [ref=e541] [cursor=pointer]:
+                      - img [ref=e542]
+                    - button "Details & build (survey, layout)" [ref=e544] [cursor=pointer]:
+                      - img [ref=e545]
+              - row "#6880 until-crypto-lodge 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 15h ago" [ref=e547]:
+                - cell "#6880" [ref=e548]
+                - cell "until-crypto-lodge" [ref=e549]
+                - cell "1" [ref=e550]
+                - cell "Reasonable" [ref=e551]
+                - cell "Aaltar L6" [ref=e552]
+                - cell "Now" [ref=e553]
+                - cell "1306 days ago" [ref=e554]
+                - cell "Owner" [ref=e555]
+                - cell "4h" [ref=e556]
+                - cell "Owner" [ref=e557]
+                - cell "Now" [ref=e558]
+                - cell "15h ago" [ref=e559]
+                - cell [ref=e560]:
+                  - generic [ref=e561]:
+                    - button "Claim reservoir" [ref=e562] [cursor=pointer]:
+                      - img [ref=e563]
+                    - button "Channel" [ref=e569] [cursor=pointer]:
+                      - img [ref=e570]
+                    - button "Details & build (survey, layout)" [ref=e572] [cursor=pointer]:
+                      - img [ref=e573]
+              - row "#7120 discover-relying-became 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 15h ago" [ref=e575]:
+                - cell "#7120" [ref=e576]
+                - cell "discover-relying-became" [ref=e577]
+                - cell "1" [ref=e578]
+                - cell "Reasonable" [ref=e579]
+                - cell "Aaltar L6" [ref=e580]
+                - cell "Now" [ref=e581]
+                - cell "1306 days ago" [ref=e582]
+                - cell "Owner" [ref=e583]
+                - cell "4h" [ref=e584]
+                - cell "Owner" [ref=e585]
+                - cell "Now" [ref=e586]
+                - cell "15h ago" [ref=e587]
+                - cell [ref=e588]:
+                  - generic [ref=e589]:
+                    - button "Claim reservoir" [ref=e590] [cursor=pointer]:
+                      - img [ref=e591]
+                    - button "Channel" [ref=e597] [cursor=pointer]:
+                      - img [ref=e598]
+                    - button "Details & build (survey, layout)" [ref=e600] [cursor=pointer]:
+                      - img [ref=e601]
+              - row "#7173 announce-exact-prove 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 15h ago" [ref=e603]:
+                - cell "#7173" [ref=e604]
+                - cell "announce-exact-prove" [ref=e605]
+                - cell "1" [ref=e606]
+                - cell "Reasonable" [ref=e607]
+                - cell "Aaltar L6" [ref=e608]
+                - cell "Now" [ref=e609]
+                - cell "1306 days ago" [ref=e610]
+                - cell "Owner" [ref=e611]
+                - cell "4h" [ref=e612]
+                - cell "Owner" [ref=e613]
+                - cell "Now" [ref=e614]
+                - cell "15h ago" [ref=e615]
+                - cell [ref=e616]:
+                  - generic [ref=e617]:
+                    - button "Claim reservoir" [ref=e618] [cursor=pointer]:
+                      - img [ref=e619]
+                    - button "Channel" [ref=e625] [cursor=pointer]:
+                      - img [ref=e626]
+                    - button "Details & build (survey, layout)" [ref=e628] [cursor=pointer]:
+                      - img [ref=e629]
+              - row "#7849 creators-completing-please 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 15h ago" [ref=e631]:
+                - cell "#7849" [ref=e632]
+                - cell "creators-completing-please" [ref=e633]
+                - cell "1" [ref=e634]
+                - cell "Reasonable" [ref=e635]
+                - cell "Aaltar L6" [ref=e636]
+                - cell "Now" [ref=e637]
+                - cell "1306 days ago" [ref=e638]
+                - cell "Owner" [ref=e639]
+                - cell "4h" [ref=e640]
+                - cell "Owner" [ref=e641]
+                - cell "Now" [ref=e642]
+                - cell "15h ago" [ref=e643]
+                - cell [ref=e644]:
+                  - generic [ref=e645]:
+                    - button "Claim reservoir" [ref=e646] [cursor=pointer]:
+                      - img [ref=e647]
+                    - button "Channel" [ref=e653] [cursor=pointer]:
+                      - img [ref=e654]
+                    - button "Details & build (survey, layout)" [ref=e656] [cursor=pointer]:
+                      - img [ref=e657]
+              - row "#7897 aadepts-smart-bridging 5 Reasonable Aaltar L6 Now 1108 days ago Owner 4h Owner Now 15h ago" [ref=e659]:
+                - cell "#7897" [ref=e660]
+                - cell "aadepts-smart-bridging" [ref=e661]
+                - cell "5" [ref=e662]
+                - cell "Reasonable" [ref=e663]
+                - cell "Aaltar L6" [ref=e664]
+                - cell "Now" [ref=e665]
+                - cell "1108 days ago" [ref=e666]
+                - cell "Owner" [ref=e667]
+                - cell "4h" [ref=e668]
+                - cell "Owner" [ref=e669]
+                - cell "Now" [ref=e670]
+                - cell "15h ago" [ref=e671]
+                - cell [ref=e672]:
+                  - generic [ref=e673]:
+                    - button "Claim reservoir" [ref=e674] [cursor=pointer]:
+                      - img [ref=e675]
+                    - button "Channel" [ref=e681] [cursor=pointer]:
+                      - img [ref=e682]
+                    - button "Details & build (survey, layout)" [ref=e684] [cursor=pointer]:
+                      - img [ref=e685]
+              - row "#8212 every-before-level 1 Reasonable Aaltar L6 Now 1306 days ago Owner 4h Owner Now 15h ago" [ref=e687]:
+                - cell "#8212" [ref=e688]
+                - cell "every-before-level" [ref=e689]
+                - cell "1" [ref=e690]
+                - cell "Reasonable" [ref=e691]
+                - cell "Aaltar L6" [ref=e692]
+                - cell "Now" [ref=e693]
+                - cell "1306 days ago" [ref=e694]
+                - cell "Owner" [ref=e695]
+                - cell "4h" [ref=e696]
+                - cell "Owner" [ref=e697]
+                - cell "Now" [ref=e698]
+                - cell "15h ago" [ref=e699]
+                - cell [ref=e700]:
+                  - generic [ref=e701]:
+                    - button "Claim reservoir" [ref=e702] [cursor=pointer]:
+                      - img [ref=e703]
+                    - button "Channel" [ref=e709] [cursor=pointer]:
+                      - img [ref=e710]
+                    - button "Details & build (survey, layout)" [ref=e712] [cursor=pointer]:
+                      - img [ref=e713]
+              - row "#8395 frens-bounds-freely 1 Reasonable Aaltar L6 Now 177 days ago Owner 4h Owner Now 15h ago" [ref=e715]:
+                - cell "#8395" [ref=e716]
+                - cell "frens-bounds-freely" [ref=e717]
+                - cell "1" [ref=e718]
+                - cell "Reasonable" [ref=e719]
+                - cell "Aaltar L6" [ref=e720]
+                - cell "Now" [ref=e721]
+                - cell "177 days ago" [ref=e722]
+                - cell "Owner" [ref=e723]
+                - cell "4h" [ref=e724]
+                - cell "Owner" [ref=e725]
+                - cell "Now" [ref=e726]
+                - cell "15h ago" [ref=e727]
+                - cell [ref=e728]:
+                  - generic [ref=e729]:
+                    - button "Claim reservoir" [ref=e730] [cursor=pointer]:
+                      - img [ref=e731]
+                    - button "Channel" [ref=e737] [cursor=pointer]:
+                      - img [ref=e738]
+                    - button "Details & build (survey, layout)" [ref=e740] [cursor=pointer]:
+                      - img [ref=e741]
+              - row "#8965 harvesting-others-these 7 Spacious Aaltar L9 Now 177 days ago Owner 1h Owner Now 15h ago" [ref=e743]:
+                - cell "#8965" [ref=e744]
+                - cell "harvesting-others-these" [ref=e745]
+                - cell "7" [ref=e746]
+                - cell "Spacious" [ref=e747]
+                - cell "Aaltar L9" [ref=e748]
+                - cell "Now" [ref=e749]
+                - cell "177 days ago" [ref=e750]
+                - cell "Owner" [ref=e751]
+                - cell "1h" [ref=e752]
+                - cell "Owner" [ref=e753]
+                - cell "Now" [ref=e754]
+                - cell "15h ago" [ref=e755]
+                - cell [ref=e756]:
+                  - generic [ref=e757]:
+                    - button "Claim reservoir" [ref=e758] [cursor=pointer]:
+                      - img [ref=e759]
+                    - button "Channel" [ref=e765] [cursor=pointer]:
+                      - img [ref=e766]
+                    - button "Details & build (survey, layout)" [ref=e768] [cursor=pointer]:
+                      - img [ref=e769]
+              - row "#9665 reward-liquidating-baaddies 7 Reasonable Aaltar L6 Now 1114 days ago Owner 4h Owner Now 15h ago" [ref=e771]:
+                - cell "#9665" [ref=e772]
+                - cell "reward-liquidating-baaddies" [ref=e773]
+                - cell "7" [ref=e774]
+                - cell "Reasonable" [ref=e775]
+                - cell "Aaltar L6" [ref=e776]
+                - cell "Now" [ref=e777]
+                - cell "1114 days ago" [ref=e778]
+                - cell "Owner" [ref=e779]
+                - cell "4h" [ref=e780]
+                - cell "Owner" [ref=e781]
+                - cell "Now" [ref=e782]
+                - cell "15h ago" [ref=e783]
+                - cell [ref=e784]:
+                  - generic [ref=e785]:
+                    - button "Claim reservoir" [ref=e786] [cursor=pointer]:
+                      - img [ref=e787]
+                    - button "Channel" [ref=e793] [cursor=pointer]:
+                      - img [ref=e794]
+                    - button "Details & build (survey, layout)" [ref=e796] [cursor=pointer]:
+                      - img [ref=e797]
+      - contentinfo [ref=e65]:
+        - generic [ref=e66]:
+          - text: Built by
+          - link "GrimLabs" [ref=e67] [cursor=pointer]:
+            - /url: https://grimlabs.xyz
+    - region "Notifications (F8)":
+      - list
+  - generic [ref=e800]:
+    - button "Close" [ref=e801] [cursor=pointer]:
+      - img [ref=e802]
+    - generic [ref=e805]:
+      - generic [ref=e806]:
+        - generic [ref=e807]:
+          - img [ref=e808]
+          - generic [ref=e811]: Parcel 4267
+          - generic [ref=e812]: that-litepaper-amounts
+          - generic [ref=e813]: Spacious
+        - generic [ref=e814]: District 1 · (5680,2360) · 32×64 · 10 rounds surveyed
+        - generic [ref=e815]:
+          - text: "Owner:"
+          - generic [ref=e816]: 0xe0d4…A3c2
+          - button "copy" [ref=e817] [cursor=pointer]
+        - button "Surveys maxed (10/10)" [disabled] [ref=e818]:
+          - img [ref=e819]
+          - text: Surveys maxed (10/10)
+      - generic [ref=e827]:
+        - generic [ref=e828]:
+          - img [ref=e829]
+          - text: Alchemica
+        - table [ref=e834]:
+          - rowgroup [ref=e835]:
+            - row "Token Claimable In-ground Harvest/day Capacity Claimed" [ref=e836]:
+              - columnheader "Token" [ref=e837]
+              - columnheader "Claimable" [ref=e838]
+              - columnheader "In-ground" [ref=e839]
+              - columnheader "Harvest/day" [ref=e840]
+              - columnheader "Capacity" [ref=e841]
+              - columnheader "Claimed" [ref=e842]
+          - rowgroup [ref=e843]:
+            - row "FUD 33 861,542 57,749,760 720 373,567" [ref=e844]:
+              - cell "FUD" [ref=e845]
+              - cell "33" [ref=e846]
+              - cell "861,542" [ref=e847]
+              - cell "57,749,760" [ref=e848]
+              - cell "720" [ref=e849]
+              - cell "373,567" [ref=e850]
+            - row "FOMO 31 164,355 54,907,200 640 328,390" [ref=e851]:
+              - cell "FOMO" [ref=e852]
+              - cell "31" [ref=e853]
+              - cell "164,355" [ref=e854]
+              - cell "54,907,200" [ref=e855]
+              - cell "640" [ref=e856]
+              - cell "328,390" [ref=e857]
+            - row "ALPHA 5 132,525 8,769,600 204 65,683" [ref=e858]:
+              - cell "ALPHA" [ref=e859]
+              - cell "5" [ref=e860]
+              - cell "132,525" [ref=e861]
+              - cell "8,769,600" [ref=e862]
+              - cell "204" [ref=e863]
+              - cell "65,683" [ref=e864]
+            - row "KEK 1 61,401 3,404,160 57 22,145" [ref=e865]:
+              - cell "KEK" [ref=e866]
+              - cell "1" [ref=e867]
+              - cell "61,401" [ref=e868]
+              - cell "3,404,160" [ref=e869]
+              - cell "57" [ref=e870]
+              - cell "22,145" [ref=e871]
+      - generic [ref=e872]:
+        - generic [ref=e873]:
+          - img [ref=e874]
+          - text: Survey history · 10 rounds
+        - table [ref=e883]:
+          - rowgroup [ref=e884]:
+            - row "Round FUD FOMO ALPHA KEK" [ref=e885]:
+              - columnheader "Round" [ref=e886]
+              - columnheader "FUD" [ref=e887]
+              - columnheader "FOMO" [ref=e888]
+              - columnheader "ALPHA" [ref=e889]
+              - columnheader "KEK" [ref=e890]
+          - rowgroup [ref=e891]:
+            - row "1 571,056 106,463 40,234 18,955" [ref=e892]:
+              - cell "1" [ref=e893]
+              - cell "571,056" [ref=e894]
+              - cell "106,463" [ref=e895]
+              - cell "40,234" [ref=e896]
+              - cell "18,955" [ref=e897]
+            - row "2 50,807 35,487 17,743 11,852" [ref=e898]:
+              - cell "2" [ref=e899]
+              - cell "50,807" [ref=e900]
+              - cell "35,487" [ref=e901]
+              - cell "17,743" [ref=e902]
+              - cell "11,852" [ref=e903]
+            - row "3 148,454 59,263 13,411 6,318" [ref=e904]:
+              - cell "3" [ref=e905]
+              - cell "148,454" [ref=e906]
+              - cell "59,263" [ref=e907]
+              - cell "13,411" [ref=e908]
+              - cell "6,318" [ref=e909]
+            - row "4 53,646 59,263 13,411 5,080" [ref=e910]:
+              - cell "4" [ref=e911]
+              - cell "53,646" [ref=e912]
+              - cell "59,263" [ref=e913]
+              - cell "13,411" [ref=e914]
+              - cell "5,080" [ref=e915]
+            - row "5 48,779 26,823 17,743 7,097" [ref=e916]:
+              - cell "5" [ref=e917]
+              - cell "48,779" [ref=e918]
+              - cell "26,823" [ref=e919]
+              - cell "17,743" [ref=e920]
+              - cell "7,097" [ref=e921]
+            - row "6 70,975 28,810 14,405 8,188" [ref=e922]:
+              - cell "6" [ref=e923]
+              - cell "70,975" [ref=e924]
+              - cell "28,810" [ref=e925]
+              - cell "14,405" [ref=e926]
+              - cell "8,188" [ref=e927]
+            - row "7 57,620 59,263 13,411 6,318" [ref=e928]:
+              - cell "7" [ref=e929]
+              - cell "57,620" [ref=e930]
+              - cell "59,263" [ref=e931]
+              - cell "13,411" [ref=e932]
+              - cell "6,318" [ref=e933]
+            - row "8 57,620 35,487 17,743 6,318" [ref=e934]:
+              - cell "8" [ref=e935]
+              - cell "57,620" [ref=e936]
+              - cell "35,487" [ref=e937]
+              - cell "17,743" [ref=e938]
+              - cell "6,318" [ref=e939]
+            - row "9 57,620 40,941 29,631 7,097" [ref=e940]:
+              - cell "9" [ref=e941]
+              - cell "57,620" [ref=e942]
+              - cell "40,941" [ref=e943]
+              - cell "29,631" [ref=e944]
+              - cell "7,097" [ref=e945]
+            - row "10 118,527 40,941 20,470 6,318" [ref=e946]:
+              - cell "10" [ref=e947]
+              - cell "118,527" [ref=e948]
+              - cell "40,941" [ref=e949]
+              - cell "20,470" [ref=e950]
+              - cell "6,318" [ref=e951]
+      - generic [ref=e952]:
+        - generic [ref=e953]:
+          - generic [ref=e954]:
+            - img [ref=e955]
+            - text: Channeling
+          - generic [ref=e957]: "Last channeled: 6/15/2026, 6:05:43 PM"
+        - generic [ref=e958]:
+          - generic [ref=e959]:
+            - img [ref=e960]
+            - text: Access rights
+          - generic [ref=e963]: "Channeling: Owner only"
+          - generic [ref=e964]: "Empty reservoir: Owner only"
+      - generic [ref=e965]:
+        - generic [ref=e966]:
+          - generic [ref=e967]:
+            - img [ref=e968]
+            - text: Layout · 49 installations · 0 tiles
+          - generic [ref=e972]: Click an installation to remove it
+        - generic [ref=e973]:
+          - generic [ref=e975]:
+            - 'generic "FOMO Reservoir Level 8 · #108 @ (12,29) · 2×2 — click to remove" [ref=e976] [cursor=pointer]':
+              - img "FOMO Reservoir Level 8"
+            - 'generic "FOMO Reservoir Level 8 · #108 @ (14,29) · 2×2 — click to remove" [ref=e977] [cursor=pointer]':
+              - img "FOMO Reservoir Level 8"
+            - 'generic "ALPHA Reservoir Level 4 · #113 @ (18,29) · 2×2 — click to remove" [ref=e978] [cursor=pointer]':
+              - img "ALPHA Reservoir Level 4"
+            - 'generic "ALPHA Reservoir Level 8 · #117 @ (16,29) · 2×2 — click to remove" [ref=e979] [cursor=pointer]':
+              - img "ALPHA Reservoir Level 8"
+            - 'generic "KEK Reservoir Level 5 · #123 @ (22,29) · 2×2 — click to remove" [ref=e980] [cursor=pointer]':
+              - img "KEK Reservoir Level 5"
+            - 'generic "KEK Reservoir Level 8 · #126 @ (20,29) · 2×2 — click to remove" [ref=e981] [cursor=pointer]':
+              - img "KEK Reservoir Level 8"
+            - 'generic "Alchemical Aaltar Level 8 · #17 @ (15,27) · 2×2 — click to remove" [ref=e982] [cursor=pointer]':
+              - img "Alchemical Aaltar Level 8"
+            - 'generic "FUD Harvester Level 1 · #56 @ (10,33) · 2×2 — click to remove" [ref=e983] [cursor=pointer]':
+              - img "FUD Harvester Level 1"
+            - 'generic "FUD Harvester Level 1 · #56 @ (10,35) · 2×2 — click to remove" [ref=e984] [cursor=pointer]':
+              - img "FUD Harvester Level 1"
+            - 'generic "FUD Harvester Level 1 · #56 @ (10,37) · 2×2 — click to remove" [ref=e985] [cursor=pointer]':
+              - img "FUD Harvester Level 1"
+            - 'generic "FUD Harvester Level 1 · #56 @ (10,39) · 2×2 — click to remove" [ref=e986] [cursor=pointer]':
+              - img "FUD Harvester Level 1"
+            - 'generic "FUD Harvester Level 1 · #56 @ (8,35) · 2×2 — click to remove" [ref=e987] [cursor=pointer]':
+              - img "FUD Harvester Level 1"
+            - 'generic "FUD Harvester Level 1 · #56 @ (8,37) · 2×2 — click to remove" [ref=e988] [cursor=pointer]':
+              - img "FUD Harvester Level 1"
+            - 'generic "FUD Harvester Level 1 · #56 @ (8,39) · 2×2 — click to remove" [ref=e989] [cursor=pointer]':
+              - img "FUD Harvester Level 1"
+            - 'generic "FUD Harvester Level 6 · #61 @ (8,33) · 2×2 — click to remove" [ref=e990] [cursor=pointer]':
+              - img "FUD Harvester Level 6"
+            - 'generic "FUD Harvester Level 8 · #63 @ (10,31) · 2×2 — click to remove" [ref=e991] [cursor=pointer]':
+              - img "FUD Harvester Level 8"
+            - 'generic "FUD Harvester Level 8 · #63 @ (8,31) · 2×2 — click to remove" [ref=e992] [cursor=pointer]':
+              - img "FUD Harvester Level 8"
+            - 'generic "FOMO Harvester Level 1 · #65 @ (12,37) · 2×2 — click to remove" [ref=e993] [cursor=pointer]':
+              - img "FOMO Harvester Level 1"
+            - 'generic "FOMO Harvester Level 1 · #65 @ (12,39) · 2×2 — click to remove" [ref=e994] [cursor=pointer]':
+              - img "FOMO Harvester Level 1"
+            - 'generic "FOMO Harvester Level 1 · #65 @ (14,35) · 2×2 — click to remove" [ref=e995] [cursor=pointer]':
+              - img "FOMO Harvester Level 1"
+            - 'generic "FOMO Harvester Level 1 · #65 @ (14,37) · 2×2 — click to remove" [ref=e996] [cursor=pointer]':
+              - img "FOMO Harvester Level 1"
+            - 'generic "FOMO Harvester Level 1 · #65 @ (14,39) · 2×2 — click to remove" [ref=e997] [cursor=pointer]':
+              - img "FOMO Harvester Level 1"
+            - 'generic "FOMO Harvester Level 8 · #72 @ (12,31) · 2×2 — click to remove" [ref=e998] [cursor=pointer]':
+              - img "FOMO Harvester Level 8"
+            - 'generic "FOMO Harvester Level 8 · #72 @ (12,33) · 2×2 — click to remove" [ref=e999] [cursor=pointer]':
+              - img "FOMO Harvester Level 8"
+            - 'generic "FOMO Harvester Level 8 · #72 @ (12,35) · 2×2 — click to remove" [ref=e1000] [cursor=pointer]':
+              - img "FOMO Harvester Level 8"
+            - 'generic "FOMO Harvester Level 8 · #72 @ (14,31) · 2×2 — click to remove" [ref=e1001] [cursor=pointer]':
+              - img "FOMO Harvester Level 8"
+            - 'generic "FOMO Harvester Level 8 · #72 @ (14,33) · 2×2 — click to remove" [ref=e1002] [cursor=pointer]':
+              - img "FOMO Harvester Level 8"
+            - 'generic "ALPHA Harvester Level 1 · #74 @ (16,33) · 2×2 — click to remove" [ref=e1003] [cursor=pointer]':
+              - img "ALPHA Harvester Level 1"
+            - 'generic "ALPHA Harvester Level 1 · #74 @ (16,35) · 2×2 — click to remove" [ref=e1004] [cursor=pointer]':
+              - img "ALPHA Harvester Level 1"
+            - 'generic "ALPHA Harvester Level 1 · #74 @ (16,37) · 2×2 — click to remove" [ref=e1005] [cursor=pointer]':
+              - img "ALPHA Harvester Level 1"
+            - 'generic "ALPHA Harvester Level 1 · #74 @ (16,39) · 2×2 — click to remove" [ref=e1006] [cursor=pointer]':
+              - img "ALPHA Harvester Level 1"
+            - 'generic "ALPHA Harvester Level 1 · #74 @ (18,35) · 2×2 — click to remove" [ref=e1007] [cursor=pointer]':
+              - img "ALPHA Harvester Level 1"
+            - 'generic "ALPHA Harvester Level 1 · #74 @ (18,37) · 2×2 — click to remove" [ref=e1008] [cursor=pointer]':
+              - img "ALPHA Harvester Level 1"
+            - 'generic "ALPHA Harvester Level 1 · #74 @ (18,39) · 2×2 — click to remove" [ref=e1009] [cursor=pointer]':
+              - img "ALPHA Harvester Level 1"
+            - 'generic "ALPHA Harvester Level 5 · #78 @ (18,33) · 2×2 — click to remove" [ref=e1010] [cursor=pointer]':
+              - img "ALPHA Harvester Level 5"
+            - 'generic "ALPHA Harvester Level 7 · #80 @ (16,31) · 2×2 — click to remove" [ref=e1011] [cursor=pointer]':
+              - img "ALPHA Harvester Level 7"
+            - 'generic "ALPHA Harvester Level 7 · #80 @ (18,31) · 2×2 — click to remove" [ref=e1012] [cursor=pointer]':
+              - img "ALPHA Harvester Level 7"
+            - 'generic "KEK Harvester Level 1 · #83 @ (20,33) · 2×2 — click to remove" [ref=e1013] [cursor=pointer]':
+              - img "KEK Harvester Level 1"
+            - 'generic "KEK Harvester Level 1 · #83 @ (20,35) · 2×2 — click to remove" [ref=e1014] [cursor=pointer]':
+              - img "KEK Harvester Level 1"
+            - 'generic "KEK Harvester Level 1 · #83 @ (20,37) · 2×2 — click to remove" [ref=e1015] [cursor=pointer]':
+              - img "KEK Harvester Level 1"
+            - 'generic "KEK Harvester Level 1 · #83 @ (20,39) · 2×2 — click to remove" [ref=e1016] [cursor=pointer]':
+              - img "KEK Harvester Level 1"
+            - 'generic "KEK Harvester Level 1 · #83 @ (22,33) · 2×2 — click to remove" [ref=e1017] [cursor=pointer]':
+              - img "KEK Harvester Level 1"
+            - 'generic "KEK Harvester Level 1 · #83 @ (22,35) · 2×2 — click to remove" [ref=e1018] [cursor=pointer]':
+              - img "KEK Harvester Level 1"
+            - 'generic "KEK Harvester Level 1 · #83 @ (22,37) · 2×2 — click to remove" [ref=e1019] [cursor=pointer]':
+              - img "KEK Harvester Level 1"
+            - 'generic "KEK Harvester Level 1 · #83 @ (22,39) · 2×2 — click to remove" [ref=e1020] [cursor=pointer]':
+              - img "KEK Harvester Level 1"
+            - 'generic "KEK Harvester Level 7 · #89 @ (22,31) · 2×2 — click to remove" [ref=e1021] [cursor=pointer]':
+              - img "KEK Harvester Level 7"
+            - 'generic "KEK Harvester Level 8 · #90 @ (20,31) · 2×2 — click to remove" [ref=e1022] [cursor=pointer]':
+              - img "KEK Harvester Level 8"
+            - 'generic "FUD Reservoir Level 5 · #96 @ (8,29) · 2×2 — click to remove" [ref=e1023] [cursor=pointer]':
+              - img "FUD Reservoir Level 5"
+            - 'generic "FUD Reservoir Level 8 · #99 @ (10,29) · 2×2 — click to remove" [ref=e1024] [cursor=pointer]':
+              - img "FUD Reservoir Level 8"
+          - generic [ref=e1026]: 25×42 grid
+        - generic [ref=e1027]:
+          - generic [ref=e1029]: Your installations — drag onto the grid (staged, not saved yet)
+          - generic [ref=e1030]: No unequipped installations in your wallet.
+          - generic [ref=e1031]: Drop to stage (green = valid, red = occupied). Click a staged tile to unstage. Hit Save changes to equip — one wallet signature each (level-1 installs only).
+          - generic [ref=e1032]:
+            - generic [ref=e1033]: Craft farming installations (spends alchemica)
+            - generic [ref=e1034]:
+              - button "FUD Harvester" [ref=e1035] [cursor=pointer]
+              - button "FOMO Harvester" [ref=e1036] [cursor=pointer]
+              - button "ALPHA Harvester" [ref=e1037] [cursor=pointer]
+              - button "KEK Harvester" [ref=e1038] [cursor=pointer]
+              - button "FUD Reservoir" [ref=e1039] [cursor=pointer]
+              - button "FOMO Reservoir" [ref=e1040] [cursor=pointer]
+              - button "ALPHA Reservoir" [ref=e1041] [cursor=pointer]
+              - button "KEK Reservoir" [ref=e1042] [cursor=pointer]
+            - generic [ref=e1043]: First craft approves alchemica spending. L1 installs mint instantly and appear in your inventory above.
+      - generic [ref=e1044]:
+        - generic [ref=e1045]:
+          - generic [ref=e1046]:
+            - img [ref=e1047]
+            - text: Upgrade installations (spends alchemica)
+          - button "Finalize ready" [ref=e1050] [cursor=pointer]
+        - generic [ref=e1051]:
+          - generic [ref=e1052]:
+            - generic [ref=e1053]:
+              - text: FOMO Reservoir Level 8
+              - generic [ref=e1054]: "@ (12,29)"
+            - button "Upgrade → L9" [ref=e1055] [cursor=pointer]
+          - generic [ref=e1056]:
+            - generic [ref=e1057]:
+              - text: FOMO Reservoir Level 8
+              - generic [ref=e1058]: "@ (14,29)"
+            - button "Upgrade → L9" [ref=e1059] [cursor=pointer]
+          - generic [ref=e1060]:
+            - generic [ref=e1061]:
+              - text: ALPHA Reservoir Level 4
+              - generic [ref=e1062]: "@ (18,29)"
+            - button "Upgrade → L5" [ref=e1063] [cursor=pointer]
+          - generic [ref=e1064]:
+            - generic [ref=e1065]:
+              - text: ALPHA Reservoir Level 8
+              - generic [ref=e1066]: "@ (16,29)"
+            - button "Upgrade → L9" [ref=e1067] [cursor=pointer]
+          - generic [ref=e1068]:
+            - generic [ref=e1069]:
+              - text: KEK Reservoir Level 5
+              - generic [ref=e1070]: "@ (22,29)"
+            - button "Upgrade → L6" [ref=e1071] [cursor=pointer]
+          - generic [ref=e1072]:
+            - generic [ref=e1073]:
+              - text: KEK Reservoir Level 8
+              - generic [ref=e1074]: "@ (20,29)"
+            - button "Upgrade → L9" [ref=e1075] [cursor=pointer]
+          - generic [ref=e1076]:
+            - generic [ref=e1077]:
+              - text: Alchemical Aaltar Level 8
+              - generic [ref=e1078]: "@ (15,27)"
+            - button "Upgrade → L9" [ref=e1079] [cursor=pointer]
+          - generic [ref=e1080]:
+            - generic [ref=e1081]:
+              - text: FUD Harvester Level 1
+              - generic [ref=e1082]: "@ (10,33)"
+            - button "Upgrade → L2" [ref=e1083] [cursor=pointer]
+          - generic [ref=e1084]:
+            - generic [ref=e1085]:
+              - text: FUD Harvester Level 1
+              - generic [ref=e1086]: "@ (10,35)"
+            - button "Upgrade → L2" [ref=e1087] [cursor=pointer]
+          - generic [ref=e1088]:
+            - generic [ref=e1089]:
+              - text: FUD Harvester Level 1
+              - generic [ref=e1090]: "@ (10,37)"
+            - button "Upgrade → L2" [ref=e1091] [cursor=pointer]
+          - generic [ref=e1092]:
+            - generic [ref=e1093]:
+              - text: FUD Harvester Level 1
+              - generic [ref=e1094]: "@ (10,39)"
+            - button "Upgrade → L2" [ref=e1095] [cursor=pointer]
+          - generic [ref=e1096]:
+            - generic [ref=e1097]:
+              - text: FUD Harvester Level 1
+              - generic [ref=e1098]: "@ (8,35)"
+            - button "Upgrade → L2" [ref=e1099] [cursor=pointer]
+          - generic [ref=e1100]:
+            - generic [ref=e1101]:
+              - text: FUD Harvester Level 1
+              - generic [ref=e1102]: "@ (8,37)"
+            - button "Upgrade → L2" [ref=e1103] [cursor=pointer]
+          - generic [ref=e1104]:
+            - generic [ref=e1105]:
+              - text: FUD Harvester Level 1
+              - generic [ref=e1106]: "@ (8,39)"
+            - button "Upgrade → L2" [ref=e1107] [cursor=pointer]
+          - generic [ref=e1108]:
+            - generic [ref=e1109]:
+              - text: FUD Harvester Level 6
+              - generic [ref=e1110]: "@ (8,33)"
+            - button "Upgrade → L7" [ref=e1111] [cursor=pointer]
+          - generic [ref=e1112]:
+            - generic [ref=e1113]:
+              - text: FUD Harvester Level 8
+              - generic [ref=e1114]: "@ (10,31)"
+            - button "Upgrade → L9" [ref=e1115] [cursor=pointer]
+          - generic [ref=e1116]:
+            - generic [ref=e1117]:
+              - text: FUD Harvester Level 8
+              - generic [ref=e1118]: "@ (8,31)"
+            - button "Upgrade → L9" [ref=e1119] [cursor=pointer]
+          - generic [ref=e1120]:
+            - generic [ref=e1121]:
+              - text: FOMO Harvester Level 1
+              - generic [ref=e1122]: "@ (12,37)"
+            - button "Upgrade → L2" [ref=e1123] [cursor=pointer]
+          - generic [ref=e1124]:
+            - generic [ref=e1125]:
+              - text: FOMO Harvester Level 1
+              - generic [ref=e1126]: "@ (12,39)"
+            - button "Upgrade → L2" [ref=e1127] [cursor=pointer]
+          - generic [ref=e1128]:
+            - generic [ref=e1129]:
+              - text: FOMO Harvester Level 1
+              - generic [ref=e1130]: "@ (14,35)"
+            - button "Upgrade → L2" [ref=e1131] [cursor=pointer]
+          - generic [ref=e1132]:
+            - generic [ref=e1133]:
+              - text: FOMO Harvester Level 1
+              - generic [ref=e1134]: "@ (14,37)"
+            - button "Upgrade → L2" [ref=e1135] [cursor=pointer]
+          - generic [ref=e1136]:
+            - generic [ref=e1137]:
+              - text: FOMO Harvester Level 1
+              - generic [ref=e1138]: "@ (14,39)"
+            - button "Upgrade → L2" [ref=e1139] [cursor=pointer]
+          - generic [ref=e1140]:
+            - generic [ref=e1141]:
+              - text: FOMO Harvester Level 8
+              - generic [ref=e1142]: "@ (12,31)"
+            - button "Upgrade → L9" [ref=e1143] [cursor=pointer]
+          - generic [ref=e1144]:
+            - generic [ref=e1145]:
+              - text: FOMO Harvester Level 8
+              - generic [ref=e1146]: "@ (12,33)"
+            - button "Upgrade → L9" [ref=e1147] [cursor=pointer]
+          - generic [ref=e1148]:
+            - generic [ref=e1149]:
+              - text: FOMO Harvester Level 8
+              - generic [ref=e1150]: "@ (12,35)"
+            - button "Upgrade → L9" [ref=e1151] [cursor=pointer]
+          - generic [ref=e1152]:
+            - generic [ref=e1153]:
+              - text: FOMO Harvester Level 8
+              - generic [ref=e1154]: "@ (14,31)"
+            - button "Upgrade → L9" [ref=e1155] [cursor=pointer]
+          - generic [ref=e1156]:
+            - generic [ref=e1157]:
+              - text: FOMO Harvester Level 8
+              - generic [ref=e1158]: "@ (14,33)"
+            - button "Upgrade → L9" [ref=e1159] [cursor=pointer]
+          - generic [ref=e1160]:
+            - generic [ref=e1161]:
+              - text: ALPHA Harvester Level 1
+              - generic [ref=e1162]: "@ (16,33)"
+            - button "Upgrade → L2" [ref=e1163] [cursor=pointer]
+          - generic [ref=e1164]:
+            - generic [ref=e1165]:
+              - text: ALPHA Harvester Level 1
+              - generic [ref=e1166]: "@ (16,35)"
+            - button "Upgrade → L2" [ref=e1167] [cursor=pointer]
+          - generic [ref=e1168]:
+            - generic [ref=e1169]:
+              - text: ALPHA Harvester Level 1
+              - generic [ref=e1170]: "@ (16,37)"
+            - button "Upgrade → L2" [ref=e1171] [cursor=pointer]
+          - generic [ref=e1172]:
+            - generic [ref=e1173]:
+              - text: ALPHA Harvester Level 1
+              - generic [ref=e1174]: "@ (16,39)"
+            - button "Upgrade → L2" [ref=e1175] [cursor=pointer]
+          - generic [ref=e1176]:
+            - generic [ref=e1177]:
+              - text: ALPHA Harvester Level 1
+              - generic [ref=e1178]: "@ (18,35)"
+            - button "Upgrade → L2" [ref=e1179] [cursor=pointer]
+          - generic [ref=e1180]:
+            - generic [ref=e1181]:
+              - text: ALPHA Harvester Level 1
+              - generic [ref=e1182]: "@ (18,37)"
+            - button "Upgrade → L2" [ref=e1183] [cursor=pointer]
+          - generic [ref=e1184]:
+            - generic [ref=e1185]:
+              - text: ALPHA Harvester Level 1
+              - generic [ref=e1186]: "@ (18,39)"
+            - button "Upgrade → L2" [ref=e1187] [cursor=pointer]
+          - generic [ref=e1188]:
+            - generic [ref=e1189]:
+              - text: ALPHA Harvester Level 5
+              - generic [ref=e1190]: "@ (18,33)"
+            - button "Upgrade → L6" [ref=e1191] [cursor=pointer]
+          - generic [ref=e1192]:
+            - generic [ref=e1193]:
+              - text: ALPHA Harvester Level 7
+              - generic [ref=e1194]: "@ (16,31)"
+            - button "Upgrade → L8" [ref=e1195] [cursor=pointer]
+          - generic [ref=e1196]:
+            - generic [ref=e1197]:
+              - text: ALPHA Harvester Level 7
+              - generic [ref=e1198]: "@ (18,31)"
+            - button "Upgrade → L8" [ref=e1199] [cursor=pointer]
+          - generic [ref=e1200]:
+            - generic [ref=e1201]:
+              - text: KEK Harvester Level 1
+              - generic [ref=e1202]: "@ (20,33)"
+            - button "Upgrade → L2" [ref=e1203] [cursor=pointer]
+          - generic [ref=e1204]:
+            - generic [ref=e1205]:
+              - text: KEK Harvester Level 1
+              - generic [ref=e1206]: "@ (20,35)"
+            - button "Upgrade → L2" [ref=e1207] [cursor=pointer]
+          - generic [ref=e1208]:
+            - generic [ref=e1209]:
+              - text: KEK Harvester Level 1
+              - generic [ref=e1210]: "@ (20,37)"
+            - button "Upgrade → L2" [ref=e1211] [cursor=pointer]
+          - generic [ref=e1212]:
+            - generic [ref=e1213]:
+              - text: KEK Harvester Level 1
+              - generic [ref=e1214]: "@ (20,39)"
+            - button "Upgrade → L2" [ref=e1215] [cursor=pointer]
+          - generic [ref=e1216]:
+            - generic [ref=e1217]:
+              - text: KEK Harvester Level 1
+              - generic [ref=e1218]: "@ (22,33)"
+            - button "Upgrade → L2" [ref=e1219] [cursor=pointer]
+          - generic [ref=e1220]:
+            - generic [ref=e1221]:
+              - text: KEK Harvester Level 1
+              - generic [ref=e1222]: "@ (22,35)"
+            - button "Upgrade → L2" [ref=e1223] [cursor=pointer]
+          - generic [ref=e1224]:
+            - generic [ref=e1225]:
+              - text: KEK Harvester Level 1
+              - generic [ref=e1226]: "@ (22,37)"
+            - button "Upgrade → L2" [ref=e1227] [cursor=pointer]
+          - generic [ref=e1228]:
+            - generic [ref=e1229]:
+              - text: KEK Harvester Level 1
+              - generic [ref=e1230]: "@ (22,39)"
+            - button "Upgrade → L2" [ref=e1231] [cursor=pointer]
+          - generic [ref=e1232]:
+            - generic [ref=e1233]:
+              - text: KEK Harvester Level 7
+              - generic [ref=e1234]: "@ (22,31)"
+            - button "Upgrade → L8" [ref=e1235] [cursor=pointer]
+          - generic [ref=e1236]:
+            - generic [ref=e1237]:
+              - text: KEK Harvester Level 8
+              - generic [ref=e1238]: "@ (20,31)"
+            - button "Upgrade → L9" [ref=e1239] [cursor=pointer]
+          - generic [ref=e1240]:
+            - generic [ref=e1241]:
+              - text: FUD Reservoir Level 5
+              - generic [ref=e1242]: "@ (8,29)"
+            - button "Upgrade → L6" [ref=e1243] [cursor=pointer]
+          - generic [ref=e1244]:
+            - generic [ref=e1245]:
+              - text: FUD Reservoir Level 8
+              - generic [ref=e1246]: "@ (10,29)"
+            - button "Upgrade → L9" [ref=e1247] [cursor=pointer]
+        - generic [ref=e1248]: Upgrades cost alchemica and queue for a block delay — hit Finalize ready once the timer passes (or pass GLTR to skip, not wired here).

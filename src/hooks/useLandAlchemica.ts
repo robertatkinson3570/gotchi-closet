@@ -13,6 +13,7 @@ import {
   REALM_FACET_ABI,
   ALCHEMICA_TOKENS_BASE,
   CHANNEL_COOLDOWN_SEC,
+  CLAIM_DUST_MIN,
 } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 
@@ -60,6 +61,9 @@ export function useLandAlchemica(claimerGotchiId?: number) {
   const [step, setStep] = useState<TxStep>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [channelStep, setChannelStep] = useState<TxStep>("idle");
+  const [channelProgress, setChannelProgress] = useState<{ done: number; total: number } | null>(null);
+  const [channelDone, setChannelDone] = useState(0);
 
   // NOTE: distinct key from useLandParcels' ["land-parcels", owner]. They must
   // NOT collide — this fetcher returns bigint[] while useLandParcels returns
@@ -126,7 +130,7 @@ export function useLandAlchemica(claimerGotchiId?: number) {
       availData.forEach((r, i) => {
         if (r.status !== "success") return;
         const amounts = r.result as readonly bigint[];
-        if (amounts.some((v) => v > 0n)) claimable.push(parcelIds[i]);
+        if (amounts.some((v) => v > CLAIM_DUST_MIN)) claimable.push(parcelIds[i]);
         ALCHEMICA_TOKENS_BASE.forEach((tk, j) => {
           totals[tk.symbol] = (totals[tk.symbol] ?? 0n) + (amounts[j] ?? 0n);
         });
@@ -182,10 +186,55 @@ export function useLandAlchemica(claimerGotchiId?: number) {
     }
   }, [isConnected, address, claimable, claimerGotchiId, writeContractAsync, publicClient, refetch, queryClient]);
 
+  // Channel every parcel whose cooldown is ready, using the claimer gotchi.
+  // Re-reads the gotchi's last-channel before each (its own cooldown updates
+  // after a channel), and skips parcels that revert (gotchi on cooldown / lent).
+  const channelAll = useCallback(async () => {
+    if (!isConnected || !address || !claimerGotchiId || !publicClient) return;
+    const nowSec = Math.floor(Date.now() / 1000);
+    const ready = parcelIds.filter((_, i) => (nextChannelTimes[i] || 0) <= nowSec);
+    if (ready.length === 0) return;
+    setErrorMsg(null);
+    setChannelStep("submitting");
+    setChannelProgress({ done: 0, total: ready.length });
+    let ok = 0;
+    for (let i = 0; i < ready.length; i++) {
+      try {
+        const last = (await publicClient.readContract({
+          address: REALM_DIAMOND_BASE,
+          abi: REALM_FACET_ABI,
+          functionName: "getLastChanneled",
+          args: [BigInt(claimerGotchiId)],
+        })) as bigint;
+        const hash = await writeContractAsync({
+          chainId: BASE_CHAIN_ID,
+          address: REALM_DIAMOND_BASE,
+          abi: REALM_FACET_ABI,
+          functionName: "channelAlchemica",
+          args: [ready[i], BigInt(claimerGotchiId), last, "0x"],
+        });
+        await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+        ok++;
+      } catch {
+        /* gotchi on cooldown / lent / no access — skip and continue */
+      }
+      setChannelProgress({ done: i + 1, total: ready.length });
+    }
+    setChannelDone(ok);
+    setChannelStep(ok > 0 ? "success" : "error");
+    if (ok === 0) {
+      setErrorMsg("No parcels channeled — your gotchi is likely on cooldown or lent/locked (a gotchi can channel once per cooldown).");
+    }
+    refetch();
+    queryClient.invalidateQueries({ queryKey: ["land-parcel-ids", address.toLowerCase()] });
+  }, [isConnected, address, claimerGotchiId, publicClient, parcelIds, nextChannelTimes, writeContractAsync, refetch, queryClient]);
+
   const reset = useCallback(() => {
     setStep("idle");
     setErrorMsg(null);
     setProgress(null);
+    setChannelStep("idle");
+    setChannelProgress(null);
   }, []);
 
   return {
@@ -198,6 +247,10 @@ export function useLandAlchemica(claimerGotchiId?: number) {
     step,
     errorMsg,
     progress,
+    channelAll,
+    channelStep,
+    channelProgress,
+    channelDone,
     reset,
     isOnBase,
     address,

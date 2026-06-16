@@ -90,6 +90,17 @@ export function LandAlchemicaBar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [land.step]);
 
+  useEffect(() => {
+    if (land.channelStep === "success") {
+      toast({ title: "Channeling done", description: `Channeled ${land.channelDone} parcel${land.channelDone === 1 ? "" : "s"}.` });
+      land.reset();
+    }
+    if (land.channelStep === "error" && land.errorMsg) {
+      toast({ title: "Channel all", description: land.errorMsg.slice(0, 180), variant: "destructive" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [land.channelStep]);
+
   if (!address) return null;
   if (land.isLoading) return null;
   if (land.claimableCount === 0) return null;
@@ -104,6 +115,7 @@ export function LandAlchemicaBar() {
     .join(" · ");
 
   const busy = land.step === "submitting" || land.step === "confirming";
+  const chBusy = land.channelStep === "submitting" || land.channelStep === "confirming";
   const batchNote = land.progress && land.progress.total > 1
     ? ` (${land.progress.done}/${land.progress.total} batches)`
     : "";
@@ -158,9 +170,9 @@ export function LandAlchemicaBar() {
       </div>
 
       {channel.total > 0 && (
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground px-0.5">
-          <Timer className="w-3.5 h-3.5 text-emerald-500/80" />
-          <span>
+        <div className="flex items-center justify-between gap-2 flex-wrap text-[11px] text-muted-foreground px-0.5">
+          <span className="inline-flex items-center gap-1.5">
+            <Timer className="w-3.5 h-3.5 text-emerald-500/80" />
             Channeling cooldown:{" "}
             <span className="text-foreground font-medium">
               {channel.readyCount}/{channel.total}
@@ -169,12 +181,28 @@ export function LandAlchemicaBar() {
             {channel.soonestIn != null && (
               <>
                 {" "}· next in{" "}
-                <span className="text-foreground font-medium">
-                  {formatCountdown(channel.soonestIn)}
-                </span>
+                <span className="text-foreground font-medium">{formatCountdown(channel.soonestIn)}</span>
               </>
             )}
           </span>
+          {channel.readyCount > 0 && (
+            <button
+              type="button"
+              onClick={() => land.channelAll()}
+              disabled={chBusy || !land.isOnBase}
+              title="Channel every ready parcel with your gotchi (needs an unlocked gotchi; one channel per gotchi cooldown — locked/lent gotchis are skipped)"
+              className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-[11px] font-semibold"
+            >
+              {chBusy ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Channeling {land.channelProgress?.done}/
+                  {land.channelProgress?.total}…
+                </>
+              ) : (
+                <>Channel all ready ({channel.readyCount})</>
+              )}
+            </button>
+          )}
         </div>
       )}
     </div>

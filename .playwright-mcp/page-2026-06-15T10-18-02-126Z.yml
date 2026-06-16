@@ -1,0 +1,60 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "GotchiCloset GotchiCloset" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "GotchiCloset" [ref=e7]
+          - generic [ref=e8]: GotchiCloset
+        - generic [ref=e9]:
+          - link [ref=e10] [cursor=pointer]:
+            - /url: /explorer
+            - button "Explorer" [ref=e11]:
+              - img [ref=e12]
+          - link [ref=e15] [cursor=pointer]:
+            - /url: /dress
+            - button "Dress" [ref=e16]:
+              - img [ref=e17]
+          - link [ref=e19] [cursor=pointer]:
+            - /url: /lending
+            - button "Lending" [ref=e20]:
+              - img [ref=e21]
+          - link [ref=e26] [cursor=pointer]:
+            - /url: /lending/lands
+            - button "Land Management" [ref=e27]:
+              - img [ref=e28]
+          - button "Toggle theme" [ref=e31] [cursor=pointer]:
+            - img [ref=e32]
+    - main [ref=e34]:
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - generic [ref=e37]:
+            - link "Back to my lendings" [ref=e38] [cursor=pointer]:
+              - /url: /lending/me
+              - img [ref=e39]
+              - text: Back to my lendings
+            - heading "Land Management" [level=1] [ref=e41]:
+              - img [ref=e42]
+              - text: Land Management
+            - paragraph [ref=e45]: 0xe0d4…A3c2
+          - link "View on aadventure" [ref=e46] [cursor=pointer]:
+            - /url: https://www.aadventure.io/lending/lands/owner/0xe0d4f8f6f04a42aed5a7ea4f68bc612e6a54a3c2
+            - img [ref=e47]
+            - text: View on aadventure
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - generic [ref=e53]: Parcels
+            - generic [ref=e54]: "0"
+          - generic [ref=e55]:
+            - generic [ref=e56]: Claimable now
+            - generic [ref=e57]: 0 FUD · 0 FOMO · 0 ALPHA · 0 KEK
+          - generic [ref=e58]:
+            - generic [ref=e59]: In-ground (remaining)
+            - generic [ref=e60]: 0 FUD · 0 FOMO · 0 ALPHA · 0 KEK
+    - contentinfo [ref=e68]:
+      - generic [ref=e69]:
+        - text: Built by
+        - link "GrimLabs" [ref=e70] [cursor=pointer]:
+          - /url: https://grimlabs.xyz
+  - region "Notifications (F8)":
+    - list

@@ -627,5 +627,11 @@ export const CRAFTABLE_L1: { id: number; name: string; cost: number[] }[] = [
   { id: 119, name: "KEK Reservoir", cost: [275, 110, 0, 5] },
 ];
 
+// A parcel reservoir counts as "ready to claim" only if some token exceeds this
+// (1 full token). Reservoirs refill to tiny dust amounts constantly, so without
+// a floor every parcel always looks claimable and claim txs revert on the empty
+// ones ("nothing to claim").
+export const CLAIM_DUST_MIN = BigInt(10) ** BigInt(18);
+
 // Bigint helper: max uint256
 export const MAX_UINT256 = (BigInt(2) ** BigInt(256)) - BigInt(1);

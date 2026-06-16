@@ -48,6 +48,7 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
   const craftHook = useCraft(address);
   const upgradeHook = useUpgrade(address);
   const [dragItem, setDragItem] = useState<InventoryItem | null>(null);
+  const [tab, setTab] = useState<"overview" | "build">("overview");
   const [pending, setPending] = useState<Placed[]>([]);
   const [moving, setMoving] = useState<{ index: number; w: number; h: number } | null>(null);
   const [saving, setSaving] = useState<{ done: number; total: number } | null>(null);
@@ -212,6 +213,26 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
               )}
             </div>
 
+            {/* Tabs */}
+            <div className="flex items-center gap-1 border-b border-border/30">
+              {(["overview", "build"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTab(t)}
+                  className={`px-3 py-1.5 text-xs font-semibold border-b-2 -mb-px transition-colors ${
+                    tab === t
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t === "overview" ? "Overview" : "Build & manage"}
+                </button>
+              ))}
+            </div>
+
+            {tab === "overview" && (
+              <div className="space-y-4">
             {/* Alchemica table */}
             <section>
               <div className="text-xs font-semibold mb-1.5 inline-flex items-center gap-1.5">
@@ -304,6 +325,11 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
               </div>
             </section>
 
+              </div>
+            )}
+
+            {tab === "build" && (
+              <div className="space-y-4">
             {/* Visual layout + building */}
             <section>
               <div className="text-xs font-semibold mb-1.5 inline-flex items-center justify-between gap-1.5">
@@ -591,6 +617,8 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                 </section>
               );
             })()}
+              </div>
+            )}
           </div>
         )}
       </div>
