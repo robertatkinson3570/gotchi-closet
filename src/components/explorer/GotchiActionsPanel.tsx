@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, Settings2, CheckCircle2, XCircle } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
+import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 
@@ -13,6 +13,7 @@ const ACTIONS_ABI = [
   { name: "decreaseAndDestroy", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_tokenId", type: "uint256" }, { name: "_toId", type: "uint256" }], outputs: [] },
   { name: "safeTransferFrom", type: "function", stateMutability: "nonpayable", inputs: [{ name: "from", type: "address" }, { name: "to", type: "address" }, { name: "tokenId", type: "uint256" }], outputs: [] },
   { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
+  { name: "cancelERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_listingId", type: "uint256" }], outputs: [] },
 ] as const;
 
 type Props = {
@@ -52,6 +53,22 @@ export function GotchiActionsPanel({ gotchiId, name, hauntId, collateral, numeri
       const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ACTIONS_ABI, functionName: functionName as any, args: args as any });
       await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
       setStatus({ kind: "ok", label: `${label} confirmed` });
+    } catch (e) {
+      setStatus({ kind: "err", label: parseRevert(e).slice(0, 140) });
+    }
+  };
+
+  // Look up this gotchi's open Baazaar listing, then cancel it.
+  const cancelListing = async () => {
+    if (!isConnected || !address) return setStatus({ kind: "err", label: "Connect your wallet first" });
+    setStatus({ kind: "busy", label: "Finding your listing…" });
+    try {
+      const q = `query($t:String!,$s:String!){ erc721Listings(first:1, where:{ tokenId:$t, seller:$s, category:${BAAZAAR_CATEGORY.AAVEGOTCHI}, cancelled:false, timePurchased:"0" }){ id } }`;
+      const res = await fetch(CORE_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q, variables: { t: gotchiId, s: address.toLowerCase() } }) });
+      const json = await res.json();
+      const lid = json.data?.erc721Listings?.[0]?.id;
+      if (!lid) return setStatus({ kind: "err", label: "No open listing found for this gotchi" });
+      await run("Cancel listing", "cancelERC721Listing", [BigInt(lid)]);
     } catch (e) {
       setStatus({ kind: "err", label: parseRevert(e).slice(0, 140) });
     }
@@ -131,6 +148,7 @@ export function GotchiActionsPanel({ gotchiId, name, hauntId, collateral, numeri
                   <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price in GHST" className={field} />
                   <button disabled={busy || !(Number(price) > 0)} onClick={() => run("List", "addERC721Listing", [AAVEGOTCHI_DIAMOND_BASE, id, BigInt(Math.floor(Number(price) * 1e18))])} className={`${goBtn} bg-emerald-600`}>List</button>
                 </div>
+                <button disabled={busy} onClick={cancelListing} className="h-7 w-full rounded border border-border/60 text-[11px] font-medium text-muted-foreground hover:bg-muted/50 disabled:opacity-50">Cancel my listing</button>
               </Section>
 
               <Section icon={<Send className="w-3.5 h-3.5" />} title="Transfer">
