@@ -1,0 +1,104 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "GotchiCloset GotchiCloset" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "GotchiCloset" [ref=e7]
+          - generic [ref=e8]: GotchiCloset
+        - generic [ref=e9]:
+          - link [ref=e10] [cursor=pointer]:
+            - /url: /explorer
+            - button "Explorer" [ref=e11]:
+              - img [ref=e12]
+          - link [ref=e15] [cursor=pointer]:
+            - /url: /dress
+            - button "Dress" [ref=e16]:
+              - img [ref=e17]
+          - link [ref=e19] [cursor=pointer]:
+            - /url: /baazaar
+            - button "Baazaar" [ref=e20]:
+              - img [ref=e21]
+          - link [ref=e24] [cursor=pointer]:
+            - /url: /auction
+            - button "Auctions" [ref=e25]:
+              - img [ref=e26]
+          - link [ref=e32] [cursor=pointer]:
+            - /url: /activity
+            - button "Activity" [ref=e33]:
+              - img [ref=e34]
+          - link [ref=e36] [cursor=pointer]:
+            - /url: /lending
+            - button "Lending" [ref=e37]:
+              - img [ref=e38]
+          - link [ref=e43] [cursor=pointer]:
+            - /url: /lending/lands
+            - button "Land Management" [ref=e44]:
+              - img [ref=e45]
+          - button "Toggle theme" [ref=e48] [cursor=pointer]:
+            - img [ref=e49]
+    - main [ref=e51]:
+      - generic [ref=e52]:
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - link "GotchiCloset" [ref=e56] [cursor=pointer]:
+              - /url: /
+              - img "GotchiCloset" [ref=e57]
+            - generic [ref=e58]: GotchiCloset
+          - generic [ref=e59]:
+            - link [ref=e60] [cursor=pointer]:
+              - /url: /explorer
+              - button "Explorer" [ref=e61]:
+                - img [ref=e62]
+            - link [ref=e65] [cursor=pointer]:
+              - /url: /lending
+              - button "Lending" [ref=e66]:
+                - img [ref=e67]
+            - button "Toggle theme" [ref=e72] [cursor=pointer]:
+              - img [ref=e73]
+            - button "Connect Wallet" [ref=e75] [cursor=pointer]
+        - generic [ref=e78]:
+          - generic [ref=e80]:
+            - generic [ref=e81]:
+              - button "Collection" [ref=e82] [cursor=pointer]:
+                - img [ref=e83]
+                - generic [ref=e88]: Collection
+              - button "Baazaar" [ref=e89] [cursor=pointer]:
+                - img [ref=e90]
+                - generic [ref=e94]: Baazaar
+            - img [ref=e95]
+            - textbox "Search entire Aavegotchi collection by name or ID..." [ref=e98]
+            - button "Catwalk" [disabled]:
+              - generic:
+                - img
+                - text: Catwalk
+          - generic [ref=e99]: No gotchis found
+        - generic [ref=e101]:
+          - generic [ref=e105]: Click a gotchi to add it to the editor.
+          - generic [ref=e107]:
+            - generic [ref=e108]:
+              - generic [ref=e109]:
+                - textbox "Search..." [ref=e110]
+                - generic [ref=e111]:
+                  - button "All" [ref=e112] [cursor=pointer]
+                  - button "Owned" [ref=e113] [cursor=pointer]
+                  - button "Baazaar" [ref=e114] [cursor=pointer]
+              - generic [ref=e115]:
+                - combobox [ref=e116] [cursor=pointer]:
+                  - generic: Slots All
+                  - img [ref=e117]
+                - combobox [ref=e119] [cursor=pointer]:
+                  - generic: Rarity All
+                  - img [ref=e120]
+                - combobox [ref=e122] [cursor=pointer]:
+                  - generic: Sets All
+                  - img [ref=e123]
+            - generic [ref=e127]: No wearables found
+      - status [ref=e128]
+    - contentinfo [ref=e129]:
+      - generic [ref=e130]:
+        - text: Built by
+        - link "GrimLabs" [ref=e131] [cursor=pointer]:
+          - /url: https://grimlabs.xyz
+  - region "Notifications (F8)":
+    - list

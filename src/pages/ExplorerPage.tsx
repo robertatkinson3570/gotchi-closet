@@ -19,6 +19,8 @@ import { defaultFilters } from "@/lib/explorer/types";
 import { getActiveFilterCount } from "@/lib/explorer/filters";
 import { defaultBaazaarSort } from "@/lib/explorer/sorts";
 import type { AssetType } from "@/lib/explorer/wearableTypes";
+import { MarketGrid } from "@/components/explorer/MarketGrid";
+import { BAAZAAR_CATEGORY, REALM_DIAMOND_BASE, WEARABLE_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import setsData from "../../data/setsByTraitDirection.json";
 
@@ -239,13 +241,17 @@ export default function ExplorerPage() {
                     onFiltersChange={handleGotchiFiltersChange}
                     availableSets={availableSets}
                   />
-                ) : (
+                ) : assetType === "wearable" ? (
                   <WearableExplorerFilters
                     filters={wearableFilters}
                     setFilters={setWearableFilters}
                     resetFilters={resetWearableFilters}
                     mode={mode}
                   />
+                ) : (
+                  <div className="text-xs text-muted-foreground p-1">
+                    Showing the cheapest open Baazaar listings. Select items to bulk-buy.
+                  </div>
                 )}
               </div>
               <button
@@ -293,7 +299,11 @@ export default function ExplorerPage() {
             </div>
           )}
 
-          {assetType === "gotchi" ? (
+          {assetType === "item" ? (
+            <MarketGrid kind="erc1155" category={BAAZAAR_CATEGORY.CONSUMABLE} contract={WEARABLE_DIAMOND_BASE} itemKind="item" />
+          ) : assetType === "parcel" ? (
+            <MarketGrid kind="erc721" category={BAAZAAR_CATEGORY.REALM} contract={REALM_DIAMOND_BASE} itemKind="parcel" />
+          ) : assetType === "gotchi" ? (
             viewMode === "family" && mode === "mine" ? (
               <div>
                 <div className="flex justify-end px-2 md:px-3 pt-2">

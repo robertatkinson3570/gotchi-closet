@@ -1,5 +1,5 @@
 import { Outlet, useLocation, Link } from "react-router-dom";
-import { Coins, Search, Shirt, MapPin, Activity, Gavel, ShoppingBag } from "lucide-react";
+import { Coins, Search, Shirt, MapPin, Activity, Gavel } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -7,9 +7,8 @@ import { FooterAttribution } from "@/components/FooterAttribution";
 
 // Every page shows the full nav so all sections are reachable everywhere.
 const NAV: { to: string; title: string; icon: LucideIcon }[] = [
-  { to: "/explorer", title: "Explorer", icon: Search },
+  { to: "/explorer", title: "Explorer / Baazaar", icon: Search },
   { to: "/dress", title: "Dress", icon: Shirt },
-  { to: "/baazaar", title: "Baazaar", icon: ShoppingBag },
   { to: "/auction", title: "Auctions", icon: Gavel },
   { to: "/activity", title: "Activity", icon: Activity },
   { to: "/lending", title: "Lending", icon: Coins },

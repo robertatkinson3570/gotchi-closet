@@ -1,0 +1,1628 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "GotchiCloset GotchiCloset" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "GotchiCloset" [ref=e7]
+          - generic [ref=e8]: GotchiCloset
+        - generic [ref=e9]:
+          - link [ref=e10] [cursor=pointer]:
+            - /url: /explorer
+            - button "Explorer" [ref=e11]:
+              - img [ref=e12]
+          - link [ref=e15] [cursor=pointer]:
+            - /url: /dress
+            - button "Dress" [ref=e16]:
+              - img [ref=e17]
+          - link [ref=e19] [cursor=pointer]:
+            - /url: /baazaar
+            - button "Baazaar" [ref=e20]:
+              - img [ref=e21]
+          - link [ref=e24] [cursor=pointer]:
+            - /url: /auction
+            - button "Auctions" [ref=e25]:
+              - img [ref=e26]
+          - link [ref=e32] [cursor=pointer]:
+            - /url: /activity
+            - button "Activity" [ref=e33]:
+              - img [ref=e34]
+          - link [ref=e36] [cursor=pointer]:
+            - /url: /lending
+            - button "Lending" [ref=e37]:
+              - img [ref=e38]
+          - link [ref=e43] [cursor=pointer]:
+            - /url: /lending/lands
+            - button "Land Management" [ref=e44]:
+              - img [ref=e45]
+          - button "Toggle theme" [ref=e48] [cursor=pointer]:
+            - img [ref=e49]
+    - main [ref=e51]:
+      - generic [ref=e52]:
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - link "GotchiCloset" [ref=e56] [cursor=pointer]:
+              - /url: /
+              - img "GotchiCloset" [ref=e57]
+            - generic [ref=e58]: GotchiCloset
+          - generic [ref=e59]:
+            - link [ref=e60] [cursor=pointer]:
+              - /url: /explorer
+              - button "Explorer" [ref=e61]:
+                - img [ref=e62]
+            - link [ref=e65] [cursor=pointer]:
+              - /url: /lending
+              - button "Lending" [ref=e66]:
+                - img [ref=e67]
+            - button "Toggle theme" [ref=e72] [cursor=pointer]:
+              - img [ref=e73]
+            - button "Connect Wallet" [ref=e75] [cursor=pointer]
+        - generic [ref=e78]:
+          - generic [ref=e80]:
+            - generic [ref=e81]:
+              - button "Collection" [ref=e82] [cursor=pointer]:
+                - img [ref=e83]
+                - generic [ref=e88]: Collection
+              - button "Baazaar" [ref=e89] [cursor=pointer]:
+                - img [ref=e90]
+                - generic [ref=e94]: Baazaar
+            - img [ref=e95]
+            - textbox "Search entire Aavegotchi collection by name or ID..." [ref=e98]
+            - button "Catwalk" [disabled]:
+              - generic:
+                - img
+                - text: Catwalk
+          - generic [ref=e99]: No gotchis found
+        - generic [ref=e101]:
+          - generic [ref=e105]: Click a gotchi to add it to the editor.
+          - generic [ref=e107]:
+            - generic [ref=e108]:
+              - generic [ref=e109]:
+                - textbox "Search..." [ref=e110]
+                - generic [ref=e111]:
+                  - button "All" [ref=e112] [cursor=pointer]
+                  - button "Owned" [ref=e113] [cursor=pointer]
+                  - button "Baazaar" [ref=e114] [cursor=pointer]
+              - generic [ref=e115]:
+                - combobox [ref=e116] [cursor=pointer]:
+                  - generic: Slots All
+                  - img [ref=e117]
+                - combobox [ref=e119] [cursor=pointer]:
+                  - generic: Rarity All
+                  - img [ref=e120]
+                - combobox [ref=e122] [cursor=pointer]:
+                  - generic: Sets All
+                  - img [ref=e123]
+            - generic [ref=e127]:
+              - generic "10 Gallon Hat • Rarity 1 • BRN +1" [ref=e133]:
+                - img "10 Gallon Hat" [ref=e136]
+                - generic [ref=e138]: BRN +1
+              - generic "1337 Laptop • Rarity 20 • NRG -2, BRN +3" [ref=e140]:
+                - img "1337 Laptop" [ref=e143]
+                - generic [ref=e144]:
+                  - generic [ref=e145]: NRG -2
+                  - generic [ref=e146]: BRN +3
+              - generic "23 Jersey • Rarity 5 • NRG +1, AGG -2" [ref=e148]:
+                - img "23 Jersey" [ref=e151]
+                - generic [ref=e152]:
+                  - generic [ref=e153]: NRG +1
+                  - generic [ref=e154]: AGG -2
+              - generic "32 ETH Coin • Rarity 1 • BRN -1" [ref=e156]:
+                - img "32 ETH Coin" [ref=e159]
+                - generic [ref=e161]: BRN -1
+              - generic "3D Glasses • Rarity 1 • BRN +1" [ref=e163]:
+                - img "3D Glasses" [ref=e166]
+                - generic [ref=e168]: BRN +1
+              - generic "APY Shades • Rarity 2 • NRG +1, BRN +1" [ref=e170]:
+                - img "APY Shades" [ref=e173]
+                - generic [ref=e174]:
+                  - generic [ref=e175]: NRG +1
+                  - generic [ref=e176]: BRN +1
+              - generic "Aagent Fedora Hat • Rarity 5 • NRG -2, SPK +1" [ref=e178]:
+                - img "Aagent Fedora Hat" [ref=e181]
+                - generic [ref=e182]:
+                  - generic [ref=e183]: NRG -2
+                  - generic [ref=e184]: SPK +1
+              - generic "Aagent Headset • Rarity 5 • AGG +1, SPK +1, BRN +1" [ref=e186]:
+                - img "Aagent Headset" [ref=e189]
+                - generic [ref=e190]:
+                  - generic [ref=e191]: AGG +1
+                  - generic [ref=e192]: SPK +1
+                  - generic [ref=e193]: BRN +1
+              - generic "Aagent Pistol • Rarity 5 • AGG +3" [ref=e195]:
+                - img "Aagent Pistol" [ref=e198]
+                - generic [ref=e200]: AGG +3
+              - generic "Aagent Shades • Rarity 5 • NRG -1, SPK +2" [ref=e202]:
+                - img "Aagent Shades" [ref=e205]
+                - generic [ref=e206]:
+                  - generic [ref=e207]: NRG -1
+                  - generic [ref=e208]: SPK +2
+              - generic "Aagent Shirt • Rarity 5 • NRG -1, AGG +1, SPK +1" [ref=e210]:
+                - img "Aagent Shirt" [ref=e213]
+                - generic [ref=e214]:
+                  - generic [ref=e215]: NRG -1
+                  - generic [ref=e216]: AGG +1
+                  - generic [ref=e217]: SPK +1
+              - generic "Aantenna Bot • Rarity 20 • AGG -2, BRN +3" [ref=e219]:
+                - img "Aantenna Bot" [ref=e222]
+                - generic [ref=e223]:
+                  - generic [ref=e224]: AGG -2
+                  - generic [ref=e225]: BRN +3
+              - generic "Aastronaut Helmet • Rarity 1 • SPK +1" [ref=e227]:
+                - img "Aastronaut Helmet" [ref=e230]
+                - generic [ref=e232]: SPK +1
+              - generic "Aastronaut Suit • Rarity 1 • SPK +1" [ref=e234]:
+                - img "Aastronaut Suit" [ref=e237]
+                - generic [ref=e239]: SPK +1
+              - generic "Aave Boat • Rarity 50 • AGG -6" [ref=e241]:
+                - img "Aave Boat" [ref=e244]
+                - generic [ref=e246]: AGG -6
+              - generic "Aave Flag • Rarity 20 • AGG -2, SPK +3" [ref=e248]:
+                - img "Aave Flag" [ref=e251]
+                - generic [ref=e252]:
+                  - generic [ref=e253]: AGG -2
+                  - generic [ref=e254]: SPK +3
+              - generic "Aave Hero Mask • Rarity 1 • SPK +1" [ref=e256]:
+                - img "Aave Hero Mask" [ref=e259]
+                - generic [ref=e261]: SPK +1
+              - generic "Aave Hero Shirt • Rarity 1 • SPK +1" [ref=e263]:
+                - img "Aave Hero Shirt" [ref=e266]
+                - generic [ref=e268]: SPK +1
+              - generic "Aave Plush • Rarity 1 • SPK +1" [ref=e270]:
+                - img "Aave Plush" [ref=e273]
+                - generic [ref=e275]: SPK +1
+              - generic "Alchemica Apron • Rarity 2 • NRG +1, BRN -1" [ref=e277]:
+                - img "Alchemica Apron" [ref=e280]
+                - generic [ref=e281]:
+                  - generic [ref=e282]: NRG +1
+                  - generic [ref=e283]: BRN -1
+              - generic "All-Seeing Eyes • Rarity 50 • NRG -6" [ref=e285]:
+                - img "All-Seeing Eyes" [ref=e288]
+                - generic [ref=e290]: NRG -6
+              - generic "Alluring Eyes • Rarity 5 • AGG -2, BRN +1" [ref=e292]:
+                - img "Alluring Eyes" [ref=e295]
+                - generic [ref=e296]:
+                  - generic [ref=e297]: AGG -2
+                  - generic [ref=e298]: BRN +1
+              - generic "Aloha Flowers • Rarity 5 • NRG -3" [ref=e300]:
+                - img "Aloha Flowers" [ref=e303]
+                - generic [ref=e305]: NRG -3
+              - generic "Animal Skins • Rarity 2 • AGG +2" [ref=e307]:
+                - img "Animal Skins" [ref=e310]
+                - generic [ref=e312]: AGG +2
+              - generic "Ape Mask • Rarity 10 • AGG +1, BRN -3" [ref=e314]:
+                - img "Ape Mask" [ref=e317]
+                - generic [ref=e318]:
+                  - generic [ref=e319]: AGG +1
+                  - generic [ref=e320]: BRN -3
+              - generic "Apple Juice • Rarity 2 • SPK -2" [ref=e322]:
+                - img "Apple Juice" [ref=e325]
+                - generic [ref=e327]: SPK -2
+              - generic "Aviators • Rarity 2 • SPK +2" [ref=e329]:
+                - img "Aviators" [ref=e332]
+                - generic [ref=e334]: SPK +2
+              - generic "Baable Gum • Rarity 5 • NRG +3" [ref=e336]:
+                - img "Baable Gum" [ref=e339]
+                - generic [ref=e341]: NRG +3
+              - generic "Baby Bottle • Rarity 10 • AGG -1, SPK -3" [ref=e343]:
+                - img "Baby Bottle" [ref=e346]
+                - generic [ref=e347]:
+                  - generic [ref=e348]: AGG -1
+                  - generic [ref=e349]: SPK -3
+              - generic "Baby Licky • Rarity 20 • NRG +2, BRN -3" [ref=e351]:
+                - img "Baby Licky" [ref=e354]
+                - generic [ref=e355]:
+                  - generic [ref=e356]: NRG +2
+                  - generic [ref=e357]: BRN -3
+              - generic "Bandage • Rarity 2 • SPK +1, BRN -1" [ref=e359]:
+                - img "Bandage" [ref=e362]
+                - generic [ref=e363]:
+                  - generic [ref=e364]: SPK +1
+                  - generic [ref=e365]: BRN -1
+              - generic "Base App • Rarity 5 • BRN +3" [ref=e367]:
+                - img "Base App" [ref=e370]
+                - generic [ref=e372]: BRN +3
+              - generic "Based Shades • Rarity 2 • AGG +2" [ref=e374]:
+                - img "Based Shades" [ref=e377]
+                - generic [ref=e379]: AGG +2
+              - generic "Based Shirt • Rarity 1 • AGG -1" [ref=e381]:
+                - img "Based Shirt" [ref=e384]
+                - generic [ref=e386]: AGG -1
+              - generic "Basketball • Rarity 1 • NRG +1" [ref=e388]:
+                - img "Basketball" [ref=e391]
+                - generic [ref=e393]: NRG +1
+              - generic "Beard of Divinity • Rarity 50 • SPK -3, BRN -3" [ref=e395]:
+                - img "Beard of Divinity" [ref=e398]
+                - generic [ref=e399]:
+                  - generic [ref=e400]: SPK -3
+                  - generic [ref=e401]: BRN -3
+              - generic "Beard of Wisdom • Rarity 50 • NRG -2, BRN +4" [ref=e403]:
+                - img "Beard of Wisdom" [ref=e406]
+                - generic [ref=e407]:
+                  - generic [ref=e408]: NRG -2
+                  - generic [ref=e409]: BRN +4
+              - generic "Bedtime Milk • Rarity 5 • AGG -2, SPK -1" [ref=e411]:
+                - img "Bedtime Milk" [ref=e414]
+                - generic [ref=e415]:
+                  - generic [ref=e416]: AGG -2
+                  - generic [ref=e417]: SPK -1
+              - generic "Beer Helmet • Rarity 20 • BRN -5" [ref=e419]:
+                - img "Beer Helmet" [ref=e422]
+                - generic [ref=e424]: BRN -5
+              - generic "Big GHST Token • Rarity 1 • BRN +1" [ref=e426]:
+                - img "Big GHST Token" [ref=e429]
+                - generic [ref=e431]: BRN +1
+              - generic "Biker Helmet • Rarity 5 • AGG +2, BRN +1" [ref=e433]:
+                - img "Biker Helmet" [ref=e436]
+                - generic [ref=e437]:
+                  - generic [ref=e438]: AGG +2
+                  - generic [ref=e439]: BRN +1
+              - generic "Biker Jacket • Rarity 2 • AGG +2" [ref=e441]:
+                - img "Biker Jacket" [ref=e444]
+                - generic [ref=e446]: AGG +2
+              - generic "Bitcoin Beanie • Rarity 2 • NRG +1, BRN -1" [ref=e448]:
+                - img "Bitcoin Beanie" [ref=e451]
+                - generic [ref=e452]:
+                  - generic [ref=e453]: NRG +1
+                  - generic [ref=e454]: BRN -1
+              - generic "Bitcoin Guitar • Rarity 10 • NRG +4" [ref=e456]:
+                - img "Bitcoin Guitar" [ref=e459]
+                - generic [ref=e461]: NRG +4
+              - generic "Black Jeans • Rarity 2 • AGG +1, BRN -1" [ref=e463]:
+                - img "Black Jeans" [ref=e466]
+                - generic [ref=e467]:
+                  - generic [ref=e468]: AGG +1
+                  - generic [ref=e469]: BRN -1
+              - generic "Block Scanners • Rarity 50 • NRG +6" [ref=e471]:
+                - img "Block Scanners" [ref=e474]
+                - generic [ref=e476]: NRG +6
+              - generic "Blue Hawaiian Shirt • Rarity 10 • NRG -2, AGG -2" [ref=e478]:
+                - img "Blue Hawaiian Shirt" [ref=e481]
+                - generic [ref=e482]:
+                  - generic [ref=e483]: NRG -2
+                  - generic [ref=e484]: AGG -2
+              - generic "Blue Plaid • Rarity 50 • NRG -4, AGG -2" [ref=e486]:
+                - img "Blue Plaid" [ref=e489]
+                - generic [ref=e490]:
+                  - generic [ref=e491]: NRG -4
+                  - generic [ref=e492]: AGG -2
+              - generic "Bow and Arrow • Rarity 1 • AGG -1" [ref=e494]:
+                - img "Bow and Arrow" [ref=e497]
+                - generic [ref=e499]: AGG -1
+              - generic "Braces • Rarity 2 • NRG -1, AGG +1" [ref=e501]:
+                - img "Braces" [ref=e504]
+                - generic [ref=e505]:
+                  - generic [ref=e506]: NRG -1
+                  - generic [ref=e507]: AGG +1
+              - generic "Brunette Ponytail • Rarity 1 • AGG -1" [ref=e509]:
+                - img "Brunette Ponytail" [ref=e512]
+                - generic [ref=e514]: AGG -1
+              - generic "Bushy Eyebrows • Rarity 50 • NRG -3, BRN +3" [ref=e516]:
+                - img "Bushy Eyebrows" [ref=e519]
+                - generic [ref=e520]:
+                  - generic [ref=e521]: NRG -3
+                  - generic [ref=e522]: BRN +3
+              - generic "Camo Hat • Rarity 1 • AGG +1" [ref=e524]:
+                - img "Camo Hat" [ref=e527]
+                - generic [ref=e529]: AGG +1
+              - generic "Camo Pants • Rarity 1 • AGG +1" [ref=e531]:
+                - img "Camo Pants" [ref=e534]
+                - generic [ref=e536]: AGG +1
+              - generic "Candy Jaar • Rarity 5 • SPK -1, BRN -2" [ref=e538]:
+                - img "Candy Jaar" [ref=e541]
+                - generic [ref=e542]:
+                  - generic [ref=e543]: SPK -1
+                  - generic [ref=e544]: BRN -2
+              - generic "Captain Aave Mask • Rarity 2 • NRG +1, SPK +1" [ref=e546]:
+                - img "Captain Aave Mask" [ref=e549]
+                - generic [ref=e550]:
+                  - generic [ref=e551]: NRG +1
+                  - generic [ref=e552]: SPK +1
+              - generic "Captain Aave Shield • Rarity 2 • NRG +2" [ref=e554]:
+                - img "Captain Aave Shield" [ref=e557]
+                - generic [ref=e559]: NRG +2
+              - generic "Captain Aave Suit • Rarity 2 • NRG +1, SPK +1" [ref=e561]:
+                - img "Captain Aave Suit" [ref=e564]
+                - generic [ref=e565]:
+                  - generic [ref=e566]: NRG +1
+                  - generic [ref=e567]: SPK +1
+              - generic "Cheap Mask • Rarity 10 • NRG +2, AGG +2" [ref=e569]:
+                - img "Cheap Mask" [ref=e572]
+                - generic [ref=e573]:
+                  - generic [ref=e574]: NRG +2
+                  - generic [ref=e575]: AGG +2
+              - generic "Citaadel Helm • Rarity 20 • NRG +3, AGG -2" [ref=e577]:
+                - img "Citaadel Helm" [ref=e580]
+                - generic [ref=e581]:
+                  - generic [ref=e582]: NRG +3
+                  - generic [ref=e583]: AGG -2
+              - generic "Clutch • Rarity 10 • NRG +1, AGG -2, SPK -2" [ref=e585]:
+                - img "Clutch" [ref=e588]
+                - generic [ref=e589]:
+                  - generic [ref=e590]: NRG +1
+                  - generic [ref=e591]: AGG -2
+                  - generic [ref=e592]: SPK -2
+              - generic "Coconut • Rarity 5 • SPK -3" [ref=e594]:
+                - img "Coconut" [ref=e597]
+                - generic [ref=e599]: SPK -3
+              - generic "Coderdan Shades • Rarity 20 • AGG +5" [ref=e601]:
+                - img "Coderdan Shades" [ref=e604]
+                - generic [ref=e606]: AGG +5
+              - generic "CoinGecko Tee • Rarity 5 • SPK -2, BRN -1" [ref=e608]:
+                - img "CoinGecko Tee" [ref=e611]
+                - generic [ref=e612]:
+                  - generic [ref=e613]: SPK -2
+                  - generic [ref=e614]: BRN -1
+              - generic "Comfy Poncho • Rarity 2 • NRG -2" [ref=e616]:
+                - img "Comfy Poncho" [ref=e619]
+                - generic [ref=e621]: NRG -2
+              - generic "Common Rofl • Rarity 1 • BRN -1" [ref=e623]:
+                - img "Common Rofl" [ref=e626]
+                - generic [ref=e628]: BRN -1
+              - generic "Common Stohn • Rarity 1 • BRN +1" [ref=e630]:
+                - img "Common Stohn" [ref=e633]
+                - generic [ref=e635]: BRN +1
+              - generic "Common Wizard Hat • Rarity 1 • BRN +1" [ref=e637]:
+                - img "Common Wizard Hat" [ref=e640]
+                - generic [ref=e642]: BRN +1
+              - generic "Common Wizard Staff • Rarity 1 • NRG +1" [ref=e644]:
+                - generic [ref=e646]:
+                  - img "Common Wizard Staff"
+                - generic [ref=e649]: NRG +1
+              - generic "Cool shades • Rarity 1 • BRN -1" [ref=e651]:
+                - generic [ref=e653]:
+                  - img "Cool shades"
+                - generic [ref=e656]: BRN -1
+              - generic "Cyborg Eye • Rarity 10 • NRG +2, AGG +2" [ref=e658]:
+                - generic [ref=e660]:
+                  - img "Cyborg Eye"
+                - generic [ref=e662]:
+                  - generic [ref=e663]: NRG +2
+                  - generic [ref=e664]: AGG +2
+              - generic "DAO Egg • Rarity 5 • NRG +1, BRN +2" [ref=e666]:
+                - generic [ref=e668]:
+                  - img "DAO Egg"
+                - generic [ref=e670]:
+                  - generic [ref=e671]: NRG +1
+                  - generic [ref=e672]: BRN +2
+              - generic "Day Dress • Rarity 10 • NRG +1, AGG -1, SPK -2" [ref=e674]:
+                - generic [ref=e676]:
+                  - img "Day Dress"
+                - generic [ref=e678]:
+                  - generic [ref=e679]: NRG +1
+                  - generic [ref=e680]: AGG -1
+                  - generic [ref=e681]: SPK -2
+              - generic "Doublesided Axe • Rarity 2 • AGG +1, BRN -1" [ref=e683]:
+                - generic [ref=e685]:
+                  - img "Doublesided Axe"
+                - generic [ref=e687]:
+                  - generic [ref=e688]: AGG +1
+                  - generic [ref=e689]: BRN -1
+              - generic "Dragon Horns • Rarity 2 • AGG +1, SPK +1" [ref=e691]:
+                - generic [ref=e693]:
+                  - img "Dragon Horns"
+                - generic [ref=e695]:
+                  - generic [ref=e696]: AGG +1
+                  - generic [ref=e697]: SPK +1
+              - generic "Dragon Wings • Rarity 5 • AGG +2, SPK +1" [ref=e699]:
+                - generic [ref=e701]:
+                  - img "Dragon Wings"
+                - generic [ref=e703]:
+                  - generic [ref=e704]: AGG +2
+                  - generic [ref=e705]: SPK +1
+              - generic "ETH Logo Glasses • Rarity 1 • BRN -1" [ref=e707]:
+                - generic [ref=e709]:
+                  - img "ETH Logo Glasses"
+                - generic [ref=e712]: BRN -1
+              - generic "ETH Tshirt • Rarity 1 • BRN -1" [ref=e714]:
+                - generic [ref=e716]:
+                  - img "ETH Tshirt"
+                - generic [ref=e719]: BRN -1
+              - generic "Eagle Armor • Rarity 5 • NRG +2, SPK +1" [ref=e721]:
+                - generic [ref=e723]:
+                  - img "Eagle Armor"
+                - generic [ref=e725]:
+                  - generic [ref=e726]: NRG +2
+                  - generic [ref=e727]: SPK +1
+              - generic "Eagle Mask • Rarity 5 • NRG +1, SPK +2" [ref=e729]:
+                - generic [ref=e731]:
+                  - img "Eagle Mask"
+                - generic [ref=e733]:
+                  - generic [ref=e734]: NRG +1
+                  - generic [ref=e735]: SPK +2
+              - generic "Elf Ears • Rarity 1 • SPK -1" [ref=e737]:
+                - generic [ref=e739]:
+                  - img "Elf Ears"
+                - generic [ref=e742]: SPK -1
+              - generic "Energy Gun • Rarity 20 • NRG +2, AGG +3" [ref=e744]:
+                - generic [ref=e746]:
+                  - img "Energy Gun"
+                - generic [ref=e748]:
+                  - generic [ref=e749]: NRG +2
+                  - generic [ref=e750]: AGG +3
+              - generic "Eyes of Devotion • Rarity 50 • SPK -3, BRN -3" [ref=e752]:
+                - generic [ref=e754]:
+                  - img "Eyes of Devotion"
+                - generic [ref=e756]:
+                  - generic [ref=e757]: SPK -3
+                  - generic [ref=e758]: BRN -3
+              - generic "FAKE Beret • Rarity 20 • NRG -3, BRN -2" [ref=e760]:
+                - generic [ref=e762]:
+                  - img "FAKE Beret"
+                - generic [ref=e764]:
+                  - generic [ref=e765]: NRG -3
+                  - generic [ref=e766]: BRN -2
+              - generic "FAKE Shirt • Rarity 20 • SPK -4, BRN -1" [ref=e768]:
+                - generic [ref=e770]:
+                  - img "FAKE Shirt"
+                - generic [ref=e772]:
+                  - generic [ref=e773]: SPK -4
+                  - generic [ref=e774]: BRN -1
+              - generic "Faangs • Rarity 20 • SPK +5" [ref=e776]:
+                - generic [ref=e778]:
+                  - img "Faangs"
+                - generic [ref=e781]: SPK +5
+              - generic "Fairy Wings • Rarity 10 • NRG -2, SPK -2" [ref=e783]:
+                - generic [ref=e785]:
+                  - img "Fairy Wings"
+                - generic [ref=e787]:
+                  - generic [ref=e788]: NRG -2
+                  - generic [ref=e789]: SPK -2
+              - generic "Farmer Jeans • Rarity 1 • BRN -1" [ref=e791]:
+                - generic [ref=e793]:
+                  - img "Farmer Jeans"
+                - generic [ref=e796]: BRN -1
+              - generic "Feathered Cap • Rarity 2 • NRG -1, SPK -1" [ref=e798]:
+                - generic [ref=e800]:
+                  - img "Feathered Cap"
+                - generic [ref=e802]:
+                  - generic [ref=e803]: NRG -1
+                  - generic [ref=e804]: SPK -1
+              - generic "Fireball • Rarity 1 • AGG +1" [ref=e806]:
+                - generic [ref=e808]:
+                  - img "Fireball"
+                - generic [ref=e811]: AGG +1
+              - generic "Flaming Apron • Rarity 10 • NRG -2, AGG -2" [ref=e813]:
+                - generic [ref=e815]:
+                  - img "Flaming Apron"
+                - generic [ref=e817]:
+                  - generic [ref=e818]: NRG -2
+                  - generic [ref=e819]: AGG -2
+              - generic "Flower Studs • Rarity 10 • NRG -2, SPK -2" [ref=e821]:
+                - generic [ref=e823]:
+                  - img "Flower Studs"
+                - generic [ref=e825]:
+                  - generic [ref=e826]: NRG -2
+                  - generic [ref=e827]: SPK -2
+              - generic "Fluffy Pillow • Rarity 10 • SPK -4" [ref=e829]:
+                - generic [ref=e831]:
+                  - img "Fluffy Pillow"
+                - generic [ref=e834]: SPK -4
+              - generic "Forge Goggles • Rarity 10 • NRG -1, AGG -3" [ref=e836]:
+                - generic [ref=e838]:
+                  - img "Forge Goggles"
+                - generic [ref=e840]:
+                  - generic [ref=e841]: NRG -1
+                  - generic [ref=e842]: AGG -3
+              - generic "Forked Beard • Rarity 1 • AGG +1" [ref=e844]:
+                - generic [ref=e846]:
+                  - img "Forked Beard"
+                - generic [ref=e849]: AGG +1
+              - generic "Foxy Mask • Rarity 2 • AGG -2" [ref=e851]:
+                - generic [ref=e853]:
+                  - img "Foxy Mask"
+                - generic [ref=e856]: AGG -2
+              - generic "Foxy Tail • Rarity 2 • AGG -1, SPK -1" [ref=e858]:
+                - generic [ref=e860]:
+                  - img "Foxy Tail"
+                - generic [ref=e862]:
+                  - generic [ref=e863]: AGG -1
+                  - generic [ref=e864]: SPK -1
+              - generic "Freckles • Rarity 1 • AGG -1" [ref=e866]:
+                - generic [ref=e868]:
+                  - img "Freckles"
+                - generic [ref=e871]: AGG -1
+              - generic "GM Seeds • Rarity 1 • SPK -1" [ref=e873]:
+                - generic [ref=e875]:
+                  - img "GM Seeds"
+                - generic [ref=e878]: SPK -1
+              - generic "GOATee • Rarity 10 • NRG +1, AGG -3" [ref=e880]:
+                - generic [ref=e882]:
+                  - img "GOATee"
+                - generic [ref=e884]:
+                  - generic [ref=e885]: NRG +1
+                  - generic [ref=e886]: AGG -3
+              - generic "Galaxy Brain • Rarity 50 • BRN +6" [ref=e888]:
+                - generic [ref=e890]:
+                  - img "Galaxy Brain"
+                - generic [ref=e893]: BRN +6
+              - generic "Game Controller • Rarity 2 • NRG +1, AGG +1" [ref=e895]:
+                - generic [ref=e897]:
+                  - img "Game Controller"
+                - generic [ref=e899]:
+                  - generic [ref=e900]: NRG +1
+                  - generic [ref=e901]: AGG +1
+              - generic "Gamer Jacket • Rarity 5 • NRG +1, AGG +2" [ref=e903]:
+                - generic [ref=e905]:
+                  - img "Gamer Jacket"
+                - generic [ref=e907]:
+                  - generic [ref=e908]: NRG +1
+                  - generic [ref=e909]: AGG +2
+              - generic "Gecko Eyes • Rarity 5 • SPK -2, BRN -1" [ref=e911]:
+                - generic [ref=e913]:
+                  - img "Gecko Eyes"
+                - generic [ref=e915]:
+                  - generic [ref=e916]: SPK -2
+                  - generic [ref=e917]: BRN -1
+              - generic "Gecko Hat • Rarity 5 • SPK -3" [ref=e919]:
+                - generic [ref=e921]:
+                  - img "Gecko Hat"
+                - generic [ref=e924]: SPK -3
+              - generic "Geisha Headpiece • Rarity 5 • NRG -2, AGG -1" [ref=e926]:
+                - generic [ref=e928]:
+                  - img "Geisha Headpiece"
+                - generic [ref=e930]:
+                  - generic [ref=e931]: NRG -2
+                  - generic [ref=e932]: AGG -1
+              - generic "Gemstone Ring • Rarity 2 • SPK -1, BRN +1" [ref=e934]:
+                - generic [ref=e936]:
+                  - img "Gemstone Ring"
+                - generic [ref=e938]:
+                  - generic [ref=e939]: SPK -1
+                  - generic [ref=e940]: BRN +1
+              - generic "Gentleman Coat • Rarity 10 • NRG -1, AGG -3" [ref=e942]:
+                - generic [ref=e944]:
+                  - img "Gentleman Coat"
+                - generic [ref=e946]:
+                  - generic [ref=e947]: NRG -1
+                  - generic [ref=e948]: AGG -3
+              - generic "Gentleman Hat • Rarity 10 • NRG -1, AGG -3" [ref=e950]:
+                - generic [ref=e952]:
+                  - img "Gentleman Hat"
+                - generic [ref=e954]:
+                  - generic [ref=e955]: NRG -1
+                  - generic [ref=e956]: AGG -3
+              - generic "Geo • Rarity 10 • AGG -2, SPK +2" [ref=e958]:
+                - generic [ref=e960]:
+                  - img "Geo"
+                - generic [ref=e962]:
+                  - generic [ref=e963]: AGG -2
+                  - generic [ref=e964]: SPK +2
+              - generic "Geode Smasher • Rarity 10 • SPK +2, BRN +2" [ref=e966]:
+                - generic [ref=e968]:
+                  - img "Geode Smasher"
+                - generic [ref=e970]:
+                  - generic [ref=e971]: SPK +2
+                  - generic [ref=e972]: BRN +2
+              - generic "GldnXross Robe • Rarity 20 • SPK +5" [ref=e974]:
+                - generic [ref=e976]:
+                  - img "GldnXross Robe"
+                - generic [ref=e979]: SPK +5
+              - generic "Godli Locks • Rarity 50 • SPK -4, BRN +2" [ref=e981]:
+                - generic [ref=e983]:
+                  - img "Godli Locks"
+                - generic [ref=e985]:
+                  - generic [ref=e986]: SPK -4
+                  - generic [ref=e987]: BRN +2
+              - generic "Godlike Cacti • Rarity 50 • SPK -3, BRN +3" [ref=e989]:
+                - generic [ref=e991]:
+                  - img "Godlike Cacti"
+                - generic [ref=e993]:
+                  - generic [ref=e994]: SPK -3
+                  - generic [ref=e995]: BRN +3
+              - generic "Godlike Rofl • Rarity 50 • NRG -3, BRN -3" [ref=e997]:
+                - generic [ref=e999]:
+                  - img "Godlike Rofl"
+                - generic [ref=e1001]:
+                  - generic [ref=e1002]: NRG -3
+                  - generic [ref=e1003]: BRN -3
+              - generic "Godlike Wizard Hat • Rarity 50 • SPK +2, BRN +4" [ref=e1005]:
+                - generic [ref=e1007]:
+                  - img "Godlike Wizard Hat"
+                - generic [ref=e1009]:
+                  - generic [ref=e1010]: SPK +2
+                  - generic [ref=e1011]: BRN +4
+              - generic "Gold Necklace • Rarity 10 • NRG +2, AGG +2" [ref=e1013]:
+                - generic [ref=e1015]:
+                  - img "Gold Necklace"
+                - generic [ref=e1017]:
+                  - generic [ref=e1018]: NRG +2
+                  - generic [ref=e1019]: AGG +2
+              - generic "Gotchi Mug • Rarity 1 • NRG +1" [ref=e1021]:
+                - generic [ref=e1023]:
+                  - img "Gotchi Mug"
+                - generic [ref=e1026]: NRG +1
+              - generic "Granny Glasses • Rarity 1 • NRG -1" [ref=e1028]:
+                - generic [ref=e1030]:
+                  - img "Granny Glasses"
+                - generic [ref=e1033]: NRG -1
+              - generic "Guy Fawkes Mask • Rarity 1 • SPK +1" [ref=e1035]:
+                - generic [ref=e1037]:
+                  - img "Guy Fawkes Mask"
+                - generic [ref=e1040]: SPK +1
+              - generic "H4xx0r Shirt • Rarity 10 • NRG -4" [ref=e1042]:
+                - generic [ref=e1044]:
+                  - img "H4xx0r Shirt"
+                - generic [ref=e1047]: NRG -4
+              - generic "Haanzo Katana • Rarity 50 • AGG +2, SPK +4" [ref=e1049]:
+                - generic [ref=e1051]:
+                  - img "Haanzo Katana"
+                - generic [ref=e1053]:
+                  - generic [ref=e1054]: AGG +2
+                  - generic [ref=e1055]: SPK +4
+              - generic "Halfrekt Shirt • Rarity 10 • NRG +1, AGG +1, BRN -2" [ref=e1057]:
+                - generic [ref=e1059]:
+                  - img "Halfrekt Shirt"
+                - generic [ref=e1061]:
+                  - generic [ref=e1062]: NRG +1
+                  - generic [ref=e1063]: AGG +1
+                  - generic [ref=e1064]: BRN -2
+              - generic "Handsaw • Rarity 20 • AGG +3, BRN -2" [ref=e1066]:
+                - generic [ref=e1068]:
+                  - img "Handsaw"
+                - generic [ref=e1070]:
+                  - generic [ref=e1071]: AGG +3
+                  - generic [ref=e1072]: BRN -2
+              - generic "Haunt1 BG • Rarity 0" [ref=e1074]:
+                - generic [ref=e1076]:
+                  - img "Haunt1 BG"
+              - generic "Hazmat Hood • Rarity 10 • NRG +1, AGG -1, SPK +2" [ref=e1079]:
+                - generic [ref=e1081]:
+                  - img "Hazmat Hood"
+                - generic [ref=e1083]:
+                  - generic [ref=e1084]: NRG +1
+                  - generic [ref=e1085]: AGG -1
+                  - generic [ref=e1086]: SPK +2
+              - generic "Hazmat Suit • Rarity 10 • NRG +2, AGG -1, SPK +1" [ref=e1088]:
+                - generic [ref=e1090]:
+                  - img "Hazmat Suit"
+                - generic [ref=e1092]:
+                  - generic [ref=e1093]: NRG +2
+                  - generic [ref=e1094]: AGG -1
+                  - generic [ref=e1095]: SPK +1
+              - generic "Headphones • Rarity 2 • AGG -2" [ref=e1097]:
+                - generic [ref=e1099]:
+                  - img "Headphones"
+                - generic [ref=e1102]: AGG -2
+              - generic "Heavenly Robes • Rarity 50 • NRG +4, BRN -2" [ref=e1104]:
+                - generic [ref=e1106]:
+                  - img "Heavenly Robes"
+                - generic [ref=e1108]:
+                  - generic [ref=e1109]: NRG +4
+                  - generic [ref=e1110]: BRN -2
+              - generic "Hook Hand • Rarity 2 • SPK +1, BRN -1" [ref=e1112]:
+                - generic [ref=e1114]:
+                  - img "Hook Hand"
+                - generic [ref=e1116]:
+                  - generic [ref=e1117]: SPK +1
+                  - generic [ref=e1118]: BRN -1
+              - generic "Horned Helmet • Rarity 1 • BRN -1" [ref=e1120]:
+                - generic [ref=e1122]:
+                  - img "Horned Helmet"
+                - generic [ref=e1125]: BRN -1
+              - generic "Horseshoe Mustache • Rarity 10 • NRG -2, SPK +2" [ref=e1127]:
+                - generic [ref=e1129]:
+                  - img "Horseshoe Mustache"
+                - generic [ref=e1131]:
+                  - generic [ref=e1132]: NRG -2
+                  - generic [ref=e1133]: SPK +2
+              - generic "Imperial Moustache • Rarity 1 • NRG -1" [ref=e1135]:
+                - generic [ref=e1137]:
+                  - img "Imperial Moustache"
+                - generic [ref=e1140]: NRG -1
+              - generic "Jaay Glasses • Rarity 20 • NRG -2, AGG -2, BRN -1" [ref=e1142]:
+                - generic [ref=e1144]:
+                  - img "Jaay Glasses"
+                - generic [ref=e1146]:
+                  - generic [ref=e1147]: NRG -2
+                  - generic [ref=e1148]: AGG -2
+                  - generic [ref=e1149]: BRN -1
+              - generic "Jaay Hairpiece • Rarity 20 • BRN -5" [ref=e1151]:
+                - generic [ref=e1153]:
+                  - img "Jaay Hairpiece"
+                - generic [ref=e1156]: BRN -5
+              - generic "Jaay Suit • Rarity 20 • NRG -2, BRN -3" [ref=e1158]:
+                - generic [ref=e1160]:
+                  - img "Jaay Suit"
+                - generic [ref=e1162]:
+                  - generic [ref=e1163]: NRG -2
+                  - generic [ref=e1164]: BRN -3
+              - generic "Jamaican Flag • Rarity 5 • NRG -1, AGG -2" [ref=e1166]:
+                - generic [ref=e1168]:
+                  - img "Jamaican Flag"
+                - generic [ref=e1170]:
+                  - generic [ref=e1171]: NRG -1
+                  - generic [ref=e1172]: AGG -2
+              - generic "Jesse Pollak Hair • Rarity 10 • NRG +2, AGG -2" [ref=e1174]:
+                - generic [ref=e1176]:
+                  - img "Jesse Pollak Hair"
+                - generic [ref=e1178]:
+                  - generic [ref=e1179]: NRG +2
+                  - generic [ref=e1180]: AGG -2
+              - generic "Jordan Hair • Rarity 20 • AGG -2, SPK +3" [ref=e1182]:
+                - generic [ref=e1184]:
+                  - img "Jordan Hair"
+                - generic [ref=e1186]:
+                  - generic [ref=e1187]: AGG -2
+                  - generic [ref=e1188]: SPK +3
+              - generic "Jordan Suit • Rarity 20 • NRG -3, SPK +1, BRN +1" [ref=e1190]:
+                - generic [ref=e1192]:
+                  - img "Jordan Suit"
+                - generic [ref=e1194]:
+                  - generic [ref=e1195]: NRG -3
+                  - generic [ref=e1196]: SPK +1
+                  - generic [ref=e1197]: BRN +1
+              - generic "Kabuto Helmet • Rarity 50 • AGG +3, SPK +3" [ref=e1199]:
+                - generic [ref=e1201]:
+                  - img "Kabuto Helmet"
+                - generic [ref=e1203]:
+                  - generic [ref=e1204]: AGG +3
+                  - generic [ref=e1205]: SPK +3
+              - generic "Kawaii Mouth • Rarity 20 • BRN -5" [ref=e1207]:
+                - generic [ref=e1209]:
+                  - img "Kawaii Mouth"
+                - generic [ref=e1212]: BRN -5
+              - generic "Kimono • Rarity 5 • NRG -1, AGG -2" [ref=e1214]:
+                - generic [ref=e1216]:
+                  - img "Kimono"
+                - generic [ref=e1218]:
+                  - generic [ref=e1219]: NRG -1
+                  - generic [ref=e1220]: AGG -2
+              - generic "L2 Sign • Rarity 1 • BRN +1" [ref=e1222]:
+                - generic [ref=e1224]:
+                  - img "L2 Sign"
+                - generic [ref=e1227]: BRN +1
+              - generic "Lasso • Rarity 2 • AGG +1, BRN +1" [ref=e1229]:
+                - generic [ref=e1231]:
+                  - img "Lasso"
+                - generic [ref=e1233]:
+                  - generic [ref=e1234]: AGG +1
+                  - generic [ref=e1235]: BRN +1
+              - generic "Leather Tunic • Rarity 1 • NRG -1" [ref=e1237]:
+                - generic [ref=e1239]:
+                  - img "Leather Tunic"
+                - generic [ref=e1242]: NRG -1
+              - generic "Legendary Rofl • Rarity 10 • NRG -2, BRN -2" [ref=e1244]:
+                - generic [ref=e1246]:
+                  - img "Legendary Rofl"
+                - generic [ref=e1248]:
+                  - generic [ref=e1249]: NRG -2
+                  - generic [ref=e1250]: BRN -2
+              - generic "Legendary Wizard Hat • Rarity 10 • SPK +2, BRN +2" [ref=e1252]:
+                - generic [ref=e1254]:
+                  - img "Legendary Wizard Hat"
+                - generic [ref=e1256]:
+                  - generic [ref=e1257]: SPK +2
+                  - generic [ref=e1258]: BRN +2
+              - generic "Legendary Wizard Staff • Rarity 10 • NRG +2, BRN +2" [ref=e1260]:
+                - generic [ref=e1262]:
+                  - img "Legendary Wizard Staff"
+                - generic [ref=e1264]:
+                  - generic [ref=e1265]: NRG +2
+                  - generic [ref=e1266]: BRN +2
+              - generic "Lens Frens Plant • Rarity 5 • NRG +2, SPK -1" [ref=e1268]:
+                - generic [ref=e1270]:
+                  - img "Lens Frens Plant"
+                - generic [ref=e1272]:
+                  - generic [ref=e1273]: NRG +2
+                  - generic [ref=e1274]: SPK -1
+              - generic "Lick Brain • Rarity 5 • AGG +2, BRN -1" [ref=e1276]:
+                - generic [ref=e1278]:
+                  - img "Lick Brain"
+                - generic [ref=e1280]:
+                  - generic [ref=e1281]: AGG +2
+                  - generic [ref=e1282]: BRN -1
+              - generic "Lick Eyes • Rarity 2 • SPK -2" [ref=e1284]:
+                - generic [ref=e1286]:
+                  - img "Lick Eyes"
+                - generic [ref=e1289]: SPK -2
+              - generic "Lick Tentacle • Rarity 5 • NRG -3" [ref=e1291]:
+                - generic [ref=e1293]:
+                  - img "Lick Tentacle"
+                - generic [ref=e1296]: NRG -3
+              - generic "Lick Tongue • Rarity 5 • SPK -3" [ref=e1298]:
+                - generic [ref=e1300]:
+                  - img "Lick Tongue"
+                - generic [ref=e1303]: SPK -3
+              - generic "Lil Bubble Space Suit • Rarity 10 • NRG +2, AGG -2" [ref=e1305]:
+                - generic [ref=e1307]:
+                  - img "Lil Bubble Space Suit"
+                - generic [ref=e1309]:
+                  - generic [ref=e1310]: NRG +2
+                  - generic [ref=e1311]: AGG -2
+              - generic "Lil Pump Drank • Rarity 5 • NRG +1, AGG +2" [ref=e1313]:
+                - generic [ref=e1315]:
+                  - img "Lil Pump Drank"
+                - generic [ref=e1317]:
+                  - generic [ref=e1318]: NRG +1
+                  - generic [ref=e1319]: AGG +2
+              - generic "Lil Pump Dreads • Rarity 50 • NRG +4, AGG +2" [ref=e1321]:
+                - generic [ref=e1323]:
+                  - img "Lil Pump Dreads"
+                - generic [ref=e1325]:
+                  - generic [ref=e1326]: NRG +4
+                  - generic [ref=e1327]: AGG +2
+              - generic "Lil Pump Goatee • Rarity 2 • NRG +1, AGG +1" [ref=e1329]:
+                - generic [ref=e1331]:
+                  - img "Lil Pump Goatee"
+                - generic [ref=e1333]:
+                  - generic [ref=e1334]: NRG +1
+                  - generic [ref=e1335]: AGG +1
+              - generic "Lil Pump Shades • Rarity 10 • AGG +3, SPK +1" [ref=e1337]:
+                - generic [ref=e1339]:
+                  - img "Lil Pump Shades"
+                - generic [ref=e1341]:
+                  - generic [ref=e1342]: AGG +3
+                  - generic [ref=e1343]: SPK +1
+              - generic "Lil Pump Threads • Rarity 20 • NRG +5" [ref=e1345]:
+                - generic [ref=e1347]:
+                  - img "Lil Pump Threads"
+                - generic [ref=e1350]: NRG +5
+              - generic "Link Bubbly • Rarity 10 • NRG +2, BRN -2" [ref=e1352]:
+                - generic [ref=e1354]:
+                  - img "Link Bubbly"
+                - generic [ref=e1356]:
+                  - generic [ref=e1357]: NRG +2
+                  - generic [ref=e1358]: BRN -2
+              - generic "Link Cube • Rarity 50 • BRN +6" [ref=e1360]:
+                - generic [ref=e1362]:
+                  - img "Link Cube"
+                - generic [ref=e1365]: BRN +6
+              - generic "Link Mess Dress • Rarity 10 • AGG +2, BRN +2" [ref=e1367]:
+                - generic [ref=e1369]:
+                  - img "Link Mess Dress"
+                - generic [ref=e1371]:
+                  - generic [ref=e1372]: AGG +2
+                  - generic [ref=e1373]: BRN +2
+              - generic "Link White Hat • Rarity 10 • AGG +2, BRN +2" [ref=e1375]:
+                - generic [ref=e1377]:
+                  - img "Link White Hat"
+                - generic [ref=e1379]:
+                  - generic [ref=e1380]: AGG +2
+                  - generic [ref=e1381]: BRN +2
+              - generic "Llamacorn Shirt • Rarity 50 • NRG -3, AGG -3" [ref=e1383]:
+                - generic [ref=e1385]:
+                  - img "Llamacorn Shirt"
+                - generic [ref=e1387]:
+                  - generic [ref=e1388]: NRG -3
+                  - generic [ref=e1389]: AGG -3
+              - generic "Longbow • Rarity 2 • AGG -1, BRN +1" [ref=e1391]:
+                - generic [ref=e1393]:
+                  - img "Longbow"
+                - generic [ref=e1395]:
+                  - generic [ref=e1396]: AGG -1
+                  - generic [ref=e1397]: BRN +1
+              - generic "M67 Grenade • Rarity 2 • AGG +2" [ref=e1399]:
+                - generic [ref=e1401]:
+                  - img "M67 Grenade"
+                - generic [ref=e1404]: AGG +2
+              - generic "MK2 Grenade • Rarity 1 • AGG +1" [ref=e1406]:
+                - generic [ref=e1408]:
+                  - img "MK2 Grenade"
+                - generic [ref=e1411]: AGG +1
+              - generic "Maan Bun • Rarity 10 • NRG -2, AGG -2" [ref=e1413]:
+                - generic [ref=e1415]:
+                  - img "Maan Bun"
+                - generic [ref=e1417]:
+                  - generic [ref=e1418]: NRG -2
+                  - generic [ref=e1419]: AGG -2
+              - generic "Marc Hair • Rarity 10 • NRG +2, AGG +2" [ref=e1421]:
+                - generic [ref=e1423]:
+                  - img "Marc Hair"
+                - generic [ref=e1425]:
+                  - generic [ref=e1426]: NRG +2
+                  - generic [ref=e1427]: AGG +2
+              - generic "Marc Outfit • Rarity 10 • NRG +2, AGG +2" [ref=e1429]:
+                - generic [ref=e1431]:
+                  - img "Marc Outfit"
+                - generic [ref=e1433]:
+                  - generic [ref=e1434]: NRG +2
+                  - generic [ref=e1435]: AGG +2
+              - generic "Marine Cap • Rarity 5 • AGG +2, BRN +1" [ref=e1437]:
+                - generic [ref=e1439]:
+                  - img "Marine Cap"
+                - generic [ref=e1441]:
+                  - generic [ref=e1442]: AGG +2
+                  - generic [ref=e1443]: BRN +1
+              - generic "Marine Jacket • Rarity 5 • AGG +2, BRN +1" [ref=e1445]:
+                - generic [ref=e1447]:
+                  - img "Marine Jacket"
+                - generic [ref=e1449]:
+                  - generic [ref=e1450]: AGG +2
+                  - generic [ref=e1451]: BRN +1
+              - generic "Martini • Rarity 10 • NRG -1, BRN -3" [ref=e1453]:
+                - generic [ref=e1455]:
+                  - img "Martini"
+                - generic [ref=e1457]:
+                  - generic [ref=e1458]: NRG -1
+                  - generic [ref=e1459]: BRN -3
+              - generic "Matrix Eyes • Rarity 50 • NRG -3, AGG -3" [ref=e1461]:
+                - generic [ref=e1463]:
+                  - img "Matrix Eyes"
+                - generic [ref=e1465]:
+                  - generic [ref=e1466]: NRG -3
+                  - generic [ref=e1467]: AGG -3
+              - generic "Mechanical Claw • Rarity 10 • AGG +2, SPK +2" [ref=e1469]:
+                - generic [ref=e1471]:
+                  - img "Mechanical Claw"
+                - generic [ref=e1473]:
+                  - generic [ref=e1474]: AGG +2
+                  - generic [ref=e1475]: SPK +2
+              - generic "Miami Shirt • Rarity 1 • NRG +1" [ref=e1477]:
+                - generic [ref=e1479]:
+                  - img "Miami Shirt"
+                - generic [ref=e1482]: NRG +1
+              - generic "Milkshake • Rarity 20 • SPK -5" [ref=e1484]:
+                - generic [ref=e1486]:
+                  - img "Milkshake"
+                - generic [ref=e1489]: SPK -5
+              - generic "Miner Helmet • Rarity 2 • NRG +1, BRN -1" [ref=e1491]:
+                - generic [ref=e1493]:
+                  - img "Miner Helmet"
+                - generic [ref=e1495]:
+                  - generic [ref=e1496]: NRG +1
+                  - generic [ref=e1497]: BRN -1
+              - generic "Miner Jeans • Rarity 2 • NRG +1, BRN -1" [ref=e1499]:
+                - generic [ref=e1501]:
+                  - img "Miner Jeans"
+                - generic [ref=e1503]:
+                  - generic [ref=e1504]: NRG +1
+                  - generic [ref=e1505]: BRN -1
+              - generic "Mohawk • Rarity 2 • NRG +1, AGG +1" [ref=e1507]:
+                - generic [ref=e1509]:
+                  - img "Mohawk"
+                - generic [ref=e1511]:
+                  - generic [ref=e1512]: NRG +1
+                  - generic [ref=e1513]: AGG +1
+              - generic "Monocle • Rarity 20 • AGG -2, BRN +3" [ref=e1515]:
+                - generic [ref=e1517]:
+                  - img "Monocle"
+                - generic [ref=e1519]:
+                  - generic [ref=e1520]: AGG -2
+                  - generic [ref=e1521]: BRN +3
+              - generic "Mudgen Diamond • Rarity 20 • BRN +5" [ref=e1523]:
+                - generic [ref=e1525]:
+                  - img "Mudgen Diamond"
+                - generic [ref=e1528]: BRN +5
+              - generic "Mutton Chops • Rarity 5 • SPK +2, BRN -1" [ref=e1530]:
+                - generic [ref=e1532]:
+                  - img "Mutton Chops"
+                - generic [ref=e1534]:
+                  - generic [ref=e1535]: SPK +2
+                  - generic [ref=e1536]: BRN -1
+              - generic "Mythical Cacti • Rarity 20 • SPK -2, BRN +3" [ref=e1538]:
+                - generic [ref=e1540]:
+                  - img "Mythical Cacti"
+                - generic [ref=e1542]:
+                  - generic [ref=e1543]: SPK -2
+                  - generic [ref=e1544]: BRN +3
+              - generic "Mythical Rofl • Rarity 20 • NRG -2, BRN -3" [ref=e1546]:
+                - generic [ref=e1548]:
+                  - img "Mythical Rofl"
+                - generic [ref=e1550]:
+                  - generic [ref=e1551]: NRG -2
+                  - generic [ref=e1552]: BRN -3
+              - generic "Mythical Wizard Hat • Rarity 20 • SPK +2, BRN +3" [ref=e1554]:
+                - generic [ref=e1556]:
+                  - img "Mythical Wizard Hat"
+                - generic [ref=e1558]:
+                  - generic [ref=e1559]: SPK +2
+                  - generic [ref=e1560]: BRN +3
+              - generic "Nail Gun • Rarity 5 • NRG +1, SPK +2" [ref=e1562]:
+                - generic [ref=e1564]:
+                  - img "Nail Gun"
+                - generic [ref=e1566]:
+                  - generic [ref=e1567]: NRG +1
+                  - generic [ref=e1568]: SPK +2
+              - generic "Nimbus • Rarity 1 • AGG -1" [ref=e1570]:
+                - generic [ref=e1572]:
+                  - img "Nimbus"
+                - generic [ref=e1575]: AGG -1
+              - generic "OKex Sign • Rarity 20 • NRG -5" [ref=e1577]:
+                - generic [ref=e1579]:
+                  - img "OKex Sign"
+                - generic [ref=e1582]: NRG -5
+              - generic "Overalls • Rarity 2 • SPK -2" [ref=e1584]:
+                - generic [ref=e1586]:
+                  - img "Overalls"
+                - generic [ref=e1589]: SPK -2
+              - generic "Paint Brush • Rarity 20 • NRG -3, SPK -2" [ref=e1591]:
+                - generic [ref=e1593]:
+                  - img "Paint Brush"
+                - generic [ref=e1595]:
+                  - generic [ref=e1596]: NRG -3
+                  - generic [ref=e1597]: SPK -2
+              - generic "Paint Palette • Rarity 20 • SPK -1, BRN -4" [ref=e1599]:
+                - generic [ref=e1601]:
+                  - img "Paint Palette"
+                - generic [ref=e1603]:
+                  - generic [ref=e1604]: SPK -1
+                  - generic [ref=e1605]: BRN -4
+              - generic "Pajama Hat • Rarity 1 • SPK -1" [ref=e1607]:
+                - generic [ref=e1609]:
+                  - img "Pajama Hat"
+                - generic [ref=e1612]: SPK -1
+              - generic "Pajama Shirt • Rarity 2 • AGG -1, SPK -1" [ref=e1614]:
+                - generic [ref=e1616]:
+                  - img "Pajama Shirt"
+                - generic [ref=e1618]:
+                  - generic [ref=e1619]: AGG -1
+                  - generic [ref=e1620]: SPK -1
+              - generic "Paper Fan • Rarity 5 • AGG -3" [ref=e1622]:
+                - generic [ref=e1624]:
+                  - img "Paper Fan"
+                - generic [ref=e1627]: AGG -3
+              - generic "Parasol • Rarity 20 • NRG +1, AGG -1, SPK -3" [ref=e1629]:
+                - generic [ref=e1631]:
+                  - img "Parasol"
+                - generic [ref=e1633]:
+                  - generic [ref=e1634]: NRG +1
+                  - generic [ref=e1635]: AGG -1
+                  - generic [ref=e1636]: SPK -3
+              - generic "Party Dress • Rarity 1 • BRN +1" [ref=e1638]:
+                - generic [ref=e1640]:
+                  - img "Party Dress"
+                - generic [ref=e1643]: BRN +1
+              - generic "Pickaxe • Rarity 5 • NRG +1, AGG +2" [ref=e1645]:
+                - generic [ref=e1647]:
+                  - img "Pickaxe"
+                - generic [ref=e1649]:
+                  - generic [ref=e1650]: NRG +1
+                  - generic [ref=e1651]: AGG +2
+              - generic "Pillbox Hat • Rarity 10 • NRG +1, AGG -1, SPK -2" [ref=e1653]:
+                - generic [ref=e1655]:
+                  - img "Pillbox Hat"
+                - generic [ref=e1657]:
+                  - generic [ref=e1658]: NRG +1
+                  - generic [ref=e1659]: AGG -1
+                  - generic [ref=e1660]: SPK -2
+              - generic "Pirate Coat • Rarity 2 • SPK +1, BRN -1" [ref=e1662]:
+                - generic [ref=e1664]:
+                  - img "Pirate Coat"
+                - generic [ref=e1666]:
+                  - generic [ref=e1667]: SPK +1
+                  - generic [ref=e1668]: BRN -1
+              - generic "Pirate Hat • Rarity 1 • BRN -1" [ref=e1670]:
+                - generic [ref=e1672]:
+                  - img "Pirate Hat"
+                - generic [ref=e1675]: BRN -1
+              - generic "Pirate Patch • Rarity 5 • SPK +2, BRN -1" [ref=e1677]:
+                - generic [ref=e1679]:
+                  - img "Pirate Patch"
+                - generic [ref=e1681]:
+                  - generic [ref=e1682]: SPK +2
+                  - generic [ref=e1683]: BRN -1
+              - generic "Pitchfork • Rarity 1 • AGG +1" [ref=e1685]:
+                - generic [ref=e1687]:
+                  - img "Pitchfork"
+                - generic [ref=e1690]: AGG +1
+              - generic "Pixelcraft Square • Rarity 1 • SPK -1" [ref=e1692]:
+                - generic [ref=e1694]:
+                  - img "Pixelcraft Square"
+                - generic [ref=e1697]: SPK -1
+              - generic "Pixelcraft Tee • Rarity 1 • NRG +1" [ref=e1699]:
+                - generic [ref=e1701]:
+                  - img "Pixelcraft Tee"
+                - generic [ref=e1704]: NRG +1
+              - generic "Plastic Earrings • Rarity 1 • NRG +1" [ref=e1706]:
+                - generic [ref=e1708]:
+                  - img "Plastic Earrings"
+                - generic [ref=e1711]: NRG +1
+              - generic "Plate Armor • Rarity 20 • NRG +3, AGG -2" [ref=e1713]:
+                - generic [ref=e1715]:
+                  - img "Plate Armor"
+                - generic [ref=e1717]:
+                  - generic [ref=e1718]: NRG +3
+                  - generic [ref=e1719]: AGG -2
+              - generic "Plate Shield • Rarity 20 • AGG -5" [ref=e1721]:
+                - generic [ref=e1723]:
+                  - img "Plate Shield"
+                - generic [ref=e1726]: AGG -5
+              - generic "Pointy Horns • Rarity 10 • AGG +2, SPK +2" [ref=e1728]:
+                - generic [ref=e1730]:
+                  - img "Pointy Horns"
+                - generic [ref=e1732]:
+                  - generic [ref=e1733]: AGG +2
+                  - generic [ref=e1734]: SPK +2
+              - generic "Polygon Cap • Rarity 5 • AGG -1, BRN +2" [ref=e1736]:
+                - generic [ref=e1738]:
+                  - img "Polygon Cap"
+                - generic [ref=e1740]:
+                  - generic [ref=e1741]: AGG -1
+                  - generic [ref=e1742]: BRN +2
+              - generic "Polygon Shirt • Rarity 2 • BRN +2" [ref=e1744]:
+                - generic [ref=e1746]:
+                  - img "Polygon Shirt"
+                - generic [ref=e1749]: BRN +2
+              - generic "Poncho Hoodie • Rarity 1 • NRG -1" [ref=e1751]:
+                - generic [ref=e1753]:
+                  - img "Poncho Hoodie"
+                - generic [ref=e1756]: NRG -1
+              - generic "Portal Mage Armor • Rarity 10 • NRG +1, AGG +2, SPK +2" [ref=e1758]:
+                - generic [ref=e1760]:
+                  - img "Portal Mage Armor"
+                - generic [ref=e1762]:
+                  - generic [ref=e1763]: NRG +1
+                  - generic [ref=e1764]: AGG +2
+                  - generic [ref=e1765]: SPK +2
+              - generic "Portal Mage Axe • Rarity 10 • AGG +4" [ref=e1767]:
+                - generic [ref=e1769]:
+                  - img "Portal Mage Axe"
+                - generic [ref=e1772]: AGG +4
+              - generic "Portal Mage Black Axe • Rarity 50 • AGG +6" [ref=e1774]:
+                - generic [ref=e1776]:
+                  - img "Portal Mage Black Axe"
+                - generic [ref=e1779]: AGG +6
+              - generic "Portal Mage Helmet • Rarity 10 • NRG +2, AGG +1, SPK +1" [ref=e1781]:
+                - generic [ref=e1783]:
+                  - img "Portal Mage Helmet"
+                - generic [ref=e1785]:
+                  - generic [ref=e1786]: NRG +2
+                  - generic [ref=e1787]: AGG +1
+                  - generic [ref=e1788]: SPK +1
+              - generic "Princess Hair • Rarity 20 • SPK -3, BRN +2" [ref=e1790]:
+                - generic [ref=e1792]:
+                  - img "Princess Hair"
+                - generic [ref=e1794]:
+                  - generic [ref=e1795]: SPK -3
+                  - generic [ref=e1796]: BRN +2
+              - generic "Princess Tiara • Rarity 5 • SPK -2, BRN +1" [ref=e1798]:
+                - generic [ref=e1800]:
+                  - img "Princess Tiara"
+                - generic [ref=e1802]:
+                  - generic [ref=e1803]: SPK -2
+                  - generic [ref=e1804]: BRN +1
+              - generic "Punk Shirt • Rarity 10 • NRG +1, AGG +3" [ref=e1806]:
+                - generic [ref=e1808]:
+                  - img "Punk Shirt"
+                - generic [ref=e1810]:
+                  - generic [ref=e1811]: NRG +1
+                  - generic [ref=e1812]: AGG +3
+              - generic "REKT Sign • Rarity 10 • BRN -4" [ref=e1814]:
+                - generic [ref=e1816]:
+                  - img "REKT Sign"
+                - generic [ref=e1819]: BRN -4
+              - generic "Radar Eyes • Rarity 20 • AGG -2, BRN +3" [ref=e1821]:
+                - generic [ref=e1823]:
+                  - img "Radar Eyes"
+                - generic [ref=e1825]:
+                  - generic [ref=e1826]: AGG -2
+                  - generic [ref=e1827]: BRN +3
+              - generic "Rainbow Vomit • Rarity 20 • SPK -5" [ref=e1829]:
+                - generic [ref=e1831]:
+                  - img "Rainbow Vomit"
+                - generic [ref=e1834]: SPK -5
+              - generic "Rare Cacti • Rarity 5 • SPK -1, BRN +2" [ref=e1836]:
+                - generic [ref=e1838]:
+                  - img "Rare Cacti"
+                - generic [ref=e1840]:
+                  - generic [ref=e1841]: SPK -1
+                  - generic [ref=e1842]: BRN +2
+              - generic "Rare Rofl • Rarity 5 • NRG -1, BRN -2" [ref=e1844]:
+                - generic [ref=e1846]:
+                  - img "Rare Rofl"
+                - generic [ref=e1848]:
+                  - generic [ref=e1849]: NRG -1
+                  - generic [ref=e1850]: BRN -2
+              - generic "Rare Stohn • Rarity 5 • SPK +2, BRN +1" [ref=e1852]:
+                - generic [ref=e1854]:
+                  - img "Rare Stohn"
+                - generic [ref=e1856]:
+                  - generic [ref=e1857]: SPK +2
+                  - generic [ref=e1858]: BRN +1
+              - generic "Rasta Glasses • Rarity 2 • AGG -2" [ref=e1860]:
+                - generic [ref=e1862]:
+                  - img "Rasta Glasses"
+                - generic [ref=e1865]: AGG -2
+              - generic "Rasta Hat • Rarity 2 • NRG -1, AGG -1" [ref=e1867]:
+                - generic [ref=e1869]:
+                  - img "Rasta Hat"
+                - generic [ref=e1871]:
+                  - generic [ref=e1872]: NRG -1
+                  - generic [ref=e1873]: AGG -1
+              - generic "Rasta Shirt • Rarity 2 • NRG -1, AGG -1" [ref=e1875]:
+                - generic [ref=e1877]:
+                  - img "Rasta Shirt"
+                - generic [ref=e1879]:
+                  - generic [ref=e1880]: NRG -1
+                  - generic [ref=e1881]: AGG -1
+              - generic "Red Hair • Rarity 10 • NRG -2, SPK -2" [ref=e1883]:
+                - generic [ref=e1885]:
+                  - img "Red Hair"
+                - generic [ref=e1887]:
+                  - generic [ref=e1888]: NRG -2
+                  - generic [ref=e1889]: SPK -2
+              - generic "Red Hawaiian Shirt • Rarity 20 • NRG -3, AGG -2" [ref=e1891]:
+                - generic [ref=e1893]:
+                  - img "Red Hawaiian Shirt"
+                - generic [ref=e1895]:
+                  - generic [ref=e1896]: NRG -3
+                  - generic [ref=e1897]: AGG -2
+              - generic "Red Headband • Rarity 5 • NRG +2, AGG -1" [ref=e1899]:
+                - generic [ref=e1901]:
+                  - img "Red Headband"
+                - generic [ref=e1903]:
+                  - generic [ref=e1904]: NRG +2
+                  - generic [ref=e1905]: AGG -1
+              - generic "Red Plaid • Rarity 20 • NRG +3, AGG +2" [ref=e1907]:
+                - generic [ref=e1909]:
+                  - img "Red Plaid"
+                - generic [ref=e1911]:
+                  - generic [ref=e1912]: NRG +3
+                  - generic [ref=e1913]: AGG +2
+              - generic "Red Santa Hat • Rarity 5 • AGG -1, SPK -2" [ref=e1915]:
+                - generic [ref=e1917]:
+                  - img "Red Santa Hat"
+                - generic [ref=e1919]:
+                  - generic [ref=e1920]: AGG -1
+                  - generic [ref=e1921]: SPK -2
+              - generic "Roflnoggin • Rarity 50 • BRN -6" [ref=e1923]:
+                - generic [ref=e1925]:
+                  - img "Roflnoggin"
+                - generic [ref=e1928]: BRN -6
+              - generic "Royal Crown • Rarity 10 • NRG -2, BRN -2" [ref=e1930]:
+                - generic [ref=e1932]:
+                  - img "Royal Crown"
+                - generic [ref=e1934]:
+                  - generic [ref=e1935]: NRG -2
+                  - generic [ref=e1936]: BRN -2
+              - generic "Royal Robes • Rarity 20 • NRG -3, BRN -2" [ref=e1938]:
+                - generic [ref=e1940]:
+                  - img "Royal Robes"
+                - generic [ref=e1942]:
+                  - generic [ref=e1943]: NRG -3
+                  - generic [ref=e1944]: BRN -2
+              - generic "Royal Scepter • Rarity 5 • NRG -2, BRN -1" [ref=e1946]:
+                - generic [ref=e1948]:
+                  - img "Royal Scepter"
+                - generic [ref=e1950]:
+                  - generic [ref=e1951]: NRG -2
+                  - generic [ref=e1952]: BRN -1
+              - generic "Safety Glasses • Rarity 5 • NRG +1, AGG +2" [ref=e1954]:
+                - generic [ref=e1956]:
+                  - img "Safety Glasses"
+                - generic [ref=e1958]:
+                  - generic [ref=e1959]: NRG +1
+                  - generic [ref=e1960]: AGG +2
+              - generic "Sandbox Hoodie • Rarity 10 • NRG +3, AGG -1" [ref=e1962]:
+                - generic [ref=e1964]:
+                  - img "Sandbox Hoodie"
+                - generic [ref=e1966]:
+                  - generic [ref=e1967]: NRG +3
+                  - generic [ref=e1968]: AGG -1
+              - generic "Sebastien Hair • Rarity 10 • NRG +2, SPK -2" [ref=e1970]:
+                - generic [ref=e1972]:
+                  - img "Sebastien Hair"
+                - generic [ref=e1974]:
+                  - generic [ref=e1975]: NRG +2
+                  - generic [ref=e1976]: SPK -2
+              - generic "Sergey Beard • Rarity 20 • NRG -1, AGG +1, BRN +3" [ref=e1978]:
+                - generic [ref=e1980]:
+                  - img "Sergey Beard"
+                - generic [ref=e1982]:
+                  - generic [ref=e1983]: NRG -1
+                  - generic [ref=e1984]: AGG +1
+                  - generic [ref=e1985]: BRN +3
+              - generic "Sergey Eyes • Rarity 20 • SPK +1, BRN +4" [ref=e1987]:
+                - generic [ref=e1989]:
+                  - img "Sergey Eyes"
+                - generic [ref=e1991]:
+                  - generic [ref=e1992]: SPK +1
+                  - generic [ref=e1993]: BRN +4
+              - generic "Shaaman Hoodie • Rarity 10 • NRG -4" [ref=e1995]:
+                - generic [ref=e1997]:
+                  - img "Shaaman Hoodie"
+                - generic [ref=e2000]: NRG -4
+              - generic "Shaaman Poncho • Rarity 20 • NRG -5" [ref=e2002]:
+                - generic [ref=e2004]:
+                  - img "Shaaman Poncho"
+                - generic [ref=e2007]: NRG -5
+              - generic "Signal Headset • Rarity 20 • AGG -2, BRN +3" [ref=e2009]:
+                - generic [ref=e2011]:
+                  - img "Signal Headset"
+                - generic [ref=e2013]:
+                  - generic [ref=e2014]: AGG -2
+                  - generic [ref=e2015]: BRN +3
+              - generic "Skateboard • Rarity 5 • NRG +1, BRN -2" [ref=e2017]:
+                - generic [ref=e2019]:
+                  - img "Skateboard"
+                - generic [ref=e2021]:
+                  - generic [ref=e2022]: NRG +1
+                  - generic [ref=e2023]: BRN -2
+              - generic "Snapshot Cap • Rarity 5 • AGG -3" [ref=e2025]:
+                - generic [ref=e2027]:
+                  - img "Snapshot Cap"
+                - generic [ref=e2030]: AGG -3
+              - generic "Snapshot Shirt • Rarity 2 • AGG -2" [ref=e2032]:
+                - generic [ref=e2034]:
+                  - img "Snapshot Shirt"
+                - generic [ref=e2037]: AGG -2
+              - generic "Snow Camo Hat • Rarity 2 • AGG +1, SPK +1" [ref=e2039]:
+                - generic [ref=e2041]:
+                  - img "Snow Camo Hat"
+                - generic [ref=e2043]:
+                  - generic [ref=e2044]: AGG +1
+                  - generic [ref=e2045]: SPK +1
+              - generic "Snow Camo Pants • Rarity 2 • AGG +1, SPK +1" [ref=e2047]:
+                - generic [ref=e2049]:
+                  - img "Snow Camo Pants"
+                - generic [ref=e2051]:
+                  - generic [ref=e2052]: AGG +1
+                  - generic [ref=e2053]: SPK +1
+              - generic "Space Helmet • Rarity 10 • NRG +2, AGG -2" [ref=e2055]:
+                - generic [ref=e2057]:
+                  - img "Space Helmet"
+                - generic [ref=e2059]:
+                  - generic [ref=e2060]: NRG +2
+                  - generic [ref=e2061]: AGG -2
+              - generic "Spirit Sword • Rarity 20 • NRG +2, AGG -3" [ref=e2063]:
+                - generic [ref=e2065]:
+                  - img "Spirit Sword"
+                - generic [ref=e2067]:
+                  - generic [ref=e2068]: NRG +2
+                  - generic [ref=e2069]: AGG -3
+              - generic "Staff Charming • Rarity 50 • NRG -4, BRN -2" [ref=e2071]:
+                - generic [ref=e2073]:
+                  - img "Staff Charming"
+                - generic [ref=e2075]:
+                  - generic [ref=e2076]: NRG -4
+                  - generic [ref=e2077]: BRN -2
+              - generic "Staff of Creation • Rarity 50 • SPK -3, BRN -3" [ref=e2079]:
+                - generic [ref=e2081]:
+                  - img "Staff of Creation"
+                - generic [ref=e2083]:
+                  - generic [ref=e2084]: SPK -3
+                  - generic [ref=e2085]: BRN -3
+              - generic "Stani Hair • Rarity 50 • AGG -3, BRN +3" [ref=e2087]:
+                - generic [ref=e2089]:
+                  - img "Stani Hair"
+                - generic [ref=e2091]:
+                  - generic [ref=e2092]: AGG -3
+                  - generic [ref=e2093]: BRN +3
+              - generic "Stani Vest • Rarity 50 • NRG +3, AGG -3" [ref=e2095]:
+                - generic [ref=e2097]:
+                  - img "Stani Vest"
+                - generic [ref=e2099]:
+                  - generic [ref=e2100]: NRG +3
+                  - generic [ref=e2101]: AGG -3
+              - generic "Steampunk Goggles • Rarity 5 • SPK +3" [ref=e2103]:
+                - generic [ref=e2105]:
+                  - img "Steampunk Goggles"
+                - generic [ref=e2108]: SPK +3
+              - generic "Steampunk Trousers • Rarity 2 • SPK +2" [ref=e2110]:
+                - generic [ref=e2112]:
+                  - img "Steampunk Trousers"
+                - generic [ref=e2115]: SPK +2
+              - generic "Straw Hat • Rarity 1 • NRG -1" [ref=e2117]:
+                - generic [ref=e2119]:
+                  - img "Straw Hat"
+                - generic [ref=e2122]: NRG -1
+              - generic "Sus Butterfly • Rarity 10 • AGG +4" [ref=e2124]:
+                - generic [ref=e2126]:
+                  - img "Sus Butterfly"
+                - generic [ref=e2129]: AGG +4
+              - generic "Sushi Bandana • Rarity 5 • NRG -1, AGG +2" [ref=e2131]:
+                - generic [ref=e2133]:
+                  - img "Sushi Bandana"
+                - generic [ref=e2135]:
+                  - generic [ref=e2136]: NRG -1
+                  - generic [ref=e2137]: AGG +2
+              - generic "Sushi Coat • Rarity 5 • NRG -2, AGG +1" [ref=e2139]:
+                - generic [ref=e2141]:
+                  - img "Sushi Coat"
+                - generic [ref=e2143]:
+                  - generic [ref=e2144]: NRG -2
+                  - generic [ref=e2145]: AGG +1
+              - generic "Sushi Knife • Rarity 5 • AGG +3" [ref=e2147]:
+                - generic [ref=e2149]:
+                  - img "Sushi Knife"
+                - generic [ref=e2152]: AGG +3
+              - generic "Sushi Piece • Rarity 10 • SPK -4" [ref=e2154]:
+                - generic [ref=e2156]:
+                  - img "Sushi Piece"
+                - generic [ref=e2159]: SPK -4
+              - generic "Sweatband • Rarity 2 • NRG +2" [ref=e2161]:
+                - generic [ref=e2163]:
+                  - img "Sweatband"
+                - generic [ref=e2166]: NRG +2
+              - generic "Taoist Robe • Rarity 50 • NRG -3, BRN +3" [ref=e2168]:
+                - generic [ref=e2170]:
+                  - img "Taoist Robe"
+                - generic [ref=e2172]:
+                  - generic [ref=e2173]: NRG -3
+                  - generic [ref=e2174]: BRN +3
+              - generic "Thaave Hammer • Rarity 5 • NRG +3, BRN +1" [ref=e2176]:
+                - generic [ref=e2178]:
+                  - img "Thaave Hammer"
+                - generic [ref=e2180]:
+                  - generic [ref=e2181]: NRG +3
+                  - generic [ref=e2182]: BRN +1
+              - generic "Thaave Helmet • Rarity 5 • NRG +2, SPK +1" [ref=e2184]:
+                - generic [ref=e2186]:
+                  - img "Thaave Helmet"
+                - generic [ref=e2188]:
+                  - generic [ref=e2189]: NRG +2
+                  - generic [ref=e2190]: SPK +1
+              - generic "Thaave Suit • Rarity 5 • NRG +2, SPK +1" [ref=e2192]:
+                - generic [ref=e2194]:
+                  - img "Thaave Suit"
+                - generic [ref=e2196]:
+                  - generic [ref=e2197]: NRG +2
+                  - generic [ref=e2198]: SPK +1
+              - generic "The Void • Rarity 0" [ref=e2200]:
+                - generic [ref=e2202]:
+                  - img "The Void"
+              - generic "Tinted Shades • Rarity 5 • AGG -3" [ref=e2205]:
+                - generic [ref=e2207]:
+                  - img "Tinted Shades"
+                - generic [ref=e2210]: AGG -3
+              - generic "Tiny Crown • Rarity 2 • NRG -1, BRN -1" [ref=e2212]:
+                - generic [ref=e2214]:
+                  - img "Tiny Crown"
+                - generic [ref=e2216]:
+                  - generic [ref=e2217]: NRG -1
+                  - generic [ref=e2218]: BRN -1
+              - generic "Track Shorts • Rarity 2 • NRG +1, BRN -1" [ref=e2220]:
+                - generic [ref=e2222]:
+                  - img "Track Shorts"
+                - generic [ref=e2224]:
+                  - generic [ref=e2225]: NRG +1
+                  - generic [ref=e2226]: BRN -1
+              - generic "Track Suit • Rarity 10 • NRG +2, AGG +2" [ref=e2228]:
+                - generic [ref=e2230]:
+                  - img "Track Suit"
+                - generic [ref=e2232]:
+                  - generic [ref=e2233]: NRG +2
+                  - generic [ref=e2234]: AGG +2
+              - generic "Trezor Wallet • Rarity 2 • NRG -1, AGG -1" [ref=e2236]:
+                - generic [ref=e2238]:
+                  - img "Trezor Wallet"
+                - generic [ref=e2240]:
+                  - generic [ref=e2241]: NRG -1
+                  - generic [ref=e2242]: AGG -1
+              - generic "Uncommon Cacti • Rarity 2 • SPK -1, BRN +1" [ref=e2244]:
+                - generic [ref=e2246]:
+                  - img "Uncommon Cacti"
+                - generic [ref=e2248]:
+                  - generic [ref=e2249]: SPK -1
+                  - generic [ref=e2250]: BRN +1
+              - generic "Uncommon Rofl • Rarity 2 • NRG -1, BRN -1" [ref=e2252]:
+                - generic [ref=e2254]:
+                  - img "Uncommon Rofl"
+                - generic [ref=e2256]:
+                  - generic [ref=e2257]: NRG -1
+                  - generic [ref=e2258]: BRN -1
+              - generic "Uncommon Stohn • Rarity 2 • SPK +1, BRN +1" [ref=e2260]:
+                - generic [ref=e2262]:
+                  - img "Uncommon Stohn"
+                - generic [ref=e2264]:
+                  - generic [ref=e2265]: SPK +1
+                  - generic [ref=e2266]: BRN +1
+              - generic "Up Arrow • Rarity 2 • NRG +1, BRN +1" [ref=e2268]:
+                - generic [ref=e2270]:
+                  - img "Up Arrow"
+                - generic [ref=e2272]:
+                  - generic [ref=e2273]: NRG +1
+                  - generic [ref=e2274]: BRN +1
+              - generic "Up Only Shirt • Rarity 2 • NRG +1, BRN +1" [ref=e2276]:
+                - generic [ref=e2278]:
+                  - img "Up Only Shirt"
+                - generic [ref=e2280]:
+                  - generic [ref=e2281]: NRG +1
+                  - generic [ref=e2282]: BRN +1
+              - generic "Uranium Rod • Rarity 50 • NRG +6" [ref=e2284]:
+                - generic [ref=e2286]:
+                  - img "Uranium Rod"
+                - generic [ref=e2289]: NRG +6
+              - generic "V-Neck Shirt • Rarity 5 • AGG -3" [ref=e2291]:
+                - generic [ref=e2293]:
+                  - img "V-Neck Shirt"
+                - generic [ref=e2296]: AGG -3
+              - generic "VR Headset • Rarity 20 • NRG +2, AGG +3" [ref=e2298]:
+                - generic [ref=e2300]:
+                  - img "VR Headset"
+                - generic [ref=e2302]:
+                  - generic [ref=e2303]: NRG +2
+                  - generic [ref=e2304]: AGG +3
+              - generic "Vote Sign • Rarity 1 • AGG -1" [ref=e2306]:
+                - generic [ref=e2308]:
+                  - img "Vote Sign"
+                - generic [ref=e2311]: AGG -1
+              - generic "Voxel Eyes • Rarity 10 • NRG +1, AGG -3" [ref=e2313]:
+                - generic [ref=e2315]:
+                  - img "Voxel Eyes"
+                - generic [ref=e2317]:
+                  - generic [ref=e2318]: NRG +1
+                  - generic [ref=e2319]: AGG -3
+              - generic "WGMI Shirt • Rarity 5 • AGG -3" [ref=e2321]:
+                - generic [ref=e2323]:
+                  - img "WGMI Shirt"
+                - generic [ref=e2326]: AGG -3
+              - generic "Wagie Cap • Rarity 2 • AGG -2" [ref=e2328]:
+                - generic [ref=e2330]:
+                  - img "Wagie Cap"
+                - generic [ref=e2333]: AGG -2
+              - generic "Waifu Pillow • Rarity 10 • BRN -4" [ref=e2335]:
+                - generic [ref=e2337]:
+                  - img "Waifu Pillow"
+                - generic [ref=e2340]: BRN -4
+              - generic "Walkie Talkie • Rarity 5 • NRG +1, SPK +1, BRN +1" [ref=e2342]:
+                - generic [ref=e2344]:
+                  - img "Walkie Talkie"
+                - generic [ref=e2346]:
+                  - generic [ref=e2347]: NRG +1
+                  - generic [ref=e2348]: SPK +1
+                  - generic [ref=e2349]: BRN +1
+              - generic "Water Jug • Rarity 10 • NRG +2, BRN +2" [ref=e2351]:
+                - generic [ref=e2353]:
+                  - img "Water Jug"
+                - generic [ref=e2355]:
+                  - generic [ref=e2356]: NRG +2
+                  - generic [ref=e2357]: BRN +2
+              - generic "Water bottle • Rarity 2 • NRG +2" [ref=e2359]:
+                - generic [ref=e2361]:
+                  - img "Water bottle"
+                - generic [ref=e2364]: NRG +2
+              - generic "Wavy Hair • Rarity 1 • NRG +1" [ref=e2366]:
+                - generic [ref=e2368]:
+                  - img "Wavy Hair"
+                - generic [ref=e2371]: NRG +1
+              - generic "Wild Fungi • Rarity 10 • AGG -2, SPK -2" [ref=e2373]:
+                - generic [ref=e2375]:
+                  - img "Wild Fungi"
+                - generic [ref=e2377]:
+                  - generic [ref=e2378]: AGG -2
+                  - generic [ref=e2379]: SPK -2
+              - generic "Wine • Rarity 5 • BRN -3" [ref=e2381]:
+                - generic [ref=e2383]:
+                  - img "Wine"
+                - generic [ref=e2386]: BRN -3
+              - generic "Witchy Cloak • Rarity 10 • AGG +1, SPK +3" [ref=e2388]:
+                - generic [ref=e2390]:
+                  - img "Witchy Cloak"
+                - generic [ref=e2392]:
+                  - generic [ref=e2393]: AGG +1
+                  - generic [ref=e2394]: SPK +3
+              - generic "Witchy Hat • Rarity 10 • AGG +1, SPK +3" [ref=e2396]:
+                - generic [ref=e2398]:
+                  - img "Witchy Hat"
+                - generic [ref=e2400]:
+                  - generic [ref=e2401]: AGG +1
+                  - generic [ref=e2402]: SPK +3
+              - generic "Witchy Wand • Rarity 20 • AGG +2, SPK +2, BRN +1" [ref=e2404]:
+                - generic [ref=e2406]:
+                  - img "Witchy Wand"
+                - generic [ref=e2408]:
+                  - generic [ref=e2409]: AGG +2
+                  - generic [ref=e2410]: SPK +2
+                  - generic [ref=e2411]: BRN +1
+              - generic "Wizard Visor • Rarity 1 • NRG +1" [ref=e2413]:
+                - generic [ref=e2415]:
+                  - img "Wizard Visor"
+                - generic [ref=e2418]: NRG +1
+              - generic "Wraangler Jeans • Rarity 1 • AGG +1" [ref=e2420]:
+                - generic [ref=e2422]:
+                  - img "Wraangler Jeans"
+                - generic [ref=e2425]: AGG +1
+              - generic "Xibot Mohawk • Rarity 20 • NRG +5" [ref=e2427]:
+                - generic [ref=e2429]:
+                  - img "Xibot Mohawk"
+                - generic [ref=e2432]: NRG +5
+              - generic "Yoroi Armor • Rarity 50 • AGG +3, SPK +3" [ref=e2434]:
+                - generic [ref=e2436]:
+                  - img "Yoroi Armor"
+                - generic [ref=e2438]:
+                  - generic [ref=e2439]: AGG +3
+                  - generic [ref=e2440]: SPK +3
+              - generic "uGOTCHI Token • Rarity 1 • SPK +1" [ref=e2442]:
+                - generic [ref=e2444]:
+                  - img "uGOTCHI Token"
+                - generic [ref=e2447]: SPK +1
+      - status [ref=e128]
+    - contentinfo [ref=e129]:
+      - generic [ref=e130]:
+        - text: Built by
+        - link "GrimLabs" [ref=e131] [cursor=pointer]:
+          - /url: https://grimlabs.xyz
+  - region "Notifications (F8)":
+    - list
