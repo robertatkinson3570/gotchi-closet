@@ -15,8 +15,11 @@ type Props = {
   className?: string;
 };
 
-const fmtGhst = (wei: string) =>
-  (Number(wei) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 0 });
+const fmtGhst = (wei: string) => {
+  const v = Number(wei) / 1e18;
+  if (v > 0 && v < 1) return v.toLocaleString(undefined, { maximumFractionDigits: 3 });
+  return v.toLocaleString(undefined, { maximumFractionDigits: v < 1000 ? 1 : 0 });
+};
 
 /**
  * Self-contained Buy button for a single Baazaar listing. Owns its own tx hook

@@ -27,7 +27,11 @@ async function fetchListings(kind: "erc721" | "erc1155", category: number): Prom
   return (json.data?.erc1155Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.erc1155TypeId, priceWei: l.priceInWei, quantity: Number(l.quantity) || 1 }));
 }
 
-const ghst = (wei: string) => (Number(wei) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 0 });
+const ghst = (wei: string) => {
+  const v = Number(wei) / 1e18;
+  if (v > 0 && v < 1) return v.toLocaleString(undefined, { maximumFractionDigits: 3 });
+  return v.toLocaleString(undefined, { maximumFractionDigits: v < 1000 ? 1 : 0 });
+};
 
 /**
  * Self-contained buyable Baazaar grid for a single category (items, parcels…),
