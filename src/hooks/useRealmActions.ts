@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   useAccount,
   useChainId,
+  usePublicClient,
   useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
@@ -19,9 +20,10 @@ export type TxStep = "idle" | "submitting" | "confirming" | "success" | "error";
  * which parcel+action is in flight via `activeKey` for row-level busy state.
  */
 export function useRealmActions() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const chainId = useChainId();
   const isOnBase = chainId === BASE_CHAIN_ID;
+  const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
   const queryClient = useQueryClient();
   const tx = useWriteContract();
   const receipt = useWaitForTransactionReceipt({
@@ -87,10 +89,24 @@ export function useRealmActions() {
     [write]
   );
 
+  // Channel pre-flights a simulate so an on-cooldown gotchi ("Gotchi can't
+  // channel yet") surfaces as a clear message instead of a failed wallet tx.
   const channel = useCallback(
-    (realmId: bigint, gotchiId: bigint, lastChanneled: bigint) =>
-      write(`channel:${realmId}`, "channelAlchemica", [realmId, gotchiId, lastChanneled, "0x"]),
-    [write]
+    async (realmId: bigint, gotchiId: bigint, lastChanneled: bigint) => {
+      if (!isConnected || !address || !publicClient) return;
+      setActiveKey(`channel:${realmId}`);
+      setErrorMsg(null);
+      const args = [realmId, gotchiId, lastChanneled, "0x"] as const;
+      try {
+        await publicClient.simulateContract({ address: REALM_DIAMOND_BASE, abi: REALM_FACET_ABI, functionName: "channelAlchemica", args, account: address });
+      } catch (e) {
+        setStep("error");
+        setErrorMsg(parseRevert(e));
+        return;
+      }
+      tx.writeContract({ chainId: BASE_CHAIN_ID, address: REALM_DIAMOND_BASE, abi: REALM_FACET_ABI, functionName: "channelAlchemica", args } as any);
+    },
+    [isConnected, address, publicClient, tx]
   );
 
   const survey = useCallback(

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useAccount, useReadContracts } from "wagmi";
+import { useAccount, useReadContracts, usePublicClient } from "wagmi";
+import { useQuery } from "@tanstack/react-query";
 import {
   Wallet,
   MapPin,
@@ -104,26 +105,54 @@ export default function LandManagementPage() {
     return m;
   }, [ownedGotchis, gotchiChannelData]);
 
-  // Shortest channel cooldown across the wallet's altars (its highest-level
-  // Aaltar) — a gotchi counts as free to channel once this has elapsed since
-  // its last channel. (Cooldown is per-altar; this is the optimistic floor.)
-  const channelCooldownSec = useMemo(() => {
-    const cds = rows
-      .filter((r) => r.altarLevel > 0)
-      .map((r) => CHANNEL_COOLDOWN_SEC_BY_ALTAR[r.altarLevel] ?? CHANNEL_COOLDOWN_SEC);
-    return cds.length ? Math.min(...cds) : CHANNEL_COOLDOWN_SEC;
-  }, [rows]);
+  const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
 
-  // Gotchis that can channel right now (off cooldown), highest-kinship first.
+  // A channel-ready parcel (its own cooldown clear) to test gotchis against.
+  const readyParcel = useMemo(
+    () =>
+      rows.find(
+        (r) => r.altarLevel > 0 && (r.lastChanneled === 0 || r.lastChanneled + (CHANNEL_COOLDOWN_SEC_BY_ALTAR[r.altarLevel] ?? CHANNEL_COOLDOWN_SEC) <= nowSec)
+      ),
+    [rows, nowSec]
+  );
+
+  // The per-gotchi channel cooldown is altar-dependent and only the contract
+  // knows it, so determine channelability ACCURATELY by simulating
+  // channelAlchemica for each owned gotchi against a ready parcel. A gotchi
+  // that simulates OK is genuinely free; everything else is on cooldown.
+  const ownedIdsKey = ownedGotchis.map((g) => g.gotchiId ?? g.id).join(",");
+  const { data: channelableIds, isFetching: channelableChecking } = useQuery({
+    queryKey: ["channelable", address, readyParcel?.tokenId, ownedIdsKey, Math.floor(nowSec / 120)],
+    enabled: !!publicClient && !!readyParcel && !!address && ownedGotchis.length > 0,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const ok: number[] = [];
+      for (const g of ownedGotchis) {
+        const gid = Number(g.gotchiId ?? g.id);
+        try {
+          await publicClient!.simulateContract({
+            address: REALM_DIAMOND_BASE,
+            abi: REALM_FACET_ABI,
+            functionName: "channelAlchemica",
+            args: [BigInt(readyParcel!.tokenId), BigInt(gid), BigInt(lastChanneledById[gid] ?? 0), "0x"],
+            account: address as `0x${string}`,
+          });
+          ok.push(gid);
+        } catch {
+          /* on cooldown / can't channel */
+        }
+      }
+      return ok;
+    },
+  });
+
+  // Gotchis confirmed channelable right now, highest-kinship first.
   const availableGotchis = useMemo(
     () =>
       [...ownedGotchis]
-        .filter((g) => {
-          const lc = lastChanneledById[Number(g.gotchiId ?? g.id)] ?? 0;
-          return lc === 0 || nowSec - lc >= channelCooldownSec;
-        })
+        .filter((g) => (channelableIds ?? []).includes(Number(g.gotchiId ?? g.id)))
         .sort((a, b) => (b.kinship ?? 0) - (a.kinship ?? 0)),
-    [ownedGotchis, lastChanneledById, nowSec, channelCooldownSec]
+    [ownedGotchis, channelableIds]
   );
 
   // Channel with a still-available gotchi; repair the choice when the selected
@@ -271,7 +300,9 @@ export default function LandManagementPage() {
         {isConnected && availableGotchis.length > 0 ? (
           <GotchiChannelSelect gotchis={availableGotchis} value={selectedGotchiId} onChange={pickGotchi} />
         ) : isConnected && ownedGotchis.length > 0 ? (
-          <p className="text-[11px] text-muted-foreground self-end">All gotchis on channeling cooldown</p>
+          <p className="text-[11px] text-muted-foreground self-end">
+            {channelableChecking ? "Checking which gotchis can channel…" : "All your gotchis are on channeling cooldown"}
+          </p>
         ) : null}
       </div>
 
