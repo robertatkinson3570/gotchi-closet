@@ -129,6 +129,14 @@ export function useLandAlchemica(claimerGotchiId?: number) {
     });
   }, [channeledData]);
 
+  // Unix-seconds timestamp at which each parcel's reservoirs can next be emptied
+  // (lastClaimed + cooldown). 0 / never-claimed parcels are ready now. Lets the
+  // UI show "next reservoir ready in Xh" once everything's been claimed.
+  const nextReservoirTimes = useMemo<number[]>(
+    () => parcelInfo.map((p) => (p.lastClaimed > 0 ? p.lastClaimed + RESERVOIR_COOLDOWN_SEC : 0)),
+    [parcelInfo]
+  );
+
   const { claimable, totalsBySymbol } = useMemo(() => {
     const claimable: bigint[] = [];
     const totals: Record<string, bigint> = {};
@@ -260,6 +268,7 @@ export function useLandAlchemica(claimerGotchiId?: number) {
     claimableCount: claimable.length,
     totalsBySymbol,
     nextChannelTimes,
+    nextReservoirTimes,
     isLoading: parcelsQuery.isLoading,
     send,
     step,

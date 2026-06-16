@@ -72,6 +72,15 @@ export function LandAlchemicaBar() {
     };
   }, [land.nextChannelTimes, nowSec]);
 
+  // Soonest time any reservoir comes off its empty-cooldown — shown once
+  // everything claimable has been claimed so the bar doesn't just vanish.
+  const reservoirSoonestIn = useMemo(() => {
+    const times = land.nextReservoirTimes ?? [];
+    let soonest = Infinity;
+    for (const t of times) if (t > nowSec) soonest = Math.min(soonest, t - nowSec);
+    return soonest === Infinity ? null : soonest;
+  }, [land.nextReservoirTimes, nowSec]);
+
   useEffect(() => {
     if (land.step === "success") {
       toast({
@@ -103,7 +112,10 @@ export function LandAlchemicaBar() {
 
   if (!address) return null;
   if (land.isLoading) return null;
-  if (land.claimableCount === 0) return null;
+  // Keep the bar mounted as long as the wallet owns parcels — hiding it the
+  // moment nothing is claimable also hid Channel-all and the cooldown status.
+  if (land.parcelCount === 0) return null;
+  const hasClaimable = land.claimableCount > 0;
 
   const summary = ["FUD", "FOMO", "ALPHA", "KEK"]
     .map((sym) => {
@@ -124,50 +136,63 @@ export function LandAlchemicaBar() {
     <div className="mb-4 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 space-y-2">
       <div className="text-sm font-semibold inline-flex items-center gap-1.5">
         <Sprout className="w-4 h-4 text-emerald-500" />
-        Claimable alchemica on your land
+        Land alchemica &amp; channeling
       </div>
-      <div className="rounded border border-emerald-500/30 bg-emerald-500/5 p-2.5 flex items-center justify-between gap-3 flex-wrap">
-        <div className="text-xs min-w-0">
-          <div className="font-semibold text-emerald-600 dark:text-emerald-400">
-            Ready to claim
+      {hasClaimable ? (
+        <div className="rounded border border-emerald-500/30 bg-emerald-500/5 p-2.5 flex items-center justify-between gap-3 flex-wrap">
+          <div className="text-xs min-w-0">
+            <div className="font-semibold text-emerald-600 dark:text-emerald-400">
+              Ready to claim
+            </div>
+            <div className="text-muted-foreground break-words">
+              <span className="text-foreground font-medium">{summary}</span>
+              <span className="ml-1">
+                · across {land.claimableCount} parcel{land.claimableCount === 1 ? "" : "s"}
+              </span>
+            </div>
           </div>
-          <div className="text-muted-foreground break-words">
-            <span className="text-foreground font-medium">{summary}</span>
-            <span className="ml-1">
-              · across {land.claimableCount} parcel{land.claimableCount === 1 ? "" : "s"}
-            </span>
-          </div>
+          <button
+            type="button"
+            onClick={() => land.send()}
+            disabled={busy || !land.isOnBase}
+            title={
+              !land.isOnBase
+                ? "Switch to Base to claim"
+                : "Sweep every ready parcel's reservoir alchemica to your wallet (signed in your wallet; large counts sign in batches)"
+            }
+            data-testid="land-claim-all"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white hover:bg-emerald-600/90 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold transition-colors"
+          >
+            {busy ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {land.step === "submitting" ? `Sign in wallet…${batchNote}` : `Confirming…${batchNote}`}
+              </>
+            ) : land.step === "success" ? (
+              <>
+                <CheckCircle2 className="w-4 h-4" /> Done
+              </>
+            ) : land.step === "error" ? (
+              <>
+                <XCircle className="w-4 h-4" /> Retry
+              </>
+            ) : (
+              <>Claim all land alchemica ({land.claimableCount})</>
+            )}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => land.send()}
-          disabled={busy || !land.isOnBase}
-          title={
-            !land.isOnBase
-              ? "Switch to Base to claim"
-              : "Sweep every parcel's reservoir alchemica to your wallet (signed in your wallet; large counts sign in batches)"
-          }
-          data-testid="land-claim-all"
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white hover:bg-emerald-600/90 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold transition-colors"
-        >
-          {busy ? (
+      ) : (
+        <div className="rounded border border-emerald-500/20 bg-muted/20 p-2.5 text-xs text-muted-foreground flex items-center gap-1.5">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500/70" />
+          All reservoirs emptied — nothing ready to claim right now
+          {reservoirSoonestIn != null && (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              {land.step === "submitting" ? `Sign in wallet…${batchNote}` : `Confirming…${batchNote}`}
+              {" "}· next ready in{" "}
+              <span className="text-foreground font-medium">{formatCountdown(reservoirSoonestIn)}</span>
             </>
-          ) : land.step === "success" ? (
-            <>
-              <CheckCircle2 className="w-4 h-4" /> Done
-            </>
-          ) : land.step === "error" ? (
-            <>
-              <XCircle className="w-4 h-4" /> Retry
-            </>
-          ) : (
-            <>Claim all land alchemica ({land.claimableCount})</>
           )}
-        </button>
-      </div>
+        </div>
+      )}
 
       {channel.total > 0 && (
         <div className="flex items-center justify-between gap-2 flex-wrap text-[11px] text-muted-foreground px-0.5">

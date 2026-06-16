@@ -74,6 +74,17 @@ export function RootLayout() {
           </div>
         </header>
       )}
+      {/* Pages above hide the full header but still need the land-management
+          shortcut, so float it top-right where the header isn't rendered. */}
+      {hideHeader && (
+        <Link
+          to="/lending/lands"
+          title="Land Management"
+          className="fixed top-3 right-3 z-40 inline-flex items-center justify-center h-9 w-9 rounded-md glass-nav border border-border/40 text-foreground/80 hover:text-primary hover:bg-primary/10 transition-colors shadow-sm"
+        >
+          <MapPin className="h-4 w-4" />
+        </Link>
+      )}
       <main className="flex-1 relative z-[1]">
         <Outlet />
       </main>
