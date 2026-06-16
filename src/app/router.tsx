@@ -1,27 +1,31 @@
+import { lazy } from "react";
 import { createBrowserRouter } from "react-router-dom";
-import HomePage from "@/pages/HomePage";
-import DressPage from "@/pages/DressPage";
-import WardrobeLabPage from "@/pages/WardrobeLabPage";
-import ExplorerPage from "@/pages/ExplorerPage";
-import SetsIndexPage from "@/pages/SetsIndexPage";
-import SetPage from "@/pages/SetPage";
-import TraitsIndexPage from "@/pages/TraitsIndexPage";
-import TraitPage from "@/pages/TraitPage";
-import RarityScorePage from "@/pages/RarityScorePage";
-import WearablesIndexPage from "@/pages/WearablesIndexPage";
-import WearablePage from "@/pages/WearablePage";
-import GotchiPage from "@/pages/GotchiPage";
-import LendingPage from "@/pages/LendingPage";
-import LendingAnalyticsPage from "@/pages/LendingAnalyticsPage";
-import LendingMePage from "@/pages/LendingMePage";
-import LandManagementPage from "@/pages/LandManagementPage";
-import WhitelistsPage from "@/pages/WhitelistsPage";
-import BulkListPage from "@/pages/BulkListPage";
-import ActivityPage from "@/pages/ActivityPage";
-import AuctionPage from "@/pages/AuctionPage";
-import ProfilePage from "@/pages/ProfilePage";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { RootLayout } from "@/components/layout/RootLayout";
+
+// Route-based code splitting: each page is its own chunk so the first paint no
+// longer ships the entire app (was a single ~2 MB bundle).
+const HomePage = lazy(() => import("@/pages/HomePage"));
+const DressPage = lazy(() => import("@/pages/DressPage"));
+const WardrobeLabPage = lazy(() => import("@/pages/WardrobeLabPage"));
+const ExplorerPage = lazy(() => import("@/pages/ExplorerPage"));
+const SetsIndexPage = lazy(() => import("@/pages/SetsIndexPage"));
+const SetPage = lazy(() => import("@/pages/SetPage"));
+const TraitsIndexPage = lazy(() => import("@/pages/TraitsIndexPage"));
+const TraitPage = lazy(() => import("@/pages/TraitPage"));
+const RarityScorePage = lazy(() => import("@/pages/RarityScorePage"));
+const WearablesIndexPage = lazy(() => import("@/pages/WearablesIndexPage"));
+const WearablePage = lazy(() => import("@/pages/WearablePage"));
+const GotchiPage = lazy(() => import("@/pages/GotchiPage"));
+const LendingPage = lazy(() => import("@/pages/LendingPage"));
+const LendingAnalyticsPage = lazy(() => import("@/pages/LendingAnalyticsPage"));
+const LendingMePage = lazy(() => import("@/pages/LendingMePage"));
+const LandManagementPage = lazy(() => import("@/pages/LandManagementPage"));
+const WhitelistsPage = lazy(() => import("@/pages/WhitelistsPage"));
+const BulkListPage = lazy(() => import("@/pages/BulkListPage"));
+const ActivityPage = lazy(() => import("@/pages/ActivityPage"));
+const AuctionPage = lazy(() => import("@/pages/AuctionPage"));
+const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 
 export const router = createBrowserRouter([
   {
@@ -29,91 +33,28 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     errorElement: <ErrorBoundary />,
     children: [
-      {
-        index: true,
-        element: <HomePage />,
-      },
-      {
-        path: "sets",
-        element: <SetsIndexPage />,
-      },
-      {
-        path: "sets/:slug",
-        element: <SetPage />,
-      },
-      {
-        path: "traits",
-        element: <TraitsIndexPage />,
-      },
-      {
-        path: "traits/:trait",
-        element: <TraitPage />,
-      },
-      {
-        path: "rarity-score",
-        element: <RarityScorePage />,
-      },
-      {
-        path: "wearables",
-        element: <WearablesIndexPage />,
-      },
-      {
-        path: "wearable/:slug",
-        element: <WearablePage />,
-      },
-      {
-        path: "gotchi/:tokenId",
-        element: <GotchiPage />,
-      },
-      {
-        path: "dress",
-        element: <DressPage />,
-      },
-      {
-        path: "wardrobe-lab",
-        element: <WardrobeLabPage />,
-      },
-      {
-        path: "explorer",
-        element: <ExplorerPage />,
-      },
-      {
-        path: "activity",
-        element: <ActivityPage />,
-      },
-      {
-        path: "auction",
-        element: <AuctionPage />,
-      },
-      {
-        path: "me",
-        element: <ProfilePage />,
-      },
-      {
-        path: "lending",
-        element: <LendingPage />,
-      },
-      {
-        path: "lending/analytics",
-        element: <LendingAnalyticsPage />,
-      },
-      {
-        path: "lending/me",
-        element: <LendingMePage />,
-      },
-      {
-        path: "lending/lands",
-        element: <LandManagementPage />,
-      },
-      {
-        path: "lending/me/list",
-        element: <BulkListPage />,
-      },
-      {
-        path: "lending/whitelists",
-        element: <WhitelistsPage />,
-      },
+      { index: true, element: <HomePage /> },
+      { path: "sets", element: <SetsIndexPage /> },
+      { path: "sets/:slug", element: <SetPage /> },
+      { path: "traits", element: <TraitsIndexPage /> },
+      { path: "traits/:trait", element: <TraitPage /> },
+      { path: "rarity-score", element: <RarityScorePage /> },
+      { path: "wearables", element: <WearablesIndexPage /> },
+      { path: "wearable/:slug", element: <WearablePage /> },
+      { path: "gotchi/:tokenId", element: <GotchiPage /> },
+      { path: "dress", element: <DressPage /> },
+      { path: "wardrobe-lab", element: <WardrobeLabPage /> },
+      { path: "explorer", element: <ExplorerPage /> },
+      { path: "baazaar", element: <ExplorerPage /> },
+      { path: "auction", element: <AuctionPage /> },
+      { path: "me", element: <ProfilePage /> },
+      { path: "activity", element: <ActivityPage /> },
+      { path: "lending", element: <LendingPage /> },
+      { path: "lending/analytics", element: <LendingAnalyticsPage /> },
+      { path: "lending/me", element: <LendingMePage /> },
+      { path: "lending/lands", element: <LandManagementPage /> },
+      { path: "lending/me/list", element: <BulkListPage /> },
+      { path: "lending/whitelists", element: <WhitelistsPage /> },
     ],
   },
 ]);
-

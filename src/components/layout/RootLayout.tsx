@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { Outlet, useLocation, Link } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { Coins, Search, Shirt, MapPin, Activity, Gavel, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/ui/button";
@@ -50,7 +52,9 @@ export function RootLayout() {
         </div>
       </header>
       <main className="flex-1 relative z-[1]">
-        <Outlet />
+        <Suspense fallback={<div className="flex items-center justify-center py-24"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>}>
+          <Outlet />
+        </Suspense>
       </main>
       <FooterAttribution className="px-4 py-4 text-center" />
     </div>
