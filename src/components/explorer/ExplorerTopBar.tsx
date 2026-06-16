@@ -88,6 +88,9 @@ export function ExplorerTopBar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Item/Parcel tabs are pure marketplace grids — the All/Owned/Baazaar scope
+  // and the gotchi/wearable search+sort don't apply, so hide them there.
+  const isMarket = assetType === "item" || assetType === "parcel";
   const currentKey = `${sort.field}:${sort.direction}`;
   const sortLabel = getSortLabel(sort);
   
@@ -138,23 +141,27 @@ export function ExplorerTopBar({
             <ExplorerAssetToggle value={assetType} onChange={onAssetTypeChange} />
           )}
 
-          <div className="flex border rounded-lg overflow-hidden shrink-0">
-            {modes.map((m) => (
-              <button
-                key={m.value}
-                onClick={() => onModeChange(m.value)}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors border-r last:border-r-0 ${
-                  mode === m.value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
+          {isMarket ? (
+            <span className="text-xs text-muted-foreground shrink-0 px-1">Cheapest open listings · select to bulk-buy</span>
+          ) : (
+            <div className="flex border rounded-lg overflow-hidden shrink-0">
+              {modes.map((m) => (
+                <button
+                  key={m.value}
+                  onClick={() => onModeChange(m.value)}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors border-r last:border-r-0 ${
+                    mode === m.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          )}
 
-          <div className="hidden md:flex items-center gap-2 flex-1">
+          <div className={`${isMarket ? "hidden" : "hidden md:flex"} items-center gap-2 flex-1`}>
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -322,7 +329,7 @@ export function ExplorerTopBar({
             )}
           </div>
 
-          <div className="flex md:hidden items-center gap-1 ml-auto shrink-0">
+          <div className={`${isMarket ? "hidden" : "flex md:hidden"} items-center gap-1 ml-auto shrink-0`}>
             {mode === "mine" && assetType === "gotchi" && (
               <div className="flex items-center border rounded overflow-hidden">
                 <button
