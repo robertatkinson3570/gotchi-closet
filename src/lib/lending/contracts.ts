@@ -470,6 +470,19 @@ export const REALM_FACET_ABI = [
       },
     ],
   },
+  // Craft L1 installations on the Installation diamond. Pays alchemica from the
+  // caller (approve the 4 alchemica tokens to the diamond first). L1 farming
+  // installs have craftTime 0 → minted instantly. _gltr can be all zeros.
+  {
+    name: "craftInstallations",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_installationTypes", type: "uint16[]" },
+      { name: "_gltr", type: "uint40[]" },
+    ],
+    outputs: [],
+  },
   // Owned (unequipped) installations for an account: [{ installationId, balance }].
   {
     name: "installationsBalances",

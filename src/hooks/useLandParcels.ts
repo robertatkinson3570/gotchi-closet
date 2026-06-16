@@ -98,13 +98,6 @@ export function useLandParcels(owner?: string) {
       out.push({
         address: REALM_DIAMOND_BASE,
         abi: REALM_FACET_ABI,
-        functionName: "getParcelInfo",
-        args: [id],
-        chainId: BASE_CHAIN_ID,
-      });
-      out.push({
-        address: REALM_DIAMOND_BASE,
-        abi: REALM_FACET_ABI,
         functionName: "getParcelsAccessRights",
         args: [[id], [0n]], // channeling
         chainId: BASE_CHAIN_ID,
@@ -127,8 +120,30 @@ export function useLandParcels(owner?: string) {
     return out;
   }, [ids]);
 
+  // getParcelInfo returns big string structs — isolate into its own multicall
+  // with a small batch so the response can't blow past the RPC's size cap and
+  // sink the whole table (which left Name/Aaltar blank for most rows).
+  const nameReads = useMemo(
+    () =>
+      ids.map((id) => ({
+        address: REALM_DIAMOND_BASE,
+        abi: REALM_FACET_ABI,
+        functionName: "getParcelInfo" as const,
+        args: [id] as const,
+        chainId: BASE_CHAIN_ID,
+      })),
+    [ids]
+  );
+
+  const { data: names } = useReadContracts({
+    contracts: nameReads as any,
+    batchSize: 512,
+    query: { enabled: nameReads.length > 0 },
+  });
+
   const { data: chain, refetch, isLoading: chainLoading } = useReadContracts({
     contracts: reads,
+    batchSize: 2048,
     query: { enabled: reads.length > 0 },
   });
 
@@ -136,11 +151,11 @@ export function useLandParcels(owner?: string) {
     const accessOf = (r: any): number =>
       r?.status === "success" ? Number((r.result as readonly bigint[])[0] ?? 0n) : 0;
     return raw.map((p, i) => {
-      const avail = chain?.[i * 5];
-      const info = chain?.[i * 5 + 1];
-      const accessCh = chain?.[i * 5 + 2];
-      const accessRsv = chain?.[i * 5 + 3];
-      const altar = chain?.[i * 5 + 4];
+      const avail = chain?.[i * 4];
+      const accessCh = chain?.[i * 4 + 1];
+      const accessRsv = chain?.[i * 4 + 2];
+      const altar = chain?.[i * 4 + 3];
+      const info = names?.[i];
       const available =
         avail?.status === "success"
           ? (avail.result as readonly bigint[]).slice()
@@ -170,7 +185,7 @@ export function useLandParcels(owner?: string) {
         lastChanneled,
       };
     });
-  }, [raw, chain]);
+  }, [raw, chain, names]);
 
   return {
     rows,
