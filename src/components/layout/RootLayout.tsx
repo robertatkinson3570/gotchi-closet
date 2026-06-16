@@ -1,5 +1,5 @@
 import { Outlet, useLocation, Link } from "react-router-dom";
-import { Coins, Search, Shirt, MapPin, Activity, Gavel } from "lucide-react";
+import { Coins, Search, Shirt, MapPin, Activity, Gavel, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -13,6 +13,7 @@ const NAV: { to: string; title: string; icon: LucideIcon }[] = [
   { to: "/activity", title: "Activity", icon: Activity },
   { to: "/lending", title: "Lending", icon: Coins },
   { to: "/lending/lands", title: "Land Management", icon: MapPin },
+  { to: "/me", title: "My Profile", icon: User },
 ];
 
 function isActive(pathname: string, to: string): boolean {
