@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
-import { Loader2, X, CheckCircle2, XCircle, Shirt, Trash2 } from "lucide-react";
+import { Loader2, X, CheckCircle2, XCircle, Shirt, Trash2, Bookmark, Plus } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
@@ -31,6 +31,17 @@ function traitSummary(w?: WData): string {
 
 type Status = { kind: "idle" } | { kind: "busy" } | { kind: "ok" } | { kind: "err"; msg: string };
 
+// Saved outfits are local (per-browser) named loadouts of the 8 slots, applicable
+// to any gotchi — same idea as the dapp's Outfit Manager.
+type Outfit = { name: string; slots: number[] };
+const OUTFITS_KEY = "gc_outfits";
+function loadOutfits(): Outfit[] {
+  try { return JSON.parse(localStorage.getItem(OUTFITS_KEY) || "[]"); } catch { return []; }
+}
+function saveOutfits(o: Outfit[]) {
+  try { localStorage.setItem(OUTFITS_KEY, JSON.stringify(o)); } catch { /* ignore quota */ }
+}
+
 export function EquipWearablesModal({
   gotchiId, equippedWearables, hauntId, collateral, numericTraits, onClose, onSaved,
 }: {
@@ -53,6 +64,17 @@ export function EquipWearablesModal({
   const [slots, setSlots] = useState<number[]>(initial);
   const [picker, setPicker] = useState<number | null>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [outfits, setOutfits] = useState<Outfit[]>(() => loadOutfits());
+  const [outfitName, setOutfitName] = useState("");
+
+  const persistOutfits = (next: Outfit[]) => { setOutfits(next); saveOutfits(next); };
+  const saveCurrentOutfit = () => {
+    const name = outfitName.trim();
+    if (!name) return;
+    const next = [...outfits.filter((o) => o.name !== name), { name, slots: [...slots] }];
+    persistOutfits(next);
+    setOutfitName("");
+  };
 
   // Owned wearable balances from the diamond (ERC1155 itemBalances).
   const { data: owned, isLoading: ownedLoading } = useQuery({
@@ -123,6 +145,25 @@ export function EquipWearablesModal({
             </div>
             {status.kind === "ok" && <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400"><CheckCircle2 className="w-4 h-4" /> Outfit saved.</div>}
             {status.kind === "err" && <div className="flex items-center gap-2 text-sm text-red-500"><XCircle className="w-4 h-4" /> {status.msg}</div>}
+
+            <div className="rounded-lg border border-border/50 p-2.5 space-y-2">
+              <div className="text-[11px] font-semibold inline-flex items-center gap-1.5 text-muted-foreground"><Bookmark className="w-3.5 h-3.5" /> Outfit manager</div>
+              <div className="flex items-center gap-1.5">
+                <input value={outfitName} onChange={(e) => setOutfitName(e.target.value)} placeholder="Name this loadout" className="h-8 flex-1 min-w-0 rounded border border-border bg-background px-2 text-xs" />
+                <button onClick={saveCurrentOutfit} disabled={!outfitName.trim()} className="h-8 px-2.5 rounded bg-muted text-xs font-medium disabled:opacity-40 inline-flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Save</button>
+              </div>
+              {outfits.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {outfits.map((o) => (
+                    <span key={o.name} className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background pl-2 pr-1 py-0.5 text-[10px]">
+                      <button onClick={() => setSlots([...o.slots, 0, 0, 0, 0, 0, 0, 0, 0].slice(0, 8))} className="hover:text-primary font-medium" title="Apply to this gotchi">{o.name}</button>
+                      <button onClick={() => persistOutfits(outfits.filter((x) => x.name !== o.name))} className="text-muted-foreground hover:text-red-500" title="Delete"><X className="w-3 h-3" /></button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="text-[9px] text-muted-foreground">Loadouts are saved in this browser and can be applied to any gotchi. Applying sets the slots; press Save outfit to commit on-chain.</p>
+            </div>
           </div>
 
           {/* Slots */}
