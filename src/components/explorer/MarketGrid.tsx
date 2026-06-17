@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { qk } from "@/lib/queryKeys";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, ShoppingCart, MapPin, SlidersHorizontal, Aperture } from "lucide-react";
+import { Loader2, ShoppingCart, MapPin, SlidersHorizontal, X } from "lucide-react";
 import { BuyButton } from "./BuyButton";
 import { useMarketplaceBuy, type BuyParams } from "@/hooks/useMarketplaceBuy";
 import { useToast } from "@/ui/use-toast";
 import { CORE_SUBGRAPH_URL } from "@/lib/lending/contracts";
 import { GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "./AssetImage";
+import { PortalImage } from "./PortalImage";
 
 type Listing = { listingId: string; tokenId: string; priceWei: string; quantity: number };
 
@@ -113,6 +114,7 @@ export function MarketGrid({
   const [levelF, setLevelF] = useState("");
   const [typeF, setTypeF] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [detail, setDetail] = useState<Listing | null>(null);
   const isTyped = itemKind === "installation" || itemKind === "tile";
 
   const { data, isLoading, error } = useQuery({
@@ -316,7 +318,7 @@ export function MarketGrid({
                 ) : itemKind === "parcel" ? (
                   <AssetImage candidates={parcelImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-full max-w-full object-contain rounded" />
                 ) : itemKind === "portal" ? (
-                  <Aperture className="w-9 h-9 text-fuchsia-400 drop-shadow-[0_0_6px_rgba(232,121,249,0.6)]" />
+                  <button type="button" onClick={() => setDetail(l)} title="View portal details" className="w-full h-full [&>svg]:w-full [&>svg]:h-full"><PortalImage tokenId={l.tokenId} /></button>
                 ) : (
                   <MapPin className="w-6 h-6 text-emerald-500/70" />
                 )}
@@ -349,6 +351,28 @@ export function MarketGrid({
             )}
           </button>
           <button onClick={() => setCart({})} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
+        </div>
+      )}
+
+      {detail && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-3" onClick={() => setDetail(null)}>
+          <div className="w-[min(460px,96vw)] rounded-2xl border border-border bg-background shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
+              <div className="text-base font-bold">Closed Portal #{detail.tokenId}</div>
+              <button onClick={() => setDetail(null)} className="p-1.5 rounded hover:bg-muted/50"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="w-40 h-40 mx-auto rounded-xl overflow-hidden bg-gradient-to-b from-fuchsia-500/10 to-fuchsia-500/30 flex items-center justify-center">
+                <PortalImage tokenId={detail.tokenId} />
+              </div>
+              <div className="text-center">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Price</div>
+                <div className="text-2xl font-bold text-emerald-500">{ghst(detail.priceWei)} GHST</div>
+              </div>
+              <p className="text-[11px] text-muted-foreground text-center">A closed portal contains 10 random Aavegotchis. Buy it, then open it on your profile to summon and claim one.</p>
+              <BuyButton listingId={detail.listingId} tokenId={detail.tokenId} priceInWei={detail.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`Portal #${detail.tokenId}`} />
+            </div>
+          </div>
         </div>
       )}
     </div>
