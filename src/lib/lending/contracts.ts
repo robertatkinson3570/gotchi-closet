@@ -23,7 +23,17 @@ export const FORGE_ABI = [
     { name: "itemId", type: "uint256" }, { name: "gotchiId", type: "uint256" }, { name: "id", type: "uint256" }, { name: "readyBlock", type: "uint40" }, { name: "claimed", type: "bool" }] }] },
   { name: "balanceOfOwner", type: "function", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "tuple[]", components: [
     { name: "tokenId", type: "uint256" }, { name: "balance", type: "uint256" }] }] },
+  { name: "getForgeQueueItemsByOwner", type: "function", stateMutability: "view", inputs: [{ name: "_owner", type: "address" }], outputs: [{ type: "tuple[]", components: [
+    { name: "itemId", type: "uint256" }, { name: "gotchiId", type: "uint256" }, { name: "id", type: "uint256" }, { name: "readyBlock", type: "uint40" }, { name: "claimed", type: "bool" }] }] },
+  // Geodes: open (triggers VRF) then claimWinnings once randomness lands.
+  { name: "openGeodes", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_geodeTokenIds", type: "uint256[]" }, { name: "_amountPerToken", type: "uint256[]" }], outputs: [] },
+  { name: "claimWinnings", type: "function", stateMutability: "nonpayable", inputs: [], outputs: [] },
+  { name: "geodeTokenIdFromRsm", type: "function", stateMutability: "view", inputs: [{ name: "rsm", type: "uint8" }], outputs: [{ type: "uint256" }] },
+  { name: "getAavegotchiSmithingLevel", type: "function", stateMutability: "view", inputs: [{ name: "gotchiId", type: "uint256" }], outputs: [{ type: "uint256" }] },
 ] as const;
+
+// Rarity-score-modifier values that map to geode token ids (common…godlike).
+export const GEODE_RSM = [1, 2, 5, 10, 20, 50] as const;
 
 // Alchemica ERC-20s on Base, indexed in the same order the RealmFacet uses
 // when emitting `AlchemicaClaimed` events (FUD=0, FOMO=1, ALPHA=2, KEK=3).
