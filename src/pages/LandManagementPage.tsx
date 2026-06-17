@@ -181,8 +181,12 @@ export default function LandManagementPage() {
   const claimerGotchiId = useMemo(() => {
     if (selectedGotchiId != null) return selectedGotchiId;
     const fromLender = lender.find((l) => Number.isFinite(Number(l.gotchiTokenId)));
-    return fromLender ? Number(fromLender.gotchiTokenId) : undefined;
-  }, [selectedGotchiId, lender]);
+    if (fromLender) return Number(fromLender.gotchiTokenId);
+    // Fall back to any owned gotchi so build mode (equip/craft/upgrade) is
+    // available to landowners even when none is channeling yet.
+    const firstOwned = ownedGotchis[0];
+    return firstOwned ? Number(firstOwned.gotchiId ?? firstOwned.id) : undefined;
+  }, [selectedGotchiId, lender, ownedGotchis]);
 
   const gotchiLastChanneled =
     claimerGotchiId != null ? BigInt(lastChanneledById[claimerGotchiId] ?? 0) : undefined;
