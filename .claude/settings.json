@@ -40,7 +40,8 @@
       "mcp__playwright__browser_evaluate",
       "mcp__playwright__browser_network_requests",
       "mcp__playwright__browser_wait_for",
-      "mcp__playwright__browser_network_request"
+      "mcp__playwright__browser_network_request",
+      "mcp__playwright__browser_resize"
     ],
     "additionalDirectories": [
       "C:\\Cursor\\bounty-pipeline\\docs\\superpowers\\specs",

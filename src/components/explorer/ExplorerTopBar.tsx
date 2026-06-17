@@ -94,7 +94,7 @@ export function ExplorerTopBar({
   const marketOptions = sortOptions.filter((o) => o.category === "market");
 
   return (
-    <div className="bg-background/95 backdrop-blur border-b">
+    <div className="relative z-30 bg-background/95 backdrop-blur border-b">
       <div className="flex flex-col gap-2 p-2 md:p-3">
         <div className="flex items-center gap-2 overflow-x-auto md:overflow-visible pb-1 md:pb-0 scrollbar-none">
           {onAssetTypeChange && (
