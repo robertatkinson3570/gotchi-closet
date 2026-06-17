@@ -19,9 +19,12 @@ type Props = {
   gotchi: ExplorerGotchi;
   eyeRarities?: EyeRarities;
   frequencyLoading?: boolean;
-  // When provided (owned view), shows a Manage button that opens the gotchi
-  // manage modal. rentalBadge marks "Rented out" / "Borrowed".
+  // When provided (owned view), shows a footer button that opens the gotchi
+  // manage modal (or toggles selection in bulk-list mode). rentalBadge marks
+  // "Rented out" / "Borrowed".
   onManage?: () => void;
+  manageLabel?: string;
+  selected?: boolean;
   rentalBadge?: string | null;
 };
 
@@ -43,6 +46,8 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   eyeRarities,
   frequencyLoading,
   onManage,
+  manageLabel,
+  selected,
   rentalBadge,
 }: Props) {
   const tier = getRarityTier(gotchi.withSetsRarityScore);
@@ -198,7 +203,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   return (
     <div
       ref={cardRef}
-      className={`rounded-lg border ${colors.border} ${colors.bg} hover:ring-1 hover:ring-primary/40 transition-all duration-150 active:scale-[0.98] relative overflow-hidden`}
+      className={`rounded-lg border ${selected ? "border-emerald-500 ring-2 ring-emerald-500/50" : colors.border} ${colors.bg} hover:ring-1 hover:ring-primary/40 transition-all duration-150 active:scale-[0.98] relative overflow-hidden`}
     >
       <div 
         className="relative aspect-square flex items-center justify-center"
@@ -334,9 +339,9 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
       {onManage && (
         <button
           onClick={onManage}
-          className="w-full h-7 text-[11px] font-semibold bg-primary/10 text-primary border-t border-primary/30 hover:bg-primary/20"
+          className={`w-full h-7 text-[11px] font-semibold border-t ${selected ? "bg-emerald-600 text-white border-emerald-600" : "bg-primary/10 text-primary border-primary/30 hover:bg-primary/20"}`}
         >
-          Manage
+          {selected ? "✓ Selected" : (manageLabel ?? "Manage")}
         </button>
       )}
 

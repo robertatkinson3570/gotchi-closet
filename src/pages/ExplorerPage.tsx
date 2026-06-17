@@ -25,8 +25,16 @@ import { GotchiManageModal, type ManageGotchi } from "@/components/explorer/Gotc
 import { useQuery } from "@tanstack/react-query";
 import { CORE_SUBGRAPH } from "@/lib/subgraph";
 import { BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE } from "@/lib/lending/contracts";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Tag, X, Loader2 } from "lucide-react";
+import { usePublicClient, useWriteContract } from "wagmi";
+import { BASE_CHAIN_ID } from "@/lib/chains";
+import { parseRevert } from "@/lib/lending/parseRevert";
+import { useToast } from "@/ui/use-toast";
 import setsData from "../../data/setsByTraitDirection.json";
+
+const ADD_LISTING_ABI = [
+  { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
+] as const;
 
 export type ViewMode = "cards" | "family";
 const VIEW_MODE_KEY = "gc_explorer_viewMode";
@@ -61,6 +69,39 @@ export default function ExplorerPage() {
   });
   const [mode, setMode] = useState<DataMode>("all");
   const [manage, setManage] = useState<ManageGotchi | null>(null);
+  const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
+  const { writeContractAsync } = useWriteContract();
+  const { toast } = useToast();
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkPrice, setBulkPrice] = useState("");
+  const [listing, setListing] = useState<{ done: number; total: number } | null>(null);
+
+  const toggleSel = (gid: string) =>
+    setSelected((s) => { const n = new Set(s); if (n.has(gid)) n.delete(gid); else n.add(gid); return n; });
+
+  // Bulk-list selected owned gotchis on the Baazaar (one signature each).
+  const doBulkList = async () => {
+    const price = Number(bulkPrice);
+    if (!publicClient || !(price > 0) || selected.size === 0) return;
+    const wei = BigInt(Math.floor(price * 1e18));
+    const ids = [...selected];
+    setListing({ done: 0, total: ids.length });
+    let ok = 0, failed = 0;
+    for (const gid of ids) {
+      try {
+        const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ADD_LISTING_ABI, functionName: "addERC721Listing", args: [AAVEGOTCHI_DIAMOND_BASE, BigInt(gid), wei] });
+        await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+        ok++;
+      } catch (e) {
+        failed++;
+        if (failed === 1) toast({ title: "A listing failed", description: parseRevert(e).slice(0, 140), variant: "destructive" });
+      }
+      setListing((p) => (p ? { ...p, done: p.done + 1 } : p));
+    }
+    toast({ title: "Bulk list complete", description: `Listed ${ok}/${ids.length}${failed ? `, ${failed} failed` : ""} at ${price} GHST.` });
+    setListing(null); setSelected(new Set()); setSelectMode(false);
+  };
 
   // Lent-out / borrowed gotchi ids for the connected user, to badge owned cards.
   const { data: rentalSets } = useQuery({
@@ -373,7 +414,9 @@ export default function ExplorerPage() {
                 hasMore={gotchiHasMore}
                 error={gotchiError}
                 onLoadMore={gotchiLoadMore}
-                onManage={mode === "mine" ? (g) => setManage({ gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables }) : undefined}
+                onManage={mode === "mine" ? (g) => (selectMode ? toggleSel(g.tokenId) : setManage({ gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables })) : undefined}
+                manageLabel={mode === "mine" && selectMode ? "Select" : undefined}
+                selectedFor={mode === "mine" && selectMode ? (g) => selected.has(g.tokenId) : undefined}
                 rentalBadgeFor={mode === "mine" ? (g) => (rentalSets?.lentOut.has(g.tokenId) ? "Rented out" : rentalSets?.borrowed.has(g.tokenId) ? "Borrowed" : null) : undefined}
               />
             )
@@ -409,6 +452,23 @@ export default function ExplorerPage() {
           setSort={setWearableSort}
           mode={mode}
         />
+      )}
+
+      {mode === "mine" && assetType === "gotchi" && !selectMode && (
+        <button onClick={() => setSelectMode(true)} className="fixed bottom-3 right-3 z-40 inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-emerald-600 text-white text-sm font-semibold shadow-lg hover:bg-emerald-700">
+          <Tag className="w-4 h-4" /> List for sale
+        </button>
+      )}
+
+      {mode === "mine" && assetType === "gotchi" && selectMode && (
+        <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full border border-border bg-background/95 backdrop-blur px-4 py-2 shadow-lg">
+          <span className="text-xs font-semibold">{selected.size} selected</span>
+          <input type="number" value={bulkPrice} onChange={(e) => setBulkPrice(e.target.value)} placeholder="Price each (GHST)" className="h-8 w-36 rounded border border-border bg-background px-2 text-xs" />
+          <button disabled={!!listing || !(Number(bulkPrice) > 0) || selected.size === 0} onClick={doBulkList} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-emerald-600 text-white text-xs font-semibold disabled:opacity-50">
+            {listing ? (<><Loader2 className="w-4 h-4 animate-spin" /> Listing {listing.done}/{listing.total}…</>) : (<><Tag className="w-4 h-4" /> List {selected.size}</>)}
+          </button>
+          <button onClick={() => { setSelectMode(false); setSelected(new Set()); }} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+        </div>
       )}
 
       {manage && <GotchiManageModal gotchi={manage} onClose={() => setManage(null)} />}
