@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
-import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle } from "lucide-react";
+import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
+import { EquipWearablesModal } from "@/components/explorer/EquipWearablesModal";
 
 const ACTIONS_ABI = [
   { name: "interact", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_tokenIds", type: "uint256[]" }], outputs: [] },
@@ -38,6 +39,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
   const { writeContractAsync } = useWriteContract();
 
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [equipOpen, setEquipOpen] = useState(false);
   const [newName, setNewName] = useState(name ?? "");
   const [sp, setSp] = useState<[string, string, string, string]>(["0", "0", "0", "0"]);
   const [to, setTo] = useState("");
@@ -101,6 +103,10 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
             </div>
           </div>
 
+          <button onClick={() => setEquipOpen(true)} className="w-full h-10 rounded-lg bg-primary/10 border border-primary/40 text-primary text-sm font-semibold inline-flex items-center justify-center gap-2 hover:bg-primary/20">
+            <Shirt className="w-4 h-4" /> Equip / change wearables
+          </button>
+
           {status.kind !== "idle" && (
             <div className={`flex items-center gap-2 text-sm rounded-md px-3 py-2 ${
               status.kind === "busy" ? "bg-muted/50 text-foreground" : status.kind === "ok" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-red-500/15 text-red-500"
@@ -162,6 +168,17 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
           </div>
         </div>
       </div>
+
+      {equipOpen && (
+        <EquipWearablesModal
+          gotchiId={gotchiId}
+          equippedWearables={equippedWearables}
+          hauntId={hauntId}
+          collateral={collateral}
+          numericTraits={numericTraits}
+          onClose={() => setEquipOpen(false)}
+        />
+      )}
     </div>
   );
 }
