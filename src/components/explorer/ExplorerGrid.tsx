@@ -13,9 +13,11 @@ type Props = {
   hasMore: boolean;
   error?: string | null;
   onLoadMore: () => void;
+  onManage?: (g: ExplorerGotchi) => void;
+  rentalBadgeFor?: (g: ExplorerGotchi) => string | null;
 };
 
-export function ExplorerGrid({ gotchis, loading, hasMore, error, onLoadMore }: Props) {
+export function ExplorerGrid({ gotchis, loading, hasMore, error, onLoadMore, onManage, rentalBadgeFor }: Props) {
   const loaderRef = useRef<HTMLDivElement>(null);
   const cardRefsRef = useRef<Map<string, HTMLDivElement>>(new Map());
   const { loading: frequencyLoading, getRarities } = useTraitFrequency(gotchis);
@@ -143,6 +145,8 @@ export function ExplorerGrid({ gotchis, loading, hasMore, error, onLoadMore }: P
               gotchi={gotchi}
               eyeRarities={getRarities(gotchi)}
               frequencyLoading={frequencyLoading}
+              onManage={onManage ? () => onManage(gotchi) : undefined}
+              rentalBadge={rentalBadgeFor ? rentalBadgeFor(gotchi) : undefined}
             />
           </div>
         ))}

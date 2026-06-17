@@ -21,6 +21,9 @@ import { defaultBaazaarSort } from "@/lib/explorer/sorts";
 import type { AssetType } from "@/lib/explorer/wearableTypes";
 import { MarketGrid } from "@/components/explorer/MarketGrid";
 import { AuctionGrid } from "@/components/explorer/AuctionGrid";
+import { GotchiManageModal, type ManageGotchi } from "@/components/explorer/GotchiActionsPanel";
+import { useQuery } from "@tanstack/react-query";
+import { CORE_SUBGRAPH } from "@/lib/subgraph";
 import { BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import setsData from "../../data/setsByTraitDirection.json";
@@ -57,6 +60,21 @@ export default function ExplorerPage() {
     return "gotchi";
   });
   const [mode, setMode] = useState<DataMode>("all");
+  const [manage, setManage] = useState<ManageGotchi | null>(null);
+
+  // Lent-out / borrowed gotchi ids for the connected user, to badge owned cards.
+  const { data: rentalSets } = useQuery({
+    queryKey: ["explorer-rentals", connectedAddress],
+    enabled: mode === "mine" && !!connectedAddress,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const q = `{ user(id:"${connectedAddress!.toLowerCase()}"){ gotchisLentOut gotchisBorrowed } }`;
+      const res = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+      const j = await res.json();
+      const u = j.data?.user ?? {};
+      return { lentOut: new Set<string>((u.gotchisLentOut ?? []).map(String)), borrowed: new Set<string>((u.gotchisBorrowed ?? []).map(String)) };
+    },
+  });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSort, setShowSort] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -355,6 +373,8 @@ export default function ExplorerPage() {
                 hasMore={gotchiHasMore}
                 error={gotchiError}
                 onLoadMore={gotchiLoadMore}
+                onManage={mode === "mine" ? (g) => setManage({ gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables }) : undefined}
+                rentalBadgeFor={mode === "mine" ? (g) => (rentalSets?.lentOut.has(g.tokenId) ? "Rented out" : rentalSets?.borrowed.has(g.tokenId) ? "Borrowed" : null) : undefined}
               />
             )
           ) : (
@@ -390,6 +410,8 @@ export default function ExplorerPage() {
           mode={mode}
         />
       )}
+
+      {manage && <GotchiManageModal gotchi={manage} onClose={() => setManage(null)} />}
     </div>
   );
 }

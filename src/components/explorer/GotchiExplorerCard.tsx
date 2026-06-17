@@ -19,6 +19,10 @@ type Props = {
   gotchi: ExplorerGotchi;
   eyeRarities?: EyeRarities;
   frequencyLoading?: boolean;
+  // When provided (owned view), shows a Manage button that opens the gotchi
+  // manage modal. rentalBadge marks "Rented out" / "Borrowed".
+  onManage?: () => void;
+  rentalBadge?: string | null;
 };
 
 const NAKED_WEARABLES: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -34,10 +38,12 @@ const tierColors: Record<string, { bg: string; border: string; text: string }> =
   godlike: { bg: "bg-pink-500/5", border: "border-pink-400/20", text: "text-pink-500" },
 };
 
-export const GotchiExplorerCard = memo(function GotchiExplorerCard({ 
-  gotchi, 
+export const GotchiExplorerCard = memo(function GotchiExplorerCard({
+  gotchi,
   eyeRarities,
-  frequencyLoading 
+  frequencyLoading,
+  onManage,
+  rentalBadge,
 }: Props) {
   const tier = getRarityTier(gotchi.withSetsRarityScore);
   const colors = tierColors[tier] || tierColors.common;
@@ -324,6 +330,19 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
           </div>
         )}
       </div>
+
+      {onManage && (
+        <button
+          onClick={onManage}
+          className="w-full h-7 text-[11px] font-semibold bg-primary/10 text-primary border-t border-primary/30 hover:bg-primary/20"
+        >
+          Manage
+        </button>
+      )}
+
+      {rentalBadge && (
+        <span className="absolute top-1 left-1 z-10 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/90 text-white shadow">{rentalBadge}</span>
+      )}
 
       {showDetails && (
         <GotchiInfoOverlay gotchi={gotchi} onClose={() => setShowDetails(false)} />
