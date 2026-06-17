@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
-import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useAccount, useChainId, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
+import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
+import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, ESCROW_FACET_ABI, GHST_TOKEN_BASE, ALCHEMICA_TOKENS_BASE } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { EquipWearablesModal } from "@/components/explorer/EquipWearablesModal";
+import { useBatchTransferEscrow, type EscrowBalance } from "@/hooks/useEscrowWithdraw";
 
 const ACTIONS_ABI = [
   { name: "interact", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_tokenIds", type: "uint256[]" }], outputs: [] },
@@ -148,6 +149,10 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
               <button disabled={busy} onClick={cancelListing} className="h-8 w-full rounded border border-border/60 text-xs font-medium text-muted-foreground hover:bg-muted/50 disabled:opacity-50">Cancel my listing</button>
             </Section>
 
+            <Section icon={<Wallet className="w-4 h-4 text-sky-500" />} title="Pocket (escrow)">
+              <PocketBody gotchiId={gotchiId} />
+            </Section>
+
             <Section icon={<Send className="w-4 h-4" />} title="Transfer">
               <div className="flex items-center gap-1.5">
                 <input value={to} onChange={(e) => setTo(e.target.value)} placeholder="0x recipient address" className={field} />
@@ -180,5 +185,44 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
         />
       )}
     </div>
+  );
+}
+
+const POCKET_TOKENS = [{ symbol: "GHST", address: GHST_TOKEN_BASE }, ...ALCHEMICA_TOKENS_BASE];
+
+// Each gotchi has a per-token escrow ("pocket"); the owner can sweep its ERC20s
+// to their wallet (must be unlocked / not actively rented). Reuses the lending
+// batchTransferEscrow path.
+function PocketBody({ gotchiId }: { gotchiId: string }) {
+  const { address } = useAccount();
+  const { data, isLoading } = useReadContracts({
+    contracts: POCKET_TOKENS.map((t) => ({ address: AAVEGOTCHI_DIAMOND_BASE, abi: ESCROW_FACET_ABI, functionName: "escrowBalance" as const, args: [BigInt(gotchiId), t.address as `0x${string}`], chainId: BASE_CHAIN_ID })),
+    query: { enabled: !!gotchiId },
+  });
+  const rows = useMemo<EscrowBalance[]>(() => {
+    if (!data) return [];
+    return POCKET_TOKENS
+      .map((t, i) => ({ tokenId: Number(gotchiId), erc20: t.address as `0x${string}`, symbol: t.symbol, amount: data[i]?.status === "success" ? (data[i].result as bigint) : 0n }))
+      .filter((r) => r.amount > 0n);
+  }, [data, gotchiId]);
+  const { send, step, errorMsg } = useBatchTransferEscrow();
+  const busy = step === "submitting" || step === "confirming";
+  const fmt = (a: bigint) => (Number(a) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+  if (isLoading) return <div className="text-xs text-muted-foreground">Loading pocket…</div>;
+  if (rows.length === 0) return <div className="text-xs text-muted-foreground">Pocket is empty.</div>;
+  return (
+    <>
+      <div className="space-y-1 text-xs">
+        {rows.map((r) => (
+          <div key={r.symbol} className="flex justify-between"><span className="text-muted-foreground">{r.symbol}</span><span className="font-semibold tabular-nums">{fmt(r.amount)}</span></div>
+        ))}
+      </div>
+      <button disabled={busy || !address} onClick={() => address && send(rows, address)} className="h-9 w-full rounded bg-sky-500/15 text-sky-600 border border-sky-500/30 text-sm font-semibold disabled:opacity-50">
+        {busy ? "Withdrawing…" : "Withdraw all to my wallet"}
+      </button>
+      {step === "success" && <div className="text-[11px] text-emerald-500">Withdrawn to your wallet.</div>}
+      {step === "error" && <div className="text-[11px] text-red-500">{errorMsg?.slice(0, 120)}</div>}
+    </>
   );
 }
