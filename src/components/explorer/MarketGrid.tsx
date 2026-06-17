@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { qk } from "@/lib/queryKeys";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, ShoppingCart, MapPin, SlidersHorizontal } from "lucide-react";
+import { Loader2, ShoppingCart, MapPin, SlidersHorizontal, Aperture } from "lucide-react";
 import { BuyButton } from "./BuyButton";
 import { useMarketplaceBuy, type BuyParams } from "@/hooks/useMarketplaceBuy";
 import { useToast } from "@/ui/use-toast";
@@ -97,7 +97,7 @@ export function MarketGrid({
   kind: "erc721" | "erc1155";
   category: number;
   contract: `0x${string}`;
-  itemKind: "item" | "parcel" | "installation" | "tile";
+  itemKind: "item" | "parcel" | "installation" | "tile" | "portal";
 }) {
   const [cart, setCart] = useState<Record<string, Listing>>({});
   const { bulkBuy, bulkStep, bulkProgress, resetBulk, isConnected } = useMarketplaceBuy();
@@ -315,6 +315,8 @@ export function MarketGrid({
                   <AssetImage candidates={tileImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-16 max-w-16 object-contain" />
                 ) : itemKind === "parcel" ? (
                   <AssetImage candidates={parcelImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-full max-w-full object-contain rounded" />
+                ) : itemKind === "portal" ? (
+                  <Aperture className="w-9 h-9 text-fuchsia-400 drop-shadow-[0_0_6px_rgba(232,121,249,0.6)]" />
                 ) : (
                   <MapPin className="w-6 h-6 text-emerald-500/70" />
                 )}
