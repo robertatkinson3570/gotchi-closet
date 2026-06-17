@@ -6,7 +6,7 @@ import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-import { AAVEGOTCHI_DIAMOND_BASE, FORGE_DIAMOND_BASE, FORGE_ABI, GEODE_RSM } from "@/lib/lending/contracts";
+import { AAVEGOTCHI_DIAMOND_BASE, FORGE_DIAMOND_BASE, FORGE_ABI, GEODE_RSM, GLTR_TOKEN_BASE, ERC20_ABI, MAX_UINT256 } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
@@ -106,12 +106,15 @@ export default function ForgePage() {
         publicClient!.readContract({ address: FORGE_DIAMOND_BASE, abi: FORGE_ABI, functionName: "getForgeQueue" }) as unknown as Promise<readonly QueueItem[]>,
         publicClient!.getBlockNumber(),
       ]);
-      return q.map((x) => ({ gotchiId: x.gotchiId.toString(), itemId: Number(x.itemId), ready: BigInt(x.readyBlock) <= block, claimed: x.claimed }));
+      const blk = Number(block);
+      const items = q.map((x) => ({ gotchiId: x.gotchiId.toString(), itemId: Number(x.itemId), readyBlock: Number(x.readyBlock), ready: BigInt(x.readyBlock) <= block, claimed: x.claimed }));
+      return { block: blk, items };
     },
   });
 
-  const myQueue = useMemo(() => (queueRaw ?? []).filter((x) => myGotchiIds.has(x.gotchiId) && !x.claimed), [queueRaw, myGotchiIds]);
+  const myQueue = useMemo(() => (queueRaw?.items ?? []).filter((x) => myGotchiIds.has(x.gotchiId) && !x.claimed), [queueRaw, myGotchiIds]);
   const readyGotchiIds = useMemo(() => [...new Set(myQueue.filter((q) => q.ready).map((q) => q.gotchiId))], [myQueue]);
+  const forging = useMemo(() => myQueue.filter((q) => !q.ready).map((q) => ({ ...q, blocksLeft: Math.max(0, q.readyBlock - (queueRaw?.block ?? q.readyBlock)) })), [myQueue, queueRaw]);
   const selCount = Object.values(sel).reduce((s, n) => s + n, 0);
 
   const setQty = (id: number, qty: number, max: number) => setSel((s) => { const n = { ...s }; const v = Math.max(0, Math.min(qty, max)); if (v === 0) delete n[id]; else n[id] = v; return n; });
@@ -178,6 +181,28 @@ export default function ForgePage() {
   };
   const claimWinnings = () => run("Claim winnings", "claimWinnings", [], () => refetchForge());
 
+  // Burn GLTR to skip a forging gotchi's remaining queue blocks (1 GLTR/block).
+  const speedUp = async (gotchiId: string, blocks: number) => {
+    if (!publicClient || blocks <= 0) return;
+    if (!isOnBase) return toast({ title: "Switch to Base", variant: "destructive" });
+    const cost = BigInt(blocks) * 10n ** 18n; // 1 GLTR per block
+    if (!window.confirm(`Speed up gotchi #${gotchiId} by ${blocks} blocks? Burns ~${blocks.toLocaleString()} GLTR.`)) return;
+    setBusy(true);
+    try {
+      const allowance = (await publicClient.readContract({ address: GLTR_TOKEN_BASE, abi: ERC20_ABI, functionName: "allowance", args: [address as `0x${string}`, FORGE_DIAMOND_BASE] })) as bigint;
+      if (allowance < cost) {
+        const ah = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: GLTR_TOKEN_BASE, abi: ERC20_ABI, functionName: "approve", args: [FORGE_DIAMOND_BASE, MAX_UINT256] });
+        await publicClient.waitForTransactionReceipt({ hash: ah, confirmations: 1 });
+      }
+      const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: FORGE_DIAMOND_BASE, abi: FORGE_ABI, functionName: "reduceQueueTime", args: [[BigInt(gotchiId)], [blocks]] });
+      await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+      toast({ title: "Sped up", description: `Reduced gotchi #${gotchiId} by ${blocks} blocks.` });
+      refetchQueue();
+    } catch (e) {
+      toast({ title: "Speed up failed", description: parseRevert(e).slice(0, 160), variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+
   if (!isConnected) {
     return (
       <div className="container mx-auto max-w-md px-4 py-16 text-center">
@@ -203,6 +228,24 @@ export default function ForgePage() {
           <button disabled={busy || readyGotchiIds.length === 0} onClick={claim} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-emerald-600 text-white text-sm font-semibold disabled:opacity-50">
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <PackageOpen className="w-4 h-4" />} Claim ready
           </button>
+        </div>
+      )}
+
+      {forging.length > 0 && (
+        <div className="mb-5">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 inline-flex items-center gap-1.5"><Zap className="w-4 h-4 text-amber-500" /> Forging — speed up with GLTR</div>
+          <div className="flex flex-wrap gap-2">
+            {forging.map((f) => (
+              <div key={`${f.gotchiId}-${f.itemId}`} className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 flex items-center gap-2">
+                <img src={itemImg(f.itemId)} alt={WMAP.get(f.itemId)?.name} className="w-8 h-8 object-contain" />
+                <div className="text-[11px]">
+                  <div className="font-medium">{WMAP.get(f.itemId)?.name ?? `#${f.itemId}`}</div>
+                  <div className="text-muted-foreground">Gotchi #{f.gotchiId} · ~{f.blocksLeft.toLocaleString()} blocks left</div>
+                </div>
+                <button disabled={busy || f.blocksLeft <= 0} onClick={() => speedUp(f.gotchiId, f.blocksLeft)} className="h-7 px-2.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 text-[11px] font-semibold disabled:opacity-50 inline-flex items-center gap-1"><Zap className="w-3 h-3" /> Finish (~{f.blocksLeft.toLocaleString()} GLTR)</button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

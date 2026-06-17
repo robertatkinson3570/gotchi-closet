@@ -7,6 +7,11 @@ export const AAVEGOTCHI_DIAMOND_BASE = "0xA99c4B08201F2913Db8D28e71d020c4298F29d
 // GHST token on Base
 export const GHST_TOKEN_BASE = "0xcD2F22236DD9Dfe2356D7C543161D4d260FD9BcB" as const;
 
+// GLTR token on Base (burned via reduceQueueTime to skip forge queue time).
+// Verified on-chain: symbol GLTR, "Aavegotchi GLTR Token". The other GLTR
+// addresses in the dapp config are other chains (no bytecode on Base).
+export const GLTR_TOKEN_BASE = "0x4D140CE792bEdc430498c2d219AfBC33e2992c9D" as const;
+
 // Forge diamond on Base (smelt wearables -> alloy/cores, forge queue, geodes).
 // Address from the dapp's 8453 chain config; verified live (has code, 91 facets).
 export const FORGE_DIAMOND_BASE = "0x50aF2d63b839aA32b4166FD1Cb247129b715186C" as const;
