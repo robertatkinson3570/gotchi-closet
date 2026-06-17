@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { qk } from "@/lib/queryKeys";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Loader2, ArrowRightLeft, MapPin } from "lucide-react";
+import { Activity, Loader2, ArrowRightLeft, MapPin, X } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
@@ -141,6 +142,7 @@ function ItemImage({ s }: { s: Sale }) {
 
 export default function ActivityPage() {
   const [filter, setFilter] = useState("all");
+  const [detail, setDetail] = useState<Sale | null>(null);
   const { data, isLoading, error } = useQuery({
     queryKey: qk.baazaarActivity(),
     queryFn: fetchActivity,
@@ -194,7 +196,7 @@ export default function ActivityPage() {
             </thead>
             <tbody>
               {rows.map((s) => (
-                <tr key={s.id} className="border-t border-border/20 hover:bg-muted/20">
+                <tr key={s.id} onClick={() => setDetail(s)} className="border-t border-border/20 hover:bg-muted/20 cursor-pointer">
                   <td className="px-3 py-1.5"><ItemImage s={s} /></td>
                   <td className="px-3 py-1.5">{CATEGORY_LABEL[s.category] ?? `Cat ${s.category}`}</td>
                   <td className="px-3 py-1.5 font-mono">#{s.tokenId}{s.quantity > 1 ? ` ×${s.quantity}` : ""}</td>
@@ -209,6 +211,50 @@ export default function ActivityPage() {
           </table>
         </div>
       )}
+
+      {detail && <SaleDetailModal s={detail} onClose={() => setDetail(null)} />}
+    </div>
+  );
+}
+
+function SaleDetailModal({ s, onClose }: { s: Sale; onClose: () => void }) {
+  const isGotchi = s.category === BAAZAAR_CATEGORY.AAVEGOTCHI;
+  const ownerLink = (addr: string) =>
+    addr && /^0x[a-fA-F0-9]{40}$/.test(addr) ? (
+      <Link to={`/explorer?owner=${addr}`} onClick={onClose} className="font-mono text-primary hover:underline" title="View this owner's gotchis">{short(addr)}</Link>
+    ) : (
+      <span className="font-mono">{short(addr)}</span>
+    );
+  const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <div className="flex items-center justify-between py-1.5 border-b border-border/30 text-sm last:border-0">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{children}</span>
+    </div>
+  );
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-3" onClick={onClose}>
+      <div className="w-[min(460px,96vw)] max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
+          <div className="text-base font-bold">{CATEGORY_LABEL[s.category] ?? `Cat ${s.category}`} #{s.tokenId}</div>
+          <button onClick={onClose} className="p-1.5 rounded hover:bg-muted/50"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="flex justify-center">
+            <span className="w-32 h-32 flex items-center justify-center rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 [&_span]:!w-28 [&_span]:!h-28 [&_img]:max-h-28 [&_img]:max-w-28">
+              <ItemImage s={s} />
+            </span>
+          </div>
+          <div>
+            <Row label="Sale price"><span className="text-emerald-500 font-bold">{ghst(s.priceWei)} GHST</span></Row>
+            {s.quantity > 1 && <Row label="Quantity">×{s.quantity}</Row>}
+            <Row label="Token ID">#{s.tokenId}</Row>
+            <Row label="Seller">{ownerLink(s.seller)}</Row>
+            {s.buyer && <Row label="Buyer">{ownerLink(s.buyer)}</Row>}
+            <Row label="When">{ago(s.timePurchased)}</Row>
+          </div>
+          {isGotchi && <p className="text-[11px] text-muted-foreground text-center">Tip: seller/buyer links open that wallet's gotchis in the Explorer.</p>}
+        </div>
+      </div>
     </div>
   );
 }

@@ -22,6 +22,12 @@ import { AssetImage, itemImageCandidates, installationImageCandidates, tileImage
 import { GotchiSvgById, FakeGotchiImage } from "./GotchiSvgById";
 import { Gavel } from "lucide-react";
 
+// The GBM diamond on Base exposes commitBid with selector 0xd2f699fc:
+// commitBid(auctionId, bidAmount, lastHighestBid, tokenContract, tokenId, amount, signature).
+// The 4-arg variant our app used previously does not exist on this diamond
+// (reverts "Diamond: Function does not exist"). The signature arg accepts an
+// empty "0x" (verified on-chain: an empty-sig call passes validation and only
+// reverts on business logic such as SelfOutbidUnavailable).
 const GBM_ABI = [
   {
     name: "commitBid",
@@ -31,6 +37,9 @@ const GBM_ABI = [
       { name: "_auctionId", type: "uint256" },
       { name: "_bidAmount", type: "uint256" },
       { name: "_highestBid", type: "uint256" },
+      { name: "_tokenContract", type: "address" },
+      { name: "_tokenId", type: "uint256" },
+      { name: "_amount", type: "uint256" },
       { name: "_signature", type: "bytes" },
     ],
     outputs: [],
@@ -46,13 +55,14 @@ type Auction = {
   highestBidder: string;
   seller: string;
   totalBids: number;
+  quantity: string;
   startsAt: number;
   endsAt: number;
 };
 
 async function fetchAuctions(): Promise<Auction[]> {
   const now = Math.floor(Date.now() / 1000);
-  const query = `query Live($now: BigInt!){ auctions(first: 200, where: { cancelled: false, claimed: false, endsAt_gt: $now }, orderBy: endsAt, orderDirection: asc){ id type tokenId contractAddress highestBid highestBidder seller totalBids startsAt endsAt } }`;
+  const query = `query Live($now: BigInt!){ auctions(first: 200, where: { cancelled: false, claimed: false, endsAt_gt: $now }, orderBy: endsAt, orderDirection: asc){ id type tokenId contractAddress highestBid highestBidder seller totalBids quantity startsAt endsAt } }`;
   const res = await fetch(GBM_BAAZAAR_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -69,6 +79,7 @@ async function fetchAuctions(): Promise<Auction[]> {
     highestBidder: (a.highestBidder ?? "").toLowerCase(),
     seller: (a.seller ?? "").toLowerCase(),
     totalBids: Number(a.totalBids) || 0,
+    quantity: a.quantity ?? "1",
     startsAt: Number(a.startsAt),
     endsAt: Number(a.endsAt),
   }));
@@ -149,7 +160,7 @@ export function AuctionGrid() {
         const ah = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: GHST_TOKEN_BASE, abi: ERC20_ABI, functionName: "approve", args: [GBM_DIAMOND_BASE, MAX_UINT256] });
         await publicClient.waitForTransactionReceipt({ hash: ah, confirmations: 1 });
       }
-      const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: GBM_DIAMOND_BASE, abi: GBM_ABI, functionName: "commitBid", args: [BigInt(a.id), bidWei, BigInt(a.highestBid || "0"), "0x"] });
+      const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: GBM_DIAMOND_BASE, abi: GBM_ABI, functionName: "commitBid", args: [BigInt(a.id), bidWei, BigInt(a.highestBid || "0"), a.contract as `0x${string}`, BigInt(a.tokenId), BigInt(a.quantity || "1"), "0x"] });
       await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
       toast({ title: "Bid placed", description: `Bid ${amount} GHST on auction #${a.id}.` });
       setBidValue("");

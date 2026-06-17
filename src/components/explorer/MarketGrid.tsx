@@ -32,6 +32,34 @@ async function fetchListings(kind: "erc721" | "erc1155", category: number): Prom
   return (json.data?.erc1155Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.erc1155TypeId, priceWei: l.priceInWei, quantity: Number(l.quantity) || 1 }));
 }
 
+// Installation functional categories (installationType enum on the diamond).
+const INSTALLATION_TYPE_LABELS: Record<string, string> = {
+  "0": "Altar", "1": "Harvester", "2": "Reservoir", "3": "Gotchi Lodge", "4": "Wall",
+  "5": "NFT Display", "6": "Maaker", "7": "Decoration", "8": "Bounce Gate",
+};
+
+type TypeMeta = { name: string; level: string; type: string };
+
+// Enrich listed installations/tiles with name + level + functional type from the
+// gotchiverse subgraph so they can be filtered and labelled like the dapp.
+async function fetchTypeMeta(kind: "installation" | "tile", tokenIds: string[]): Promise<Record<string, TypeMeta>> {
+  if (tokenIds.length === 0) return {};
+  const query =
+    kind === "installation"
+      ? `query($ids: [ID!]){ installationTypes(first: 1000, where: { id_in: $ids }){ id name level installationType } }`
+      : `query($ids: [ID!]){ tileTypes(first: 1000, where: { id_in: $ids }){ id name tileType } }`;
+  const res = await fetch(GOTCHIVERSE_SUBGRAPH, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables: { ids: tokenIds } }),
+  });
+  const json = await res.json();
+  const rows = kind === "installation" ? json.data?.installationTypes : json.data?.tileTypes;
+  const out: Record<string, TypeMeta> = {};
+  for (const t of rows ?? []) out[t.id] = { name: t.name ?? "", level: String(t.level ?? ""), type: String(t.installationType ?? t.tileType ?? "") };
+  return out;
+}
+
 type ParcelMeta = { size: string; district: string };
 
 // Enrich listed parcels with size + district from the gotchiverse subgraph so
@@ -82,7 +110,10 @@ export function MarketGrid({
   const [sort, setSort] = useState<"price-asc" | "price-desc" | "id-asc" | "id-desc">("price-asc");
   const [sizeF, setSizeF] = useState("");
   const [districtF, setDistrictF] = useState("");
+  const [levelF, setLevelF] = useState("");
+  const [typeF, setTypeF] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const isTyped = itemKind === "installation" || itemKind === "tile";
 
   const { data, isLoading, error } = useQuery({
     queryKey: qk.baazaarMarket(kind, category),
@@ -106,6 +137,24 @@ export function MarketGrid({
     return [...new Set(Object.values(parcelMeta).map((m) => m.district).filter(Boolean))].sort((a, b) => Number(a) - Number(b));
   }, [itemKind, parcelMeta]);
 
+  // Installation/tile name + level + type metadata for the listed tokenIds.
+  const typeIds = useMemo(() => (isTyped ? all.map((l) => l.tokenId) : []), [isTyped, all]);
+  const { data: typeMeta } = useQuery({
+    queryKey: ["baazaar", "type-meta", itemKind, typeIds],
+    queryFn: () => fetchTypeMeta(itemKind as "installation" | "tile", typeIds),
+    enabled: isTyped && typeIds.length > 0,
+    staleTime: 5 * 60_000,
+  });
+
+  const levelOptions = useMemo(() => {
+    if (itemKind !== "installation" || !typeMeta) return [];
+    return [...new Set(Object.values(typeMeta).map((m) => m.level).filter(Boolean))].sort((a, b) => Number(a) - Number(b));
+  }, [itemKind, typeMeta]);
+  const typeOptions = useMemo(() => {
+    if (!isTyped || !typeMeta) return [];
+    return [...new Set(Object.values(typeMeta).map((m) => m.type).filter(Boolean))].sort((a, b) => Number(a) - Number(b));
+  }, [isTyped, typeMeta]);
+
   useEffect(() => {
     if (bulkStep === "success") {
       toast({ title: "Bulk buy complete", description: "Selected listings purchased." });
@@ -117,14 +166,19 @@ export function MarketGrid({
 
   const rows = useMemo(() => {
     let r = all;
-    const q = idQuery.trim();
-    if (q) r = r.filter((l) => l.tokenId.includes(q));
+    const q = idQuery.trim().toLowerCase();
+    // For typed assets the search box also matches the item name.
+    if (q) r = r.filter((l) => l.tokenId.includes(q) || (typeMeta?.[l.tokenId]?.name ?? "").toLowerCase().includes(q));
     const lo = Number(minP), hi = Number(maxP);
     if (minP && lo > 0) r = r.filter((l) => Number(l.priceWei) / 1e18 >= lo);
     if (maxP && hi > 0) r = r.filter((l) => Number(l.priceWei) / 1e18 <= hi);
     if (itemKind === "parcel" && parcelMeta) {
       if (sizeF) r = r.filter((l) => parcelMeta[l.tokenId]?.size === sizeF);
       if (districtF) r = r.filter((l) => parcelMeta[l.tokenId]?.district === districtF);
+    }
+    if (isTyped && typeMeta) {
+      if (levelF) r = r.filter((l) => typeMeta[l.tokenId]?.level === levelF);
+      if (typeF) r = r.filter((l) => typeMeta[l.tokenId]?.type === typeF);
     }
     const arr = [...r];
     arr.sort((a, b) => {
@@ -134,10 +188,10 @@ export function MarketGrid({
       return Number(b.tokenId) - Number(a.tokenId);
     });
     return arr;
-  }, [all, idQuery, minP, maxP, sort, sizeF, districtF, itemKind, parcelMeta]);
+  }, [all, idQuery, minP, maxP, sort, sizeF, districtF, levelF, typeF, itemKind, isTyped, parcelMeta, typeMeta]);
 
-  const activeFilters = (idQuery ? 1 : 0) + (minP ? 1 : 0) + (maxP ? 1 : 0) + (sizeF ? 1 : 0) + (districtF ? 1 : 0);
-  const clearFilters = () => { setIdQuery(""); setMinP(""); setMaxP(""); setSizeF(""); setDistrictF(""); };
+  const activeFilters = (idQuery ? 1 : 0) + (minP ? 1 : 0) + (maxP ? 1 : 0) + (sizeF ? 1 : 0) + (districtF ? 1 : 0) + (levelF ? 1 : 0) + (typeF ? 1 : 0);
+  const clearFilters = () => { setIdQuery(""); setMinP(""); setMaxP(""); setSizeF(""); setDistrictF(""); setLevelF(""); setTypeF(""); };
   const cartList = Object.values(cart);
   const cartTotal = cartList.reduce((s, l) => s + Number(l.priceWei) / 1e18, 0);
   const bulkBusy = bulkStep === "approving" || bulkStep === "submitting";
@@ -188,8 +242,8 @@ export function MarketGrid({
 
       {showFilters && (
         <div className="flex flex-wrap items-end gap-2 mb-3 px-1 pb-3 border-b border-border/40">
-          <label className="text-[10px] text-muted-foreground">Token ID
-            <input value={idQuery} onChange={(e) => setIdQuery(e.target.value)} placeholder="e.g. 1234" className={`${fieldCls} w-24 block mt-0.5`} />
+          <label className="text-[10px] text-muted-foreground">{isTyped ? "ID or name" : "Token ID"}
+            <input value={idQuery} onChange={(e) => setIdQuery(e.target.value)} placeholder={isTyped ? "name or ID" : "e.g. 1234"} className={`${fieldCls} ${isTyped ? "w-36" : "w-24"} block mt-0.5`} />
           </label>
           <label className="text-[10px] text-muted-foreground">Min GHST
             <input type="number" value={minP} onChange={(e) => setMinP(e.target.value)} placeholder="0" className={`${fieldCls} w-24 block mt-0.5`} />
@@ -212,6 +266,22 @@ export function MarketGrid({
                 </select>
               </label>
             </>
+          )}
+          {isTyped && typeOptions.length > 0 && (
+            <label className="text-[10px] text-muted-foreground">Type
+              <select value={typeF} onChange={(e) => setTypeF(e.target.value)} className={`${fieldCls} w-36 block mt-0.5`}>
+                <option value="">Any type</option>
+                {typeOptions.map((t) => <option key={t} value={t}>{itemKind === "installation" ? (INSTALLATION_TYPE_LABELS[t] ?? `Type ${t}`) : `Type ${t}`}</option>)}
+              </select>
+            </label>
+          )}
+          {itemKind === "installation" && levelOptions.length > 0 && (
+            <label className="text-[10px] text-muted-foreground">Level
+              <select value={levelF} onChange={(e) => setLevelF(e.target.value)} className={`${fieldCls} w-28 block mt-0.5`}>
+                <option value="">Any level</option>
+                {levelOptions.map((l) => <option key={l} value={l}>Level {l}</option>)}
+              </select>
+            </label>
           )}
           {activeFilters > 0 && (
             <button onClick={clearFilters} className="h-8 px-2.5 rounded-md text-xs font-medium border border-border/50 hover:bg-muted/40">Clear</button>
@@ -249,6 +319,9 @@ export function MarketGrid({
                   <MapPin className="w-6 h-6 text-emerald-500/70" />
                 )}
               </div>
+              {isTyped && typeMeta?.[l.tokenId]?.name && (
+                <div className="text-[9px] text-muted-foreground text-center truncate" title={typeMeta[l.tokenId].name}>{typeMeta[l.tokenId].name}</div>
+              )}
               <div className="text-[11px] text-emerald-500 font-semibold text-center">{ghst(l.priceWei)} GHST</div>
               <BuyButton listingId={l.listingId} tokenId={l.tokenId} priceInWei={l.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`#${l.tokenId}`} />
             </div>
