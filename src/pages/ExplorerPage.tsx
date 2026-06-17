@@ -22,6 +22,7 @@ import type { AssetType } from "@/lib/explorer/wearableTypes";
 import { MarketGrid } from "@/components/explorer/MarketGrid";
 import { AuctionGrid } from "@/components/explorer/AuctionGrid";
 import { GotchiManageModal, type ManageGotchi } from "@/components/explorer/GotchiActionsPanel";
+import { OwnedOverview } from "@/components/explorer/OwnedOverview";
 import { useQuery } from "@tanstack/react-query";
 import { CORE_SUBGRAPH } from "@/lib/subgraph";
 import { BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE } from "@/lib/lending/contracts";
@@ -229,6 +230,17 @@ export default function ExplorerPage() {
     }
   }, [gotchiFilters, setGotchiFilters]);
 
+  // Deep link from the deprecated profile: /explorer?scope=owned lands on the
+  // owned view.
+  const appliedScopeRef = useRef(false);
+  useEffect(() => {
+    if (appliedScopeRef.current) return;
+    if (new URLSearchParams(window.location.search).get("scope") === "owned") {
+      appliedScopeRef.current = true;
+      setMode("mine");
+    }
+  }, []);
+
   const handleModeChange = useCallback((newMode: DataMode) => {
     setMode(newMode);
     if (newMode === "baazaar" && assetType === "gotchi") {
@@ -362,6 +374,7 @@ export default function ExplorerPage() {
         </aside>
 
         <main className="flex-1 min-w-0">
+          {mode === "mine" && <OwnedOverview />}
           {assetType === "gotchi" && gotchiFilterCount > 0 && (
             <div className="px-2 md:px-4 py-2 border-b bg-muted/30 flex items-center gap-2 overflow-x-auto">
               <span className="text-xs text-muted-foreground shrink-0">{gotchiFilterCount} active:</span>

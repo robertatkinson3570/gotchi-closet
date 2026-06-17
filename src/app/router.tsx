@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { RootLayout } from "@/components/layout/RootLayout";
 
@@ -24,7 +24,6 @@ const LandManagementPage = lazy(() => import("@/pages/LandManagementPage"));
 const WhitelistsPage = lazy(() => import("@/pages/WhitelistsPage"));
 const BulkListPage = lazy(() => import("@/pages/BulkListPage"));
 const ActivityPage = lazy(() => import("@/pages/ActivityPage"));
-const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 const ForgePage = lazy(() => import("@/pages/ForgePage"));
 
 export const router = createBrowserRouter([
@@ -46,7 +45,7 @@ export const router = createBrowserRouter([
       { path: "wardrobe-lab", element: <WardrobeLabPage /> },
       { path: "explorer", element: <ExplorerPage /> },
       { path: "baazaar", element: <ExplorerPage /> },
-      { path: "me", element: <ProfilePage /> },
+      { path: "me", element: <Navigate to="/explorer?scope=owned" replace /> },
       { path: "activity", element: <ActivityPage /> },
       { path: "forge", element: <ForgePage /> },
       { path: "lending", element: <LendingPage /> },
