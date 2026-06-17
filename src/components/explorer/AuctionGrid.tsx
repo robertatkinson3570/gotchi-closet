@@ -21,6 +21,9 @@ import { useToast } from "@/ui/use-toast";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "./AssetImage";
 import { GotchiSvgById, FakeGotchiImage } from "./GotchiSvgById";
 import { Gavel } from "lucide-react";
+import { CORE_SUBGRAPH } from "@/lib/subgraph";
+import { GotchiExplorerCard } from "./GotchiExplorerCard";
+import type { ExplorerGotchi } from "@/lib/explorer/types";
 
 // The GBM diamond on Base exposes commitBid with selector 0xd2f699fc:
 // commitBid(auctionId, bidAmount, lastHighestBid, tokenContract, tokenId, amount, signature).
@@ -228,6 +231,7 @@ function AuctionDetailModal({
   setBidValue: (v: string) => void; onBid: () => void; onClose: () => void;
 }) {
   const left = a.endsAt - nowSec;
+  const isGotchi = a.contract === AAVEGOTCHI_DIAMOND_BASE.toLowerCase() && a.type === "erc721";
   const ownerUrl = (addr: string) => `/explorer?owner=${addr}`;
   const Addr = ({ label, addr }: { label: string; addr: string }) => (
     <div>
@@ -251,21 +255,24 @@ function AuctionDetailModal({
         </div>
 
         <div className="p-4 space-y-4">
-          <div className="flex gap-4">
-            <div className="w-40 h-40 shrink-0 flex items-center justify-center rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
+          {isGotchi ? (
+            <div className="max-w-[260px] mx-auto"><GotchiAuctionCard tokenId={a.tokenId} /></div>
+          ) : (
+            <div className="w-40 h-40 mx-auto flex items-center justify-center rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
               <AuctionItemImage a={a} />
             </div>
-            <div className="flex-1 min-w-0 space-y-2">
-              <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-2.5">
-                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Top bid</div>
-                <div className="text-lg font-bold text-emerald-500">{ghst(a.highestBid)} GHST</div>
-                <div className="text-[11px] text-muted-foreground">{a.totalBids} bid{a.totalBids === 1 ? "" : "s"}</div>
-              </div>
-              <div className="text-sm">
-                <span className={left <= 3600 ? "text-red-500 font-semibold" : "text-foreground"}>
-                  {left <= 0 ? "Ended" : `Ends in ${countdown(left)}`}
-                </span>
-              </div>
+          )}
+
+          <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-2.5 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Top bid</div>
+              <div className="text-lg font-bold text-emerald-500">{ghst(a.highestBid)} GHST</div>
+              <div className="text-[11px] text-muted-foreground">{a.totalBids} bid{a.totalBids === 1 ? "" : "s"}</div>
+            </div>
+            <div className="text-right text-sm">
+              <span className={left <= 3600 ? "text-red-500 font-semibold" : "text-foreground"}>
+                {left <= 0 ? "Ended" : `Ends in ${countdown(left)}`}
+              </span>
             </div>
           </div>
 
@@ -288,4 +295,47 @@ function AuctionDetailModal({
       </div>
     </div>
   );
+}
+
+const num = (a: any): number[] => (Array.isArray(a) ? a.map((n) => Number(n)) : []);
+
+// Fetch an auctioned gotchi as a full ExplorerGotchi so we can render the exact
+// same card the Explorer uses (traits, BRS, wearables, info overlay).
+async function fetchAuctionGotchi(id: string): Promise<ExplorerGotchi | null> {
+  const q = `{ aavegotchi(id:"${id}"){ id gotchiId name hauntId collateral level kinship experience numericTraits modifiedNumericTraits withSetsNumericTraits baseRarityScore modifiedRarityScore withSetsRarityScore equippedWearables owner{ id } createdAt usedSkillPoints equippedSetID equippedSetName stakedAmount lastInteracted } }`;
+  const res = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+  const json = await res.json();
+  const g = json.data?.aavegotchi;
+  if (!g) return null;
+  return {
+    id: g.id,
+    tokenId: String(g.gotchiId ?? id),
+    name: g.name || "Unnamed",
+    hauntId: Number(g.hauntId) || 1,
+    level: Number(g.level) || 0,
+    baseRarityScore: Number(g.baseRarityScore) || 0,
+    modifiedRarityScore: Number(g.modifiedRarityScore) || 0,
+    withSetsRarityScore: Number(g.withSetsRarityScore) || 0,
+    numericTraits: num(g.numericTraits),
+    modifiedNumericTraits: num(g.modifiedNumericTraits),
+    withSetsNumericTraits: num(g.withSetsNumericTraits),
+    equippedWearables: num(g.equippedWearables),
+    collateral: g.collateral || "",
+    owner: g.owner?.id || "",
+    kinship: Number(g.kinship) || 0,
+    experience: Number(g.experience) || 0,
+    createdAt: g.createdAt ? Number(g.createdAt) : undefined,
+    usedSkillPoints: g.usedSkillPoints != null ? Number(g.usedSkillPoints) : undefined,
+    equippedSetID: g.equippedSetID != null ? Number(g.equippedSetID) : undefined,
+    equippedSetName: g.equippedSetName || undefined,
+    stakedAmount: g.stakedAmount || undefined,
+    lastInteracted: g.lastInteracted ? Number(g.lastInteracted) : undefined,
+  };
+}
+
+// Renders the auctioned gotchi as the standard Explorer card.
+function GotchiAuctionCard({ tokenId }: { tokenId: string }) {
+  const { data } = useQuery({ queryKey: ["auction-gotchi", tokenId], queryFn: () => fetchAuctionGotchi(tokenId), staleTime: 60_000 });
+  if (!data) return <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>;
+  return <GotchiExplorerCard gotchi={data} frequencyLoading />;
 }

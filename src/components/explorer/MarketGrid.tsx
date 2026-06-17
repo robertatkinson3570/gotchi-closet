@@ -10,16 +10,17 @@ import { GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "./AssetImage";
 import { PortalImage } from "./PortalImage";
 
-type Listing = { listingId: string; tokenId: string; priceWei: string; quantity: number };
+type Listing = { listingId: string; tokenId: string; priceWei: string; quantity: number; created: number };
 
 // Parcel size codes used by the realm contract / gotchiverse subgraph.
 const PARCEL_SIZES: Record<string, string> = { "0": "Humble", "1": "Reasonable", "2": "Spacious (V)", "3": "Spacious (H)", "4": "Partner" };
 
+// Fetch newest-first (timeCreated desc) so the default view is the latest listings.
 async function fetchListings(kind: "erc721" | "erc1155", category: number): Promise<Listing[]> {
   const query =
     kind === "erc721"
-      ? `query($c: Int!){ erc721Listings(first: 200, where: { category: $c, cancelled: false, timePurchased: "0" }, orderBy: priceInWei, orderDirection: asc){ id tokenId priceInWei } }`
-      : `query($c: Int!){ erc1155Listings(first: 200, where: { category: $c, cancelled: false, sold: false, quantity_gt: 0 }, orderBy: priceInWei, orderDirection: asc){ id erc1155TypeId priceInWei quantity } }`;
+      ? `query($c: Int!){ erc721Listings(first: 200, where: { category: $c, cancelled: false, timePurchased: "0" }, orderBy: timeCreated, orderDirection: desc){ id tokenId priceInWei timeCreated } }`
+      : `query($c: Int!){ erc1155Listings(first: 200, where: { category: $c, cancelled: false, sold: false, quantity_gt: 0 }, orderBy: timeCreated, orderDirection: desc){ id erc1155TypeId priceInWei quantity timeCreated } }`;
   const res = await fetch(CORE_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -28,9 +29,9 @@ async function fetchListings(kind: "erc721" | "erc1155", category: number): Prom
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");
   if (kind === "erc721") {
-    return (json.data?.erc721Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.tokenId, priceWei: l.priceInWei, quantity: 1 }));
+    return (json.data?.erc721Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.tokenId, priceWei: l.priceInWei, quantity: 1, created: Number(l.timeCreated) || 0 }));
   }
-  return (json.data?.erc1155Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.erc1155TypeId, priceWei: l.priceInWei, quantity: Number(l.quantity) || 1 }));
+  return (json.data?.erc1155Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.erc1155TypeId, priceWei: l.priceInWei, quantity: Number(l.quantity) || 1, created: Number(l.timeCreated) || 0 }));
 }
 
 // Installation functional categories (installationType enum on the diamond).
@@ -108,7 +109,7 @@ export function MarketGrid({
   const [idQuery, setIdQuery] = useState("");
   const [minP, setMinP] = useState("");
   const [maxP, setMaxP] = useState("");
-  const [sort, setSort] = useState<"price-asc" | "price-desc" | "id-asc" | "id-desc">("price-asc");
+  const [sort, setSort] = useState<"recent" | "price-asc" | "price-desc" | "id-asc" | "id-desc">("recent");
   const [sizeF, setSizeF] = useState("");
   const [districtF, setDistrictF] = useState("");
   const [levelF, setLevelF] = useState("");
@@ -184,6 +185,7 @@ export function MarketGrid({
     }
     const arr = [...r];
     arr.sort((a, b) => {
+      if (sort === "recent") return b.created - a.created;
       if (sort === "price-asc") return Number(a.priceWei) - Number(b.priceWei);
       if (sort === "price-desc") return Number(b.priceWei) - Number(a.priceWei);
       if (sort === "id-asc") return Number(a.tokenId) - Number(b.tokenId);
@@ -234,6 +236,7 @@ export function MarketGrid({
           <SlidersHorizontal className="w-3.5 h-3.5" /> Filters{activeFilters ? ` (${activeFilters})` : ""}
         </button>
         <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} className={fieldCls}>
+          <option value="recent">Recently listed</option>
           <option value="price-asc">Price: low → high</option>
           <option value="price-desc">Price: high → low</option>
           <option value="id-asc">ID: low → high</option>
