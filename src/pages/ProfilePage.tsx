@@ -40,6 +40,7 @@ export default function ProfilePage() {
   const { gotchis, isLoading } = useGotchisByOwner(address?.toLowerCase() ?? "");
   const { data: listingPrices } = useOwnerListings(address?.toLowerCase());
   const [filter, setFilter] = useState<Filter>("all");
+  const [sort, setSort] = useState<"brs" | "kinship" | "level" | "id">("brs");
   const [manage, setManage] = useState<ManageGotchi | null>(null);
   const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
   const { writeContractAsync } = useWriteContract();
@@ -96,12 +97,19 @@ export default function ProfilePage() {
   );
 
   const isLent = (g: any) => Number(g.lending ?? 0) > 0;
+  const brs = (g: any) => Number(g.withSetsRarityScore ?? g.modifiedRarityScore ?? g.baseRarityScore ?? 0);
   const filtered = useMemo(() => {
-    const list = gotchis ?? [];
-    if (filter === "lent") return list.filter(isLent);
-    if (filter === "available") return list.filter((g) => !isLent(g));
+    let list = [...(gotchis ?? [])];
+    if (filter === "lent") list = list.filter(isLent);
+    else if (filter === "available") list = list.filter((g) => !isLent(g));
+    list.sort((a, b) => {
+      if (sort === "brs") return brs(b) - brs(a);
+      if (sort === "kinship") return Number(b.kinship ?? 0) - Number(a.kinship ?? 0);
+      if (sort === "level") return Number(b.level ?? 0) - Number(a.level ?? 0);
+      return Number(a.gotchiId ?? a.id) - Number(b.gotchiId ?? b.id);
+    });
     return list;
-  }, [gotchis, filter]);
+  }, [gotchis, filter, sort]);
 
   if (!isConnected) {
     return (
@@ -151,6 +159,17 @@ export default function ProfilePage() {
               {f === "lent" ? "Lent out" : f}
             </button>
           ))}
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as typeof sort)}
+            className="h-7 rounded-md border border-border/40 bg-background px-2 text-[11px] font-medium text-muted-foreground"
+            title="Sort gotchis"
+          >
+            <option value="brs">Highest BRS</option>
+            <option value="kinship">Most kinship</option>
+            <option value="level">Highest level</option>
+            <option value="id">Token ID</option>
+          </select>
           <button
             onClick={() => { setSelectMode((s) => !s); setSelected(new Set()); }}
             className={`h-7 px-2.5 rounded-md text-[11px] font-semibold border inline-flex items-center gap-1 ${selectMode ? "bg-emerald-600 text-white border-emerald-600" : "border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"}`}
