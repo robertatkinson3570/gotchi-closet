@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Outlet, useLocation, Link } from "react-router-dom";
 import { useAccount, useDisconnect } from "wagmi";
 import { Loader2 } from "lucide-react";
-import { Coins, Search, Shirt, MapPin, Activity, User } from "lucide-react";
+import { Coins, Search, Shirt, MapPin, Activity, User, Flame } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -15,6 +15,7 @@ const NAV: { to: string; title: string; icon: LucideIcon }[] = [
   { to: "/explorer", title: "Explorer / Baazaar", icon: Search },
   { to: "/dress", title: "Dress", icon: Shirt },
   { to: "/activity", title: "Activity", icon: Activity },
+  { to: "/forge", title: "Forge", icon: Flame },
   { to: "/lending", title: "Lending", icon: Coins },
   { to: "/lending/lands", title: "Land Management", icon: MapPin },
   { to: "/me", title: "My Profile", icon: User },

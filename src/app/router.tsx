@@ -25,6 +25,7 @@ const WhitelistsPage = lazy(() => import("@/pages/WhitelistsPage"));
 const BulkListPage = lazy(() => import("@/pages/BulkListPage"));
 const ActivityPage = lazy(() => import("@/pages/ActivityPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+const ForgePage = lazy(() => import("@/pages/ForgePage"));
 
 export const router = createBrowserRouter([
   {
@@ -47,6 +48,7 @@ export const router = createBrowserRouter([
       { path: "baazaar", element: <ExplorerPage /> },
       { path: "me", element: <ProfilePage /> },
       { path: "activity", element: <ActivityPage /> },
+      { path: "forge", element: <ForgePage /> },
       { path: "lending", element: <LendingPage /> },
       { path: "lending/analytics", element: <LendingAnalyticsPage /> },
       { path: "lending/me", element: <LendingMePage /> },

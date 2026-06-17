@@ -7,6 +7,19 @@ export const AAVEGOTCHI_DIAMOND_BASE = "0xA99c4B08201F2913Db8D28e71d020c4298F29d
 // GHST token on Base
 export const GHST_TOKEN_BASE = "0xcD2F22236DD9Dfe2356D7C543161D4d260FD9BcB" as const;
 
+// Forge diamond on Base (smelt wearables -> alloy/cores, forge queue, geodes).
+// Address from the dapp's 8453 chain config; verified live (has code, 91 facets).
+export const FORGE_DIAMOND_BASE = "0x50aF2d63b839aA32b4166FD1Cb247129b715186C" as const;
+
+export const FORGE_ABI = [
+  { name: "smeltWearables", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_itemIds", type: "uint256[]" }, { name: "_amounts", type: "uint256[]" }], outputs: [] },
+  { name: "claimForgeQueueItems", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_queueIds", type: "uint256[]" }], outputs: [] },
+  { name: "getForgeQueue", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "tuple[]", components: [
+    { name: "owner", type: "address" }, { name: "itemId", type: "uint256" }, { name: "id", type: "uint256" }, { name: "readyBlock", type: "uint256" }, { name: "claimed", type: "bool" }] }] },
+  { name: "balanceOfOwner", type: "function", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "tuple[]", components: [
+    { name: "tokenId", type: "uint256" }, { name: "balance", type: "uint256" }] }] },
+] as const;
+
 // Alchemica ERC-20s on Base, indexed in the same order the RealmFacet uses
 // when emitting `AlchemicaClaimed` events (FUD=0, FOMO=1, ALPHA=2, KEK=3).
 export const ALCHEMICA_TOKENS_BASE = [
