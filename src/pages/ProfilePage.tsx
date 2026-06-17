@@ -9,6 +9,7 @@ import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { GotchiManageModal, type ManageGotchi } from "@/components/explorer/GotchiActionsPanel";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
 import { useOwnerListings } from "@/lib/hooks/useOwnerListings";
+import { PortalsPanel } from "@/components/explorer/PortalsPanel";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { GHST_TOKEN_BASE, ALCHEMICA_TOKENS_BASE, ERC20_ABI, AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
@@ -150,6 +151,8 @@ export default function ProfilePage() {
         <Link to="/lending/lands" className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border/50 text-xs font-medium hover:bg-muted/50"><MapPin className="w-3.5 h-3.5" /> My land</Link>
         <Link to="/activity" className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border/50 text-xs font-medium hover:bg-muted/50"><ActivityIcon className="w-3.5 h-3.5" /> Activity</Link>
       </div>
+
+      <PortalsPanel />
 
       <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
         <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">My Gotchis ({(gotchis ?? []).length})</div>
