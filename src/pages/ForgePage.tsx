@@ -9,6 +9,7 @@ import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE, FORGE_DIAMOND_BASE, FORGE_ABI } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
+import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
 import wearablesData from "../../data/wearables.json";
 
 const ITEM_BALANCES_ABI = [
@@ -20,7 +21,7 @@ const WMAP = new Map<number, WData>((wearablesData as WData[]).map((w) => [w.id,
 const itemImg = (id: number) => `https://dapp.aavegotchi.com/brand/items/${id}.svg`;
 const FORGE_ITEM_MIN = 1_000_000_000; // forge materials (alloy/cores/geodes/schematics) live above this
 
-type QueueItem = { owner: string; itemId: bigint; id: bigint; readyBlock: bigint; claimed: boolean };
+type QueueItem = { itemId: bigint; gotchiId: bigint; id: bigint; readyBlock: bigint; claimed: boolean };
 type Bal = { tokenId: bigint; balance: bigint };
 
 export default function ForgePage() {
@@ -33,6 +34,13 @@ export default function ForgePage() {
 
   const [sel, setSel] = useState<Record<number, number>>({}); // wearableId -> qty to smelt
   const [busy, setBusy] = useState(false);
+
+  // Smelting/forging is done BY a gotchi — the user picks which one acts.
+  const { gotchis } = useGotchisByOwner(address?.toLowerCase() ?? "");
+  const myGotchis = useMemo(() => (gotchis ?? []).map((g) => ({ id: String(g.gotchiId ?? g.id), name: g.name })).filter((g) => /^\d+$/.test(g.id)), [gotchis]);
+  const myGotchiIds = useMemo(() => new Set(myGotchis.map((g) => g.id)), [myGotchis]);
+  const [actor, setActor] = useState<string>("");
+  const actorId = actor || myGotchis[0]?.id || "";
 
   // Unequipped wallet wearables (smeltable). itemBalances on the Aavegotchi diamond
   // returns wallet balances; equipped wearables aren't included.
@@ -57,22 +65,23 @@ export default function ForgePage() {
     },
   });
 
-  // Forge queue — find this owner's ready-to-claim items.
-  const { data: queue, refetch: refetchQueue } = useQuery({
-    queryKey: ["forge-queue", address?.toLowerCase()],
-    enabled: !!address && !!publicClient,
+  // Global forge queue (items are keyed by the forging gotchi). Filter to the
+  // user's gotchis client-side.
+  const { data: queueRaw, refetch: refetchQueue } = useQuery({
+    queryKey: ["forge-queue"],
+    enabled: !!publicClient,
     staleTime: 20_000,
     queryFn: async () => {
       const [q, block] = await Promise.all([
-        publicClient!.readContract({ address: FORGE_DIAMOND_BASE, abi: FORGE_ABI, functionName: "getForgeQueue" }) as Promise<readonly QueueItem[]>,
+        publicClient!.readContract({ address: FORGE_DIAMOND_BASE, abi: FORGE_ABI, functionName: "getForgeQueue" }) as unknown as Promise<readonly QueueItem[]>,
         publicClient!.getBlockNumber(),
       ]);
-      const mine = q.filter((x) => x.owner.toLowerCase() === address!.toLowerCase() && !x.claimed);
-      return mine.map((x) => ({ id: x.id, itemId: Number(x.itemId), ready: x.readyBlock <= block }));
+      return q.map((x) => ({ gotchiId: x.gotchiId.toString(), itemId: Number(x.itemId), ready: BigInt(x.readyBlock) <= block, claimed: x.claimed }));
     },
   });
 
-  const readyIds = useMemo(() => (queue ?? []).filter((q) => q.ready).map((q) => q.id), [queue]);
+  const myQueue = useMemo(() => (queueRaw ?? []).filter((x) => myGotchiIds.has(x.gotchiId) && !x.claimed), [queueRaw, myGotchiIds]);
+  const readyGotchiIds = useMemo(() => [...new Set(myQueue.filter((q) => q.ready).map((q) => q.gotchiId))], [myQueue]);
   const selCount = Object.values(sel).reduce((s, n) => s + n, 0);
 
   const setQty = (id: number, qty: number, max: number) => setSel((s) => { const n = { ...s }; const v = Math.max(0, Math.min(qty, max)); if (v === 0) delete n[id]; else n[id] = v; return n; });
@@ -80,12 +89,16 @@ export default function ForgePage() {
   const smelt = async () => {
     if (!publicClient || selCount === 0) return;
     if (!isOnBase) return toast({ title: "Switch to Base", variant: "destructive" });
-    const ids = Object.keys(sel).map(Number);
-    const names = ids.map((id) => `${sel[id]}× ${WMAP.get(id)?.name ?? `#${id}`}`).join(", ");
-    if (!window.confirm(`Smelt ${names}? This permanently burns these wearables in exchange for Forge materials (alloy/cores). Irreversible.`)) return;
+    if (!actorId) return toast({ title: "Select a gotchi to smelt with", variant: "destructive" });
+    // smeltWearables takes parallel itemIds + gotchiIds (one gotchi per burned item).
+    const itemIds: bigint[] = [];
+    for (const id of Object.keys(sel).map(Number)) for (let k = 0; k < sel[id]; k++) itemIds.push(BigInt(id));
+    const gotchiIds = itemIds.map(() => BigInt(actorId));
+    const names = Object.keys(sel).map((id) => `${sel[Number(id)]}× ${WMAP.get(Number(id))?.name ?? `#${id}`}`).join(", ");
+    if (!window.confirm(`Smelt ${names} using gotchi #${actorId}? This permanently burns these wearables for Forge materials (alloy). Irreversible.`)) return;
     setBusy(true);
     try {
-      const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: FORGE_DIAMOND_BASE, abi: FORGE_ABI, functionName: "smeltWearables", args: [ids.map((i) => BigInt(i)), ids.map((i) => BigInt(sel[i]))] });
+      const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: FORGE_DIAMOND_BASE, abi: FORGE_ABI, functionName: "smeltWearables", args: [itemIds, gotchiIds] });
       await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
       toast({ title: "Smelted", description: "Wearables smelted into Forge materials." });
       setSel({});
@@ -96,13 +109,13 @@ export default function ForgePage() {
   };
 
   const claim = async () => {
-    if (!publicClient || readyIds.length === 0) return;
+    if (!publicClient || readyGotchiIds.length === 0) return;
     if (!isOnBase) return toast({ title: "Switch to Base", variant: "destructive" });
     setBusy(true);
     try {
-      const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: FORGE_DIAMOND_BASE, abi: FORGE_ABI, functionName: "claimForgeQueueItems", args: [readyIds] });
+      const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: FORGE_DIAMOND_BASE, abi: FORGE_ABI, functionName: "claimForgeQueueItems", args: [readyGotchiIds.map((g) => BigInt(g))] });
       await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
-      toast({ title: "Claimed", description: `Claimed ${readyIds.length} forged item(s).` });
+      toast({ title: "Claimed", description: `Claimed forged item(s) for ${readyGotchiIds.length} gotchi(s).` });
       refetchQueue(); refetchMaterials();
     } catch (e) {
       toast({ title: "Claim failed", description: parseRevert(e).slice(0, 160), variant: "destructive" });
@@ -126,16 +139,28 @@ export default function ForgePage() {
       <h1 className="text-2xl font-bold tracking-tight inline-flex items-center gap-2 mb-1"><Flame className="w-6 h-6 text-orange-500" /> Forge</h1>
       <p className="text-sm text-muted-foreground mb-5">Smelt unequipped wearables into Forge materials, and claim items you've forged. All actions are signed in your wallet.</p>
 
-      {(queue ?? []).length > 0 && (
+      {myQueue.length > 0 && (
         <div className="mb-5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 flex items-center justify-between gap-3 flex-wrap">
           <div className="text-sm">
-            <span className="font-semibold">{readyIds.length}</span> ready to claim · <span className="text-muted-foreground">{(queue ?? []).length - readyIds.length} still forging</span>
+            <span className="font-semibold">{readyGotchiIds.length}</span> gotchi(s) ready to claim · <span className="text-muted-foreground">{myQueue.filter((q) => !q.ready).length} still forging</span>
           </div>
-          <button disabled={busy || readyIds.length === 0} onClick={claim} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-emerald-600 text-white text-sm font-semibold disabled:opacity-50">
+          <button disabled={busy || readyGotchiIds.length === 0} onClick={claim} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-emerald-600 text-white text-sm font-semibold disabled:opacity-50">
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <PackageOpen className="w-4 h-4" />} Claim ready
           </button>
         </div>
       )}
+
+      {/* Gotchi selector — smelting/forging is performed by a gotchi */}
+      <div className="mb-4 flex items-center gap-2 flex-wrap">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Forge with gotchi</span>
+        {myGotchis.length === 0 ? (
+          <span className="text-xs text-muted-foreground">You need a gotchi to smelt or forge.</span>
+        ) : (
+          <select value={actorId} onChange={(e) => setActor(e.target.value)} className="h-8 rounded-md border border-border bg-background px-2 text-xs">
+            {myGotchis.map((g) => <option key={g.id} value={g.id}>#{g.id}{g.name ? ` · ${g.name}` : ""}</option>)}
+          </select>
+        )}
+      </div>
 
       <div className="mb-6">
         <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 inline-flex items-center gap-1.5"><Hammer className="w-4 h-4" /> Smelt wearables</div>

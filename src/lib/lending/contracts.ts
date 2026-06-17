@@ -11,11 +11,16 @@ export const GHST_TOKEN_BASE = "0xcD2F22236DD9Dfe2356D7C543161D4d260FD9BcB" as c
 // Address from the dapp's 8453 chain config; verified live (has code, 91 facets).
 export const FORGE_DIAMOND_BASE = "0x50aF2d63b839aA32b4166FD1Cb247129b715186C" as const;
 
+// Canonical ForgeFacet signatures (from aavegotchi-contracts). Smelt/forge/claim
+// all operate per-gotchi: each wearable is smelted/forged BY a gotchi, and items
+// are claimed by the forging gotchi's id (not a queue id).
 export const FORGE_ABI = [
-  { name: "smeltWearables", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_itemIds", type: "uint256[]" }, { name: "_amounts", type: "uint256[]" }], outputs: [] },
-  { name: "claimForgeQueueItems", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_queueIds", type: "uint256[]" }], outputs: [] },
+  { name: "smeltWearables", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_itemIds", type: "uint256[]" }, { name: "_gotchiIds", type: "uint256[]" }], outputs: [] },
+  { name: "forgeWearables", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_itemIds", type: "uint256[]" }, { name: "_gotchiIds", type: "uint256[]" }, { name: "_gltr", type: "uint40[]" }], outputs: [] },
+  { name: "claimForgeQueueItems", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_gotchiIds", type: "uint256[]" }], outputs: [] },
+  { name: "reduceQueueTime", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_gotchiIds", type: "uint256[]" }, { name: "_amounts", type: "uint40[]" }], outputs: [] },
   { name: "getForgeQueue", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "tuple[]", components: [
-    { name: "owner", type: "address" }, { name: "itemId", type: "uint256" }, { name: "id", type: "uint256" }, { name: "readyBlock", type: "uint256" }, { name: "claimed", type: "bool" }] }] },
+    { name: "itemId", type: "uint256" }, { name: "gotchiId", type: "uint256" }, { name: "id", type: "uint256" }, { name: "readyBlock", type: "uint40" }, { name: "claimed", type: "bool" }] }] },
   { name: "balanceOfOwner", type: "function", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "tuple[]", components: [
     { name: "tokenId", type: "uint256" }, { name: "balance", type: "uint256" }] }] },
 ] as const;
