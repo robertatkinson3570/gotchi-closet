@@ -18,6 +18,8 @@ export function ParcelGrid({
   onUnstage,
   onMoveStart,
   size,
+  removalKeys,
+  onMoveExistingStart,
 }: {
   installations: Placed[];
   tiles: Placed[];
@@ -25,6 +27,10 @@ export function ParcelGrid({
   realmId?: string;
   /** When provided, installation tiles become clickable to remove (unequip). */
   onRemove?: (item: Placed) => void;
+  /** Keys (installationId:x:y) of existing installs staged for removal/move. */
+  removalKeys?: Set<string>;
+  /** Begin dragging an existing installation to reposition it. */
+  onMoveExistingStart?: (item: Placed) => void;
   /** `unequip:<realm>:<id>:<x>:<y>` key currently mid-transaction. */
   busyKey?: string | null;
   /** Footprint of the item being dragged from the inventory (enables drop). */
@@ -118,15 +124,19 @@ export function ParcelGrid({
           )}
           {items.map((it, idx) => {
             const removable = !!onRemove && it.category !== -1;
+            const movable = !!onMoveExistingStart && it.category !== -1;
+            const staged = removalKeys?.has(`${it.installationId}:${it.x}:${it.y}`) ?? false;
             const busy = busyKey === `unequip:${realmId}:${it.installationId}:${it.x}:${it.y}`;
             return (
               <div
                 key={idx}
-                title={`${it.name} · #${it.installationId} @ (${it.x},${it.y}) · ${it.w}×${it.h}${removable ? " — click to remove" : ""}`}
+                title={`${it.name} · #${it.installationId} @ (${it.x},${it.y}) · ${it.w}×${it.h}${removable ? " — click to remove, drag to move" : ""}`}
                 onClick={removable ? () => onRemove!(it) : undefined}
+                draggable={movable}
+                onDragStart={movable ? () => onMoveExistingStart!(it) : undefined}
                 className={`group absolute flex items-center justify-center ${
                   removable ? "cursor-pointer rounded-[2px] hover:ring-2 hover:ring-red-400 hover:z-10" : ""
-                } ${busy ? "animate-pulse ring-2 ring-red-500 rounded-[2px]" : ""}`}
+                } ${movable ? "cursor-move" : ""} ${staged ? "ring-2 ring-amber-400 rounded-[2px] opacity-40" : ""} ${busy ? "animate-pulse ring-2 ring-red-500 rounded-[2px]" : ""}`}
                 style={{
                   left: `${(it.x / cols) * 100}%`,
                   top: `${(it.y / rows) * 100}%`,
@@ -140,7 +150,9 @@ export function ParcelGrid({
                   className="w-full h-full object-contain pointer-events-none"
                   style={{ imageRendering: "pixelated" }}
                 />
-                {removable && (
+                {staged ? (
+                  <span className="absolute inset-0 flex items-center justify-center bg-amber-600/40 text-white text-[9px] font-bold z-20 rounded-[2px]">staged</span>
+                ) : removable && (
                   <span className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-red-600/50 text-white text-[10px] font-bold z-20 rounded-[2px]">
                     ✕
                   </span>
@@ -171,7 +183,7 @@ export function ParcelGrid({
                 style={{ imageRendering: "pixelated" }}
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
               />
-              <span className="relative text-[7px] font-bold text-white leading-none z-10" style={{ textShadow: "0 0 2px #000" }}>NEW</span>
+              <span className="relative text-[7px] font-bold text-white leading-none z-10" style={{ textShadow: "0 0 2px #000" }}>{(it as Placed & { _moved?: boolean })._moved ? "MOVE" : "NEW"}</span>
             </div>
           ))}
         </div>

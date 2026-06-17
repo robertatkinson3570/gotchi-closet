@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { qk } from "@/lib/queryKeys";
 import { createPortal } from "react-dom";
 import { useAccount, useWriteContract, usePublicClient } from "wagmi";
@@ -53,26 +53,46 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
   const [pending, setPending] = useState<Placed[]>([]);
   const [moving, setMoving] = useState<{ index: number; w: number; h: number } | null>(null);
   const [saving, setSaving] = useState<{ done: number; total: number } | null>(null);
+  const [removals, setRemovals] = useState<Placed[]>([]); // existing installs staged for removal
+  const [moves, setMoves] = useState<{ from: Placed; x: number; y: number }[]>([]); // existing installs staged to move
+  const [movingExisting, setMovingExisting] = useState<Placed | null>(null);
+
+  const keyOf = (i: { installationId: string; x: number; y: number }) => `${i.installationId}:${i.x}:${i.y}`;
+  const removalKeys = useMemo(() => {
+    const s = new Set<string>();
+    removals.forEach((r) => s.add(keyOf(r)));
+    moves.forEach((m) => s.add(keyOf(m.from)));
+    return s;
+  }, [removals, moves]);
+  // Staged ghosts drawn on the grid: new placements + existing-install moves.
+  const stagedGhosts = useMemo<Placed[]>(
+    () => [...pending, ...moves.map((m) => ({ ...m.from, x: m.x, y: m.y, _moved: true } as Placed & { _moved: boolean }))],
+    [pending, moves]
+  );
+  const pendingChanges = removals.length + moves.length + pending.length;
   const canBuild = !!actions && !!gotchiId && !!actions.isOnBase;
   const canRemove = canBuild;
 
-  async function savePending() {
-    if (!detail || !gotchiId || pending.length === 0) return;
-    setSaving({ done: 0, total: pending.length });
+  // Apply all staged changes in one pass: removals (unequip), moves (unequip
+  // old + equip new), then new placements (equip). One signature per tx.
+  async function saveChanges() {
+    if (!detail || !gotchiId || pendingChanges === 0) return;
+    const total = removals.length + moves.length * 2 + pending.length;
+    let done = 0;
+    setSaving({ done, total });
+    const tick = () => { done++; setSaving({ done, total }); };
+    const uneq = (i: { installationId: string; x: number; y: number }) =>
+      writeContractAsync({ chainId: BASE_CHAIN_ID, address: REALM_DIAMOND_BASE, abi: REALM_FACET_ABI, functionName: "unequipInstallation", args: [BigInt(detail.tokenId), BigInt(gotchiId!), BigInt(i.installationId), BigInt(i.x), BigInt(i.y), "0x"] });
+    const eq = (i: { installationId: string; x: number; y: number }) =>
+      writeContractAsync({ chainId: BASE_CHAIN_ID, address: REALM_DIAMOND_BASE, abi: REALM_FACET_ABI, functionName: "equipInstallation", args: [BigInt(detail.tokenId), BigInt(gotchiId!), BigInt(i.installationId), BigInt(i.x), BigInt(i.y), "0x"] });
     try {
-      for (let i = 0; i < pending.length; i++) {
-        const it = pending[i];
-        const hash = await writeContractAsync({
-          chainId: BASE_CHAIN_ID,
-          address: REALM_DIAMOND_BASE,
-          abi: REALM_FACET_ABI,
-          functionName: "equipInstallation",
-          args: [BigInt(detail.tokenId), BigInt(gotchiId), BigInt(it.installationId), BigInt(it.x), BigInt(it.y), "0x"],
-        });
-        await publicClient?.waitForTransactionReceipt({ hash, confirmations: 1 });
-        setSaving({ done: i + 1, total: pending.length });
+      for (const r of removals) { const h = await uneq(r); await publicClient?.waitForTransactionReceipt({ hash: h, confirmations: 1 }); tick(); }
+      for (const m of moves) {
+        const h1 = await uneq(m.from); await publicClient?.waitForTransactionReceipt({ hash: h1, confirmations: 1 }); tick();
+        const h2 = await eq({ installationId: m.from.installationId, x: m.x, y: m.y }); await publicClient?.waitForTransactionReceipt({ hash: h2, confirmations: 1 }); tick();
       }
-      setPending([]);
+      for (const it of pending) { const h = await eq(it); await publicClient?.waitForTransactionReceipt({ hash: h, confirmations: 1 }); tick(); }
+      setPending([]); setRemovals([]); setMoves([]);
       queryClient.invalidateQueries({ queryKey: qk.parcelDetail() });
       queryClient.invalidateQueries({ queryKey: qk.landParcels() });
     } catch (e) {
@@ -338,7 +358,7 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                   <Package className="w-3.5 h-3.5 text-primary" /> Layout · {detail.installations.length} installations · {detail.tiles.length} tiles
                 </span>
                 {canRemove && (
-                  <span className="text-[10px] font-normal text-muted-foreground">Click an installation to remove it</span>
+                  <span className="text-[10px] font-normal text-muted-foreground">Click to remove · drag to move · staged until you Save</span>
                 )}
               </div>
               <ParcelGrid
@@ -346,31 +366,25 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                 tiles={detail.tiles}
                 realmId={detail.tokenId}
                 busyKey={actions?.activeKey ?? null}
+                removalKeys={removalKeys}
                 onRemove={
                   canRemove
-                    ? (item) => {
-                        if (
-                          typeof window !== "undefined" &&
-                          !window.confirm(`Remove ${item.name} at (${item.x},${item.y})? This unequips it from the parcel.`)
-                        )
-                          return;
-                        actions!.unequip(
-                          BigInt(detail.tokenId),
-                          BigInt(gotchiId!),
-                          BigInt(item.installationId),
-                          BigInt(item.x),
-                          BigInt(item.y)
-                        );
-                      }
+                    ? (item) =>
+                        setRemovals((r) => (r.some((x) => keyOf(x) === keyOf(item)) ? r.filter((x) => keyOf(x) !== keyOf(item)) : [...r, item]))
                     : undefined
                 }
+                onMoveExistingStart={canBuild ? (item) => { setMovingExisting(item); setDragItem(null); setMoving(null); } : undefined}
                 placing={
-                  dragItem ? { w: dragItem.w, h: dragItem.h } : moving ? { w: moving.w, h: moving.h } : null
+                  dragItem ? { w: dragItem.w, h: dragItem.h } : moving ? { w: moving.w, h: moving.h } : movingExisting ? { w: movingExisting.w, h: movingExisting.h } : null
                 }
                 onPlace={
                   canBuild
                     ? (x, y) => {
-                        if (moving) {
+                        if (movingExisting) {
+                          const from = movingExisting;
+                          setMoves((m) => [...m.filter((z) => keyOf(z.from) !== keyOf(from)), { from, x, y }]);
+                          setMovingExisting(null);
+                        } else if (moving) {
                           setPending((p) => p.map((it, idx) => (idx === moving.index ? { ...it, x, y } : it)));
                           setMoving(null);
                         } else if (dragItem) {
@@ -393,11 +407,14 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                       }
                     : undefined
                 }
-                pending={pending}
-                onUnstage={(i) => setPending((p) => p.filter((_, idx) => idx !== i))}
+                pending={stagedGhosts}
+                onUnstage={(i) => {
+                  if (i < pending.length) setPending((p) => p.filter((_, idx) => idx !== i));
+                  else setMoves((m) => m.filter((_, idx) => idx !== i - pending.length));
+                }}
                 onMoveStart={(i) => {
-                  setMoving({ index: i, w: pending[i].w, h: pending[i].h });
-                  setDragItem(null);
+                  if (i < pending.length) { setMoving({ index: i, w: pending[i].w, h: pending[i].h }); setDragItem(null); }
+                  else { const mv = moves[i - pending.length]; setMovingExisting(mv.from); setMoves((m) => m.filter((_, idx) => idx !== i - pending.length)); setDragItem(null); }
                 }}
                 size={detail.size}
               />
@@ -406,24 +423,24 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                 <div className="mt-3">
                   <div className="text-xs font-semibold mb-1.5 flex items-center justify-between gap-2 flex-wrap">
                     <span>Your installations — drag onto the grid (staged, not saved yet)</span>
-                    {pending.length > 0 && (
+                    {pendingChanges > 0 && (
                       <span className="inline-flex items-center gap-1.5">
                         <button
                           type="button"
                           disabled={!!saving}
-                          onClick={savePending}
+                          onClick={saveChanges}
                           className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-emerald-600 text-white hover:bg-emerald-600/90 disabled:opacity-50 text-[11px] font-semibold"
                         >
                           {saving ? (
                             <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving {saving.done}/{saving.total}…</>
                           ) : (
-                            <>Save changes ({pending.length})</>
+                            <>Save changes ({pendingChanges})</>
                           )}
                         </button>
                         <button
                           type="button"
                           disabled={!!saving}
-                          onClick={() => setPending([])}
+                          onClick={() => { setPending([]); setRemovals([]); setMoves([]); setMovingExisting(null); }}
                           className="h-7 px-2 rounded-md border border-border/40 text-[11px] disabled:opacity-50"
                         >
                           Discard
