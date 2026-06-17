@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useAccount, useChainId, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, ESCROW_FACET_ABI, GHST_TOKEN_BASE, ALCHEMICA_TOKENS_BASE } from "@/lib/lending/contracts";
+import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, ESCROW_FACET_ABI, GHST_TOKEN_BASE } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { EquipWearablesModal } from "@/components/explorer/EquipWearablesModal";
@@ -214,7 +214,8 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
   );
 }
 
-const POCKET_TOKENS = [{ symbol: "GHST", address: GHST_TOKEN_BASE }, ...ALCHEMICA_TOKENS_BASE];
+// A gotchi's escrow ("pocket") holds GHST — show that, not alchemica.
+const POCKET_TOKENS = [{ symbol: "GHST", address: GHST_TOKEN_BASE }];
 
 // Each gotchi has a per-token escrow ("pocket"); the owner can sweep its ERC20s
 // to their wallet (must be unlocked / not actively rented). Reuses the lending
