@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { useAccount, useChainId, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
-import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet } from "lucide-react";
+import { useAccount, useChainId, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
+import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, ESCROW_FACET_ABI, GHST_TOKEN_BASE, ALCHEMICA_TOKENS_BASE } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
@@ -16,6 +16,14 @@ const ACTIONS_ABI = [
   { name: "safeTransferFrom", type: "function", stateMutability: "nonpayable", inputs: [{ name: "from", type: "address" }, { name: "to", type: "address" }, { name: "tokenId", type: "uint256" }], outputs: [] },
   { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
   { name: "cancelERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_listingId", type: "uint256" }], outputs: [] },
+  // Respec: resets the gotchi's traits to base and refunds all spent skill
+  // points. First respec per gotchi is free; subsequent ones charge a fee
+  // enforced by the contract. Token id is uint32 here (matches the diamond).
+  { name: "resetSkillPoints", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_tokenId", type: "uint32" }], outputs: [] },
+] as const;
+
+const RESPEC_COUNT_ABI = [
+  { name: "respecCount", type: "function", stateMutability: "view", inputs: [{ name: "_tokenId", type: "uint32" }], outputs: [{ name: "", type: "uint256" }] },
 ] as const;
 
 export type ManageGotchi = {
@@ -48,6 +56,9 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
 
   const id = BigInt(gotchiId);
   const busy = status.kind === "busy";
+
+  const { data: respecCountData } = useReadContract({ address: AAVEGOTCHI_DIAMOND_BASE, abi: RESPEC_COUNT_ABI, functionName: "respecCount", args: [Number(gotchiId)], chainId: BASE_CHAIN_ID });
+  const respecCount = respecCountData != null ? Number(respecCountData) : null;
 
   const run = async (label: string, functionName: string, args: any[]) => {
     if (!isConnected || !address || !publicClient) return setStatus({ kind: "err", label: "Connect your wallet first" });
@@ -139,6 +150,21 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
                 ))}
               </div>
               <button disabled={busy} onClick={() => run("Spend skill points", "spendSkillPoints", [id, sp.map((v) => Math.trunc(Number(v) || 0))])} className="h-9 w-full rounded bg-amber-500/15 text-amber-600 border border-amber-500/30 text-sm font-semibold disabled:opacity-50">Spend</button>
+            </Section>
+
+            <Section icon={<RotateCcw className="w-4 h-4 text-violet-500" />} title="Respec (reset skill points)">
+              <p className="text-[11px] text-muted-foreground">
+                Resets traits to base and refunds all spent skill points.
+                {respecCount != null && <> Respecs performed: <span className="font-semibold text-foreground">{respecCount}</span>.</>}{" "}
+                {respecCount === 0 ? "First respec is free." : "A fee applies (enforced by the contract)."}
+              </p>
+              <button
+                disabled={busy}
+                onClick={() => { if (window.confirm(`Respec gotchi #${gotchiId}? This resets its traits to base values and refunds all spent skill points${respecCount && respecCount > 0 ? " (a fee applies)" : " (first respec is free)"}.`)) run("Respec", "resetSkillPoints", [Number(gotchiId)]); }}
+                className="h-9 w-full rounded bg-violet-500/15 text-violet-600 border border-violet-500/30 text-sm font-semibold disabled:opacity-50"
+              >
+                Respec gotchi
+              </button>
             </Section>
 
             <Section icon={<Tag className="w-4 h-4 text-emerald-500" />} title="List for sale">
