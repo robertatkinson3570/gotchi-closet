@@ -15,7 +15,7 @@ const ACTIONS_ABI = [
   { name: "spendSkillPoints", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_tokenId", type: "uint256" }, { name: "_values", type: "int16[4]" }], outputs: [] },
   { name: "decreaseAndDestroy", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_tokenId", type: "uint256" }, { name: "_toId", type: "uint256" }], outputs: [] },
   { name: "safeTransferFrom", type: "function", stateMutability: "nonpayable", inputs: [{ name: "from", type: "address" }, { name: "to", type: "address" }, { name: "tokenId", type: "uint256" }], outputs: [] },
-  { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
+  { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_category", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
   { name: "cancelERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_listingId", type: "uint256" }], outputs: [] },
   // Respec: resets the gotchi's traits to base and refunds all spent skill
   // points. First respec per gotchi is free; subsequent ones charge a fee
@@ -172,7 +172,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
             <Section icon={<Tag className="w-4 h-4 text-emerald-500" />} title="List for sale">
               <div className="flex items-center gap-1.5">
                 <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price (GHST)" className={field} />
-                <button disabled={busy || !(Number(price) > 0)} onClick={() => run("List", "addERC721Listing", [AAVEGOTCHI_DIAMOND_BASE, id, BigInt(Math.floor(Number(price) * 1e18))])} className={`${goBtn} bg-emerald-600`}>List</button>
+                <button disabled={busy || !(Number(price) > 0)} onClick={() => run("List", "addERC721Listing", [AAVEGOTCHI_DIAMOND_BASE, id, 3n, BigInt(Math.floor(Number(price) * 1e18))])} className={`${goBtn} bg-emerald-600`}>List</button>
               </div>
               <button disabled={busy} onClick={cancelListing} className="h-8 w-full rounded border border-border/60 text-xs font-medium text-muted-foreground hover:bg-muted/50 disabled:opacity-50">Cancel my listing</button>
             </Section>

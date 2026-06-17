@@ -733,12 +733,15 @@ export const ERC721_MARKETPLACE_ABI = [
     outputs: [],
   },
   {
+    // Base diamond takes a _category arg (3 = gotchi, 4 = realm). The 3-arg
+    // Polygon-era variant does not exist on Base.
     name: "addERC721Listing",
     type: "function",
     stateMutability: "nonpayable",
     inputs: [
       { name: "_erc721TokenAddress", type: "address" },
       { name: "_erc721TokenId", type: "uint256" },
+      { name: "_category", type: "uint256" },
       { name: "_priceInWei", type: "uint256" },
     ],
     outputs: [],
@@ -769,6 +772,8 @@ export const ERC1155_MARKETPLACE_ABI = [
     outputs: [],
   },
   {
+    // Base diamond takes a _category arg (0 wearable, 2 consumable, 4
+    // installation, 5 tile). The 4-arg Polygon variant does not exist on Base.
     name: "setERC1155Listing",
     type: "function",
     stateMutability: "nonpayable",
@@ -776,6 +781,7 @@ export const ERC1155_MARKETPLACE_ABI = [
       { name: "_erc1155TokenAddress", type: "address" },
       { name: "_erc1155TypeId", type: "uint256" },
       { name: "_quantity", type: "uint256" },
+      { name: "_category", type: "uint256" },
       { name: "_priceInWei", type: "uint256" },
     ],
     outputs: [],

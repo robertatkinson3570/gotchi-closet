@@ -23,6 +23,7 @@ import { MarketGrid } from "@/components/explorer/MarketGrid";
 import { AuctionGrid } from "@/components/explorer/AuctionGrid";
 import { GotchiManageModal, type ManageGotchi } from "@/components/explorer/GotchiActionsPanel";
 import { OwnedOverview } from "@/components/explorer/OwnedOverview";
+import { OwnedMarketGrid } from "@/components/explorer/OwnedMarketGrid";
 import { useQuery } from "@tanstack/react-query";
 import { CORE_SUBGRAPH } from "@/lib/subgraph";
 import { BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE } from "@/lib/lending/contracts";
@@ -34,7 +35,7 @@ import { useToast } from "@/ui/use-toast";
 import setsData from "../../data/setsByTraitDirection.json";
 
 const ADD_LISTING_ABI = [
-  { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
+  { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_category", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
 ] as const;
 
 export type ViewMode = "cards" | "family";
@@ -69,6 +70,7 @@ export default function ExplorerPage() {
     return "gotchi";
   });
   const [mode, setMode] = useState<DataMode>("all");
+  const [marketScope, setMarketScope] = useState<"buy" | "owned">("buy");
   const [manage, setManage] = useState<ManageGotchi | null>(null);
   const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
   const { writeContractAsync } = useWriteContract();
@@ -91,7 +93,7 @@ export default function ExplorerPage() {
     let ok = 0, failed = 0;
     for (const gid of ids) {
       try {
-        const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ADD_LISTING_ABI, functionName: "addERC721Listing", args: [AAVEGOTCHI_DIAMOND_BASE, BigInt(gid), wei] });
+        const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ADD_LISTING_ABI, functionName: "addERC721Listing", args: [AAVEGOTCHI_DIAMOND_BASE, BigInt(gid), 3n, wei] });
         await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
         ok++;
       } catch (e) {
@@ -400,7 +402,25 @@ export default function ExplorerPage() {
           )}
 
           {MARKET_TABS[assetType] ? (
-            <MarketGrid {...MARKET_TABS[assetType]} />
+            (() => {
+              const ownable = assetType === "item" || assetType === "installation" || assetType === "parcel";
+              return (
+                <div>
+                  {ownable && (
+                    <div className="flex items-center gap-1 px-2 pt-2">
+                      {(["buy", "owned"] as const).map((s) => (
+                        <button key={s} onClick={() => setMarketScope(s)} className={`h-7 px-3 rounded-md text-[11px] font-semibold border capitalize ${marketScope === s ? "bg-primary/15 text-primary border-primary/40" : "border-border/40 text-muted-foreground hover:bg-muted/40"}`}>
+                          {s === "owned" ? "Owned · bulk list" : "Buy"}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {ownable && marketScope === "owned"
+                    ? <OwnedMarketGrid itemKind={assetType as "item" | "installation" | "parcel"} />
+                    : <MarketGrid {...MARKET_TABS[assetType]} />}
+                </div>
+              );
+            })()
           ) : assetType === "auction" ? (
             <AuctionGrid />
           ) : assetType === "gotchi" ? (
