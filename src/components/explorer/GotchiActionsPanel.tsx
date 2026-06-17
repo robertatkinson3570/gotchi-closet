@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
-import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw } from "lucide-react";
+import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw, Clock } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, ESCROW_FACET_ABI, GHST_TOKEN_BASE } from "@/lib/lending/contracts";
+import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, ESCROW_FACET_ABI, GHST_TOKEN_BASE, LENDING_FACET_ABI } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { EquipWearablesModal } from "@/components/explorer/EquipWearablesModal";
@@ -53,6 +54,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
   const [sp, setSp] = useState<[string, string, string, string]>(["0", "0", "0", "0"]);
   const [to, setTo] = useState("");
   const [price, setPrice] = useState("");
+  const [sacrificeTo, setSacrificeTo] = useState("");
 
   const id = BigInt(gotchiId);
   const busy = status.kind === "busy";
@@ -179,6 +181,8 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
               <PocketBody gotchiId={gotchiId} />
             </Section>
 
+            <EndRentalBody gotchiId={gotchiId} />
+
             <Section icon={<Send className="w-4 h-4" />} title="Transfer">
               <div className="flex items-center gap-1.5">
                 <input value={to} onChange={(e) => setTo(e.target.value)} placeholder="0x recipient address" className={field} />
@@ -187,10 +191,13 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
             </Section>
 
             <Section icon={<Flame className="w-4 h-4 text-red-500" />} title="Sacrifice (irreversible)">
-              <p className="text-[11px] text-muted-foreground">Destroys the gotchi and returns its staked collateral.</p>
+              <p className="text-[11px] text-muted-foreground">Destroys this gotchi, returns its staked collateral, and transfers its XP to another gotchi you choose.</p>
+              <div className="flex items-center gap-1.5">
+                <input type="number" value={sacrificeTo} onChange={(e) => setSacrificeTo(e.target.value)} placeholder="Transfer XP to gotchi #" className={field} />
+              </div>
               <button
-                disabled={busy}
-                onClick={() => { if (window.confirm(`Sacrifice gotchi #${gotchiId}? IRREVERSIBLE — destroys it and returns staked collateral.`)) run("Sacrifice", "decreaseAndDestroy", [id, id]); }}
+                disabled={busy || !/^\d+$/.test(sacrificeTo.trim())}
+                onClick={() => { const toId = sacrificeTo.trim(); if (/^\d+$/.test(toId) && window.confirm(`Sacrifice gotchi #${gotchiId}? IRREVERSIBLE — destroys it, returns staked collateral, and sends its XP to gotchi #${toId}.`)) run("Sacrifice", "decreaseAndDestroy", [id, BigInt(toId)]); }}
                 className="h-9 w-full rounded bg-red-500/15 text-red-500 border border-red-500/40 text-sm font-semibold disabled:opacity-50"
               >
                 Sacrifice gotchi
@@ -251,5 +258,58 @@ function PocketBody({ gotchiId }: { gotchiId: string }) {
       {step === "success" && <div className="text-[11px] text-emerald-500">Withdrawn to your wallet.</div>}
       {step === "error" && <div className="text-[11px] text-red-500">{errorMsg?.slice(0, 120)}</div>}
     </>
+  );
+}
+
+// Shows an "End rental" action when the gotchi is actively rented out. The
+// rental can be ended (claim final split + free the gotchi) once the agreed
+// period has elapsed.
+function EndRentalBody({ gotchiId }: { gotchiId: string }) {
+  const { address } = useAccount();
+  const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
+  const { writeContractAsync } = useWriteContract();
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok?: boolean; text: string } | null>(null);
+
+  const { data: lending } = useQuery({
+    queryKey: ["gotchi-active-lending", gotchiId],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const q = `{ gotchiLendings(first:1, where:{ gotchiTokenId:"${gotchiId}", completed:false, cancelled:false }){ timeAgreed period borrower } }`;
+      const res = await fetch(CORE_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+      const j = await res.json();
+      return j.data?.gotchiLendings?.[0] ?? null;
+    },
+  });
+
+  const timeAgreed = Number(lending?.timeAgreed ?? 0);
+  if (!lending || timeAgreed === 0) return null; // not actively rented
+
+  const endTs = timeAgreed + Number(lending.period ?? 0);
+  const now = Math.floor(Date.now() / 1000);
+  const expired = now >= endTs;
+  const endDate = new Date(endTs * 1000).toLocaleString();
+
+  const endRental = async () => {
+    if (!publicClient) return;
+    setBusy(true); setMsg(null);
+    try {
+      const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: LENDING_FACET_ABI, functionName: "claimAndEndGotchiLending", args: [Number(gotchiId)] });
+      await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+      setMsg({ ok: true, text: "Rental ended and final split claimed." });
+    } catch (e) {
+      setMsg({ text: parseRevert(e).slice(0, 140) });
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="rounded-lg border border-amber-500/40 p-3 space-y-2 sm:col-span-2">
+      <div className="flex items-center gap-1.5 text-sm font-semibold"><Clock className="w-4 h-4 text-amber-500" /> Rented out</div>
+      <p className="text-[11px] text-muted-foreground">{expired ? `Rental period ended ${endDate}. You can end it now to reclaim your gotchi and the final revenue split.` : `Rented until ${endDate}. You can end it once the period elapses.`}</p>
+      <button disabled={busy || !expired || !address} onClick={endRental} className="h-9 w-full rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/40 text-sm font-semibold disabled:opacity-50">
+        {busy ? "Ending…" : expired ? "End rental" : "Rental still active"}
+      </button>
+      {msg && <div className={`text-[11px] ${msg.ok ? "text-emerald-500" : "text-red-500"}`}>{msg.text}</div>}
+    </div>
   );
 }
