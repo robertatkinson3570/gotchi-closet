@@ -128,6 +128,30 @@ function countdown(sec: number): string {
   return `${m}m`;
 }
 
+const AUCTION_TRAITS = ["NRG", "AGG", "SPK", "BRN", "EYS", "EYC"];
+type GInfo = { name: string; brs: number; kin: number; lvl: number; haunt: number; traits: number[] };
+
+// Batch-fetch gotchi stats for auction cards (one query for all gotchi auctions).
+async function fetchGotchiBatch(ids: string[]): Promise<Record<string, GInfo>> {
+  if (ids.length === 0) return {};
+  const idList = ids.map((i) => `"${i}"`).join(",");
+  const q = `{ aavegotchis(first:1000, where:{ id_in:[${idList}] }){ id name baseRarityScore modifiedRarityScore withSetsRarityScore kinship level hauntId numericTraits modifiedNumericTraits withSetsNumericTraits } }`;
+  const res = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+  const json = await res.json();
+  const out: Record<string, GInfo> = {};
+  for (const g of json.data?.aavegotchis ?? []) {
+    out[g.id] = {
+      name: g.name || "Unnamed",
+      brs: Number(g.withSetsRarityScore ?? g.modifiedRarityScore ?? g.baseRarityScore ?? 0),
+      kin: Number(g.kinship) || 0,
+      lvl: Number(g.level) || 0,
+      haunt: Number(g.hauntId) || 1,
+      traits: (g.withSetsNumericTraits ?? g.modifiedNumericTraits ?? g.numericTraits ?? []).map((n: any) => Number(n)),
+    };
+  }
+  return out;
+}
+
 /** Live GBM auctions with inline bidding (GHST approve + commitBid). */
 export function AuctionGrid() {
   const { address, isConnected } = useAccount();
@@ -149,6 +173,19 @@ export function AuctionGrid() {
 
   const { data, isLoading, error, refetch } = useQuery({ queryKey: qk.gbmAuctions(), queryFn: fetchAuctions, staleTime: 30_000 });
   const rows = useMemo(() => (data ?? []).filter((a) => a.startsAt <= nowSec), [data, nowSec]);
+
+  // Batch-fetch stats for all gotchi auctions so cards are scannable without
+  // opening each one.
+  const gotchiIds = useMemo(
+    () => rows.filter((a) => a.contract === AAVEGOTCHI_DIAMOND_BASE.toLowerCase() && a.type === "erc721").map((a) => a.tokenId),
+    [rows]
+  );
+  const { data: gotchiInfo } = useQuery({
+    queryKey: ["auction-gotchi-batch", gotchiIds.join(",")],
+    enabled: gotchiIds.length > 0,
+    staleTime: 60_000,
+    queryFn: () => fetchGotchiBatch(gotchiIds),
+  });
 
   const placeBid = async (a: Auction) => {
     if (!isConnected || !address || !publicClient) return toast({ title: "Connect wallet", variant: "destructive" });
@@ -200,6 +237,24 @@ export function AuctionGrid() {
               <div className="h-24 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
                 <AuctionItemImage a={a} />
               </div>
+              {(() => {
+                const g = gotchiInfo?.[a.tokenId];
+                if (!g) return null;
+                return (
+                  <div className="space-y-0.5">
+                    <div className="text-[10px] font-semibold truncate" title={g.name}>{g.name}</div>
+                    <div className="text-[9px] text-muted-foreground">RAR {g.brs} · KIN {g.kin} · L{g.lvl} · H{g.haunt}</div>
+                    <div className="grid grid-cols-6 gap-px text-center text-[8px] leading-tight">
+                      {AUCTION_TRAITS.map((t, i) => (
+                        <div key={t} className="rounded bg-muted/40 py-0.5">
+                          <div className="text-muted-foreground">{t}</div>
+                          <div className="font-semibold tabular-nums">{g.traits[i]}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
               <div className="text-[11px] text-muted-foreground">
                 Top bid <span className="text-emerald-500 font-semibold">{ghst(a.highestBid)} GHST</span>
               </div>
