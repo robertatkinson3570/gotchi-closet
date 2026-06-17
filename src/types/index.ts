@@ -18,6 +18,8 @@ export type Gotchi = {
   blocksElapsed?: number;
   // True (>0) when this gotchi has an active GotchiLending listing.
   lending?: number | string | null;
+  // True when this gotchi is currently lent out (sourced from gotchisLentOut).
+  lentOut?: boolean;
   kinship?: number;
   // Optional Baazaar metadata (only present for Baazaar-sourced gotchis)
   market?: {

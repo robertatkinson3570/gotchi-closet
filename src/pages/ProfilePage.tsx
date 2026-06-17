@@ -8,6 +8,7 @@ import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { GotchiManageModal, type ManageGotchi } from "@/components/explorer/GotchiActionsPanel";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
+import { useOwnerListings } from "@/lib/hooks/useOwnerListings";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { GHST_TOKEN_BASE, ALCHEMICA_TOKENS_BASE, ERC20_ABI, AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
@@ -27,11 +28,17 @@ const fmt = (wei: bigint) => {
   return v.toLocaleString(undefined, { maximumFractionDigits: v < 1 ? 3 : v < 1000 ? 1 : 0 });
 };
 
+const fmtGhst = (wei: string) => {
+  const v = Number(wei) / 1e18;
+  return v.toLocaleString(undefined, { maximumFractionDigits: v < 1 ? 3 : v < 1000 ? 1 : 0 });
+};
+
 type Filter = "all" | "lent" | "available";
 
 export default function ProfilePage() {
   const { address, isConnected } = useAccount();
   const { gotchis, isLoading } = useGotchisByOwner(address?.toLowerCase() ?? "");
+  const { data: listingPrices } = useOwnerListings(address?.toLowerCase());
   const [filter, setFilter] = useState<Filter>("all");
   const [manage, setManage] = useState<ManageGotchi | null>(null);
   const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
@@ -183,6 +190,11 @@ export default function ProfilePage() {
                   <span>#{gid}</span>
                   {isLent(g) && <span className="text-amber-500">Lent</span>}
                 </div>
+                {listingPrices?.[gid] && (
+                  <div className="mt-0.5 flex items-center gap-0.5 text-[9px] font-semibold text-emerald-500" title="Listed for sale">
+                    <Tag className="w-2.5 h-2.5" /> {fmtGhst(listingPrices[gid])} GHST
+                  </div>
+                )}
               </button>
             );
           })}

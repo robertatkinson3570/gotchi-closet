@@ -22,11 +22,37 @@ export const GOTCHIS_BY_OWNER = gql`
         lending
         kinship
       }
+      gotchisLentOut
     }
     _meta {
       block {
         number
       }
+    }
+  }
+`;
+
+// Fetch full gotchi entities by token id — used to resolve a user's lent-out
+// gotchis, which live under `gotchisLentOut` (ids only) because ownership moves
+// to the lending escrow during an active rental.
+export const GOTCHIS_BY_IDS = gql`
+  query GotchisByIds($ids: [ID!]) {
+    aavegotchis(first: 1000, where: { id_in: $ids }) {
+      id
+      name
+      level
+      numericTraits
+      modifiedNumericTraits
+      withSetsNumericTraits
+      equippedWearables
+      baseRarityScore
+      modifiedRarityScore
+      withSetsRarityScore
+      usedSkillPoints
+      hauntId
+      collateral
+      createdAt
+      kinship
     }
   }
 `;

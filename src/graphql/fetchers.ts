@@ -1,5 +1,5 @@
 import { client } from "./client";
-import { GOTCHIS_BY_OWNER, GOTCHI_BY_TOKEN_ID, GOTCHIS_SEARCH, WEARABLES } from "./queries";
+import { GOTCHIS_BY_OWNER, GOTCHIS_BY_IDS, GOTCHI_BY_TOKEN_ID, GOTCHIS_SEARCH, WEARABLES } from "./queries";
 import type { Gotchi, Wearable, WearableSet } from "@/types";
 import wearablesData from "../../data/wearables.json";
 import wearableSetsData from "../../data/wearableSets.json";
@@ -17,7 +17,22 @@ export async function fetchGotchisByOwner(
 
   const gotchis = result.data?.user?.gotchisOwned || [];
   const currentBlock = Number(result.data?._meta?.block?.number) || null;
-  return gotchis.map((g: any) => ({
+  const lentIds: string[] = result.data?.user?.gotchisLentOut || [];
+
+  // Gotchis the user has lent out aren't in `gotchisOwned` (ownership moves to
+  // the lending escrow during a rental), so resolve them separately and flag
+  // them as lent so the profile can show + filter them.
+  let lentGotchis: Gotchi[] = [];
+  if (lentIds.length > 0) {
+    const lentRes = await client.query(GOTCHIS_BY_IDS, { ids: lentIds }).toPromise();
+    lentGotchis = (lentRes.data?.aavegotchis || []).map((g: any) => ({
+      ...mapGotchiData(g, currentBlock),
+      lending: 1,
+      lentOut: true,
+    }));
+  }
+
+  const owned = gotchis.map((g: any) => ({
     id: g.id,
     gotchiId:
       typeof g.id === "string"
@@ -51,6 +66,8 @@ export async function fetchGotchisByOwner(
         ? Math.max(0, currentBlock - Number(g.createdAt))
         : undefined,
   }));
+
+  return [...owned, ...lentGotchis];
 }
 
 function mapGotchiData(g: any, currentBlock: number | null): Gotchi {
