@@ -247,8 +247,10 @@ export default function ExplorerPage() {
     setMode(newMode);
     if (newMode === "baazaar" && assetType === "gotchi") {
       setGotchiSort(defaultBaazaarSort);
+    } else if (newMode === "baazaar" && assetType === "wearable") {
+      setWearableSort({ field: "listingCreated", direction: "desc" });
     }
-  }, [setGotchiSort, assetType]);
+  }, [setGotchiSort, setWearableSort, assetType]);
 
   const filteredGotchisBySearch = useMemo(() => {
     // If searching by owner address, server-side filtering handles it

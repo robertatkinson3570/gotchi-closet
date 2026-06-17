@@ -43,6 +43,7 @@ const wearableSortOptions: WearableSortOption[] = [
   { label: "Total Stats ↓", value: { field: "totalStats", direction: "desc" }, category: "core" },
   { label: "Quantity ↓", value: { field: "quantity", direction: "desc" }, category: "owned" },
   { label: "Quantity ↑", value: { field: "quantity", direction: "asc" }, category: "owned" },
+  { label: "Newest Listing", value: { field: "listingCreated", direction: "desc" }, category: "market" },
   { label: "Price ↑ (Cheapest)", value: { field: "price", direction: "asc" }, category: "market" },
   { label: "Price ↓", value: { field: "price", direction: "desc" }, category: "market" },
 ];

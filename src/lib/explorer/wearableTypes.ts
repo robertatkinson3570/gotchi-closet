@@ -7,7 +7,8 @@ export type WearableSortField =
   | "slot"
   | "totalStats"
   | "quantity"
-  | "price";
+  | "price"
+  | "listingCreated";
 
 export type WearableSort = {
   field: WearableSortField;

@@ -11,6 +11,8 @@ export type BaazaarPriceMap = Record<
     listingId: string;
     /** Quantity available on that cheapest listing. */
     quantity: number;
+    /** Most recent listing time (unix) across all open listings of this type. */
+    latestListed: number;
   }
 >;
 
@@ -19,6 +21,7 @@ interface ERC1155Listing {
   erc1155TypeId: string;
   priceInWei: string;
   quantity: string;
+  timeCreated: string;
 }
 
 const BAAZAAR_QUERY = `
@@ -39,6 +42,7 @@ const BAAZAAR_QUERY = `
       erc1155TypeId
       priceInWei
       quantity
+      timeCreated
     }
   }
 `;
@@ -94,6 +98,8 @@ function buildPriceMap(listings: ERC1155Listing[]): BaazaarPriceMap {
     if (isNaN(wearableId) || wearableId <= 0) continue;
 
     const priceWei = BigInt(listing.priceInWei);
+    const listed = Number(listing.timeCreated) || 0;
+    const prevLatest = map[wearableId]?.latestListed ?? 0;
 
     if (!map[wearableId] || priceWei < map[wearableId].minPriceWei) {
       map[wearableId] = {
@@ -101,7 +107,10 @@ function buildPriceMap(listings: ERC1155Listing[]): BaazaarPriceMap {
         minPriceGHST: formatUnits(priceWei, 18),
         listingId: listing.id,
         quantity: parseInt(listing.quantity, 10) || 1,
+        latestListed: Math.max(prevLatest, listed),
       };
+    } else if (listed > map[wearableId].latestListed) {
+      map[wearableId].latestListed = listed;
     }
   }
 

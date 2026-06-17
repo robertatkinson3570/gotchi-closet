@@ -118,7 +118,8 @@ function applySort(
   wearables: ExplorerWearable[],
   sort: WearableSort,
   ownedCounts: Record<number, number>,
-  prices: Record<number, string>
+  prices: Record<number, string>,
+  latest: Record<number, number> = {}
 ): ExplorerWearable[] {
   const sorted = [...wearables];
   const dir = sort.direction === "asc" ? 1 : -1;
@@ -148,6 +149,8 @@ function applySort(
         const priceB = parseFloat(prices[b.id] || "999999999");
         return dir * (priceA - priceB);
       }
+      case "listingCreated":
+        return dir * ((latest[a.id] || 0) - (latest[b.id] || 0));
       default:
         return 0;
     }
@@ -178,14 +181,24 @@ export function useWearableExplorerData(mode: DataMode) {
     return map;
   }, [baazaarPrices]);
 
+  const latestMap = useMemo(() => {
+    const map: Record<number, number> = {};
+    for (const [id, priceData] of Object.entries(baazaarPrices)) {
+      if (priceData && typeof priceData === "object" && "latestListed" in priceData) {
+        map[parseInt(id)] = (priceData as { latestListed: number }).latestListed;
+      }
+    }
+    return map;
+  }, [baazaarPrices]);
+
   const allWearables = useMemo(() => {
     return wearables.map(wearableToExplorer);
   }, [wearables]);
 
   const filteredWearables = useMemo(() => {
     const filtered = applyFilters(allWearables, filters, ownedCounts, pricesMap, mode);
-    return applySort(filtered, sort, ownedCounts, pricesMap);
-  }, [allWearables, filters, ownedCounts, pricesMap, mode, sort]);
+    return applySort(filtered, sort, ownedCounts, pricesMap, latestMap);
+  }, [allWearables, filters, ownedCounts, pricesMap, latestMap, mode, sort]);
 
   const paginatedWearables = useMemo(() => {
     return filteredWearables.slice(0, page * PAGE_SIZE);
