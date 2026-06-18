@@ -15,7 +15,8 @@ export interface SoulDepthData {
   streak: number;
   kinship: number;
   memories: number;
-  pastLives: number;
+  pastLives: { eraHint: string; fragment: string }[];
+  sealStatus: "unconfigured" | "unsealed" | "sealed";
 }
 
 export async function getSoulDepth(

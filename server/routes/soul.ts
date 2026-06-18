@@ -3,7 +3,7 @@ import { fetchGotchiState } from "../companion/gotchiState";
 import { getRecentMessages, getFacts } from "../companion/db";
 import { newSoulDocument } from "../soul/soulDoc";
 import { buildDepth } from "../soul/depth";
-import { saveSoulDoc } from "../soul/soulStore";
+import { saveSoulDoc, getSoulDoc } from "../soul/soulStore";
 import { reconcileSoul } from "../soul/transfer";
 
 const router = Router();
@@ -73,18 +73,31 @@ router.get("/:tokenId", async (req, res) => {
       privacy: "normal" as const,
       weight: 1,
     }));
-    doc.pastLives = [];
+    // Load stored past-life echoes (from a previous owner's distilled memories).
+    const storedDoc = getSoulDoc(tokenId);
+    doc.pastLives = storedDoc?.pastLives ?? [];
 
     const kinship = state.kinship ?? 0;
     const xp = (state.level ?? 0) * 1000;
 
     const depth = buildDepth(doc, { kinship, xp });
 
+    // sealStatus: "unconfigured" when no contract address is set, else "unsealed"
+    // (full on-chain seal lookup is a later phase).
+    const sealAddress = process.env.SOUL_SEAL_ADDRESS;
+    const sealStatus: "unconfigured" | "unsealed" =
+      sealAddress && sealAddress.trim() !== "" ? "unsealed" : "unconfigured";
+
+    const pastLivesEchoes = doc.pastLives.map(({ eraHint, fragment }) => ({
+      eraHint,
+      fragment,
+    }));
+
     try {
       saveSoulDoc(tokenId, owner || null, doc, {
         depth: depth.score,
         soulAgeDays: bondedDays,
-        pastLivesCount: 0,
+        pastLivesCount: pastLivesEchoes.length,
       });
     } catch (_) {
       // Non-fatal: store best-effort
@@ -100,7 +113,8 @@ router.get("/:tokenId", async (req, res) => {
       streak,
       kinship,
       memories: facts.length,
-      pastLives: 0,
+      pastLives: pastLivesEchoes,
+      sealStatus,
     });
   } catch (err) {
     console.error("[soul route]", err);

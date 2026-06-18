@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { getSoulDepth, type SoulDepthData } from "@/lib/companion/soulApi";
+import { SoulCertificate } from "@/components/soul/SoulCertificate";
 
 // ---------------------------------------------------------------------------
 // Level → accent colour
@@ -65,6 +66,7 @@ interface SoulDepthMeterProps {
 export function SoulDepthMeter({ tokenId }: SoulDepthMeterProps) {
   const [data, setData] = useState<SoulDepthData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [certOpen, setCertOpen] = useState(false);
 
   useEffect(() => {
     if (!tokenId) { setData(null); return; }
@@ -92,21 +94,33 @@ export function SoulDepthMeter({ tokenId }: SoulDepthMeterProps) {
   const scorePct = Math.min(100, data.depth);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="mt-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 backdrop-blur"
-    >
-      {/* Header row */}
-      <div className="flex items-center justify-between">
+    <>
+      {certOpen && tokenId && (
+        <SoulCertificate tokenId={tokenId} onClose={() => setCertOpen(false)} />
+      )}
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="mt-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 backdrop-blur"
+      >
+      {/* Header row — clicking opens the certificate */}
+      <button
+        type="button"
+        onClick={() => setCertOpen(true)}
+        className="flex w-full items-center justify-between hover:opacity-80 transition-opacity"
+        aria-label="View Soul Certificate"
+      >
         <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: colour }}>
           Soul Depth
         </span>
-        <span className="text-[11px] font-medium" style={{ color: colour }}>
-          {data.level}
+        <span className="flex items-center gap-1.5">
+          <span className="text-[11px] font-medium" style={{ color: colour }}>
+            {data.level}
+          </span>
+          <span className="text-[10px] text-white/30">view certificate →</span>
         </span>
-      </div>
+      </button>
 
       {/* Main score bar */}
       <div className="relative mt-1.5 h-2 overflow-hidden rounded-full bg-white/10">
@@ -137,6 +151,7 @@ export function SoulDepthMeter({ tokenId }: SoulDepthMeterProps) {
         <span title="Kinship on-chain">{data.kinship} kinship</span>
         <span title="Stored memories">{data.memories} memories</span>
       </div>
-    </motion.div>
+      </motion.div>
+    </>
   );
 }
