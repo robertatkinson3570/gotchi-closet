@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { qk } from "@/lib/queryKeys";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, ShoppingCart, MapPin, SlidersHorizontal, X } from "lucide-react";
@@ -114,9 +115,13 @@ export function MarketGrid({
   const [districtF, setDistrictF] = useState("");
   const [levelF, setLevelF] = useState("");
   const [typeF, setTypeF] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [detail, setDetail] = useState<Listing | null>(null);
   const isTyped = itemKind === "installation" || itemKind === "tile";
+
+  // Render filters into the Explorer's left sidebar (same panel as gotchis/
+  // wearables). Falls back to inline when the sidebar isn't present (mobile).
+  const [slotEl, setSlotEl] = useState<HTMLElement | null>(null);
+  useEffect(() => { setSlotEl(document.getElementById("market-filter-slot")); });
 
   const { data, isLoading, error } = useQuery({
     queryKey: qk.baazaarMarket(kind, category),
@@ -228,13 +233,7 @@ export function MarketGrid({
 
   return (
     <div className="p-2">
-      <div className="flex flex-wrap items-center gap-2 mb-3 px-1">
-        <button
-          onClick={() => setShowFilters((s) => !s)}
-          className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-xs font-medium border ${activeFilters ? "bg-primary/15 text-primary border-primary/40" : "border-border/50 hover:bg-muted/40"}`}
-        >
-          <SlidersHorizontal className="w-3.5 h-3.5" /> Filters{activeFilters ? ` (${activeFilters})` : ""}
-        </button>
+      <div className="flex items-center gap-2 mb-3 px-1">
         <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} className={fieldCls}>
           <option value="recent">Recently listed</option>
           <option value="price-asc">Price: low → high</option>
@@ -245,54 +244,57 @@ export function MarketGrid({
         <span className="text-[11px] text-muted-foreground ml-auto">{rows.length} of {all.length}</span>
       </div>
 
-      {showFilters && (
-        <div className="flex flex-wrap items-end gap-2 mb-3 px-1 pb-3 border-b border-border/40">
-          <label className="text-[10px] text-muted-foreground">{isTyped ? "ID or name" : "Token ID"}
-            <input value={idQuery} onChange={(e) => setIdQuery(e.target.value)} placeholder={isTyped ? "name or ID" : "e.g. 1234"} className={`${fieldCls} ${isTyped ? "w-36" : "w-24"} block mt-0.5`} />
-          </label>
-          <label className="text-[10px] text-muted-foreground">Min GHST
-            <input type="number" value={minP} onChange={(e) => setMinP(e.target.value)} placeholder="0" className={`${fieldCls} w-24 block mt-0.5`} />
-          </label>
-          <label className="text-[10px] text-muted-foreground">Max GHST
-            <input type="number" value={maxP} onChange={(e) => setMaxP(e.target.value)} placeholder="∞" className={`${fieldCls} w-24 block mt-0.5`} />
-          </label>
-          {itemKind === "parcel" && (
-            <>
-              <label className="text-[10px] text-muted-foreground">Size
-                <select value={sizeF} onChange={(e) => setSizeF(e.target.value)} className={`${fieldCls} w-32 block mt-0.5`}>
-                  <option value="">Any size</option>
-                  {Object.entries(PARCEL_SIZES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+      {(() => {
+        const w = `${fieldCls} w-full mt-0.5`;
+        const panel = (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground inline-flex items-center gap-1.5"><SlidersHorizontal className="w-3.5 h-3.5" /> Filters{activeFilters ? ` (${activeFilters})` : ""}</div>
+              {activeFilters > 0 && <button onClick={clearFilters} className="text-[11px] text-primary hover:underline">Clear</button>}
+            </div>
+            <label className="block text-[10px] text-muted-foreground">{isTyped ? "ID or name" : "Token ID"}
+              <input value={idQuery} onChange={(e) => setIdQuery(e.target.value)} placeholder={isTyped ? "name or ID" : "e.g. 1234"} className={w} />
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block text-[10px] text-muted-foreground">Min GHST<input type="number" value={minP} onChange={(e) => setMinP(e.target.value)} placeholder="0" className={w} /></label>
+              <label className="block text-[10px] text-muted-foreground">Max GHST<input type="number" value={maxP} onChange={(e) => setMaxP(e.target.value)} placeholder="∞" className={w} /></label>
+            </div>
+            {itemKind === "parcel" && (
+              <>
+                <label className="block text-[10px] text-muted-foreground">Size
+                  <select value={sizeF} onChange={(e) => setSizeF(e.target.value)} className={w}>
+                    <option value="">Any size</option>
+                    {Object.entries(PARCEL_SIZES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  </select>
+                </label>
+                <label className="block text-[10px] text-muted-foreground">District
+                  <select value={districtF} onChange={(e) => setDistrictF(e.target.value)} className={w}>
+                    <option value="">Any district</option>
+                    {districtOptions.map((d) => <option key={d} value={d}>District {d}</option>)}
+                  </select>
+                </label>
+              </>
+            )}
+            {isTyped && typeOptions.length > 0 && (
+              <label className="block text-[10px] text-muted-foreground">Type
+                <select value={typeF} onChange={(e) => setTypeF(e.target.value)} className={w}>
+                  <option value="">Any type</option>
+                  {typeOptions.map((t) => <option key={t} value={t}>{itemKind === "installation" ? (INSTALLATION_TYPE_LABELS[t] ?? `Type ${t}`) : `Type ${t}`}</option>)}
                 </select>
               </label>
-              <label className="text-[10px] text-muted-foreground">District
-                <select value={districtF} onChange={(e) => setDistrictF(e.target.value)} className={`${fieldCls} w-28 block mt-0.5`}>
-                  <option value="">Any district</option>
-                  {districtOptions.map((d) => <option key={d} value={d}>District {d}</option>)}
+            )}
+            {itemKind === "installation" && levelOptions.length > 0 && (
+              <label className="block text-[10px] text-muted-foreground">Level
+                <select value={levelF} onChange={(e) => setLevelF(e.target.value)} className={w}>
+                  <option value="">Any level</option>
+                  {levelOptions.map((l) => <option key={l} value={l}>Level {l}</option>)}
                 </select>
               </label>
-            </>
-          )}
-          {isTyped && typeOptions.length > 0 && (
-            <label className="text-[10px] text-muted-foreground">Type
-              <select value={typeF} onChange={(e) => setTypeF(e.target.value)} className={`${fieldCls} w-36 block mt-0.5`}>
-                <option value="">Any type</option>
-                {typeOptions.map((t) => <option key={t} value={t}>{itemKind === "installation" ? (INSTALLATION_TYPE_LABELS[t] ?? `Type ${t}`) : `Type ${t}`}</option>)}
-              </select>
-            </label>
-          )}
-          {itemKind === "installation" && levelOptions.length > 0 && (
-            <label className="text-[10px] text-muted-foreground">Level
-              <select value={levelF} onChange={(e) => setLevelF(e.target.value)} className={`${fieldCls} w-28 block mt-0.5`}>
-                <option value="">Any level</option>
-                {levelOptions.map((l) => <option key={l} value={l}>Level {l}</option>)}
-              </select>
-            </label>
-          )}
-          {activeFilters > 0 && (
-            <button onClick={clearFilters} className="h-8 px-2.5 rounded-md text-xs font-medium border border-border/50 hover:bg-muted/40">Clear</button>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        );
+        return slotEl ? createPortal(panel, slotEl) : <div className="mb-3 px-1 pb-3 border-b border-border/40">{panel}</div>;
+      })()}
 
       {rows.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-sm">No listings match these filters.</div>

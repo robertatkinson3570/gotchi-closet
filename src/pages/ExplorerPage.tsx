@@ -354,10 +354,12 @@ export default function ExplorerPage() {
                     resetFilters={resetWearableFilters}
                     mode={mode}
                   />
+                ) : assetType === "auction" ? (
+                  <div className="text-xs text-muted-foreground p-1">Live GBM auctions — click a card to view details and bid.</div>
                 ) : (
-                  <div className="text-xs text-muted-foreground p-1">
-                    Showing the cheapest open Baazaar listings. Select items to bulk-buy.
-                  </div>
+                  // Market tabs (items/parcels/installations/tiles/portals) portal
+                  // their filters into this slot.
+                  <div id="market-filter-slot" className="space-y-2" />
                 )}
               </div>
               <button
