@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
       // Unit tests only. Playwright E2E (*.spec.ts) are run by Playwright, not
       // vitest; the heavy wallet regression has its own `mommy:regression`
       // script and is excluded from the fast unit run.
-      include: ["tests/**/*.test.ts", "src/**/*.test.{ts,tsx}"],
+      include: ["tests/**/*.test.ts", "src/**/*.test.{ts,tsx}", "server/**/*.test.ts"],
       exclude: ["**/node_modules/**", "**/dist/**", "**/*.spec.ts", "tests/e2e/**", "tests/mommy-regression.test.ts"],
     },
   };
