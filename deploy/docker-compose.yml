@@ -7,6 +7,10 @@ services:
     restart: unless-stopped
     env_file:
       - ../.env
+    environment:
+      # Persist companion memory/entitlements on the mounted volume (the container
+      # user cannot write the default ./data under /app). Shares the autorenew volume.
+      - COMPANION_DB_PATH=/srv/gotchicloset/data/companion.db
     ports:
       - "127.0.0.1:8791:8787"
     volumes:
