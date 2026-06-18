@@ -10,6 +10,7 @@ import { DonateCard } from "@/components/DonateCard";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
+import { KnowledgeBaseButton } from "@/components/KnowledgeBaseModal";
 import { useAccount, useChainId, useDisconnect } from "wagmi";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { loadMultiWallets, addWallet, removeWallet } from "@/lib/multiWallet";
@@ -119,6 +120,9 @@ export default function HomePage() {
               <p className="text-sm text-muted-foreground mt-1">
                 Put an outfit on it already.
               </p>
+              <div className="mt-2 flex justify-center">
+                <KnowledgeBaseButton variant="link" />
+              </div>
             </div>
 
             <div className="px-5 pb-5 space-y-3">

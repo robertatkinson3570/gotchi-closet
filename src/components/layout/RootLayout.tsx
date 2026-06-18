@@ -10,6 +10,7 @@ import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { shortenAddress } from "@/lib/address";
 import { FooterAttribution } from "@/components/FooterAttribution";
 import { CompanionRoot } from "@/components/companion/CompanionRoot";
+import { KnowledgeBaseButton } from "@/components/KnowledgeBaseModal";
 
 // Every page shows the full nav so all sections are reachable everywhere.
 const NAV: { to: string; title: string; icon: LucideIcon }[] = [
@@ -68,6 +69,7 @@ export function RootLayout() {
                 <ConnectButton />
               )}
             </div>
+            <KnowledgeBaseButton variant="nav" />
             <ThemeToggle />
           </div>
         </div>

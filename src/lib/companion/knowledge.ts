@@ -1,6 +1,10 @@
+import { retrieveKB } from "../knowledgeBase";
+
 // Knowledge the companion draws on. SITE_OVERVIEW is always injected so the gotchi
 // foremost knows what GotchiCloset is and how to help. The tagged snippets below are
-// keyword-retrieved per message for accurate, specific how-to answers.
+// keyword-retrieved per message for accurate, specific how-to answers. The canonical
+// app knowledge base (../knowledgeBase) is layered in as an ADDITIONAL reference —
+// it supplements these snippets, it does not replace them.
 
 export const SITE_OVERVIEW =
   "You live on GotchiCloset — a companion web app for managing Aavegotchis on Base. " +
@@ -44,9 +48,17 @@ const LORE: LoreSnippet[] = [
 export function retrieveLore(message: string, max = 4): string[] {
   const m = message.toLowerCase();
   const hits: string[] = [];
+  // Companion's own curated lore takes priority…
   for (const s of LORE) {
     if (s.tags.some((tag) => m.includes(tag))) hits.push(s.text);
     if (hits.length >= max) break;
+  }
+  // …then supplement (never replace) with the canonical app knowledge base.
+  if (hits.length < max) {
+    for (const extra of retrieveKB(message, max)) {
+      if (!hits.includes(extra)) hits.push(extra);
+      if (hits.length >= max) break;
+    }
   }
   return hits;
 }
