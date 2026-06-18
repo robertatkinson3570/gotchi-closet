@@ -2,6 +2,7 @@ import { useCompanion } from "@/state/useCompanion";
 import { useCompanionGotchis } from "./useCompanionGotchis";
 import { CompanionMascot } from "./CompanionMascot";
 import { CompanionChatPanel } from "./CompanionChatPanel";
+import { RoastArenaModal } from "@/components/roast/RoastArenaModal";
 
 export function CompanionRoot() {
   const isOpen = useCompanion((s) => s.isOpen);
@@ -17,6 +18,7 @@ export function CompanionRoot() {
           psst… pet me to grow our kinship 👻
         </div>
       )}
+      <RoastArenaModal />
     </>
   );
 }

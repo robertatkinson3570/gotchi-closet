@@ -13,17 +13,20 @@ interface CompanionState {
   selectedTokenId: string | null;
   isOpen: boolean;
   draft: string;
+  roastOpen: boolean;
   setSelected: (id: string) => void;
   toggleOpen: () => void;
   setOpen: (v: boolean) => void;
   setDraft: (v: string) => void;
   ensureDefault: (gotchis: Gotchi[]) => void;
+  setRoastOpen: (v: boolean) => void;
 }
 
 export const useCompanion = create<CompanionState>((set, get) => ({
   selectedTokenId: typeof localStorage !== "undefined" ? localStorage.getItem(LS_KEY) : null,
   isOpen: false,
   draft: "",
+  roastOpen: false,
   setSelected: (id) => {
     if (typeof localStorage !== "undefined") localStorage.setItem(LS_KEY, id);
     set({ selectedTokenId: id });
@@ -36,4 +39,5 @@ export const useCompanion = create<CompanionState>((set, get) => ({
     const id = pickDefaultTokenId(gotchis);
     if (id) get().setSelected(id);
   },
+  setRoastOpen: (v) => set({ roastOpen: v }),
 }));

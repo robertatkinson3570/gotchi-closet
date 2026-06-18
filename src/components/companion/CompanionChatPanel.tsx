@@ -17,7 +17,7 @@ export function CompanionChatPanel() {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const gotchis = useCompanionGotchis();
-  const { selectedTokenId, setOpen } = useCompanion();
+  const { selectedTokenId, setOpen, setRoastOpen } = useCompanion();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -90,8 +90,17 @@ export function CompanionChatPanel() {
         <button className="truncate text-xs text-fuchsia-200/80 hover:text-white" onClick={() => setPicking((p) => !p)}>
           {gotchi ? `${gotchi.name || `#${gotchi.id}`} ▾` : "Choose a gotchi ▾"}
         </button>
-        <button className="-mr-1 shrink-0 rounded-lg px-2 py-1 text-base leading-none text-white/60 hover:bg-white/10 hover:text-white"
-          onClick={() => setOpen(false)} aria-label="close">✕</button>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            onClick={() => setRoastOpen(true)}
+            className="rounded-lg px-2 py-1 text-xs font-semibold text-fuchsia-300/70 transition hover:bg-fuchsia-500/10 hover:text-fuchsia-200"
+            title="Roast Arena"
+          >
+            ⚔️ Arena
+          </button>
+          <button className="-mr-1 rounded-lg px-2 py-1 text-base leading-none text-white/60 hover:bg-white/10 hover:text-white"
+            onClick={() => setOpen(false)} aria-label="close">✕</button>
+        </div>
       </div>
       <div className="flex shrink-0 gap-1 border-b border-white/10 px-2 py-1">
         {(["chat", "global"] as const).map((t) => (
