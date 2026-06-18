@@ -39,6 +39,25 @@ const FEEDS: { key: Feed; label: string; icon: typeof Tag }[] = [
   { key: "auction", label: "Auctions", icon: Gavel },
 ];
 
+// Offer status sub-filter (Open is the actionable default, like the dapp).
+const OFFER_STATUSES = ["Open", "Filled", "Partial", "Cancelled", "Expired", "All"] as const;
+
+function statusClass(status?: string): string {
+  switch (status) {
+    case "Open":
+    case "Live":
+      return "bg-emerald-500/15 text-emerald-500";
+    case "Filled":
+      return "bg-blue-500/15 text-blue-400";
+    case "Partial":
+      return "bg-amber-500/15 text-amber-400";
+    case "Cancelled":
+      return "bg-destructive/15 text-destructive";
+    default:
+      return "bg-muted/50 text-muted-foreground";
+  }
+}
+
 // BAAZAAR_CATEGORY collides REALM/INSTALLATION at 4, so labels are kind-aware.
 function catLabel(s: Row): string {
   if (s.kind === "erc721") return s.category === BAAZAAR_CATEGORY.AAVEGOTCHI ? "Gotchi" : s.category === BAAZAAR_CATEGORY.REALM ? "Parcel" : "Item";
@@ -88,18 +107,30 @@ async function fetchSales(): Promise<Row[]> {
   return [...e721, ...e1155].sort((a, b) => b.time - a.time);
 }
 
+// Derive a buy order's lifecycle status (matches the dapp's Status column).
+function offerStatus(o: { canceled?: boolean; executed?: boolean; partial?: boolean; createdAt: number; duration: number }, now: number): string {
+  if (o.canceled) return "Cancelled";
+  if (o.executed) return "Filled";
+  if (o.partial) return "Partial";
+  if (o.duration > 0 && o.createdAt + o.duration < now) return "Expired";
+  return "Open";
+}
+
 async function fetchOffers(): Promise<Row[]> {
   const d = await gql(CORE_SUBGRAPH_URL, `query {
-    erc721BuyOrders(first: 100, orderBy: createdAt, orderDirection: desc) { id category erc721TokenId priceInWei buyer createdAt }
-    erc1155BuyOrders(first: 100, orderBy: createdAt, orderDirection: desc) { id category erc1155TokenId priceInWei buyer quantity createdAt }
+    erc721BuyOrders(first: 150, orderBy: createdAt, orderDirection: desc) { id category erc721TokenId priceInWei buyer createdAt duration executedAt canceled }
+    erc1155BuyOrders(first: 150, orderBy: createdAt, orderDirection: desc) { id category erc1155TokenId priceInWei buyer quantity createdAt duration executedQuantity completedAt canceled }
   }`);
+  const now = Math.floor(Date.now() / 1000);
   const o721: Row[] = (d?.erc721BuyOrders ?? []).map((o: any) => ({
     id: `o721-${o.id}`, feed: "offer" as const, kind: "erc721" as const, category: Number(o.category), tokenId: o.erc721TokenId, quantity: 1,
-    priceWei: o.priceInWei, to: o.buyer, time: Number(o.createdAt), status: "Open",
+    priceWei: o.priceInWei, to: o.buyer, time: Number(o.createdAt),
+    status: offerStatus({ canceled: o.canceled, executed: o.executedAt != null, createdAt: Number(o.createdAt), duration: Number(o.duration) || 0 }, now),
   }));
   const o1155: Row[] = (d?.erc1155BuyOrders ?? []).map((o: any) => ({
     id: `o1155-${o.id}`, feed: "offer" as const, kind: "erc1155" as const, category: Number(o.category), tokenId: o.erc1155TokenId, quantity: Number(o.quantity) || 1,
-    priceWei: o.priceInWei, to: o.buyer, time: Number(o.createdAt), status: "Open",
+    priceWei: o.priceInWei, to: o.buyer, time: Number(o.createdAt),
+    status: offerStatus({ canceled: o.canceled, executed: o.completedAt != null, partial: Number(o.executedQuantity) > 0, createdAt: Number(o.createdAt), duration: Number(o.duration) || 0 }, now),
   }));
   return enrichGotchiArt([...o721, ...o1155].sort((a, b) => b.time - a.time));
 }
@@ -167,14 +198,17 @@ const FETCHERS: Record<Feed, () => Promise<Row[]>> = { sale: fetchSales, offer: 
 export default function ActivityPage() {
   const [feed, setFeed] = useState<Feed>("sale");
   const [cat, setCat] = useState("all");
+  const [offerStatusF, setOfferStatusF] = useState<string>("Open");
   const [detail, setDetail] = useState<Row | null>(null);
   const { data, isLoading, error } = useQuery({ queryKey: ["activity", feed], queryFn: FETCHERS[feed], staleTime: 30_000 });
 
   const rows = useMemo(() => {
     const cats = CATEGORY_FILTERS.find((f) => f.key === cat)?.cats;
-    const all = data ?? [];
-    return cats ? all.filter((s) => cats.includes(s.category)) : all;
-  }, [data, cat]);
+    let all = data ?? [];
+    if (cats) all = all.filter((s) => cats.includes(s.category));
+    if (feed === "offer" && offerStatusF !== "All") all = all.filter((s) => s.status === offerStatusF);
+    return all;
+  }, [data, cat, feed, offerStatusF]);
 
   return (
     <div className="container mx-auto max-w-[1200px] px-4 py-6">
@@ -203,6 +237,16 @@ export default function ActivityPage() {
                 ))}
               </div>
             </div>
+            {feed === "offer" && (
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Status</div>
+                <div className="flex flex-col gap-1">
+                  {OFFER_STATUSES.map((s) => (
+                    <button key={s} onClick={() => setOfferStatusF(s)} className={`h-8 px-3 rounded-lg text-xs font-medium border text-left ${offerStatusF === s ? "bg-primary/15 text-primary border-primary/40" : "border-border/40 text-muted-foreground hover:bg-muted/40"}`}>{s}</button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </aside>
 
@@ -217,6 +261,13 @@ export default function ActivityPage() {
                 <button key={f.key} onClick={() => setCat(f.key)} className={`h-7 px-2.5 rounded-md text-[11px] font-medium border ${cat === f.key ? "bg-primary/15 text-primary border-primary/40" : "border-border/40 text-muted-foreground"}`}>{f.label}</button>
               ))}
             </div>
+            {feed === "offer" && (
+              <div className="w-full flex items-center gap-1.5 flex-wrap mt-1">
+                {OFFER_STATUSES.map((s) => (
+                  <button key={s} onClick={() => setOfferStatusF(s)} className={`h-7 px-2.5 rounded-md text-[11px] font-medium border ${offerStatusF === s ? "bg-primary/15 text-primary border-primary/40" : "border-border/40 text-muted-foreground"}`}>{s}</button>
+                ))}
+              </div>
+            )}
           </div>
 
           {error && <div className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm mb-3">{(error as Error).message}</div>}
@@ -250,7 +301,7 @@ export default function ActivityPage() {
                           <span className="inline-flex items-center gap-1">{short(s.from)} <ArrowRightLeft className="w-3 h-3" /> {short(s.to)}</span>
                         )}
                       </td>
-                      {feed !== "sale" && <td className="px-3 py-1.5"><span className={`text-[10px] px-1.5 py-0.5 rounded ${s.status === "Live" || s.status === "Open" ? "bg-emerald-500/15 text-emerald-500" : "bg-muted/50 text-muted-foreground"}`}>{s.status}</span></td>}
+                      {feed !== "sale" && <td className="px-3 py-1.5"><span className={`text-[10px] px-1.5 py-0.5 rounded ${statusClass(s.status)}`}>{s.status}</span></td>}
                       <td className="px-3 py-1.5 text-right text-muted-foreground">{ago(s.time)}</td>
                     </tr>
                   ))}
