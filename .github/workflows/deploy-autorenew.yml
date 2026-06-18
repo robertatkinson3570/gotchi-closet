@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "server/**"
+      - "src/lib/companion/**"
       - "deploy/**"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -28,24 +29,25 @@ jobs:
           git reset --hard origin/main
 
       - name: Sync companion secrets into .env
-        # The .env is gitignored and survives the `git reset --hard` above. Write
-        # the Groq key (free-tier companion LLM) idempotently from the encrypted
-        # GitHub secret so we never need direct SSH to manage it. Avoids `-x` so the
-        # key value is never echoed into the build log.
+        # The .env is gitignored and survives the `git reset --hard` above. Write the
+        # companion LLM keys (Groq free tier, OpenAI premium tier) idempotently from
+        # encrypted GitHub secrets so we never need direct SSH to manage them. Avoids
+        # `-x` so key values are never echoed into the build log.
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           set -euo pipefail
           cd /root/gotchicloset
           touch .env
-          if [ -n "${GROQ_API_KEY:-}" ]; then
-            grep -v '^GROQ_API_KEY=' .env > .env.tmp 2>/dev/null || true
-            printf 'GROQ_API_KEY=%s\n' "$GROQ_API_KEY" >> .env.tmp
+          set_var() {
+            local name="$1" val="$2"
+            grep -v "^${name}=" .env > .env.tmp 2>/dev/null || true
+            if [ -n "$val" ]; then printf '%s=%s\n' "$name" "$val" >> .env.tmp; fi
             mv .env.tmp .env
-            echo "GROQ_API_KEY synced (len=${#GROQ_API_KEY})"
-          else
-            echo "no GROQ_API_KEY secret set — companion will use template fallback"
-          fi
+          }
+          if [ -n "${GROQ_API_KEY:-}" ]; then set_var GROQ_API_KEY "$GROQ_API_KEY"; echo "GROQ_API_KEY synced (len=${#GROQ_API_KEY})"; else echo "no GROQ_API_KEY secret"; fi
+          if [ -n "${OPENAI_API_KEY:-}" ]; then set_var OPENAI_API_KEY "$OPENAI_API_KEY"; set_var OPENAI_MODEL "gpt-4o-mini"; echo "OPENAI_API_KEY synced (len=${#OPENAI_API_KEY})"; else echo "no OPENAI_API_KEY secret"; fi
 
       - name: Build + start
         # Isolation guarantee: -p gotchicloset namespaces every container, volume,

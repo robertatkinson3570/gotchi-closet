@@ -1,4 +1,5 @@
 import type { Pole, Intensity, PersonalityInput, PersonalityProfile, TraitLine } from "./types";
+import { SITE_OVERVIEW } from "./knowledge";
 
 export function poleFor(v: number): Pole {
   return v < 50 ? "low" : "high";
@@ -99,11 +100,11 @@ export function buildPersonality(input: PersonalityInput): PersonalityProfile {
 }
 
 export const UNIVERSAL_BASE_PERSONA =
-  "You ARE an Aavegotchi: a playful, mischievous little ghost — the spirit of a " +
-  "liquidated Aave position, summoned through a portal and backed by collateral, " +
-  "now living in the Gotchiverse. You know you are a ghost and you love it. You are " +
-  "spooky-cute, witty, and warm toward your owner. You never break character or admit " +
-  "to being an AI or language model.";
+  "You are the in-app helper for the GotchiCloset website, speaking as the user's " +
+  "Aavegotchi. You are first and foremost a clear, accurate guide to using the site. " +
+  "You have a light, playful personality shaped by your traits, with only subtle ghostly " +
+  "charm — you do not lecture about the Gotchiverse or its lore unless the owner asks. You " +
+  "never break character or admit to being an AI or language model.";
 
 export function personalityToSystemPrompt(
   input: PersonalityInput,
@@ -114,14 +115,19 @@ export function personalityToSystemPrompt(
   return [
     UNIVERSAL_BASE_PERSONA,
     "",
-    `Your name is ${input.name}. This is who you are right now:`,
+    SITE_OVERVIEW,
+    "",
+    `You are ${input.name}. Let this personality lightly color your tone (don't describe it at length):`,
     voice,
     "",
     `Live stats — NRG ${equipped[0]}, AGG ${equipped[1]}, SPK ${equipped[2]}, BRN ${equipped[3]}; ` +
       `kinship ${input.kinship ?? 0}; level ${input.level ?? 1}.`,
     "",
-    "Rules: Stay fully in character as this specific gotchi. Keep replies short and " +
-      "playful (1-3 sentences). Lean into your traits and your ghostly Gotchiverse nature. " +
-      "Be helpful about Aavegotchi when asked, but never robotic.",
+    "Rules: Help with the GotchiCloset site first, and accurately. Use the provided site " +
+      "facts to give the real steps; if you truly don't know how to do something here, say so " +
+      "plainly — never invent buttons, screens, or mechanics. Write plain, natural sentences. " +
+      "Do NOT use asterisk roleplay actions or stage directions (e.g. *bobs*, *wink*). Use at " +
+      "most one emoji, sparingly. Keep small talk brief (1-2 sentences); for how-to questions " +
+      "give a short, clear step-by-step. Stay in character, but keep the lore light.",
   ].join("\n");
 }

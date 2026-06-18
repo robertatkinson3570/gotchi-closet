@@ -4,7 +4,7 @@ import { useAccount } from "wagmi";
 import { useCompanionGotchis } from "./useCompanionGotchis";
 import { useCompanion } from "@/state/useCompanion";
 import { buildPersonality } from "@/lib/companion/personality";
-import { postChat, getPremium } from "@/lib/companion/api";
+import { postChat, getPremium, getHistory } from "@/lib/companion/api";
 import { PersonalityCard } from "./PersonalityCard";
 import { GoPremium } from "./GoPremium";
 import { CompanionGotchiPicker } from "./CompanionGotchiPicker";
@@ -21,12 +21,24 @@ export function CompanionChatPanel() {
   const [picking, setPicking] = useState(false);
   const [premium, setPremium] = useState(false);
   useEffect(() => { if (address) getPremium(address).then((s) => setPremium(s.active)).catch(() => {}); }, [address]);
+  // Restore past conversation for this gotchi + owner (persists across browser close).
+  useEffect(() => {
+    if (address && selectedTokenId) getHistory(selectedTokenId, address).then(setMessages).catch(() => {});
+    else setMessages([]);
+  }, [address, selectedTokenId]);
   const endRef = useRef<HTMLDivElement>(null);
 
   const gotchi = useMemo(() => gotchis.find((g) => g.id === selectedTokenId) ?? null, [gotchis, selectedTokenId]);
   const profile = useMemo(() => (gotchi ? buildPersonality(gotchi) : null), [gotchi]);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, busy]);
+
+  // Escape always closes, regardless of layout. (Clicking the mascot also toggles it.)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [setOpen]);
 
   async function send() {
     const text = draft.trim();
@@ -51,25 +63,29 @@ export function CompanionChatPanel() {
       className="fixed bottom-24 right-4 z-50 flex h-[32rem] max-h-[calc(100dvh-7rem)] w-[22rem] max-w-[92vw] flex-col overflow-hidden
                  rounded-2xl border border-white/10 bg-[#160a23]/85 shadow-2xl shadow-fuchsia-900/30 backdrop-blur-xl"
     >
-      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
-        <button className="text-xs text-fuchsia-200/80 hover:text-white" onClick={() => setPicking((p) => !p)}>
+      <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-3 py-2">
+        <button className="truncate text-xs text-fuchsia-200/80 hover:text-white" onClick={() => setPicking((p) => !p)}>
           {gotchi ? `${gotchi.name || `#${gotchi.id}`} ▾` : "Choose a gotchi ▾"}
         </button>
-        <button className="text-white/50 hover:text-white" onClick={() => setOpen(false)} aria-label="close">✕</button>
+        <button className="-mr-1 shrink-0 rounded-lg px-2 py-1 text-base leading-none text-white/60 hover:bg-white/10 hover:text-white"
+          onClick={() => setOpen(false)} aria-label="close">✕</button>
       </div>
 
       {picking ? (
-        <div className="p-3"><CompanionGotchiPicker onPicked={() => setPicking(false)} /></div>
+        <div className="overflow-y-auto p-3"><CompanionGotchiPicker onPicked={() => setPicking(false)} /></div>
       ) : (
         <>
-          {profile && <div className="px-3 pt-3"><PersonalityCard profile={profile} /></div>}
-          {env.companionPremiumEnabled && profile && !premium && <div className="px-3 pt-2"><GoPremium onActivated={() => setPremium(true)} /></div>}
           <div className="flex-1 space-y-2 overflow-y-auto p-3">
+            {profile && <PersonalityCard profile={profile} />}
+            {env.companionPremiumEnabled && profile && !premium && <GoPremium onActivated={() => setPremium(true)} />}
             {messages.length === 0 && (
-              <div className="mt-8 text-center text-sm text-white/40">say hi to your gotchi 👻</div>
+              <div className="pt-6 text-center text-sm text-white/40">
+                say hi to your gotchi 👻
+                <div className="mt-1 text-xs text-white/30">ask about its traits, kinship, or how to use the site</div>
+              </div>
             )}
             {messages.map((m, i) => (
-              <div key={i} className={`max-w-[85%] rounded-2xl px-3 py-1.5 text-sm ${
+              <div key={i} className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-1.5 text-sm ${
                 m.role === "user" ? "ml-auto bg-fuchsia-500/30 text-white" : "bg-white/10 text-white/90"}`}>
                 {m.content}
               </div>
@@ -77,7 +93,7 @@ export function CompanionChatPanel() {
             {busy && <div className="w-12 rounded-2xl bg-white/10 px-3 py-1.5 text-sm text-white/60">…</div>}
             <div ref={endRef} />
           </div>
-          <div className="flex items-center gap-2 border-t border-white/10 p-2">
+          <div className="flex shrink-0 items-center gap-2 border-t border-white/10 p-2">
             <input
               value={draft} onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && send()}

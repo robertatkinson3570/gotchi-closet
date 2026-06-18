@@ -26,8 +26,8 @@ export async function complete(
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.key}` },
       body: JSON.stringify({
         model: cfg.model,
-        max_tokens: 200,
-        temperature: 0.9,
+        max_tokens: 450,
+        temperature: 0.8,
         messages: [{ role: "system", content: systemPrompt }, ...messages],
       }),
     });

@@ -1,5 +1,5 @@
 import { env } from "@/lib/env";
-import type { Tier } from "./types";
+import type { Tier, ChatMessage } from "./types";
 
 export interface ChatResponse { reply: string; deflected: boolean; tier?: Tier; }
 
@@ -15,6 +15,17 @@ export async function postChat(tokenId: string, wallet: string, message: string)
   });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `chat failed (${res.status})`);
   return res.json();
+}
+
+export async function getHistory(tokenId: string, wallet: string): Promise<ChatMessage[]> {
+  try {
+    const res = await fetch(`${BASE}/api/companion/history/${tokenId}/${wallet}`);
+    if (!res.ok) return [];
+    const json = await res.json();
+    return Array.isArray(json?.messages) ? json.messages : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function getPremium(wallet: string): Promise<{ active: boolean; daysLeft: number }> {

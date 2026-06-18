@@ -135,4 +135,14 @@ router.get("/premium/:wallet", (req, res) => {
   res.json({ active, entitlement: ent, daysLeft: ent ? Math.max(0, Math.floor((ent.expires_at - Date.now()) / 86400_000)) : 0 });
 });
 
+// GET /history/:tokenId/:wallet — recent chat history for this gotchi + owner, so the
+// client can restore past conversation after a browser close.
+router.get("/history/:tokenId/:wallet", (req, res) => {
+  const tokenId = String(req.params.tokenId);
+  const wallet = String(req.params.wallet);
+  if (!wallet.startsWith("0x")) return res.status(400).json({ error: "wallet (0x) required" });
+  const messages = getRecentMessages(wallet, tokenId, 30).map((m) => ({ role: m.role, content: m.content }));
+  res.json({ messages });
+});
+
 export default router;
