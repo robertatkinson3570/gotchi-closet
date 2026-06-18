@@ -689,6 +689,14 @@ export const MAX_UINT256 = (BigInt(2) ** BigInt(256)) - BigInt(1);
 export const WEARABLE_DIAMOND_BASE = "0x052e6c114a166B0e91C2340370d72D4C33752B4b" as const;
 export const TILE_DIAMOND_BASE = "0x617fdB8093b309e4699107F48812b407A7c37938" as const;
 
+// FAKE Gotchis (ERC721, Baazaar category 5) + FAKE Gotchi Cards (ERC1155,
+// category 6). Guardians: profile (ERC721, no on-chain listings yet) + skins
+// (ERC1155, category 12). Addresses from the dapp's Base config.
+export const FAKE_GOTCHIS_NFT_BASE = "0xAb59CA4A16925b0a4BaC5026C94bEB20A29Df479" as const;
+export const FAKE_CARDS_DIAMOND_BASE = "0xe46B8902dAD841476d9Fee081F1d62aE317206A9" as const;
+export const GUARDIAN_SKINS_DIAMOND_BASE = "0x898d0F54d8CF60698972a75be7Ea1B45aAb66e59" as const;
+export const GUARDIAN_PROFILE_DIAMOND_BASE = "0xdc27a8BF85508387cB8c3B97BA77f3941eDFF45f" as const;
+
 // GBM auction subgraph on Base (the dapp's /auction source). Indexes the
 // `auctions` entity (id, type, tokenId, highestBid, highestBidder, startsAt,
 // endsAt, cancelled, claimed) — GBMFacet has no on-chain enumeration.

@@ -11,6 +11,8 @@ import { CORE_SUBGRAPH_URL } from "@/lib/lending/contracts";
 import { GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "./AssetImage";
 import { PortalImage } from "./PortalImage";
+import { FakeGotchiImage } from "./GotchiSvgById";
+import { Palette } from "lucide-react";
 
 type Listing = { listingId: string; tokenId: string; priceWei: string; quantity: number; created: number };
 
@@ -101,7 +103,7 @@ export function MarketGrid({
   kind: "erc721" | "erc1155";
   category: number;
   contract: `0x${string}`;
-  itemKind: "item" | "parcel" | "installation" | "tile" | "portal";
+  itemKind: "item" | "parcel" | "installation" | "tile" | "portal" | "fakegotchi" | "fakecard";
 }) {
   const [cart, setCart] = useState<Record<string, Listing>>({});
   const { bulkBuy, bulkStep, bulkProgress, resetBulk, isConnected } = useMarketplaceBuy();
@@ -325,6 +327,8 @@ export function MarketGrid({
                   <AssetImage candidates={parcelImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-full max-w-full object-contain rounded" />
                 ) : itemKind === "portal" ? (
                   <button type="button" onClick={() => setDetail(l)} title="View portal details" className="w-full h-full [&>svg]:w-full [&>svg]:h-full"><PortalImage tokenId={l.tokenId} /></button>
+                ) : itemKind === "fakegotchi" || itemKind === "fakecard" ? (
+                  <FakeGotchiImage id={l.tokenId} className="max-h-16 max-w-16 object-contain rounded" fallback={<Palette className="w-6 h-6 text-fuchsia-400/70" />} />
                 ) : (
                   <MapPin className="w-6 h-6 text-emerald-500/70" />
                 )}
