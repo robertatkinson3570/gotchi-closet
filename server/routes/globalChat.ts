@@ -72,6 +72,8 @@ router.get("/stream", (req, res) => {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache, no-transform",
     Connection: "keep-alive",
+    // Tell nginx not to buffer this response, else SSE messages never flush to the client.
+    "X-Accel-Buffering": "no",
   });
   res.flushHeaders?.();
   res.write(": connected\n\n");
