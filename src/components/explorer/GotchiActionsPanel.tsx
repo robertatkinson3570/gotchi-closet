@@ -37,6 +37,8 @@ export type ManageGotchi = {
   /** Rented out or borrowed — only petting is allowed; other actions revert. */
   locked?: boolean;
   lockReason?: string;
+  /** Listed for sale — only petting + editing the listing are allowed. */
+  listed?: boolean;
 };
 
 const TRAITS = ["NRG", "AGG", "SPK", "BRN"] as const;
@@ -44,7 +46,7 @@ type Status = { kind: "idle" } | { kind: "busy"; label: string } | { kind: "ok";
 
 /** Large, controlled modal to view + manage a gotchi (opened from the profile). */
 export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; onClose: () => void }) {
-  const { gotchiId, name, hauntId, collateral, numericTraits, equippedWearables, locked, lockReason } = gotchi;
+  const { gotchiId, name, hauntId, collateral, numericTraits, equippedWearables, locked, lockReason, listed } = gotchi;
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const isOnBase = chainId === BASE_CHAIN_ID;
@@ -133,10 +135,16 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
             </div>
           )}
 
-          {!locked && (
+          {!locked && !listed && (
             <button onClick={() => setEquipOpen(true)} className="w-full h-11 rounded-xl bg-gradient-to-r from-primary/20 to-fuchsia-500/20 border border-primary/40 text-primary text-sm font-bold inline-flex items-center justify-center gap-2 hover:from-primary/30 hover:to-fuchsia-500/30 transition-colors">
               <Shirt className="w-4 h-4" /> Equip / change wearables
             </button>
+          )}
+
+          {listed && !locked && (
+            <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5 text-[12px] text-emerald-700 dark:text-emerald-400">
+              This gotchi is <span className="font-semibold">listed for sale</span> — only <span className="font-semibold">petting</span> and editing the listing are available. Cancel the listing to unlock other actions.
+            </div>
           )}
 
           {status.kind !== "idle" && (
@@ -156,6 +164,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
             <EndRentalBody gotchiId={gotchiId} />
 
             {!locked && (<>
+            {!listed && (<>
             <Section icon={<Pencil className="w-4 h-4" />} title="Rename">
               <div className="flex items-center gap-1.5">
                 <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="New name" className={field} />
@@ -189,6 +198,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
                 Respec gotchi
               </button>
             </Section>
+            </>)}
 
             <Section icon={<Tag className="w-4 h-4 text-emerald-500" />} title="List for sale">
               <div className="flex items-center gap-1.5">
@@ -198,6 +208,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
               <button disabled={busy} onClick={cancelListing} className="h-8 w-full rounded border border-border/60 text-xs font-medium text-muted-foreground hover:bg-muted/50 disabled:opacity-50">Cancel my listing</button>
             </Section>
 
+            {!listed && (<>
             <Section icon={<Wallet className="w-4 h-4 text-sky-500" />} title="Pocket (escrow)">
               <PocketBody gotchiId={gotchiId} />
             </Section>
@@ -222,6 +233,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
                 Sacrifice gotchi
               </button>
             </Section>
+            </>)}
             </>)}
           </div>
         </div>
