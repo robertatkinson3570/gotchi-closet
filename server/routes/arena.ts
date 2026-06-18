@@ -2,6 +2,7 @@ import { Router } from "express";
 import { fetchPublicGotchi } from "../arena/publicState";
 import { publicTasteChat } from "../arena/publicChat";
 import { buildPersonality } from "../../src/lib/companion/personality";
+import { publicBattle } from "../arena/publicBattle";
 
 const router = Router();
 
@@ -73,6 +74,20 @@ router.post("/chat/:tokenId", async (req, res) => {
   } catch (err) {
     console.error("[arena/chat] error:", err);
     res.status(500).json({ error: "internal error" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/arena/battle/:a/vs/:b
+// Public — no auth. Runs (or returns cached) a roast battle between two gotchis.
+// Free-tier LLM only; never writes XP, credits, or stats.
+// ---------------------------------------------------------------------------
+
+router.get("/battle/:a/vs/:b", async (req, res) => {
+  try {
+    res.json(await publicBattle(String(req.params.a), String(req.params.b)));
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || "battle failed" });
   }
 });
 
