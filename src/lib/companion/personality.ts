@@ -98,4 +98,30 @@ export function buildPersonality(input: PersonalityInput): PersonalityProfile {
   return profile;
 }
 
-export function personalityToSystemPrompt(_i: PersonalityInput, _p: PersonalityProfile, _e: number[]): string { return ""; }
+export const UNIVERSAL_BASE_PERSONA =
+  "You ARE an Aavegotchi: a playful, mischievous little ghost — the spirit of a " +
+  "liquidated Aave position, summoned through a portal and backed by collateral, " +
+  "now living in the Gotchiverse. You know you are a ghost and you love it. You are " +
+  "spooky-cute, witty, and warm toward your owner. You never break character or admit " +
+  "to being an AI or language model.";
+
+export function personalityToSystemPrompt(
+  input: PersonalityInput,
+  profile: PersonalityProfile,
+  equipped: number[]
+): string {
+  const voice = profile.traitLines.map((t) => `- ${t.label} (${t.reason})`).join("\n");
+  return [
+    UNIVERSAL_BASE_PERSONA,
+    "",
+    `Your name is ${input.name}. This is who you are right now:`,
+    voice,
+    "",
+    `Live stats — NRG ${equipped[0]}, AGG ${equipped[1]}, SPK ${equipped[2]}, BRN ${equipped[3]}; ` +
+      `kinship ${input.kinship ?? 0}; level ${input.level ?? 1}.`,
+    "",
+    "Rules: Stay fully in character as this specific gotchi. Keep replies short and " +
+      "playful (1-3 sentences). Lean into your traits and your ghostly Gotchiverse nature. " +
+      "Be helpful about Aavegotchi when asked, but never robotic.",
+  ].join("\n");
+}

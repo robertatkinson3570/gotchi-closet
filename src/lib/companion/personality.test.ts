@@ -59,3 +59,24 @@ describe("buildPersonality", () => {
     expect(aloof.toneWords).toContain("aloof");
   });
 });
+
+import { UNIVERSAL_BASE_PERSONA } from "./personality";
+
+describe("personalityToSystemPrompt", () => {
+  it("always contains the universal ghost base persona", () => {
+    const p = buildPersonality(base());
+    expect(p.systemPrompt).toContain(UNIVERSAL_BASE_PERSONA);
+  });
+
+  it("embeds the gotchi name and live trait values", () => {
+    const p = buildPersonality(base({ name: "MoonDust", numericTraits: [12, 50, 88, 50, 0, 0] }));
+    expect(p.systemPrompt).toContain("MoonDust");
+    expect(p.systemPrompt).toMatch(/SPK\D*88/);
+  });
+
+  it("instructs short, in-character, playful replies", () => {
+    const p = buildPersonality(base());
+    expect(p.systemPrompt.toLowerCase()).toMatch(/short|brief|concise/);
+    expect(p.systemPrompt.toLowerCase()).toContain("character");
+  });
+});
