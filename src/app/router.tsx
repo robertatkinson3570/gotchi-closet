@@ -26,6 +26,7 @@ const BulkListPage = lazy(() => import("@/pages/BulkListPage"));
 const ActivityPage = lazy(() => import("@/pages/ActivityPage"));
 const StatsPage = lazy(() => import("@/pages/StatsPage"));
 const DaoPage = lazy(() => import("@/pages/DaoPage"));
+const GetTokensPage = lazy(() => import("@/pages/GetTokensPage"));
 const ForgePage = lazy(() => import("@/pages/ForgePage"));
 
 export const router = createBrowserRouter([
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
       { path: "activity", element: <ActivityPage /> },
       { path: "stats", element: <StatsPage /> },
       { path: "dao", element: <DaoPage /> },
+      { path: "get-tokens", element: <GetTokensPage /> },
       { path: "forge", element: <ForgePage /> },
       { path: "lending", element: <LendingPage /> },
       { path: "lending/analytics", element: <LendingAnalyticsPage /> },

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useAccount, useReadContracts } from "wagmi";
-import { Coins } from "lucide-react";
+import { Coins, Sparkles } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { GHST_TOKEN_BASE, ALCHEMICA_TOKENS_BASE, ERC20_ABI } from "@/lib/lending/contracts";
 import { PortalsPanel } from "./PortalsPanel";
@@ -35,7 +36,10 @@ export function OwnedOverview() {
   return (
     <div className="px-2 md:px-4 pt-2 space-y-3">
       <div>
-        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 inline-flex items-center gap-1.5"><Coins className="w-4 h-4" /> Your tokens</div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide inline-flex items-center gap-1.5"><Coins className="w-4 h-4" /> Your tokens</div>
+          <Link to="/get-tokens" className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"><Sparkles className="w-3.5 h-3.5" /> Get GHST</Link>
+        </div>
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
           {balances.map((t) => (
             <div key={t.symbol} className="rounded-lg border border-border/40 bg-background/60 p-2.5">
