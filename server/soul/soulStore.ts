@@ -91,7 +91,15 @@ export function getSoulDoc(tokenId: string): SoulDocument | null {
     .prepare(`SELECT blob_cipher FROM souls WHERE token_id = ?`)
     .get(String(tokenId)) as { blob_cipher: string } | undefined;
   if (!row) return null;
-  return deserialize(decryptSoul(row.blob_cipher));
+  // A blob that can't be decrypted (e.g. it was written under a different/older
+  // SOUL_ENCRYPTION_KEY, or is otherwise corrupt) must not break the read path.
+  // Treat it as "no stored soul" — callers rebuild the doc from live signals and
+  // saveSoulDoc() re-encrypts it under the current key on the next write.
+  try {
+    return deserialize(decryptSoul(row.blob_cipher));
+  } catch {
+    return null;
+  }
 }
 
 /**
