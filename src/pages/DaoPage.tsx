@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useAccount, useReadContracts } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import { createPublicClient, http } from "viem";
-import { Landmark, ExternalLink, Vote, Wrench, BookOpen, Megaphone, Bot, BarChart3, Loader2, Zap } from "lucide-react";
+import { Landmark, ExternalLink, Vote, Wrench, BookOpen, Megaphone, Bot, BarChart3, Loader2, Zap, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { SnapshotVotePanel } from "@/components/dao/SnapshotVotePanel";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { BASE_CHAIN_ID } from "@/lib/chains";
@@ -134,13 +135,23 @@ function useSpaceStats() {
 }
 
 // ---- Snapshot proposals (with results: leading choice) ----
-type Proposal = { id: string; title: string; state: string; votes: number; end: number; choices: string[]; scores: number[] };
+type Proposal = { id: string; title: string; state: string; votes: number; end: number; choices: string[]; scores: number[]; type: string };
 async function fetchProposals(): Promise<Proposal[]> {
-  const query = `{ proposals(first: 6, where: { space: "${SNAPSHOT_SPACE}" }, orderBy: "created", orderDirection: desc){ id title state votes end choices scores } }`;
+  const query = `{ proposals(first: 6, where: { space: "${SNAPSHOT_SPACE}" }, orderBy: "created", orderDirection: desc){ id title state votes end choices scores type } }`;
   const res = await fetch("https://hub.snapshot.org/graphql", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query }) });
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "snapshot error");
-  return (json.data?.proposals ?? []).map((p: any) => ({ id: p.id, title: p.title, state: p.state, votes: Number(p.votes) || 0, end: Number(p.end) || 0, choices: p.choices ?? [], scores: (p.scores ?? []).map(Number) }));
+  return (json.data?.proposals ?? []).map((p: any) => ({ id: p.id, title: p.title, state: p.state, votes: Number(p.votes) || 0, end: Number(p.end) || 0, choices: p.choices ?? [], scores: (p.scores ?? []).map(Number), type: p.type ?? "" }));
+}
+
+// Which of these proposals has the connected wallet already voted on?
+async function fetchMyVotes(voter: string, proposalIds: string[]): Promise<Set<string>> {
+  if (!voter || proposalIds.length === 0) return new Set();
+  const ids = proposalIds.map((i) => `"${i}"`).join(",");
+  const query = `{ votes(first: 100, where: { space: "${SNAPSHOT_SPACE}", voter: "${voter}", proposal_in: [${ids}] }){ proposal { id } } }`;
+  const res = await fetch("https://hub.snapshot.org/graphql", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query }) });
+  const json = await res.json();
+  return new Set((json?.data?.votes ?? []).map((v: any) => v.proposal.id));
 }
 function leadingChoice(p: Proposal): string | null {
   if (!p.scores.length || !p.choices.length) return null;
@@ -156,8 +167,17 @@ function proposalAgo(end: number, state: string): string {
   return state === "pending" ? "pending" : "closed";
 }
 
-function ProposalsSection() {
-  const { data, isLoading } = useQuery({ queryKey: ["snapshot-proposals", SNAPSHOT_SPACE], queryFn: fetchProposals, staleTime: 5 * 60_000 });
+function ProposalsSection({ address }: { address?: string }) {
+  const { data, isLoading, refetch } = useQuery({ queryKey: ["snapshot-proposals", SNAPSHOT_SPACE], queryFn: fetchProposals, staleTime: 5 * 60_000 });
+  const proposalIds = useMemo(() => (data ?? []).map((p) => p.id), [data]);
+  const { data: myVotes, refetch: refetchVotes } = useQuery({
+    queryKey: ["snapshot-my-votes", address?.toLowerCase(), proposalIds.join(",")],
+    enabled: !!address && proposalIds.length > 0,
+    staleTime: 60_000,
+    queryFn: () => fetchMyVotes(address!.toLowerCase(), proposalIds),
+  });
+  const [openId, setOpenId] = useState<string | null>(null);
+
   return (
     <div className="mb-5">
       <div className="flex items-center justify-between mb-2">
@@ -170,13 +190,30 @@ function ProposalsSection() {
         <p className="text-[11px] text-muted-foreground">No proposals found.</p>
       ) : (
         <div className="space-y-2">
-          {data.map((p) => (
-            <a key={p.id} href={`https://snapshot.org/#/${SNAPSHOT_SPACE}/proposal/${p.id}`} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-3 rounded-xl border border-border/40 bg-background/60 p-3 hover:border-primary/40 hover:-translate-y-0.5 transition-all">
-              <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${p.state === "active" ? "bg-emerald-500/15 text-emerald-500" : p.state === "pending" ? "bg-amber-500/15 text-amber-500" : "bg-muted/50 text-muted-foreground"}`}>{p.state}</span>
-              <div className="min-w-0 flex-1"><div className="text-sm font-medium truncate">{p.title}</div><div className="text-[10px] text-muted-foreground">{p.votes.toLocaleString()} votes · {proposalAgo(p.end, p.state)}{leadingChoice(p) ? ` · leading: ${leadingChoice(p)}` : ""}</div></div>
-              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
-            </a>
-          ))}
+          {data.map((p) => {
+            const voted = myVotes?.has(p.id);
+            const canVote = p.state === "active" && !!address;
+            const open = openId === p.id;
+            return (
+              <div key={p.id} className="rounded-xl border border-border/40 bg-background/60 p-3">
+                <div className="flex items-center gap-3">
+                  <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${p.state === "active" ? "bg-emerald-500/15 text-emerald-500" : p.state === "pending" ? "bg-amber-500/15 text-amber-500" : "bg-muted/50 text-muted-foreground"}`}>{p.state}</span>
+                  <a href={`https://snapshot.org/#/${SNAPSHOT_SPACE}/proposal/${p.id}`} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 group">
+                    <div className="text-sm font-medium truncate group-hover:text-primary">{p.title}</div>
+                    <div className="text-[10px] text-muted-foreground">{p.votes.toLocaleString()} votes · {proposalAgo(p.end, p.state)}{leadingChoice(p) ? ` · leading: ${leadingChoice(p)}` : ""}</div>
+                  </a>
+                  {p.state === "active" && voted ? (
+                    <span className="text-[10px] font-semibold text-emerald-500 inline-flex items-center gap-1 shrink-0"><CheckCircle2 className="w-3.5 h-3.5" /> Voted</span>
+                  ) : canVote ? (
+                    <button onClick={() => setOpenId(open ? null : p.id)} className="h-7 px-3 rounded-md bg-primary/15 text-primary border border-primary/40 text-[11px] font-semibold shrink-0">{open ? "Close" : "Vote"}</button>
+                  ) : null}
+                </div>
+                {open && canVote && !voted && (
+                  <SnapshotVotePanel proposalId={p.id} type={p.type} choices={p.choices} onVoted={() => { setOpenId(null); refetchVotes(); refetch(); }} />
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -262,7 +299,7 @@ export default function DaoPage() {
         </div>
       </div>
 
-      <ProposalsSection />
+      <ProposalsSection address={address} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
         <div>
