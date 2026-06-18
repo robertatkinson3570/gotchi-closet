@@ -25,6 +25,7 @@ const WhitelistsPage = lazy(() => import("@/pages/WhitelistsPage"));
 const BulkListPage = lazy(() => import("@/pages/BulkListPage"));
 const ActivityPage = lazy(() => import("@/pages/ActivityPage"));
 const StatsPage = lazy(() => import("@/pages/StatsPage"));
+const DaoPage = lazy(() => import("@/pages/DaoPage"));
 const ForgePage = lazy(() => import("@/pages/ForgePage"));
 
 export const router = createBrowserRouter([
@@ -49,6 +50,7 @@ export const router = createBrowserRouter([
       { path: "me", element: <Navigate to="/explorer?scope=owned" replace /> },
       { path: "activity", element: <ActivityPage /> },
       { path: "stats", element: <StatsPage /> },
+      { path: "dao", element: <DaoPage /> },
       { path: "forge", element: <ForgePage /> },
       { path: "lending", element: <LendingPage /> },
       { path: "lending/analytics", element: <LendingAnalyticsPage /> },
