@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Outlet, useLocation, Link } from "react-router-dom";
 import { useAccount, useDisconnect } from "wagmi";
 import { Loader2 } from "lucide-react";
-import { Coins, Search, Shirt, MapPin, Activity, User, Flame } from "lucide-react";
+import { Coins, Search, Shirt, MapPin, Activity, Flame } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -18,7 +18,6 @@ const NAV: { to: string; title: string; icon: LucideIcon }[] = [
   { to: "/forge", title: "Forge", icon: Flame },
   { to: "/lending", title: "Lending", icon: Coins },
   { to: "/lending/lands", title: "Land Management", icon: MapPin },
-  { to: "/me", title: "My Profile", icon: User },
 ];
 
 function isActive(pathname: string, to: string): boolean {
