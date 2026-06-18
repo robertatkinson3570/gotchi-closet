@@ -69,6 +69,12 @@ export const env = {
     "VITE_COMPANION_RECEIVING_WALLET",
     "0xc4Cb6cB969e8b4e309Ab98E4Da51b77887aFaD96"
   ),
+  // Premium (OpenAI) tier is hidden until the operator sets OPENAI_API_KEY on the
+  // server AND gates premium behind a wallet signature. Until then, buying premium
+  // would charge GHST but deliver no upgrade — so keep the CTA off by default.
+  // Flip VITE_COMPANION_PREMIUM_ENABLED="true" to show it.
+  companionPremiumEnabled:
+    resolveEnv("VITE_COMPANION_PREMIUM_ENABLED", "false") === "true",
   // Auto-renew service fee — paid in GHST via the protocol's splitOther mechanism.
   // Default: 5% of revenue split goes to GotchiCloset operator wallet on every rental
   // of an auto-renewed listing. Owner can opt out (then auto-renew is disallowed).

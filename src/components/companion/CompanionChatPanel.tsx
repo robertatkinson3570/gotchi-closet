@@ -8,6 +8,7 @@ import { postChat, getPremium } from "@/lib/companion/api";
 import { PersonalityCard } from "./PersonalityCard";
 import { GoPremium } from "./GoPremium";
 import { CompanionGotchiPicker } from "./CompanionGotchiPicker";
+import { env } from "@/lib/env";
 import type { ChatMessage } from "@/lib/companion/types";
 
 export function CompanionChatPanel() {
@@ -62,7 +63,7 @@ export function CompanionChatPanel() {
       ) : (
         <>
           {profile && <div className="px-3 pt-3"><PersonalityCard profile={profile} /></div>}
-          {profile && !premium && <div className="px-3 pt-2"><GoPremium onActivated={() => setPremium(true)} /></div>}
+          {env.companionPremiumEnabled && profile && !premium && <div className="px-3 pt-2"><GoPremium onActivated={() => setPremium(true)} /></div>}
           <div className="flex-1 space-y-2 overflow-y-auto p-3">
             {messages.length === 0 && (
               <div className="mt-8 text-center text-sm text-white/40">say hi to your gotchi 👻</div>
