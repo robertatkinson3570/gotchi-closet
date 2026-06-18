@@ -6,6 +6,7 @@ import lendingAutoRenewRoutes from "./routes/lendingAutoRenew";
 import gotchibattlerRoutes from "./routes/gotchibattler";
 import companionRoutes from "./routes/companion";
 import globalChatRoutes from "./routes/globalChat";
+import roastRoutes from "./routes/roast";
 import { getDebugStats } from "./aavegotchi/serverSvgService";
 import { startAutoRenewCron } from "./lending/cron";
 
@@ -72,6 +73,7 @@ export function createApp() {
   // can never be shadowed by a future catch-all on the companion router.
   app.use("/api/companion/global", globalChatRoutes);
   app.use("/api/companion", companionRoutes);
+  app.use("/api/roast", roastRoutes);
 
   // Boot auto-renew cron (no-op if AUTORENEW_HOT_WALLET_KEY not set)
   startAutoRenewCron();
