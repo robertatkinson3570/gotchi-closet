@@ -6,6 +6,7 @@ import { getSlotName, getWearableRarityTier } from "@/lib/explorer/wearableTypes
 import type { ExplorerWearable } from "@/lib/explorer/wearableTypes";
 import { BuyButton } from "./BuyButton";
 import { MakeOfferButton } from "./MakeOfferButton";
+import { InlineSvg } from "./InlineSvg";
 import { AAVEGOTCHI_DIAMOND_BASE, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
 
 interface WearableExplorerCardProps {
@@ -74,9 +75,9 @@ export function WearableExplorerCard({
 
       <div className="h-12 w-full flex items-center justify-center bg-black/20 rounded overflow-hidden">
         {!imageUrls[urlIndex] || errored ? (
-          <div
+          <InlineSvg
+            svg={fallbackSvg}
             className="w-10 h-10 [&>svg]:w-full [&>svg]:h-full"
-            dangerouslySetInnerHTML={{ __html: fallbackSvg }}
           />
         ) : (
           <img

@@ -6,6 +6,7 @@ import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { CORE_SUBGRAPH } from "@/lib/subgraph";
 import { parseRevert } from "@/lib/lending/parseRevert";
+import { InlineSvg } from "./InlineSvg";
 
 const PORTAL_ABI = [
   { name: "openPortals", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_tokenIds", type: "uint256[]" }], outputs: [] },
@@ -149,7 +150,7 @@ function ClaimModal({ tokenId, onClose, onClaimed }: { tokenId: string; onClose:
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
               {options.map((o, i) => (
                 <button key={i} onClick={() => setPicked(i)} className={`rounded-lg border p-2 transition-all hover:-translate-y-0.5 ${picked === i ? "border-primary ring-2 ring-primary/50 bg-primary/5" : "border-border/40 hover:border-primary/40"}`}>
-                  <span className="block aspect-square rounded bg-muted/30 overflow-hidden [&>svg]:w-full [&>svg]:h-full" dangerouslySetInnerHTML={{ __html: o.svg }} />
+                  <InlineSvg svg={o.svg} className="block aspect-square rounded bg-muted/30 overflow-hidden [&>svg]:w-full [&>svg]:h-full" />
                   <div className="mt-1 text-[11px] font-bold">BRS {o.brs}</div>
                   <div className="text-[8px] text-muted-foreground leading-tight">{o.numericTraits.slice(0, 6).map((t, j) => `${TRAITS[j]} ${t}`).join(" · ")}</div>
                 </button>

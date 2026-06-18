@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { qk } from "@/lib/queryKeys";
 import { useQuery } from "@tanstack/react-query";
+import { InlineSvg } from "./InlineSvg";
 
 // The svg subgraph stores each gotchi's fully-rendered SVG by token id — used
 // where we have a gotchi id but not its traits (e.g. auction listings).
@@ -22,11 +23,10 @@ export function GotchiSvgById({ id, className }: { id: string; className?: strin
     queryFn: () => fetchGotchiSvg(id),
     staleTime: 10 * 60_000,
   });
-  // Always render the same <span> node (identity stable across loading → loaded),
-  // and only ever change its innerHTML. Returning null then a fresh element makes
-  // React insert/remove this node next to conditionally-rendered siblings, which
-  // can desync from the raw SVG's untracked child nodes and throw removeChild.
-  return <span className={className} dangerouslySetInnerHTML={{ __html: data ?? "" }} />;
+  // Render via InlineSvg: React only ever sees an empty <span> and the raw SVG
+  // children are managed imperatively, so unmounting (e.g. fast tab switches)
+  // can never desync React's reconciler and throw removeChild.
+  return <InlineSvg svg={data} className={className} />;
 }
 
 // Fake Gotchis are a separate collection; their art is off-chain (irys) and
