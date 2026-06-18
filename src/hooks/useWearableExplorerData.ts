@@ -3,7 +3,6 @@ import { useAccount, usePublicClient } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import { useAppStore } from "@/state/useAppStore";
 import { useBaazaar } from "@/hooks/useBaazaar";
-import { computeOwnedCounts } from "@/state/selectors";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
 import type { DataMode } from "@/lib/explorer/types";
@@ -172,7 +171,6 @@ function applySort(
 
 export function useWearableExplorerData(mode: DataMode) {
   const wearables = useAppStore((s) => s.wearables);
-  const gotchis = useAppStore((s) => s.gotchis);
   const sets = useAppStore((s) => s.sets);
   const { baazaarPrices, baazaarLoading } = useBaazaar();
   const { address } = useAccount();
@@ -203,18 +201,10 @@ export function useWearableExplorerData(mode: DataMode) {
     },
   });
 
-  // Owned = equipped on gotchis + held in wallet (the two are disjoint, since
-  // equipping escrows the wearable off the wallet balance).
-  const ownedCounts = useMemo(() => {
-    const equipped = computeOwnedCounts(gotchis);
-    if (!walletWearables) return equipped;
-    const merged: Record<number, number> = { ...equipped };
-    for (const [id, bal] of Object.entries(walletWearables)) {
-      const key = Number(id);
-      merged[key] = (merged[key] || 0) + bal;
-    }
-    return merged;
-  }, [gotchis, walletWearables]);
+  // Owned wearables = those the wallet holds but has NOT equipped on a gotchi.
+  // Equipping escrows the wearable off the wallet balance, so itemBalances is
+  // exactly the unequipped owned set (empty when nothing is held unequipped).
+  const ownedCounts = useMemo(() => walletWearables ?? {}, [walletWearables]);
 
   const pricesMap = useMemo(() => {
     const map: Record<number, string> = {};
