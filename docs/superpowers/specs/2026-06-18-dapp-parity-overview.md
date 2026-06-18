@@ -136,10 +136,12 @@ Every image component must keep a fallback (placeholder SVG / icon), never a bro
 ## 5. Management ABIs (verified signatures, aavegotchiDiamond unless noted)
 
 ```
-// Portals
+// Portals — ALREADY BUILT in PortalsPanel.tsx (open + 10-option picker + claim).
+// NOTE: on Base the claim is 2-arg; the 3-arg variant "does not exist" (verified).
 openPortals(uint256[] _tokenIds)
 portalAavegotchiTraits(uint256 _tokenId)            // -> 10 ghost options (traits/collateral)
-claimAavegotchi(uint256 _tokenId, uint256 _option, uint256 _stakeAmount)
+portalAavegotchisSvg(uint256 _tokenId)              // -> string[10] option SVGs
+claimAavegotchi(uint256 _tokenId, uint256 _option)  // Base: 2-arg (NOT 3-arg)
 
 // Gotchi
 interact(uint256[] _tokenIds)                       // pet (have)

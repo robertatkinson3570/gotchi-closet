@@ -4,6 +4,7 @@ import { Coins } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { GHST_TOKEN_BASE, ALCHEMICA_TOKENS_BASE, ERC20_ABI } from "@/lib/lending/contracts";
 import { PortalsPanel } from "./PortalsPanel";
+import { PetOperatorControl } from "./PetOperatorControl";
 
 const TOKENS = [
   { symbol: "GHST", address: GHST_TOKEN_BASE, color: "text-purple-400" },
@@ -45,6 +46,7 @@ export function OwnedOverview() {
         </div>
       </div>
       <PortalsPanel />
+      <PetOperatorControl />
     </div>
   );
 }
