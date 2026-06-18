@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import { useAppStore } from "@/state/useAppStore";
+import { useCompanionGotchis } from "./useCompanionGotchis";
 import { useCompanion } from "@/state/useCompanion";
 import { buildPersonality } from "@/lib/companion/personality";
 import { GotchiSvgById } from "@/components/explorer/GotchiSvgById";
 
 export function CompanionGotchiPicker({ onPicked }: { onPicked?: () => void }) {
-  const gotchis = useAppStore((s) => s.gotchis);
+  const gotchis = useCompanionGotchis();
   const setSelected = useCompanion((s) => s.setSelected);
   const selectedId = useCompanion((s) => s.selectedTokenId);
 

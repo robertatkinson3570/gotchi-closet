@@ -4,8 +4,8 @@ export interface CompanionTier { days: number; priceGhst: number; }
 
 // Keep in sync with the client "Go Premium" UI (Task 17).
 export const COMPANION_TIERS: CompanionTier[] = [
-  { days: 30, priceGhst: 5 },
-  { days: 90, priceGhst: 12 },
+  { days: 30, priceGhst: 500 },
+  { days: 90, priceGhst: 1000 },
 ];
 
 export function companionTierFor(days: number): CompanionTier | null {

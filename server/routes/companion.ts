@@ -103,10 +103,9 @@ router.post("/premium/claim", async (req, res) => {
     const expectedWei = expectedWeiForTier(days);
     if (!tier || expectedWei === null) return res.status(400).json({ error: `unsupported term: ${days} days` });
 
-    // Require an explicit receiving wallet — never fall back to another module's
-    // hot wallet, which would silently misroute premium GHST payments.
-    const operator = process.env.COMPANION_RECEIVING_WALLET;
-    if (!operator) return res.status(503).json({ error: "COMPANION_RECEIVING_WALLET not configured" });
+    // Receiving wallet for premium GHST. Defaults to the GotchiCloset operator
+    // wallet (same as the lending fee address); override via COMPANION_RECEIVING_WALLET.
+    const operator = process.env.COMPANION_RECEIVING_WALLET || "0xc4Cb6cB969e8b4e309Ab98E4Da51b77887aFaD96";
 
     const verify = await verifyGhstPayment({
       txHash: txHash as `0x${string}`,

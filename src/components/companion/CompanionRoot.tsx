@@ -1,11 +1,11 @@
 import { useCompanion } from "@/state/useCompanion";
-import { useAppStore } from "@/state/useAppStore";
+import { useCompanionGotchis } from "./useCompanionGotchis";
 import { CompanionMascot } from "./CompanionMascot";
 import { CompanionChatPanel } from "./CompanionChatPanel";
 
 export function CompanionRoot() {
   const isOpen = useCompanion((s) => s.isOpen);
-  const gotchis = useAppStore((s) => s.gotchis);
+  const gotchis = useCompanionGotchis();
   const selectedTokenId = useCompanion((s) => s.selectedTokenId);
   const g = gotchis.find((x) => x.id === selectedTokenId);
   return (

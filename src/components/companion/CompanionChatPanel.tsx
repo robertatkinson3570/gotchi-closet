@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
-import { useAppStore } from "@/state/useAppStore";
+import { useCompanionGotchis } from "./useCompanionGotchis";
 import { useCompanion } from "@/state/useCompanion";
 import { buildPersonality } from "@/lib/companion/personality";
 import { postChat, getPremium } from "@/lib/companion/api";
@@ -12,7 +12,7 @@ import type { ChatMessage } from "@/lib/companion/types";
 
 export function CompanionChatPanel() {
   const { address } = useAccount();
-  const gotchis = useAppStore((s) => s.gotchis);
+  const gotchis = useCompanionGotchis();
   const { selectedTokenId, setOpen } = useCompanion();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -47,7 +47,7 @@ export function CompanionChatPanel() {
     <motion.div
       initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: "spring", stiffness: 300, damping: 26 }}
-      className="fixed bottom-24 right-4 z-50 flex h-[32rem] w-[22rem] max-w-[92vw] flex-col overflow-hidden
+      className="fixed bottom-24 right-4 z-50 flex h-[32rem] max-h-[calc(100dvh-7rem)] w-[22rem] max-w-[92vw] flex-col overflow-hidden
                  rounded-2xl border border-white/10 bg-[#160a23]/85 shadow-2xl shadow-fuchsia-900/30 backdrop-blur-xl"
     >
       <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">

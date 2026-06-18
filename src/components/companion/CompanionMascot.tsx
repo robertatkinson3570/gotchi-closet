@@ -1,13 +1,13 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect } from "react";
-import { useAppStore } from "@/state/useAppStore";
+import { useCompanionGotchis } from "./useCompanionGotchis";
 import { useCompanion } from "@/state/useCompanion";
 import { GotchiSvgById } from "@/components/explorer/GotchiSvgById";
 import { glowColor } from "@/lib/companion/glow";
 
 export function CompanionMascot() {
   const reduce = useReducedMotion();
-  const gotchis = useAppStore((s) => s.gotchis);
+  const gotchis = useCompanionGotchis();
   const { selectedTokenId, isOpen, toggleOpen, ensureDefault } = useCompanion();
 
   useEffect(() => { ensureDefault(gotchis); }, [gotchis, ensureDefault]);
@@ -28,7 +28,7 @@ export function CompanionMascot() {
       style={{ boxShadow: `0 0 24px 4px ${glow}` }}
     >
       {id
-        ? <GotchiSvgById id={id} className="block h-full w-full" />
+        ? <GotchiSvgById id={id} className="block h-full w-full overflow-hidden rounded-full [&>svg]:h-full [&>svg]:w-full" />
         : <span className="grid h-full w-full place-items-center text-2xl">👻</span>}
       {!isOpen && <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-fuchsia-400 shadow" />}
     </motion.button>

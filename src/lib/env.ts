@@ -55,10 +55,20 @@ export const env = {
   autoRenewOperator: resolveEnv("VITE_AUTORENEW_OPERATOR", ""),
   // Auto-renew backend API URL (where the cron service runs)
   autoRenewApiUrl: resolveEnv("VITE_AUTORENEW_API_URL", ""),
-  // Companion backend origin (the same Express server, e.g. https://api.gotchicloset.com).
-  // Empty in local dev so the Vite /api proxy handles it; set in prod (Vercel) to the
-  // VPS origin since the companion routes live on the VPS, not Vercel.
-  companionApiUrl: resolveEnv("VITE_COMPANION_API_URL", ""),
+  // Companion backend origin (the same Express server on the VPS). Empty in local
+  // dev so the Vite /api proxy handles it; in prod the companion routes live on the
+  // VPS (not Vercel), so default to the public API origin. Override per-deploy with
+  // VITE_COMPANION_API_URL if the hostname differs.
+  companionApiUrl: resolveEnv(
+    "VITE_COMPANION_API_URL",
+    import.meta.env.PROD ? "https://api.gotchicloset.com" : ""
+  ),
+  // Wallet that receives GHST premium payments for the companion. Defaults to the
+  // GotchiCloset operator wallet (same as the lending fee address).
+  companionReceivingWallet: resolveEnv(
+    "VITE_COMPANION_RECEIVING_WALLET",
+    "0xc4Cb6cB969e8b4e309Ab98E4Da51b77887aFaD96"
+  ),
   // Auto-renew service fee — paid in GHST via the protocol's splitOther mechanism.
   // Default: 5% of revenue split goes to GotchiCloset operator wallet on every rental
   // of an auto-renewed listing. Owner can opt out (then auto-renew is disallowed).

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAccount, useWriteContract } from "wagmi";
 import { parseUnits } from "viem";
 import { claimPremium, getPremium } from "@/lib/companion/api";
+import { env } from "@/lib/env";
 
 const GHST_BASE = "0xcD2F22236DD9Dfe2356D7C543161D4d260FD9BcB" as const;
 const ERC20_TRANSFER_ABI = [{
@@ -11,8 +12,8 @@ const ERC20_TRANSFER_ABI = [{
 }] as const;
 
 // Keep in sync with server/companion/pricing.ts COMPANION_TIERS.
-const TIERS = [{ days: 30, ghst: 5 }, { days: 90, ghst: 12 }];
-const RECEIVING = import.meta.env.VITE_COMPANION_RECEIVING_WALLET as `0x${string}` | undefined;
+const TIERS = [{ days: 30, ghst: 500 }, { days: 90, ghst: 1000 }];
+const RECEIVING = env.companionReceivingWallet as `0x${string}` | undefined;
 
 export function GoPremium({ onActivated }: { onActivated?: () => void }) {
   const { address } = useAccount();
