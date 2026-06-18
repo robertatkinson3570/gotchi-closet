@@ -3,19 +3,23 @@ import path from "node:path";
 import fs from "node:fs";
 import type { Tier } from "../../src/lib/companion/types";
 
-const DB_PATH = process.env.COMPANION_DB_PATH || path.resolve("./data/companion.db");
 let db: Database.Database | null = null;
 
+function dbPath(): string {
+  return process.env.COMPANION_DB_PATH || path.resolve("./data/companion.db");
+}
+
 /** Close and discard the current connection. Used by tests between runs. */
-export function closeDb() {
+export function closeDb(): void {
   if (db) { db.close(); db = null; }
 }
 
 export function getDb(): Database.Database {
   if (db) return db;
-  const dir = path.dirname(DB_PATH);
+  const p = dbPath();
+  const dir = path.dirname(p);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  db = new Database(DB_PATH);
+  db = new Database(p);
   db.pragma("journal_mode = WAL");
   db.exec(`
     CREATE TABLE IF NOT EXISTS companion_messages (
