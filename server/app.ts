@@ -7,6 +7,7 @@ import gotchibattlerRoutes from "./routes/gotchibattler";
 import companionRoutes from "./routes/companion";
 import globalChatRoutes from "./routes/globalChat";
 import roastRoutes from "./routes/roast";
+import soulRoutes from "./routes/soul";
 import { getDebugStats } from "./aavegotchi/serverSvgService";
 import { startAutoRenewCron } from "./lending/cron";
 
@@ -74,6 +75,7 @@ export function createApp() {
   app.use("/api/companion/global", globalChatRoutes);
   app.use("/api/companion", companionRoutes);
   app.use("/api/roast", roastRoutes);
+  app.use("/api/soul", soulRoutes);
 
   // Boot auto-renew cron (no-op if AUTORENEW_HOT_WALLET_KEY not set)
   startAutoRenewCron();

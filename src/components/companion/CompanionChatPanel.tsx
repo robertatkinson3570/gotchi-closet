@@ -6,6 +6,7 @@ import { useCompanion } from "@/state/useCompanion";
 import { buildPersonality } from "@/lib/companion/personality";
 import { postChat, getPremium, getHistory } from "@/lib/companion/api";
 import { PersonalityCard } from "./PersonalityCard";
+import { SoulDepthMeter } from "./SoulDepthMeter";
 import { GoPremium } from "./GoPremium";
 import { CompanionGotchiPicker } from "./CompanionGotchiPicker";
 import { GlobalChatTab } from "./GlobalChatTab";
@@ -119,6 +120,7 @@ export function CompanionChatPanel() {
         <>
           <div className="flex-1 space-y-2 overflow-y-auto p-3">
             {profile && <PersonalityCard profile={profile} />}
+            {selectedTokenId && <SoulDepthMeter tokenId={selectedTokenId} />}
             {credits > 0 && <div className="px-3 pt-1 text-[10px] text-fuchsia-200/60">⚡ {credits.toLocaleString()} premium credits</div>}
             {env.companionPremiumEnabled && profile && (!premium || credits < 200) && <GoPremium onActivated={() => getPremium(address!).then((s) => { setPremium(s.active); setCredits(s.credits); }).catch(() => {})} />}
             {messages.length === 0 && (
