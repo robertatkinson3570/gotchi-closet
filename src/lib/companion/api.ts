@@ -7,11 +7,16 @@ export interface ChatResponse { reply: string; deflected: boolean; tier?: Tier; 
 // the server origin in prod and empty in dev (where the Vite /api proxy forwards).
 const BASE = env.companionApiUrl;
 
-export async function postChat(tokenId: string, wallet: string, message: string): Promise<ChatResponse> {
+export async function postChat(
+  tokenId: string,
+  wallet: string,
+  message: string,
+  auth?: { signature: string; signedAt: number }
+): Promise<ChatResponse> {
   const res = await fetch(`${BASE}/api/companion/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tokenId, wallet, message }),
+    body: JSON.stringify({ tokenId, wallet, message, ...(auth ?? {}) }),
   });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `chat failed (${res.status})`);
   return res.json();

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { useAccount } from "wagmi";
+import { useAccount, useSignMessage } from "wagmi";
 import { useCompanionGotchis } from "./useCompanionGotchis";
 import { useCompanion } from "@/state/useCompanion";
 import { buildPersonality } from "@/lib/companion/personality";
@@ -9,10 +9,12 @@ import { PersonalityCard } from "./PersonalityCard";
 import { GoPremium } from "./GoPremium";
 import { CompanionGotchiPicker } from "./CompanionGotchiPicker";
 import { env } from "@/lib/env";
+import { premiumMessage, PREMIUM_SIG_TTL_MS } from "@/lib/companion/premiumAuth";
 import type { ChatMessage } from "@/lib/companion/types";
 
 export function CompanionChatPanel() {
   const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
   const gotchis = useCompanionGotchis();
   const { selectedTokenId, setOpen } = useCompanion();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -40,6 +42,22 @@ export function CompanionChatPanel() {
     return () => window.removeEventListener("keydown", onKey);
   }, [setOpen]);
 
+  // Premium chat must prove wallet ownership so the OpenAI key can't be spent by a
+  // spoofed wallet. Sign once per 24h and cache it; free chat never signs.
+  async function ensurePremiumAuth(): Promise<{ signature: string; signedAt: number } | undefined> {
+    if (!address || !premium || !env.companionPremiumEnabled) return undefined;
+    const key = `companion.premiumSig.${address.toLowerCase()}`;
+    try {
+      const cached = JSON.parse(localStorage.getItem(key) || "null");
+      if (cached?.signature && Date.now() - cached.signedAt < PREMIUM_SIG_TTL_MS) return cached;
+    } catch { /* ignore */ }
+    const signedAt = Date.now();
+    const signature = await signMessageAsync({ message: premiumMessage(address, signedAt) });
+    const auth = { signature, signedAt };
+    try { localStorage.setItem(key, JSON.stringify(auth)); } catch { /* ignore */ }
+    return auth;
+  }
+
   async function send() {
     const text = draft.trim();
     if (!text || !selectedTokenId || !address || busy) return;
@@ -47,7 +65,9 @@ export function CompanionChatPanel() {
     setMessages((m) => [...m, { role: "user", content: text }]);
     setBusy(true);
     try {
-      const res = await postChat(selectedTokenId, address, text);
+      let auth: { signature: string; signedAt: number } | undefined;
+      try { auth = await ensurePremiumAuth(); } catch { auth = undefined; }
+      const res = await postChat(selectedTokenId, address, text, auth);
       setMessages((m) => [...m, { role: "assistant", content: res.reply }]);
     } catch {
       setMessages((m) => [...m, { role: "assistant", content: "the ether glitched 👻 try again in a sec" }]);

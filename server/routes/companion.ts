@@ -12,6 +12,7 @@ import {
 } from "../companion/db";
 import { verifyGhstPayment } from "../lending/verifyPayment";
 import { expectedWeiForTier, companionTierFor } from "../companion/pricing";
+import { premiumSignatureValid } from "../companion/auth";
 
 const router = Router();
 
@@ -63,7 +64,13 @@ router.post("/chat", async (req, res) => {
       return res.json({ reply, deflected: true });
     }
 
-    const tier = isPremiumActive(wallet) ? "premium" : "free";
+    // Premium (OpenAI) requires BOTH an active entitlement AND a fresh wallet
+    // signature, so a spoofed wallet in the body can't spend the operator's key.
+    let tier: "free" | "premium" = "free";
+    if (isPremiumActive(wallet)) {
+      const ok = await premiumSignatureValid(wallet, Number(body.signedAt), String(body.signature ?? ""));
+      if (ok) tier = "premium";
+    }
     const messages = assembleMessages({
       facts: getFacts(wallet, tokenId),
       lore: retrieveLore(masked),
