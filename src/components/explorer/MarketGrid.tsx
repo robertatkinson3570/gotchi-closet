@@ -14,17 +14,23 @@ import { PortalImage } from "./PortalImage";
 import { FakeGotchiImage } from "./GotchiSvgById";
 import { Palette } from "lucide-react";
 
-type Listing = { listingId: string; tokenId: string; priceWei: string; quantity: number; created: number };
+type Listing = { listingId: string; tokenId: string; priceWei: string; quantity: number; created: number; category?: number };
 
 // Parcel size codes used by the realm contract / gotchiverse subgraph.
 const PARCEL_SIZES: Record<string, string> = { "0": "Humble", "1": "Reasonable", "2": "Spacious (V)", "3": "Spacious (H)", "4": "Partner" };
 
 // Fetch newest-first (timeCreated desc) so the default view is the latest listings.
-async function fetchListings(kind: "erc721" | "erc1155", category: number): Promise<Listing[]> {
+// When `tokenAddress` is given (collections that span several categories, e.g.
+// Forge), filter by contract instead of a single category and keep each row's
+// category so per-item art/labels can be derived.
+async function fetchListings(kind: "erc721" | "erc1155", category: number, tokenAddress?: string): Promise<Listing[]> {
+  const byAddr = !!tokenAddress;
+  const where721 = byAddr ? `erc721TokenAddress: "${tokenAddress!.toLowerCase()}", cancelled: false, timePurchased: "0"` : `category: $c, cancelled: false, timePurchased: "0"`;
+  const where1155 = byAddr ? `erc1155TokenAddress: "${tokenAddress!.toLowerCase()}", cancelled: false, sold: false, quantity_gt: 0` : `category: $c, cancelled: false, sold: false, quantity_gt: 0`;
   const query =
     kind === "erc721"
-      ? `query($c: Int!){ erc721Listings(first: 200, where: { category: $c, cancelled: false, timePurchased: "0" }, orderBy: timeCreated, orderDirection: desc){ id tokenId priceInWei timeCreated } }`
-      : `query($c: Int!){ erc1155Listings(first: 200, where: { category: $c, cancelled: false, sold: false, quantity_gt: 0 }, orderBy: timeCreated, orderDirection: desc){ id erc1155TypeId priceInWei quantity timeCreated } }`;
+      ? `query($c: Int!){ erc721Listings(first: 200, where: { ${where721} }, orderBy: timeCreated, orderDirection: desc){ id tokenId priceInWei timeCreated category } }`
+      : `query($c: Int!){ erc1155Listings(first: 200, where: { ${where1155} }, orderBy: timeCreated, orderDirection: desc){ id erc1155TypeId priceInWei quantity timeCreated category } }`;
   const res = await fetch(CORE_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -33,10 +39,19 @@ async function fetchListings(kind: "erc721" | "erc1155", category: number): Prom
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");
   if (kind === "erc721") {
-    return (json.data?.erc721Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.tokenId, priceWei: l.priceInWei, quantity: 1, created: Number(l.timeCreated) || 0 }));
+    return (json.data?.erc721Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.tokenId, priceWei: l.priceInWei, quantity: 1, created: Number(l.timeCreated) || 0, category: Number(l.category) }));
   }
-  return (json.data?.erc1155Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.erc1155TypeId, priceWei: l.priceInWei, quantity: Number(l.quantity) || 1, created: Number(l.timeCreated) || 0 }));
+  return (json.data?.erc1155Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.erc1155TypeId, priceWei: l.priceInWei, quantity: Number(l.quantity) || 1, created: Number(l.timeCreated) || 0, category: Number(l.category) }));
 }
+
+// Forge items span categories 7/8/9/11; each maps to a type icon on the dapp CDN.
+const FORGE_TYPE_IMG: Record<number, string> = {
+  7: "https://dapp.aavegotchi.com/brand/icons/forge/alloy.svg",
+  8: "https://dapp.aavegotchi.com/brand/icons/forge/essence.svg",
+  9: "https://dapp.aavegotchi.com/brand/icons/forge/geodes.svg",
+  11: "https://dapp.aavegotchi.com/brand/icons/forge/cores.svg",
+};
+const FORGE_TYPE_NAME: Record<number, string> = { 7: "Alloy", 8: "Essence", 9: "Geode", 11: "Core", 10: "Schematic" };
 
 // Installation functional categories (installationType enum on the diamond).
 const INSTALLATION_TYPE_LABELS: Record<string, string> = {
@@ -99,11 +114,14 @@ export function MarketGrid({
   category,
   contract,
   itemKind,
+  tokenAddress,
 }: {
   kind: "erc721" | "erc1155";
   category: number;
   contract: `0x${string}`;
-  itemKind: "item" | "parcel" | "installation" | "tile" | "portal" | "fakegotchi" | "fakecard";
+  itemKind: "item" | "parcel" | "installation" | "tile" | "portal" | "fakegotchi" | "fakecard" | "forge";
+  /** When set, fetch by contract across all categories (collections like Forge). */
+  tokenAddress?: string;
 }) {
   const [cart, setCart] = useState<Record<string, Listing>>({});
   const { bulkBuy, bulkStep, bulkProgress, resetBulk, isConnected } = useMarketplaceBuy();
@@ -127,8 +145,8 @@ export function MarketGrid({
   useEffect(() => { setSlotEl(document.getElementById("market-filter-slot")); });
 
   const { data, isLoading, error } = useQuery({
-    queryKey: qk.baazaarMarket(kind, category),
-    queryFn: () => fetchListings(kind, category),
+    queryKey: [...qk.baazaarMarket(kind, category), tokenAddress ?? ""],
+    queryFn: () => fetchListings(kind, category, tokenAddress),
     staleTime: 30_000,
   });
 
@@ -329,6 +347,8 @@ export function MarketGrid({
                   <button type="button" onClick={() => setDetail(l)} title="View portal details" className="w-full h-full [&>svg]:w-full [&>svg]:h-full"><PortalImage tokenId={l.tokenId} /></button>
                 ) : itemKind === "fakegotchi" || itemKind === "fakecard" ? (
                   <FakeGotchiImage id={l.tokenId} className="max-h-16 max-w-16 object-contain rounded" fallback={<Palette className="w-6 h-6 text-fuchsia-400/70" />} />
+                ) : itemKind === "forge" ? (
+                  <AssetImage candidates={[FORGE_TYPE_IMG[l.category ?? -1]].filter(Boolean)} alt={FORGE_TYPE_NAME[l.category ?? -1] ?? `#${l.tokenId}`} className="max-h-14 max-w-14 object-contain" />
                 ) : (
                   <MapPin className="w-6 h-6 text-emerald-500/70" />
                 )}
@@ -336,9 +356,12 @@ export function MarketGrid({
               {isTyped && typeMeta?.[l.tokenId]?.name && (
                 <div className="text-[9px] text-muted-foreground text-center truncate" title={typeMeta[l.tokenId].name}>{typeMeta[l.tokenId].name}</div>
               )}
+              {itemKind === "forge" && l.category != null && (
+                <div className="text-[9px] text-muted-foreground text-center truncate">{FORGE_TYPE_NAME[l.category] ?? "Forge"}</div>
+              )}
               <div className="text-[11px] text-emerald-500 font-semibold text-center">{ghst(l.priceWei)} GHST</div>
               <BuyButton listingId={l.listingId} tokenId={l.tokenId} priceInWei={l.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`#${l.tokenId}`} />
-              {itemKind !== "portal" && (
+              {itemKind !== "portal" && itemKind !== "forge" && (
                 <MakeOfferButton kind={kind} category={category} tokenId={l.tokenId} contractAddress={contract} label={`#${l.tokenId}`} compact />
               )}
             </div>

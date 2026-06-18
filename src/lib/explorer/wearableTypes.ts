@@ -1,4 +1,4 @@
-export type AssetType = "gotchi" | "wearable" | "item" | "parcel" | "installation" | "tile" | "portal" | "fakegotchi" | "fakecard" | "auction";
+export type AssetType = "gotchi" | "wearable" | "item" | "parcel" | "installation" | "tile" | "portal" | "fakegotchi" | "fakecard" | "forge" | "auction";
 
 export type WearableSortField =
   | "name"

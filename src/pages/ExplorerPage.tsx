@@ -26,7 +26,7 @@ import { OwnedOverview } from "@/components/explorer/OwnedOverview";
 import { OwnedMarketGrid } from "@/components/explorer/OwnedMarketGrid";
 import { useQuery } from "@tanstack/react-query";
 import { CORE_SUBGRAPH } from "@/lib/subgraph";
-import { BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE, FAKE_CARDS_DIAMOND_BASE } from "@/lib/lending/contracts";
+import { BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE, FAKE_CARDS_DIAMOND_BASE, FORGE_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { ChevronLeft, ChevronRight, Tag, X, Loader2 } from "lucide-react";
 import { usePublicClient, useWriteContract } from "wagmi";
 import { BASE_CHAIN_ID } from "@/lib/chains";
@@ -45,7 +45,7 @@ const ASSET_TYPE_KEY = "gc_explorer_assetType";
 // Registry of buyable Baazaar tabs -> the MarketGrid props that drive them.
 // Adding a market category is now a one-line entry instead of another render
 // branch (and a missing entry simply isn't a market tab).
-type MarketTab = { kind: "erc721" | "erc1155"; category: number; contract: `0x${string}`; itemKind: "item" | "parcel" | "installation" | "tile" | "portal" | "fakegotchi" | "fakecard" };
+type MarketTab = { kind: "erc721" | "erc1155"; category: number; contract: `0x${string}`; itemKind: "item" | "parcel" | "installation" | "tile" | "portal" | "fakegotchi" | "fakecard" | "forge"; tokenAddress?: string };
 const MARKET_TABS: Record<string, MarketTab> = {
   item: { kind: "erc1155", category: BAAZAAR_CATEGORY.CONSUMABLE, contract: AAVEGOTCHI_DIAMOND_BASE, itemKind: "item" },
   parcel: { kind: "erc721", category: BAAZAAR_CATEGORY.REALM, contract: REALM_DIAMOND_BASE, itemKind: "parcel" },
@@ -57,6 +57,9 @@ const MARKET_TABS: Record<string, MarketTab> = {
   // unique to its collection, so a category fetch maps 1:1 to the contract.
   fakegotchi: { kind: "erc721", category: 5, contract: FAKE_GOTCHIS_NFT_BASE, itemKind: "fakegotchi" },
   fakecard: { kind: "erc1155", category: 6, contract: FAKE_CARDS_DIAMOND_BASE, itemKind: "fakecard" },
+  // Forge items (alloy/essence/geodes/cores) span categories 7/8/9/11 on the
+  // Forge diamond — fetch by contract, art by per-item category.
+  forge: { kind: "erc1155", category: 0, contract: FORGE_DIAMOND_BASE, itemKind: "forge", tokenAddress: FORGE_DIAMOND_BASE },
 };
 
 export default function ExplorerPage() {
