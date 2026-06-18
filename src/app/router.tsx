@@ -28,6 +28,7 @@ const StatsPage = lazy(() => import("@/pages/StatsPage"));
 const DaoPage = lazy(() => import("@/pages/DaoPage"));
 const GetTokensPage = lazy(() => import("@/pages/GetTokensPage"));
 const ForgePage = lazy(() => import("@/pages/ForgePage"));
+const SoulVerifyPage = lazy(() => import("@/pages/SoulVerifyPage"));
 
 export const router = createBrowserRouter([
   {
@@ -54,6 +55,7 @@ export const router = createBrowserRouter([
       { path: "dao", element: <DaoPage /> },
       { path: "get-tokens", element: <GetTokensPage /> },
       { path: "forge", element: <ForgePage /> },
+      { path: "soul/verify/:tokenId", element: <SoulVerifyPage /> },
       { path: "lending", element: <LendingPage /> },
       { path: "lending/analytics", element: <LendingAnalyticsPage /> },
       { path: "lending/me", element: <LendingMePage /> },

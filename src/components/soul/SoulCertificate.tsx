@@ -217,12 +217,27 @@ interface SoulCertificateProps {
   onClose: () => void;
 }
 
+interface SealAttestation {
+  payload: {
+    tokenId: string;
+    soulHash: string;
+    depthBips: number;
+    soulAgeDays: number;
+    nonce: string;
+  };
+  attestorSig: string;
+  contract: string;
+}
+
 export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
   const [data, setData] = useState<SoulDepthData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [sealing, setSealing] = useState(false);
+  const [sealAttestation, setSealAttestation] = useState<SealAttestation | null>(null);
+  const [sealError, setSealError] = useState<string | null>(null);
   const cardElRef = useRef<HTMLDivElement | null>(null);
   const cardRef = (el: HTMLDivElement | null) => { cardElRef.current = el; };
 
@@ -255,6 +270,33 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
       console.error("[SoulCertificate] export failed", e);
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function handleSeal() {
+    if (!data || data.sealStatus !== "unsealed") return;
+    setSealing(true);
+    setSealError(null);
+    setSealAttestation(null);
+    try {
+      const base = (import.meta as { env: Record<string, string> }).env.VITE_COMPANION_API_URL || "";
+      const resp = await fetch(`${base}/api/soul/${tokenId}/seal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: "" }),
+      });
+      if (!resp.ok) {
+        const body = await resp.json().catch(() => ({})) as { error?: string };
+        setSealError(body.error ?? `Request failed (${resp.status})`);
+        return;
+      }
+      const result = await resp.json() as SealAttestation;
+      setSealAttestation(result);
+    } catch (e) {
+      setSealError("Network error — please try again");
+      console.error("[SoulCertificate] seal failed", e);
+    } finally {
+      setSealing(false);
     }
   }
 
@@ -321,20 +363,75 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
 
           {/* Action buttons */}
           {!loading && data && (
-            <div className="flex gap-2">
-              <button
-                onClick={handleExport}
-                disabled={exporting}
-                className="flex-1 rounded-xl bg-violet-600 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
-              >
-                {exporting ? "Exporting…" : "Export PNG"}
-              </button>
-              <button
-                onClick={handleCopyVerifyUrl}
-                className="flex-1 rounded-xl border border-white/15 bg-white/8 py-2 text-[12px] font-semibold text-white/70 transition-colors hover:bg-white/15 hover:text-white"
-              >
-                {copied ? "Copied!" : "Copy Verify Link"}
-              </button>
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <button
+                  onClick={handleExport}
+                  disabled={exporting}
+                  className="flex-1 rounded-xl bg-violet-600 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
+                >
+                  {exporting ? "Exporting…" : "Export PNG"}
+                </button>
+                <button
+                  onClick={handleCopyVerifyUrl}
+                  className="flex-1 rounded-xl border border-white/15 bg-white/8 py-2 text-[12px] font-semibold text-white/70 transition-colors hover:bg-white/15 hover:text-white"
+                >
+                  {copied ? "Copied!" : "Copy Verify Link"}
+                </button>
+              </div>
+
+              {/* Seal on Base button */}
+              {data.sealStatus === "unconfigured" && (
+                <button
+                  disabled
+                  className="w-full rounded-xl border border-white/10 bg-white/4 py-2 text-[12px] font-semibold text-white/30 cursor-not-allowed"
+                >
+                  Seal: coming soon
+                </button>
+              )}
+              {data.sealStatus === "unsealed" && !sealAttestation && (
+                <button
+                  onClick={handleSeal}
+                  disabled={sealing}
+                  className="w-full rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-2 text-[12px] font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:opacity-50"
+                >
+                  {sealing ? "Requesting attestation…" : "Seal on Base"}
+                </button>
+              )}
+              {data.sealStatus === "sealed" && (
+                <button
+                  disabled
+                  className="w-full rounded-xl border border-emerald-500/20 bg-emerald-500/8 py-2 text-[12px] font-semibold text-emerald-400/50 cursor-not-allowed"
+                >
+                  Already sealed
+                </button>
+              )}
+
+              {/* Seal error */}
+              {sealError && (
+                <p className="text-center text-[11px] text-red-400">{sealError}</p>
+              )}
+
+              {/* Attestation ready — display sig + contract */}
+              {sealAttestation && (
+                <div className="rounded-xl border border-emerald-500/25 bg-emerald-950/30 px-3 py-3 text-[11px] flex flex-col gap-1.5">
+                  <p className="font-semibold text-emerald-300">
+                    Attestation ready — submit in your wallet
+                  </p>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-white/35">Contract</span>
+                    <span className="font-mono text-white/55 break-all">
+                      {sealAttestation.contract}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-white/35">Attestor sig</span>
+                    <span className="font-mono text-white/55 break-all">
+                      {sealAttestation.attestorSig.slice(0, 20)}…{sealAttestation.attestorSig.slice(-10)}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </motion.div>
