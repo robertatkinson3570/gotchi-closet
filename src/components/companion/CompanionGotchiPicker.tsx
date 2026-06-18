@@ -4,6 +4,7 @@ import { useCompanion } from "@/state/useCompanion";
 import { buildPersonality } from "@/lib/companion/personality";
 import { GotchiSvgById } from "@/components/explorer/GotchiSvgById";
 import type { Gotchi } from "@/types";
+import { SoulBadge } from "@/components/soul/SoulBadge";
 
 const brsOf = (g: Gotchi) =>
   g.withSetsRarityScore ?? g.modifiedRarityScore ?? g.baseRarityScore ?? 0;
@@ -31,12 +32,15 @@ export function CompanionGotchiPicker({ onPicked }: { onPicked?: () => void }) {
             ${selectedId === g.id ? "border-fuchsia-400/60 bg-fuchsia-400/10" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
         >
           <span className="h-12 w-12 shrink-0"><GotchiSvgById id={g.id} className="block h-12 w-12" /></span>
-          <span className="min-w-0">
+          <span className="min-w-0 flex-1">
             <span className="block truncate text-sm text-white">{g.name || `#${g.id}`}</span>
             <span className="block truncate text-[11px] text-fuchsia-200/70">{p.archetype}</span>
             <span className="block truncate text-[10px] text-white/50">
               {p.traitLines.slice(0, 2).map((t) => `${t.emoji} ${t.label}`).join(" · ")}
             </span>
+          </span>
+          <span className="shrink-0 self-center ml-auto pl-2">
+            <SoulBadge kinship={g.kinship} level={g.level} createdAt={g.createdAt} size="sm" />
           </span>
         </button>
       ))}

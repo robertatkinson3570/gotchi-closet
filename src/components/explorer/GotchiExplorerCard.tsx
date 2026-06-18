@@ -10,6 +10,7 @@ import { AAVEGOTCHI_DIAMOND_BASE, BAAZAAR_CATEGORY } from "@/lib/lending/contrac
 import { Info } from "lucide-react";
 import { prefetchGotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { isGotchiRenderReady } from "@/lib/explorer/gotchiReady";
+import { SoulBadge } from "@/components/soul/SoulBadge";
 
 type EyeRarities = {
   shape: number | null;
@@ -305,6 +306,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <span>KIN <span className="text-foreground">{gotchi.kinship || 0}</span></span>
             <span>LVL <span className="text-foreground">{gotchi.level}</span></span>
+            <SoulBadge kinship={gotchi.kinship} level={gotchi.level} createdAt={gotchi.createdAt} size="sm" />
           </div>
         </div>
 
