@@ -8,6 +8,7 @@ import companionRoutes from "./routes/companion";
 import globalChatRoutes from "./routes/globalChat";
 import roastRoutes from "./routes/roast";
 import soulRoutes from "./routes/soul";
+import arenaRoutes from "./routes/arena";
 import { getDebugStats } from "./aavegotchi/serverSvgService";
 import { startAutoRenewCron } from "./lending/cron";
 
@@ -76,6 +77,8 @@ export function createApp() {
   app.use("/api/companion", companionRoutes);
   app.use("/api/roast", roastRoutes);
   app.use("/api/soul", soulRoutes);
+  // Public arena — no auth middleware. Must stay after authed routes to avoid shadowing.
+  app.use("/api/arena", arenaRoutes);
 
   // Boot auto-renew cron (no-op if AUTORENEW_HOT_WALLET_KEY not set)
   startAutoRenewCron();
