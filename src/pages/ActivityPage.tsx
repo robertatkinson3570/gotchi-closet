@@ -161,7 +161,13 @@ async function fetchAuctions(): Promise<Row[]> {
 }
 
 const short = (a?: string) => (a && a !== "0x0000000000000000000000000000000000000000" ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—");
-const ghst = (wei: string) => (Number(wei) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 0 });
+// Show decimals for sub-1-GHST values so small offers (e.g. 0.019 GHST) don't
+// render as a misleading "0 GHST"; whole-GHST amounts stay clean (no decimals).
+const ghst = (wei: string) => {
+  const v = Number(wei) / 1e18;
+  if (v > 0 && v < 1) return v.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  return v.toLocaleString(undefined, { maximumFractionDigits: v < 1000 ? 1 : 0 });
+};
 function ago(unix: number): string {
   const s = Math.floor(Date.now() / 1000) - unix;
   const abs = Math.abs(s);
