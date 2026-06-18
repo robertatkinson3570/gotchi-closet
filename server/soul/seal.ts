@@ -126,34 +126,62 @@ export async function buildSealAttestation(
   return { payload: p, attestorSig, contract: sealAddress };
 }
 
-/**
- * Read the on-chain seal record for a token.
- * Returns null when SOUL_SEAL_ADDRESS is unset, on any RPC error,
- * or when the gotchi has never been sealed (blockNumber === 0).
- */
-export async function readOnChainSeal(
-  tokenId: string
-): Promise<{
+// ---------------------------------------------------------------------------
+// On-chain seal read — singleton client + bounded RPC + monotonic cache
+// ---------------------------------------------------------------------------
+
+export interface OnChainSeal {
   soulHash: string;
   depthBips: number;
   soulAgeDays: number;
   blockNumber: number;
-} | null> {
+}
+
+// One Base public client for the whole process, bounded so a degraded public RPC
+// can never stall the GET /api/soul/:id hot path: 2.5s timeout, a single retry.
+let _sealClient: ReturnType<typeof createPublicClient> | null = null;
+function sealClient() {
+  if (!_sealClient) {
+    _sealClient = createPublicClient({
+      chain:     base,
+      transport: http(getBaseRpcUrl(), { timeout: 2500, retryCount: 1 }),
+    });
+  }
+  return _sealClient;
+}
+
+// A seal is monotonic on-chain (once sealed, always sealed), so a positive read
+// is cached for minutes to (a) remove per-request RPC cost on the hot path and
+// (b) stop a lagging read-replica's blockNumber===0 from flipping a sealed badge
+// back to "unsealed". Negative reads cache briefly so a fresh seal still shows up
+// soon, while still bounding RPC fan-out.
+const _sealCache = new Map<string, { value: OnChainSeal | null; expires: number }>();
+const SEALED_TTL_MS = 5 * 60_000;
+const NULL_TTL_MS = 20_000;
+
+/**
+ * Read the on-chain seal record for a token.
+ * Returns null when SOUL_SEAL_ADDRESS is unset, on any RPC error/timeout,
+ * or when the gotchi has never been sealed (blockNumber === 0).
+ * Never throws — the GET /api/soul/:id path depends on this failing safe.
+ */
+export async function readOnChainSeal(
+  tokenId: string
+): Promise<OnChainSeal | null> {
   const sealAddress = getSealAddress();
   if (!sealAddress) return null;
 
-  try {
-    const client = createPublicClient({
-      chain:     base,
-      transport: http(getBaseRpcUrl()),
-    });
+  const key = String(tokenId);
+  const cached = _sealCache.get(key);
+  if (cached && cached.expires > Date.now()) return cached.value;
 
-    const result = await client.readContract({
+  try {
+    const result = (await sealClient().readContract({
       address:      sealAddress as `0x${string}`,
       abi:          GET_SEAL_ABI,
       functionName: "getSeal",
       args:         [BigInt(tokenId)],
-    }) as {
+    })) as {
       soulHash:    `0x${string}`;
       depthBips:   number;
       soulAgeDays: number;
@@ -161,16 +189,22 @@ export async function readOnChainSeal(
       sealedBy:    `0x${string}`;
     };
 
-    // blockNumber === 0n means this tokenId has never been sealed
-    if (!result || result.blockNumber === 0n) return null;
+    // blockNumber === 0n means this tokenId has never been sealed.
+    if (!result || result.blockNumber === 0n) {
+      _sealCache.set(key, { value: null, expires: Date.now() + NULL_TTL_MS });
+      return null;
+    }
 
-    return {
+    const out: OnChainSeal = {
       soulHash:    result.soulHash,
       depthBips:   Number(result.depthBips),
       soulAgeDays: Number(result.soulAgeDays),
       blockNumber: Number(result.blockNumber),
     };
+    _sealCache.set(key, { value: out, expires: Date.now() + SEALED_TTL_MS });
+    return out;
   } catch {
+    // Transient RPC failure — don't cache; fail safe to "unsealed".
     return null;
   }
 }

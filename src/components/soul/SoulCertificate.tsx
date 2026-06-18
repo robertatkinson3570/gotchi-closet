@@ -1,8 +1,36 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toPng } from "html-to-image";
+import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { getSoulDepth, type SoulDepthData } from "@/lib/companion/soulApi";
 import { GotchiSvgById } from "@/components/explorer/GotchiSvgById";
+import { BASE_CHAIN_ID } from "@/lib/chains";
+import { env } from "@/lib/env";
+
+// ABI for SoulSeal.seal(...) — the owner submits this from their own wallet to
+// anchor the soul on Base. The contract verifies the attestor signature AND that
+// msg.sender == ownerOf(tokenId), so only the real owner can complete a seal.
+const SEAL_ABI = [
+  {
+    type: "function",
+    name: "seal",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "tokenId", type: "uint256" },
+      { name: "soulHash", type: "bytes32" },
+      { name: "depthBips", type: "uint16" },
+      { name: "soulAgeDays", type: "uint16" },
+      { name: "nonce", type: "uint256" },
+      { name: "attestorSig", type: "bytes" },
+    ],
+    outputs: [],
+  },
+] as const;
+
+// Seal flow phases, in order. Drives the step indicator + button label so the
+// user always understands exactly where they are.
+type SealPhase = "idle" | "attesting" | "confirm" | "mining" | "done";
+const SEAL_PHASES: SealPhase[] = ["idle", "attesting", "confirm", "mining", "done"];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -25,7 +53,7 @@ function SealBadge({ status }: { status: SoulDepthData["sealStatus"] }) {
   }
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-white/35 ring-1 ring-white/10">
-      Seal coming soon
+      Sealing coming soon
     </span>
   );
 }
@@ -236,10 +264,27 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
   const [exporting, setExporting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [sealing, setSealing] = useState(false);
-  const [sealAttestation, setSealAttestation] = useState<SealAttestation | null>(null);
+  const [sealPhase, setSealPhase] = useState<SealPhase>("idle");
+  const [sealTxHash, setSealTxHash] = useState<string | null>(null);
   const [sealError, setSealError] = useState<string | null>(null);
   const cardElRef = useRef<HTMLDivElement | null>(null);
   const cardRef = (el: HTMLDivElement | null) => { cardElRef.current = el; };
+
+  // Wallet plumbing for the on-chain seal step.
+  const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const isOnBase = chainId === BASE_CHAIN_ID;
+  const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
+  const { writeContractAsync } = useWriteContract();
+
+  // Step indicator: ✓ done · • active · ○ pending.
+  const sealPhaseIdx = SEAL_PHASES.indexOf(sealPhase);
+  const stepMark = (need: SealPhase) => {
+    const i = SEAL_PHASES.indexOf(need);
+    if (sealPhaseIdx > i) return "✓";
+    if (sealPhaseIdx === i) return "•";
+    return "○";
+  };
 
   const prefersReduced =
     typeof window !== "undefined" &&
@@ -274,26 +319,86 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
   }
 
   async function handleSeal() {
-    if (!data || data.sealStatus !== "unsealed") return;
+    // Allow both first-seal ("unsealed") and re-seal ("sealed") — the contract
+    // and server both permit overwriting latest[tokenId] with a fresh snapshot.
+    if (!data || (data.sealStatus !== "unsealed" && data.sealStatus !== "sealed")) return;
+    if (!isConnected || !address) {
+      setSealError("Connect your wallet to seal this soul.");
+      return;
+    }
     setSealing(true);
     setSealError(null);
-    setSealAttestation(null);
+    setSealTxHash(null);
+    setSealPhase("idle");
     try {
-      const base = (import.meta as { env: Record<string, string> }).env.VITE_COMPANION_API_URL || "";
-      const resp = await fetch(`${base}/api/soul/${tokenId}/seal`, {
+      // 1. Ask the server attestor to sign the EIP-712 seal payload.
+      setSealPhase("attesting");
+      const apiBase = env.companionApiUrl || "";
+      const resp = await fetch(`${apiBase}/api/soul/${tokenId}/seal`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wallet: "" }),
+        body: JSON.stringify({ wallet: address }),
       });
       if (!resp.ok) {
-        const body = await resp.json().catch(() => ({})) as { error?: string };
-        setSealError(body.error ?? `Request failed (${resp.status})`);
+        const body = (await resp.json().catch(() => ({}))) as { error?: string };
+        setSealError(body.error ?? `Attestation failed (${resp.status})`);
+        setSealPhase("idle");
         return;
       }
-      const result = await resp.json() as SealAttestation;
-      setSealAttestation(result);
+      const att = (await resp.json()) as SealAttestation;
+
+      // 2. Owner submits seal() from their own wallet (pays gas). Passing chainId
+      //    makes the wallet switch to Base if it isn't already. The contract
+      //    re-checks ownerOf(tokenId) == msg.sender, so only the owner can seal.
+      setSealPhase("confirm");
+      const hash = await writeContractAsync({
+        chainId: BASE_CHAIN_ID,
+        address: att.contract as `0x${string}`,
+        abi: SEAL_ABI,
+        functionName: "seal",
+        args: [
+          BigInt(att.payload.tokenId),
+          att.payload.soulHash as `0x${string}`,
+          att.payload.depthBips,
+          att.payload.soulAgeDays,
+          BigInt(att.payload.nonce),
+          att.attestorSig as `0x${string}`,
+        ],
+      });
+      setSealTxHash(hash);
+
+      // 3. Wait for the tx to actually mine before claiming success. A missing
+      //    client must be a hard error (never a silent "done"); a reverted tx
+      //    must surface as failure. The tx hash is already in state either way,
+      //    so the user keeps the Basescan link to check.
+      setSealPhase("mining");
+      if (!publicClient) {
+        throw new Error("Could not reach Base to confirm. Check the transaction on Basescan.");
+      }
+      const receipt = await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+      if (receipt.status === "reverted") {
+        throw new Error("The seal transaction reverted on-chain. You may not be the current owner of this gotchi.");
+      }
+      setSealPhase("done");
+      setData((d) => (d ? { ...d, sealStatus: "sealed" } : d));
+      getSoulDepth(tokenId)
+        .then((d) => { if (d) setData(d); })
+        .catch(() => { /* optimistic state already applied */ });
     } catch (e) {
-      setSealError("Network error — please try again");
+      const err = e as { shortMessage?: string; message?: string };
+      const raw = err?.shortMessage || err?.message || "";
+      const lc = raw.toLowerCase();
+      let msg: string;
+      if (lc.includes("user rejected") || lc.includes("rejected the request") || lc.includes("denied")) {
+        msg = "You cancelled the request in your wallet.";
+      } else if (lc.includes("chain mismatch") || lc.includes("4902") ||
+                 (lc.includes("chain") && lc.includes("switch")) || lc.includes("unsupported chain")) {
+        msg = "Switch your wallet to the Base network, then try again.";
+      } else {
+        msg = raw || "Sealing failed — please try again.";
+      }
+      setSealError(msg);
+      setSealPhase("idle");
       console.error("[SoulCertificate] seal failed", e);
     } finally {
       setSealing(false);
@@ -380,58 +485,125 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
                 </button>
               </div>
 
-              {/* Seal on Base button */}
+              {/* ── Seal on Base ──────────────────────────────────────────── */}
               {data.sealStatus === "unconfigured" && (
                 <button
                   disabled
                   className="w-full rounded-xl border border-white/10 bg-white/4 py-2 text-[12px] font-semibold text-white/30 cursor-not-allowed"
                 >
-                  Seal: coming soon
-                </button>
-              )}
-              {data.sealStatus === "unsealed" && !sealAttestation && (
-                <button
-                  onClick={handleSeal}
-                  disabled={sealing}
-                  className="w-full rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-2 text-[12px] font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:opacity-50"
-                >
-                  {sealing ? "Requesting attestation…" : "Seal on Base"}
-                </button>
-              )}
-              {data.sealStatus === "sealed" && (
-                <button
-                  disabled
-                  className="w-full rounded-xl border border-emerald-500/20 bg-emerald-500/8 py-2 text-[12px] font-semibold text-emerald-400/50 cursor-not-allowed"
-                >
-                  Already sealed
+                  Sealing coming soon
                 </button>
               )}
 
-              {/* Seal error */}
-              {sealError && (
-                <p className="text-center text-[11px] text-red-400">{sealError}</p>
-              )}
+              {data.sealStatus !== "unconfigured" &&
+                (() => {
+                  const inFlight =
+                    sealPhase === "attesting" ||
+                    sealPhase === "confirm" ||
+                    sealPhase === "mining";
+                  const sealed = data.sealStatus === "sealed" || sealPhase === "done";
+                  const isReseal = data.sealStatus === "sealed";
 
-              {/* Attestation ready — display sig + contract */}
-              {sealAttestation && (
-                <div className="rounded-xl border border-emerald-500/25 bg-emerald-950/30 px-3 py-3 text-[11px] flex flex-col gap-1.5">
-                  <p className="font-semibold text-emerald-300">
-                    Attestation ready — submit in your wallet
-                  </p>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-white/35">Contract</span>
-                    <span className="font-mono text-white/55 break-all">
-                      {sealAttestation.contract}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-white/35">Attestor sig</span>
-                    <span className="font-mono text-white/55 break-all">
-                      {sealAttestation.attestorSig.slice(0, 20)}…{sealAttestation.attestorSig.slice(-10)}
-                    </span>
-                  </div>
-                </div>
-              )}
+                  // Sealed and not mid-flow → success card with a quiet re-seal.
+                  if (sealed && !inFlight) {
+                    return (
+                      <div className="flex flex-col items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-3 text-center">
+                        <p className="text-[12px] font-semibold text-emerald-300">✓ Sealed on Base</p>
+                        <p className="text-[10px] text-white/50">
+                          A snapshot of this soul&rsquo;s depth &amp; fingerprint is permanently
+                          anchored on-chain.
+                        </p>
+                        <a
+                          href={sealTxHash ? `https://basescan.org/tx/${sealTxHash}` : `/soul/verify/${tokenId}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] text-cyan-400 underline underline-offset-2"
+                        >
+                          {sealTxHash ? "View transaction on Basescan ↗" : "View on-chain proof ↗"}
+                        </a>
+                        <button
+                          onClick={handleSeal}
+                          disabled={sealing || !isConnected}
+                          className="mt-1 rounded-lg border border-white/15 bg-white/8 px-3 py-1.5 text-[11px] font-semibold text-white/70 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-50"
+                        >
+                          Re-seal to refresh
+                        </button>
+                        {!isConnected && (
+                          <p className="text-[10px] text-yellow-400/80">Connect your wallet to re-seal.</p>
+                        )}
+                        {sealError && <p className="text-[11px] text-red-400">{sealError}</p>}
+                      </div>
+                    );
+                  }
+
+                  // First seal, or a seal/re-seal in flight → explainer + step trail.
+                  return (
+                    <div className="flex flex-col gap-2 rounded-xl border border-emerald-500/25 bg-emerald-950/20 p-3">
+                      <p className="text-[11px] font-semibold text-emerald-300">
+                        🔏 {isReseal ? "Re-seal this soul on Base" : "Seal this soul onto Base"}
+                      </p>
+                      <p className="text-[10px] leading-relaxed text-white/55">
+                        {isReseal ? (
+                          <>
+                            Records a fresh snapshot of your soul&rsquo;s current depth on Base. You
+                            approve it in your wallet and pay a small gas fee (usually a few cents).
+                          </>
+                        ) : (
+                          <>
+                            Stamps a snapshot of this soul&rsquo;s depth &amp; fingerprint onto the Base
+                            blockchain as on-chain proof of your bond &mdash;{" "}
+                            <span className="text-white/80">owner-only and permanent</span>. You approve
+                            it in your wallet on Base and pay a small gas fee (usually a few cents). Your
+                            soul keeps growing afterward; the seal records today&rsquo;s depth, so you can
+                            re-seal later to capture a newer one.
+                          </>
+                        )}
+                      </p>
+
+                      {!isConnected && (
+                        <p className="text-[10px] font-medium text-yellow-400/90">
+                          Connect your wallet to seal.
+                        </p>
+                      )}
+                      {isConnected && !isOnBase && sealPhase === "idle" && (
+                        <p className="text-[10px] text-white/45">
+                          You&rsquo;re not on Base — your wallet will switch when you confirm.
+                        </p>
+                      )}
+
+                      <button
+                        onClick={handleSeal}
+                        disabled={sealing || !isConnected}
+                        className="w-full rounded-lg border border-emerald-500/40 bg-emerald-500/15 py-2 text-[12px] font-semibold text-emerald-200 transition-colors hover:bg-emerald-500/25 disabled:opacity-50"
+                      >
+                        {sealPhase === "attesting" && "Preparing attestation…"}
+                        {sealPhase === "confirm" && "Confirm in your wallet…"}
+                        {sealPhase === "mining" && "Sealing on Base…"}
+                        {sealPhase === "idle" && (isReseal ? "Re-seal on Base" : "Seal on Base")}
+                      </button>
+
+                      {inFlight && (
+                        <ol className="flex flex-col gap-1 text-[10px] text-white/55">
+                          <li>{stepMark("attesting")} Server signs attestation</li>
+                          <li>{stepMark("confirm")} You approve in your wallet</li>
+                          <li>{stepMark("mining")} Confirming on Base</li>
+                        </ol>
+                      )}
+
+                      {sealTxHash && (
+                        <a
+                          href={`https://basescan.org/tx/${sealTxHash}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] text-cyan-400 underline underline-offset-2"
+                        >
+                          View transaction on Basescan ↗
+                        </a>
+                      )}
+                      {sealError && <p className="text-[11px] text-red-400">{sealError}</p>}
+                    </div>
+                  );
+                })()}
             </div>
           )}
         </motion.div>
