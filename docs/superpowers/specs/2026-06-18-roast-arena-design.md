@@ -122,19 +122,17 @@ System prompt for roast lines: *roast the opponent gotchi's traits, looks, vibes
 - **Anti-grind XP.** To stop farming the leaderboard by replaying weak/own opponents: XP from battles against the **same opponent token** within a rolling window (e.g. 1h) **diminishes** (full → reduced → zero); the win–loss record still updates but XP does not balloon. **Self-battles** (both gotchis owned by the same wallet) are allowed for fun but award **no leaderboard XP** to either side (record-only) — you can't pump your own ranking.
 - **Offline-side cost attribution.** The queued (offline) gotchi roasts at **its owner's** tier; that owner's premium lines **burn their own credits** (§7), falling back to the free chain when their balance hits 0 — so a challenger can't drain someone else's credits beyond their balance, and the owner can never be charged beyond what they bought.
 
-### 4.5 Model tiers & provider chain (best free experience, near-zero cost)
-Roast quality matters, so the **free tier uses a genuinely sharp free model** (NVIDIA NIM `moonshotai/kimi-k2.5` — markedly funnier/nastier than Groq's llama, and free), reusing the working NIM setup from GotchiHeist. `llmProvider` is extended from a single-provider-per-tier lookup to an **ordered fallback chain per tier**, each link tried until one returns text:
+### 4.5 Model tiers & cost (near-zero cost)
+The existing `llmProvider.complete(systemPrompt, msgs, tier)` already provides what roast needs — **no provider change**. (NVIDIA NIM/kimi was evaluated and dropped: `kimi` is deprecated — HTTP 410 Gone — and NIM's remaining models are just `llama-3.3-70b`, the same family Groq already gives us free, so NIM adds no quality. Groq's `llama-3.3-70b-versatile` produces genuinely savage roasts.)
 
-| Use | Chain (first → last) | Operator cost |
+| Use | Model | Operator cost |
 |---|---|---|
-| **Free roast** | NIM `kimi-k2.5` → Groq `llama-3.3-70b` → template pool | **$0** |
-| **Premium roast** | OpenAI `gpt-4o-mini` → NIM `kimi-k2.5` → Groq → template pool | OpenAI only (premium-paid) |
-| **Judge (all battles)** | NIM `kimi-k2.5` → Groq → deterministic fallback | **$0** |
+| **Free roast** | Groq `llama-3.3-70b-versatile` → template pool | **$0** |
+| **Premium roast** | OpenAI `gpt-4o-mini` (burns 1 credit) → on failure, free model → template pool | OpenAI only (credit-paid) |
+| **Judge (all battles)** | Groq `llama-3.3-70b-versatile` → deterministic fallback | **$0** |
 
-- Net effect: **free roasts and every judge call cost nothing**, yet quality is high (kimi). The operator only ever pays OpenAI for **premium generation**, which the premium owner already paid for — exactly the cost posture wanted.
-- **Hard caps (mirrors GotchiHeist's narrator proxy):** `max_tokens` capped (~120 per roast line, ~150 for the judge), request timeout (~20s) with chain fall-through on timeout, and a per-wallet **sliding-window battle limit** (e.g. 60 LLM calls / 10 min ≈ the narrator's guardrail).
-- **Config (env, not hardcoded):** `NVIDIA_NIM_API_KEY`, `NVIDIA_NIM_ENDPOINT`, `NVIDIA_NIM_MODEL`, plus existing `GROQ_*`/`OPENAI_*`. The NIM key is reused from GotchiHeist and synced to the VPS via the existing deploy secret-sync step (same as `GROQ_API_KEY`).
-- **Companion bonus (note, not in scope here):** adding NIM to `llmProvider` also lets the *companion* free tier upgrade from Groq to kimi at zero cost — a free quality win, applied separately.
+- Net effect: **free roasts and every judge call cost nothing**; the operator only spends OpenAI against **already-purchased credits** (§7). The route attempts the premium (OpenAI) line and **burns a credit only when OpenAI actually returns text** — exactly as the live companion now does.
+- **Hard caps:** `max_tokens` capped (~120 per roast line, ~150 for the judge), request timeout (~20s), and a per-wallet **battle rate limit** (~3 battles/min) to protect the free Groq quota.
 
 ### 4.6 Template burn pool (never hard-fail)
 When the whole provider chain fails, `src/lib/roast/templates.ts` returns an **archetype-flavored canned burn** (ported from GotchiHeist's fallback phrase-pool pattern) — e.g. *"your BRS is lower than my kinship 💀"*, *"summoned from a portal just to lose to me?"* — selected deterministically by the gotchi's archetype + line index (no `Math.random`). Degraded but in-character; a battle always produces 6 lines and a verdict.
