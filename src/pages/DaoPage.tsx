@@ -30,7 +30,7 @@ function useVotingPower(address?: string) {
 // ---- Multi-chain treasury (best-effort; Ethereum/Polygon can rate-limit) ----
 const TREASURY_CHAINS = [
   {
-    name: "Ethereum", rpc: "https://eth.llamarpc.com", explorer: "https://etherscan.io/address/",
+    name: "Ethereum", rpc: "https://ethereum-rpc.publicnode.com", explorer: "https://etherscan.io/address/",
     treasury: "0x53c3CA81EA03001a350166D2Cc0fcd9d4c1b7B62",
     tokens: [
       { sym: "GHST", addr: "0x3F382DbD960E3a9bbCeaE22651E88158d2791550", dec: 18 },
@@ -39,7 +39,7 @@ const TREASURY_CHAINS = [
     ],
   },
   {
-    name: "Polygon", rpc: "https://polygon-rpc.com", explorer: "https://polygonscan.com/address/",
+    name: "Polygon", rpc: "https://polygon-bor-rpc.publicnode.com", explorer: "https://polygonscan.com/address/",
     treasury: "0x939b67F6F6BE63E09B0258621c5A24eecB92631c",
     tokens: [
       { sym: "GHST", addr: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7", dec: 18 },
@@ -59,7 +59,7 @@ function useMultiChainTreasury() {
       await Promise.all(
         TREASURY_CHAINS.map(async (c) => {
           out[c.name] = {};
-          const client = createPublicClient({ transport: http(c.rpc) });
+          const client = createPublicClient({ transport: http(c.rpc, { retryCount: 0 }) });
           await Promise.all(
             c.tokens.map(async (t) => {
               try {
