@@ -123,23 +123,24 @@ export function EquipWearablesModal({
   const previewWearables = [...slots, 0, 0, 0, 0, 0, 0, 0, 0].slice(0, 16);
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-3" onClick={onClose}>
-      <div className="w-[min(880px,97vw)] max-h-[94vh] overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 sticky top-0 bg-background z-10">
-          <div className="text-base font-bold inline-flex items-center gap-2"><Shirt className="w-5 h-5 text-primary" /> Equip wearables · Gotchi #{gotchiId}</div>
-          <button onClick={onClose} className="p-1.5 rounded hover:bg-muted/50"><X className="w-5 h-5" /></button>
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 backdrop-blur-sm p-3" onClick={onClose}>
+      <div className="w-[min(880px,97vw)] max-h-[94vh] overflow-y-auto rounded-2xl border border-white/10 bg-background shadow-2xl ring-1 ring-primary/10" onClick={(e) => e.stopPropagation()}>
+        <div className="relative flex items-center justify-between px-4 py-3 border-b border-border/60 sticky top-0 z-10 bg-background overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-fuchsia-500/10 to-transparent pointer-events-none" />
+          <div className="relative text-base font-bold inline-flex items-center gap-2"><Shirt className="w-5 h-5 text-primary" /> Equip wearables · <span className="font-mono text-muted-foreground">#{gotchiId}</span></div>
+          <button onClick={onClose} className="relative p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-foreground"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="grid md:grid-cols-[300px_1fr] gap-4 p-4">
           {/* Live preview */}
           <div className="space-y-3">
-            <div className="aspect-square rounded-xl bg-gradient-to-b from-muted/20 to-muted/50 overflow-hidden">
+            <div className="aspect-square rounded-xl bg-gradient-to-b from-fuchsia-500/10 via-muted/20 to-primary/15 overflow-hidden ring-1 ring-white/10 shadow-inner">
               <GotchiSvg gotchiId={gotchiId} hauntId={hauntId} collateral={collateral} numericTraits={numericTraits} equippedWearables={previewWearables} mode="preview" useBlobUrl className="w-full h-full object-contain" />
             </div>
             <p className="text-[11px] text-muted-foreground">Live preview. Equipping is signed in your wallet; unequipped wearables return to it. You must own this gotchi and it must be unlocked.</p>
             <div className="flex gap-2">
-              <button onClick={() => setSlots([0, 0, 0, 0, 0, 0, 0, 0])} disabled={slots.every((s) => s === 0)} className="flex-1 h-9 rounded-md border border-border/60 text-xs font-medium hover:bg-muted/50 disabled:opacity-40 inline-flex items-center justify-center gap-1.5"><Trash2 className="w-3.5 h-3.5" /> Unequip all</button>
-              <button onClick={save} disabled={status.kind === "busy" || !dirty} className="flex-1 h-9 rounded-md bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-40 inline-flex items-center justify-center gap-1.5">
+              <button onClick={() => setSlots([0, 0, 0, 0, 0, 0, 0, 0])} disabled={slots.every((s) => s === 0)} className="flex-1 h-9 rounded-lg border border-border/60 text-xs font-medium hover:bg-muted/50 disabled:opacity-40 inline-flex items-center justify-center gap-1.5"><Trash2 className="w-3.5 h-3.5" /> Unequip all</button>
+              <button onClick={save} disabled={status.kind === "busy" || !dirty} className="flex-1 h-9 rounded-lg bg-gradient-to-r from-primary to-fuchsia-500 text-white text-xs font-bold disabled:opacity-40 inline-flex items-center justify-center gap-1.5 hover:brightness-110 shadow">
                 {status.kind === "busy" ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : "Save outfit"}
               </button>
             </div>

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
-import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw, Clock } from "lucide-react";
+import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw, Clock, Lock } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, ESCROW_FACET_ABI, GHST_TOKEN_BASE, LENDING_FACET_ABI } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
@@ -34,6 +34,9 @@ export type ManageGotchi = {
   collateral?: string;
   numericTraits?: number[];
   equippedWearables?: number[];
+  /** Rented out or borrowed — only petting is allowed; other actions revert. */
+  locked?: boolean;
+  lockReason?: string;
 };
 
 const TRAITS = ["NRG", "AGG", "SPK", "BRN"] as const;
@@ -41,7 +44,7 @@ type Status = { kind: "idle" } | { kind: "busy"; label: string } | { kind: "ok";
 
 /** Large, controlled modal to view + manage a gotchi (opened from the profile). */
 export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; onClose: () => void }) {
-  const { gotchiId, name, hauntId, collateral, numericTraits, equippedWearables } = gotchi;
+  const { gotchiId, name, hauntId, collateral, numericTraits, equippedWearables, locked, lockReason } = gotchi;
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const isOnBase = chainId === BASE_CHAIN_ID;
@@ -91,38 +94,53 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
   };
 
   const Section = ({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) => (
-    <div className="rounded-lg border border-border/60 p-3 space-y-2">
-      <div className="flex items-center gap-1.5 text-sm font-semibold">{icon}{title}</div>
+    <div className="rounded-xl border border-border/50 bg-gradient-to-b from-muted/25 to-transparent p-3 space-y-2 transition-colors hover:border-border">
+      <div className="flex items-center gap-2 text-[13px] font-semibold tracking-tight">
+        <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-background/70 border border-border/50">{icon}</span>
+        {title}
+      </div>
       {children}
     </div>
   );
-  const field = "h-9 flex-1 min-w-0 rounded border border-border bg-background px-2.5 text-sm";
-  const goBtn = "h-9 px-4 rounded bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 shrink-0";
+  const field = "h-9 flex-1 min-w-0 rounded-lg border border-border bg-background px-2.5 text-sm focus:ring-1 focus:ring-primary/40 outline-none";
+  const goBtn = "h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 shrink-0 hover:brightness-110";
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-3" onClick={onClose}>
-      <div className="w-[min(560px,96vw)] max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 sticky top-0 bg-background z-10">
-          <div className="text-base font-bold">Manage Gotchi #{gotchiId}{name ? ` · ${name}` : ""}</div>
-          <button onClick={onClose} className="p-1.5 rounded hover:bg-muted/50"><X className="w-5 h-5" /></button>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-3" onClick={onClose}>
+      <div className="w-[min(620px,96vw)] max-h-[92vh] overflow-y-auto rounded-2xl border border-white/10 bg-background shadow-2xl ring-1 ring-primary/10" onClick={(e) => e.stopPropagation()}>
+        {/* Hero header */}
+        <div className="relative overflow-hidden border-b border-border/60">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-fuchsia-500/10 to-transparent" />
+          <button onClick={onClose} className="absolute right-3 top-3 z-10 p-1.5 rounded-lg bg-black/25 hover:bg-black/45 text-white"><X className="w-5 h-5" /></button>
+          <div className="relative flex items-center gap-4 p-4">
+            <span className="w-24 h-24 rounded-xl bg-black/20 overflow-hidden shrink-0 ring-2 ring-white/15 shadow-lg">
+              <GotchiSvg gotchiId={gotchiId} hauntId={hauntId} collateral={collateral} numericTraits={numericTraits} equippedWearables={equippedWearables} mode="preview" useBlobUrl className="w-full h-full object-contain" />
+            </span>
+            <div className="min-w-0">
+              <div className="text-xl font-bold tracking-tight truncate">{name || "Unnamed"}</div>
+              <div className="text-xs text-muted-foreground font-mono">Gotchi #{gotchiId}</div>
+              {locked && (
+                <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/90 text-white"><Lock className="w-3 h-3" /> {lockReason || "Rented"}</span>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="p-4 space-y-3">
-          <div className="flex items-center gap-4">
-            <span className="w-28 h-28 rounded-lg bg-muted/40 overflow-hidden shrink-0">
-              <GotchiSvg gotchiId={gotchiId} hauntId={hauntId} collateral={collateral} numericTraits={numericTraits} equippedWearables={equippedWearables} mode="preview" useBlobUrl className="w-full h-full object-contain" />
-            </span>
-            <div className="text-sm text-muted-foreground">
-              Every action is signed in your wallet. You must own this gotchi and it must be unlocked, or the action reverts.
+          {locked && (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-[12px] text-amber-700 dark:text-amber-300">
+              This gotchi is {(lockReason || "rented").toLowerCase()} — only <span className="font-semibold">petting</span> is available right now. Channel &amp; claim its alchemica from <span className="font-semibold">Land Management</span>. Other actions unlock when the rental ends.
             </div>
-          </div>
+          )}
 
-          <button onClick={() => setEquipOpen(true)} className="w-full h-10 rounded-lg bg-primary/10 border border-primary/40 text-primary text-sm font-semibold inline-flex items-center justify-center gap-2 hover:bg-primary/20">
-            <Shirt className="w-4 h-4" /> Equip / change wearables
-          </button>
+          {!locked && (
+            <button onClick={() => setEquipOpen(true)} className="w-full h-11 rounded-xl bg-gradient-to-r from-primary/20 to-fuchsia-500/20 border border-primary/40 text-primary text-sm font-bold inline-flex items-center justify-center gap-2 hover:from-primary/30 hover:to-fuchsia-500/30 transition-colors">
+              <Shirt className="w-4 h-4" /> Equip / change wearables
+            </button>
+          )}
 
           {status.kind !== "idle" && (
-            <div className={`flex items-center gap-2 text-sm rounded-md px-3 py-2 ${
+            <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${
               status.kind === "busy" ? "bg-muted/50 text-foreground" : status.kind === "ok" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-red-500/15 text-red-500"
             }`}>
               {status.kind === "busy" ? <Loader2 className="w-4 h-4 animate-spin" /> : status.kind === "ok" ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
@@ -132,9 +150,12 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
 
           <div className="grid sm:grid-cols-2 gap-3">
             <Section icon={<Heart className="w-4 h-4 text-rose-500" />} title="Pet (kinship)">
-              <button disabled={busy} onClick={() => run("Pet", "interact", [[id]])} className="h-9 w-full rounded bg-rose-500/15 text-rose-500 border border-rose-500/30 text-sm font-semibold disabled:opacity-50">Pet now</button>
+              <button disabled={busy} onClick={() => run("Pet", "interact", [[id]])} className="h-9 w-full rounded-lg bg-rose-500/15 text-rose-500 border border-rose-500/30 text-sm font-semibold disabled:opacity-50 hover:bg-rose-500/25">Pet now</button>
             </Section>
 
+            <EndRentalBody gotchiId={gotchiId} />
+
+            {!locked && (<>
             <Section icon={<Pencil className="w-4 h-4" />} title="Rename">
               <div className="flex items-center gap-1.5">
                 <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="New name" className={field} />
@@ -181,8 +202,6 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
               <PocketBody gotchiId={gotchiId} />
             </Section>
 
-            <EndRentalBody gotchiId={gotchiId} />
-
             <Section icon={<Send className="w-4 h-4" />} title="Transfer">
               <div className="flex items-center gap-1.5">
                 <input value={to} onChange={(e) => setTo(e.target.value)} placeholder="0x recipient address" className={field} />
@@ -203,6 +222,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
                 Sacrifice gotchi
               </button>
             </Section>
+            </>)}
           </div>
         </div>
       </div>
