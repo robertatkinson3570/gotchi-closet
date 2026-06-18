@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
-import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw, Clock, Lock } from "lucide-react";
+import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw, Clock, Lock, FlaskConical } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, ESCROW_FACET_ABI, GHST_TOKEN_BASE, LENDING_FACET_ABI } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { EquipWearablesModal } from "@/components/explorer/EquipWearablesModal";
+import { UseConsumablesBody } from "@/components/explorer/UseConsumablesBody";
 import { useBatchTransferEscrow, type EscrowBalance } from "@/hooks/useEscrowWithdraw";
 
 const ACTIONS_ABI = [
@@ -206,6 +207,10 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
                 <button disabled={busy || !(Number(price) > 0)} onClick={() => run("List", "addERC721Listing", [AAVEGOTCHI_DIAMOND_BASE, id, 3n, BigInt(Math.floor(Number(price) * 1e18))])} className={`${goBtn} bg-emerald-600`}>List</button>
               </div>
               <button disabled={busy} onClick={cancelListing} className="h-8 w-full rounded border border-border/60 text-xs font-medium text-muted-foreground hover:bg-muted/50 disabled:opacity-50">Cancel my listing</button>
+            </Section>
+
+            <Section icon={<FlaskConical className="w-4 h-4 text-cyan-500" />} title="Use item (consumables)">
+              <UseConsumablesBody gotchiId={gotchiId} />
             </Section>
 
             {!listed && (<>
