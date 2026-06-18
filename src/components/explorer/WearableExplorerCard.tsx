@@ -5,7 +5,8 @@ import { formatTraitValue } from "@/lib/format";
 import { getSlotName, getWearableRarityTier } from "@/lib/explorer/wearableTypes";
 import type { ExplorerWearable } from "@/lib/explorer/wearableTypes";
 import { BuyButton } from "./BuyButton";
-import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
+import { MakeOfferButton } from "./MakeOfferButton";
+import { AAVEGOTCHI_DIAMOND_BASE, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
 
 interface WearableExplorerCardProps {
   wearable: ExplorerWearable;
@@ -158,6 +159,17 @@ export function WearableExplorerCard({
           />
         </div>
       )}
+
+      <div className="mt-1" onClick={(e) => e.stopPropagation()}>
+        <MakeOfferButton
+          kind="erc1155"
+          category={BAAZAAR_CATEGORY.WEARABLE}
+          tokenId={String(wearable.id)}
+          contractAddress={AAVEGOTCHI_DIAMOND_BASE}
+          label={wearable.name}
+          compact
+        />
+      </div>
 
       <div className="mt-0.5 text-center text-[8px] text-muted-foreground">
         #{wearable.id} • BRS +{wearable.rarityScoreModifier}

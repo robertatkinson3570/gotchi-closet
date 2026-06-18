@@ -4,6 +4,7 @@ import { qk } from "@/lib/queryKeys";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, ShoppingCart, MapPin, SlidersHorizontal, X } from "lucide-react";
 import { BuyButton } from "./BuyButton";
+import { MakeOfferButton } from "./MakeOfferButton";
 import { useMarketplaceBuy, type BuyParams } from "@/hooks/useMarketplaceBuy";
 import { useToast } from "@/ui/use-toast";
 import { CORE_SUBGRAPH_URL } from "@/lib/lending/contracts";
@@ -333,6 +334,9 @@ export function MarketGrid({
               )}
               <div className="text-[11px] text-emerald-500 font-semibold text-center">{ghst(l.priceWei)} GHST</div>
               <BuyButton listingId={l.listingId} tokenId={l.tokenId} priceInWei={l.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`#${l.tokenId}`} />
+              {itemKind !== "portal" && (
+                <MakeOfferButton kind={kind} category={category} tokenId={l.tokenId} contractAddress={contract} label={`#${l.tokenId}`} compact />
+              )}
             </div>
           );
         })}

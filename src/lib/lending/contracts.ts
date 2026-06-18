@@ -794,3 +794,49 @@ export const ERC1155_MARKETPLACE_ABI = [
     outputs: [],
   },
 ] as const;
+
+// Buy orders (offers): a buyer escrows GHST to the diamond, the owner can fill
+// it. Hosted on the Aavegotchi diamond. Sigs verified on-chain via eth_call.
+// ERC721 gotchis (category 3) REQUIRE exactly 3 bool validation options
+// (base rarity / modified rarity / kinship — all false = fill regardless of
+// state); other erc721 categories take an empty array.
+export const ERC721_BUY_ORDER_ABI = [
+  {
+    name: "placeERC721BuyOrder",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_erc721TokenAddress", type: "address" },
+      { name: "_erc721TokenId", type: "uint256" },
+      { name: "_category", type: "uint256" },
+      { name: "_priceInWei", type: "uint256" },
+      { name: "_duration", type: "uint256" },
+      { name: "_validationOptions", type: "bool[]" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "cancelERC721BuyOrder",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_buyOrderId", type: "uint256" }],
+    outputs: [],
+  },
+] as const;
+
+export const ERC1155_BUY_ORDER_ABI = [
+  {
+    name: "placeERC1155BuyOrder",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_erc1155TokenAddress", type: "address" },
+      { name: "_erc1155TokenId", type: "uint256" },
+      { name: "_category", type: "uint256" },
+      { name: "_priceInWei", type: "uint256" },
+      { name: "_quantity", type: "uint256" },
+      { name: "_duration", type: "uint256" },
+    ],
+    outputs: [],
+  },
+] as const;

@@ -151,6 +151,7 @@ export function ExplorerGrid({ gotchis, loading, hasMore, error, onLoadMore, onM
               manageLabel={manageLabel}
               selected={selectedFor ? selectedFor(gotchi) : undefined}
               rentalBadge={rentalBadgeFor ? rentalBadgeFor(gotchi) : undefined}
+              offerable={!onManage}
             />
           </div>
         ))}

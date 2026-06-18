@@ -5,7 +5,8 @@ import { getRarityTier } from "@/lib/explorer/filters";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { GotchiInfoOverlay } from "./GotchiInfoOverlay";
 import { BuyButton } from "./BuyButton";
-import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
+import { MakeOfferButton } from "./MakeOfferButton";
+import { AAVEGOTCHI_DIAMOND_BASE, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
 import { Info } from "lucide-react";
 import { prefetchGotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { isGotchiRenderReady } from "@/lib/explorer/gotchiReady";
@@ -27,6 +28,9 @@ type Props = {
   manageLabel?: string;
   selected?: boolean;
   rentalBadge?: string | null;
+  // Buy-side only: show a "Make Offer" (buy order) action. Set by the browse
+  // grid, not by auction/lending views.
+  offerable?: boolean;
 };
 
 const NAKED_WEARABLES: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -50,6 +54,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   manageLabel,
   selected,
   rentalBadge,
+  offerable,
 }: Props) {
   const { address } = useAccount();
   const isOwnListing = !!gotchi.listing?.seller && !!address && gotchi.listing.seller.toLowerCase() === address.toLowerCase();
@@ -339,6 +344,20 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
                 />
               )
             )}
+          </div>
+        )}
+
+        {/* Buy-mode offer: any gotchi you don't own/list can receive a buy order. */}
+        {offerable && !isOwnListing && (
+          <div className="pt-1" onClick={(e) => e.stopPropagation()}>
+            <MakeOfferButton
+              kind="erc721"
+              category={BAAZAAR_CATEGORY.AAVEGOTCHI}
+              tokenId={gotchi.tokenId}
+              contractAddress={AAVEGOTCHI_DIAMOND_BASE}
+              label={gotchi.name || `#${gotchi.tokenId}`}
+              compact
+            />
           </div>
         )}
       </div>
