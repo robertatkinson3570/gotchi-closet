@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useReadContracts } from "wagmi";
-import { Landmark, ExternalLink, Vote, Wrench, BookOpen, Megaphone, Bot, BarChart3 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Landmark, ExternalLink, Vote, Wrench, BookOpen, Megaphone, Bot, BarChart3, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
@@ -33,6 +34,60 @@ const COMMUNITY = [
   { label: "Wiki & FAQ", href: "https://wiki.aavegotchi.com", icon: BookOpen },
   { label: "Agents", href: "https://dapp.aavegotchi.com/agents", icon: Bot },
 ];
+
+// Live AavegotchiDAO governance via the Snapshot public GraphQL API (the same
+// data the Snapshot MCP exposes; the browser uses the public hub directly).
+const SNAPSHOT_SPACE = "aavegotchi.eth";
+type Proposal = { id: string; title: string; state: string; votes: number; end: number; scoresTotal: number };
+
+async function fetchProposals(): Promise<Proposal[]> {
+  const query = `{ proposals(first: 6, where: { space: "${SNAPSHOT_SPACE}" }, orderBy: "created", orderDirection: desc){ id title state votes end scores_total } }`;
+  const res = await fetch("https://hub.snapshot.org/graphql", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query }) });
+  const json = await res.json();
+  if (json.errors) throw new Error(json.errors[0]?.message ?? "snapshot error");
+  return (json.data?.proposals ?? []).map((p: any) => ({ id: p.id, title: p.title, state: p.state, votes: Number(p.votes) || 0, end: Number(p.end) || 0, scoresTotal: Number(p.scores_total) || 0 }));
+}
+
+function proposalAgo(end: number, state: string): string {
+  const now = Math.floor(Date.now() / 1000);
+  if (state === "active") {
+    const s = end - now;
+    if (s <= 0) return "ending";
+    const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600);
+    return d > 0 ? `ends in ${d}d` : `ends in ${h}h`;
+  }
+  return state === "pending" ? "pending" : "closed";
+}
+
+function ProposalsSection() {
+  const { data, isLoading } = useQuery({ queryKey: ["snapshot-proposals", SNAPSHOT_SPACE], queryFn: fetchProposals, staleTime: 5 * 60_000 });
+  return (
+    <div className="mb-5">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground inline-flex items-center gap-1.5"><Vote className="w-4 h-4 text-primary" /> Live proposals</div>
+        <a href={`https://snapshot.org/#/${SNAPSHOT_SPACE}`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary hover:underline inline-flex items-center gap-1">All on Snapshot <ExternalLink className="w-3 h-3" /></a>
+      </div>
+      {isLoading ? (
+        <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+      ) : !data || data.length === 0 ? (
+        <p className="text-[11px] text-muted-foreground">No proposals found.</p>
+      ) : (
+        <div className="space-y-2">
+          {data.map((p) => (
+            <a key={p.id} href={`https://snapshot.org/#/${SNAPSHOT_SPACE}/proposal/${p.id}`} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-3 rounded-xl border border-border/40 bg-background/60 p-3 hover:border-primary/40 hover:-translate-y-0.5 transition-all">
+              <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${p.state === "active" ? "bg-emerald-500/15 text-emerald-500" : p.state === "pending" ? "bg-amber-500/15 text-amber-500" : "bg-muted/50 text-muted-foreground"}`}>{p.state}</span>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium truncate">{p.title}</div>
+                <div className="text-[10px] text-muted-foreground">{p.votes.toLocaleString()} votes · {proposalAgo(p.end, p.state)}</div>
+              </div>
+              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function LinkCard({ label, href, icon: Icon }: { label: string; href: string; icon: typeof Vote }) {
   return (
@@ -80,6 +135,8 @@ export default function DaoPage() {
           </a>
         </div>
       </div>
+
+      <ProposalsSection />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
