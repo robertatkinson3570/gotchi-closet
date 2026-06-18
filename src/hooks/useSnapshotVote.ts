@@ -9,11 +9,15 @@ const SPACE = "aavegotchi.eth";
 export type VoteStep = "idle" | "signing" | "success" | "error";
 
 // Adapt a wagmi/viem wallet client to an ethers v6 signer (what snapshot.js wants).
+// snapshot.js (0.14) calls the ethers v5 method `_signTypedData`; ethers v6 renamed
+// it to `signTypedData`, so we alias it back or signing throws "not a function".
 function walletClientToSigner(client: any) {
   const { account, chain, transport } = client;
   const network = { chainId: chain?.id ?? 1, name: chain?.name ?? "ethereum" };
   const provider = new BrowserProvider(transport as any, network);
-  return new JsonRpcSigner(provider, account.address);
+  const signer = new JsonRpcSigner(provider, account.address);
+  (signer as any)._signTypedData = (domain: any, types: any, value: any) => signer.signTypedData(domain, types, value);
+  return signer;
 }
 
 /**
