@@ -68,8 +68,10 @@ export function createApp() {
   app.use("/api/gotchis", gotchiRoutes);
   app.use("/api/wearables", wearableRoutes);
   app.use("/api/lending/autorenew", lendingAutoRenewRoutes);
-  app.use("/api/companion", companionRoutes);
+  // Mount the more-specific prefix first (Express convention) so the global routes
+  // can never be shadowed by a future catch-all on the companion router.
   app.use("/api/companion/global", globalChatRoutes);
+  app.use("/api/companion", companionRoutes);
 
   // Boot auto-renew cron (no-op if AUTORENEW_HOT_WALLET_KEY not set)
   startAutoRenewCron();
