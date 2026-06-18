@@ -13,6 +13,7 @@ import {
 import { verifyGhstPayment } from "../lending/verifyPayment";
 import { creditPackForGhst, expectedWeiForPack } from "../companion/pricing";
 import { premiumSignatureValid } from "../companion/auth";
+import { soulDepthSnapshot } from "../soul/snapshot";
 
 const router = Router();
 
@@ -56,6 +57,8 @@ router.post("/chat", async (req, res) => {
     const state = await fetchGotchiState(tokenId);
     if (!state) return res.status(404).json({ error: "gotchi not found" });
     const profile = buildPersonality(state);
+    const soul = soulDepthSnapshot(tokenId);
+    const systemPrompt = soul ? `${profile.systemPrompt}\n\n${soul}` : profile.systemPrompt;
 
     if (deflected) {
       const reply = templateReply({ profile, message: masked, deflected: true });
@@ -81,18 +84,18 @@ router.post("/chat", async (req, res) => {
     let tier: "free" | "premium" = "free";
 
     if (eligiblePremium) {
-      const premiumText = await complete(profile.systemPrompt, messages, "premium");
+      const premiumText = await complete(systemPrompt, messages, "premium");
       if (premiumText !== null) {
         burnCredit(wallet);
         reply = screenOutbound(premiumText);
         tier = "premium";
       } else {
         // Premium LLM unavailable — fall through to free
-        const freeText = await complete(profile.systemPrompt, messages, "free");
+        const freeText = await complete(systemPrompt, messages, "free");
         reply = screenOutbound(freeText ?? templateReply({ profile, message: masked, deflected: false }));
       }
     } else {
-      const freeText = await complete(profile.systemPrompt, messages, "free");
+      const freeText = await complete(systemPrompt, messages, "free");
       reply = screenOutbound(freeText ?? templateReply({ profile, message: masked, deflected: false }));
     }
 
