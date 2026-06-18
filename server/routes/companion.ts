@@ -8,7 +8,11 @@ import { fetchGotchiState } from "../companion/gotchiState";
 import { complete } from "../companion/llmProvider";
 import {
   appendMessage, getRecentMessages, getFacts, upsertFact, isPremiumActive,
+  grantPremium, getEntitlement,
 } from "../companion/db";
+import { verifyGhstPayment } from "../lending/verifyPayment";
+import { getOperatorAddress } from "../lending/relist";
+import { expectedWeiForTier, companionTierFor } from "../companion/pricing";
 
 const router = Router();
 
@@ -69,6 +73,51 @@ router.post("/chat", async (req, res) => {
   } catch (err: any) {
     res.status(500).json({ error: err?.message ?? String(err) });
   }
+});
+
+// POST /premium/claim  Body: { wallet, days, txHash }
+router.post("/premium/claim", async (req, res) => {
+  try {
+    const body = req.body ?? {};
+    const wallet = String(body.wallet ?? "");
+    const days = Number(body.days ?? 0);
+    const txHash = String(body.txHash ?? "");
+    if (!wallet.startsWith("0x") || !txHash.startsWith("0x")) {
+      return res.status(400).json({ error: "wallet (0x) and txHash (0x) required" });
+    }
+    const tier = companionTierFor(days);
+    const expectedWei = expectedWeiForTier(days);
+    if (!tier || expectedWei === null) return res.status(400).json({ error: `unsupported term: ${days} days` });
+
+    const operator = process.env.COMPANION_RECEIVING_WALLET || getOperatorAddress();
+    if (!operator) return res.status(503).json({ error: "receiving wallet not configured" });
+
+    const verify = await verifyGhstPayment({
+      txHash: txHash as `0x${string}`,
+      expectedFrom: wallet as `0x${string}`,
+      expectedTo: operator as `0x${string}`,
+      expectedValueWei: expectedWei,
+    });
+    if (!verify.ok) return res.status(402).json({ error: `payment verification failed: ${verify.error}` });
+
+    try {
+      const ent = grantPremium(wallet, Date.now() + days * 86400_000, txHash);
+      return res.json({ ok: true, entitlement: ent });
+    } catch (err: any) {
+      if (String(err?.message).includes("already credited")) {
+        return res.status(409).json({ error: "payment tx already credited" });
+      }
+      throw err;
+    }
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message ?? String(err) });
+  }
+});
+
+router.get("/premium/:wallet", (req, res) => {
+  const ent = getEntitlement(req.params.wallet);
+  const active = !!ent && ent.tier === "premium" && ent.expires_at > Date.now();
+  res.json({ active, entitlement: ent, daysLeft: ent ? Math.max(0, Math.floor((ent.expires_at - Date.now()) / 86400_000)) : 0 });
 });
 
 export default router;
