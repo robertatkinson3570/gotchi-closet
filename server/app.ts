@@ -4,6 +4,7 @@ import gotchiRoutes from "./routes/gotchis";
 import wearableRoutes from "./routes/wearables";
 import lendingAutoRenewRoutes from "./routes/lendingAutoRenew";
 import gotchibattlerRoutes from "./routes/gotchibattler";
+import companionRoutes from "./routes/companion";
 import { getDebugStats } from "./aavegotchi/serverSvgService";
 import { startAutoRenewCron } from "./lending/cron";
 
@@ -66,6 +67,7 @@ export function createApp() {
   app.use("/api/gotchis", gotchiRoutes);
   app.use("/api/wearables", wearableRoutes);
   app.use("/api/lending/autorenew", lendingAutoRenewRoutes);
+  app.use("/api/companion", companionRoutes);
 
   // Boot auto-renew cron (no-op if AUTORENEW_HOT_WALLET_KEY not set)
   startAutoRenewCron();

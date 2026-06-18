@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { shortenAddress } from "@/lib/address";
 import { FooterAttribution } from "@/components/FooterAttribution";
+import { CompanionRoot } from "@/components/companion/CompanionRoot";
 
 // Every page shows the full nav so all sections are reachable everywhere.
 const NAV: { to: string; title: string; icon: LucideIcon }[] = [
@@ -76,6 +77,7 @@ export function RootLayout() {
         </Suspense>
       </main>
       <FooterAttribution className="px-4 py-4 text-center" />
+      <CompanionRoot />
     </div>
   );
 }
