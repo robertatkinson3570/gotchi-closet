@@ -1,7 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useAccount, usePublicClient } from "wagmi";
+import { useQuery } from "@tanstack/react-query";
 import { useAppStore } from "@/state/useAppStore";
 import { useBaazaar } from "@/hooks/useBaazaar";
 import { computeOwnedCounts } from "@/state/selectors";
+import { BASE_CHAIN_ID } from "@/lib/chains";
+import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
 import type { DataMode } from "@/lib/explorer/types";
 import type {
   ExplorerWearable,
@@ -17,6 +21,13 @@ import {
 import type { Wearable } from "@/types";
 
 const PAGE_SIZE = 100;
+
+// Wallet-held wearables (ERC1155) live on the Aavegotchi diamond's itemBalances,
+// NOT on the user's gotchis. computeOwnedCounts only sees equipped wearables, so
+// the "mine" view must also read wallet balances or it shows nothing.
+const ITEM_BALANCES_ABI = [
+  { name: "itemBalances", type: "function", stateMutability: "view", inputs: [{ name: "_account", type: "address" }], outputs: [{ type: "tuple[]", components: [{ name: "itemId", type: "uint256" }, { name: "balance", type: "uint256" }] }] },
+] as const;
 
 function wearableToExplorer(w: Wearable): ExplorerWearable {
   return {
@@ -164,12 +175,46 @@ export function useWearableExplorerData(mode: DataMode) {
   const gotchis = useAppStore((s) => s.gotchis);
   const sets = useAppStore((s) => s.sets);
   const { baazaarPrices, baazaarLoading } = useBaazaar();
+  const { address } = useAccount();
+  const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
 
   const [filters, setFilters] = useState<WearableExplorerFilters>(defaultWearableFilters);
   const [sort, setSort] = useState<WearableSort>(defaultWearableSort);
   const [page, setPage] = useState(1);
 
-  const ownedCounts = useMemo(() => computeOwnedCounts(gotchis), [gotchis]);
+  // Wallet-held (unequipped) wearable balances for the connected address.
+  const { data: walletWearables } = useQuery({
+    queryKey: ["owned-wearable-balances", address?.toLowerCase()],
+    enabled: mode === "mine" && !!address && !!publicClient,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const res = (await publicClient!.readContract({
+        address: AAVEGOTCHI_DIAMOND_BASE,
+        abi: ITEM_BALANCES_ABI,
+        functionName: "itemBalances",
+        args: [address!.toLowerCase() as `0x${string}`],
+      })) as unknown as { itemId: bigint; balance: bigint }[];
+      const m: Record<number, number> = {};
+      for (const b of res) {
+        const n = Number(b.balance);
+        if (n > 0) m[Number(b.itemId)] = n;
+      }
+      return m;
+    },
+  });
+
+  // Owned = equipped on gotchis + held in wallet (the two are disjoint, since
+  // equipping escrows the wearable off the wallet balance).
+  const ownedCounts = useMemo(() => {
+    const equipped = computeOwnedCounts(gotchis);
+    if (!walletWearables) return equipped;
+    const merged: Record<number, number> = { ...equipped };
+    for (const [id, bal] of Object.entries(walletWearables)) {
+      const key = Number(id);
+      merged[key] = (merged[key] || 0) + bal;
+    }
+    return merged;
+  }, [gotchis, walletWearables]);
 
   const pricesMap = useMemo(() => {
     const map: Record<number, string> = {};
