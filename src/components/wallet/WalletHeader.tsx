@@ -7,9 +7,7 @@ import { switchToBaseChain } from "@/lib/chains";
 import { useToast } from "@/ui/use-toast";
 import { ConnectButton } from "./ConnectButton";
 import { NetworkBanner } from "./NetworkBanner";
-import { X, Wallet, Search, Coins } from "lucide-react";
-import { Link } from "react-router-dom";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { X, Wallet } from "lucide-react";
 
 type WalletHeaderProps = {
   multiWallets?: string[];
@@ -17,7 +15,13 @@ type WalletHeaderProps = {
   onRemoveWallet?: (addr: string) => void;
 };
 
-export function WalletHeader({ 
+/**
+ * Slim wallet bar for the Dress page's multi-wallet workflow. The global header
+ * (logo, nav, theme, connect) lives in RootLayout — this only adds the extra
+ * wallet chips + the "use connected address" menu + the network banner, so it no
+ * longer duplicates the logo/menu.
+ */
+export function WalletHeader({
   multiWallets = [],
   connectedOwner,
   onRemoveWallet,
@@ -35,33 +39,16 @@ export function WalletHeader({
     try {
       await switchToBaseChain();
     } catch (error: any) {
-      toast({
-        title: "Switch failed",
-        description: error?.message || "Unable to switch to Base.",
-        variant: "destructive",
-      });
+      toast({ title: "Switch failed", description: error?.message || "Unable to switch to Base.", variant: "destructive" });
     }
   };
 
   const totalWallets = multiWallets.length + (connectedOwner ? 1 : 0);
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-      <div className="px-4 flex h-12 items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 min-w-0 shrink-0">
-          <Link to="/" className="hover:opacity-80 transition-opacity">
-            <img
-              src="/logo.png"
-              alt="GotchiCloset"
-              className="h-12 w-12 object-contain -my-2"
-            />
-          </Link>
-          <div className="text-lg font-semibold tracking-tight hidden sm:block">
-            Gotchi<span className="font-normal text-muted-foreground">Closet</span>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-1 flex-1 justify-center min-w-0 overflow-hidden">
+    <div className="w-full border-b border-border/40 bg-background/70">
+      <div className="px-3 md:px-4 flex min-h-10 items-center justify-between gap-2 py-1">
+        <div className="flex items-center gap-1 flex-1 min-w-0 overflow-hidden">
           {totalWallets > 0 && (
             <div className="flex items-center gap-1 overflow-x-auto scrollbar-none max-w-full">
               <Wallet className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -73,17 +60,10 @@ export function WalletHeader({
                 </span>
               )}
               {multiWallets.map((addr) => (
-                <span
-                  key={addr}
-                  className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/30 px-2 py-0.5 text-[10px] text-primary shrink-0"
-                >
+                <span key={addr} className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/30 px-2 py-0.5 text-[10px] text-primary shrink-0">
                   {shortenAddress(addr)}
                   {onRemoveWallet && (
-                    <button
-                      onClick={() => onRemoveWallet(addr)}
-                      className="hover:text-destructive ml-0.5"
-                      title="Remove wallet"
-                    >
+                    <button onClick={() => onRemoveWallet(addr)} className="hover:text-destructive ml-0.5" title="Remove wallet">
                       <X className="h-3 w-3" />
                     </button>
                   )}
@@ -94,74 +74,26 @@ export function WalletHeader({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          <Link to="/explorer">
-            <Button size="sm" variant="ghost" className="h-8 px-2" title="Explorer">
-              <Search className="h-4 w-4" />
-            </Button>
-          </Link>
-          <Link to="/lending">
-            <Button size="sm" variant="ghost" className="h-8 px-2" title="Lending">
-              <Coins className="h-4 w-4" />
-            </Button>
-          </Link>
-          <ThemeToggle />
           {!isConnected ? (
             <ConnectButton />
           ) : (
             <Menu as="div" className="relative">
               <Menu.Button as={Button} variant="secondary" size="sm" className="h-8">
-                {connectedAddress
-                  ? shortenAddress(connectedAddress)
-                  : "Connected"}
+                {connectedAddress ? shortenAddress(connectedAddress) : "Connected"}
               </Menu.Button>
-              <Menu.Items className="absolute right-0 mt-2 w-56 rounded-lg border bg-background shadow-lg p-2 text-sm">
-                <div className="px-2 py-1 text-xs text-muted-foreground">
-                  {isOnBase ? "Base" : "Wrong network"}
-                </div>
+              <Menu.Items className="absolute right-0 mt-2 w-56 rounded-lg border bg-background shadow-lg p-2 text-sm z-50">
+                <div className="px-2 py-1 text-xs text-muted-foreground">{isOnBase ? "Base" : "Wrong network"}</div>
                 {!isOnBase && (
-                  <Menu.Item>
-                    {() => (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={handleSwitch}
-                      >
-                        Switch to Base
-                      </Button>
-                    )}
-                  </Menu.Item>
+                  <Menu.Item>{() => <Button variant="secondary" size="sm" className="w-full justify-start" onClick={handleSwitch}>Switch to Base</Button>}</Menu.Item>
                 )}
-                <Menu.Item>
-                  {() => (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={applyConnectedAddress}
-                    >
-                      Use connected address
-                    </Button>
-                  )}
-                </Menu.Item>
-                <Menu.Item>
-                  {() => (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => disconnect()}
-                    >
-                      Disconnect
-                    </Button>
-                  )}
-                </Menu.Item>
+                <Menu.Item>{() => <Button variant="ghost" size="sm" className="w-full justify-start" onClick={applyConnectedAddress}>Use connected address</Button>}</Menu.Item>
+                <Menu.Item>{() => <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => disconnect()}>Disconnect</Button>}</Menu.Item>
               </Menu.Items>
             </Menu>
           )}
         </div>
       </div>
       <NetworkBanner />
-    </header>
+    </div>
   );
 }
