@@ -55,6 +55,17 @@ async function gql(url: string, query: string) {
   return json.data;
 }
 
+// Offers/auctions carry only a token id, so batch-fetch gotchi traits to render
+// art client-side (matching Sales) instead of hitting the server SVG endpoint.
+async function enrichGotchiArt(rows: Row[]): Promise<Row[]> {
+  const ids = [...new Set(rows.filter((r) => r.kind === "erc721" && r.category === BAAZAAR_CATEGORY.AAVEGOTCHI && !r.gotchi).map((r) => r.tokenId))];
+  if (!ids.length) return rows;
+  const d = await gql(CORE_SUBGRAPH_URL, `query { aavegotchis(first: 1000, where: { id_in: [${ids.map((i) => `"${i}"`).join(",")}] }) { id numericTraits withSetsNumericTraits equippedWearables hauntId collateral } }`);
+  const map = new Map<string, GotchiArt>();
+  for (const g of d?.aavegotchis ?? []) map.set(g.id, { numericTraits: (g.withSetsNumericTraits ?? g.numericTraits ?? []).map((n: any) => Number(n)), equippedWearables: (g.equippedWearables ?? []).map((n: any) => Number(n)), hauntId: g.hauntId != null ? Number(g.hauntId) : undefined, collateral: g.collateral });
+  return rows.map((r) => (r.gotchi || !map.has(r.tokenId) ? r : { ...r, gotchi: map.get(r.tokenId) }));
+}
+
 async function fetchSales(): Promise<Row[]> {
   const d = await gql(CORE_SUBGRAPH_URL, `query {
     erc721Listings(first: 100, where: { timePurchased_gt: "0" }, orderBy: timePurchased, orderDirection: desc) {
@@ -90,7 +101,7 @@ async function fetchOffers(): Promise<Row[]> {
     id: `o1155-${o.id}`, feed: "offer" as const, kind: "erc1155" as const, category: Number(o.category), tokenId: o.erc1155TokenId, quantity: Number(o.quantity) || 1,
     priceWei: o.priceInWei, to: o.buyer, time: Number(o.createdAt), status: "Open",
   }));
-  return [...o721, ...o1155].sort((a, b) => b.time - a.time);
+  return enrichGotchiArt([...o721, ...o1155].sort((a, b) => b.time - a.time));
 }
 
 // Map an auction's token contract to the (kind, category) used for imagery.
@@ -106,7 +117,7 @@ function auctionCat(contract: string, type: string): { kind: "erc721" | "erc1155
 async function fetchAuctions(): Promise<Row[]> {
   const d = await gql(GBM_SUBGRAPH, `query { auctions(first: 100, orderBy: endsAt, orderDirection: desc){ id type tokenId contractAddress highestBid highestBidder seller endsAt totalBids } }`);
   const now = Math.floor(Date.now() / 1000);
-  return (d?.auctions ?? []).map((a: any) => {
+  const rows: Row[] = (d?.auctions ?? []).map((a: any) => {
     const { kind, category } = auctionCat(a.contractAddress, a.type);
     const endsAt = Number(a.endsAt);
     return {
@@ -115,6 +126,7 @@ async function fetchAuctions(): Promise<Row[]> {
       status: endsAt > now ? "Live" : "Ended",
     } as Row;
   });
+  return enrichGotchiArt(rows);
 }
 
 const short = (a?: string) => (a && a !== "0x0000000000000000000000000000000000000000" ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—");
@@ -130,6 +142,10 @@ function ago(unix: number): string {
 
 function ItemImage({ s }: { s: Row }) {
   if (s.category === BAAZAAR_CATEGORY.AAVEGOTCHI && s.kind === "erc721") {
+    // Only render client-side when traits are present; the server SVG fallback is unreliable.
+    if (!s.gotchi?.numericTraits?.length) {
+      return <span className="inline-flex w-9 h-9 rounded bg-primary/10 items-center justify-center text-[9px] font-mono text-primary/70 align-middle">#{s.tokenId}</span>;
+    }
     return (
       <span className="inline-block w-9 h-9 rounded bg-muted/40 overflow-hidden align-middle">
         <GotchiSvg gotchiId={s.tokenId} hauntId={s.gotchi?.hauntId} collateral={s.gotchi?.collateral} numericTraits={s.gotchi?.numericTraits} equippedWearables={s.gotchi?.equippedWearables} mode="preview" useBlobUrl className="w-full h-full object-contain" />
