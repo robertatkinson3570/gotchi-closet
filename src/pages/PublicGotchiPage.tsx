@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { GotchiSvgById } from "@/components/explorer/GotchiSvgById";
 import { SoulBadge } from "@/components/soul/SoulBadge";
+import { ShareBar } from "@/components/soul/ShareBar";
 import { env } from "@/lib/env";
 
 // ---------------------------------------------------------------------------
@@ -256,11 +257,15 @@ export default function PublicGotchiPage() {
           transition={{ duration: 0.4, delay: 0.1 }}
           className="flex-1 flex flex-col gap-4 min-h-[480px]"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-white/60 text-sm">Talk to</span>
             <span className="text-purple-300 font-semibold text-sm">{gotchi.name}</span>
             <span className="text-white/20 text-xs ml-auto">no wallet needed</span>
           </div>
+          <ShareBar
+            url={`${window.location.origin}/g/${tokenId}`}
+            text={`Come talk to ${gotchi.name} on GotchiCloset 👻`}
+          />
 
           {/* Message list */}
           <div

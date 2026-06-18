@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { GotchiSvgById } from "@/components/explorer/GotchiSvgById";
+import { ShareBar } from "@/components/soul/ShareBar";
 import { env } from "@/lib/env";
 
 // ---------------------------------------------------------------------------
@@ -280,6 +281,14 @@ export default function PublicBattlePage() {
               >
                 Talk to {data.a.name} →
               </Link>
+            </div>
+
+            {/* Share */}
+            <div className="mt-4 flex justify-center">
+              <ShareBar
+                url={`${window.location.origin}/arena/${a}/vs/${b}`}
+                text={`${data.a.name} vs ${data.b.name} — who won this roast battle? 🔥👻`}
+              />
             </div>
 
             {data.cached && (
