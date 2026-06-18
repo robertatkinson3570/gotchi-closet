@@ -4,8 +4,9 @@ import { useAccount } from "wagmi";
 import { useAppStore } from "@/state/useAppStore";
 import { useCompanion } from "@/state/useCompanion";
 import { buildPersonality } from "@/lib/companion/personality";
-import { postChat } from "@/lib/companion/api";
+import { postChat, getPremium } from "@/lib/companion/api";
 import { PersonalityCard } from "./PersonalityCard";
+import { GoPremium } from "./GoPremium";
 import { CompanionGotchiPicker } from "./CompanionGotchiPicker";
 import type { ChatMessage } from "@/lib/companion/types";
 
@@ -17,6 +18,8 @@ export function CompanionChatPanel() {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [picking, setPicking] = useState(false);
+  const [premium, setPremium] = useState(false);
+  useEffect(() => { if (address) getPremium(address).then((s) => setPremium(s.active)).catch(() => {}); }, [address]);
   const endRef = useRef<HTMLDivElement>(null);
 
   const gotchi = useMemo(() => gotchis.find((g) => g.id === selectedTokenId) ?? null, [gotchis, selectedTokenId]);
@@ -59,6 +62,7 @@ export function CompanionChatPanel() {
       ) : (
         <>
           {profile && <div className="px-3 pt-3"><PersonalityCard profile={profile} /></div>}
+          {profile && !premium && <div className="px-3 pt-2"><GoPremium onActivated={() => setPremium(true)} /></div>}
           <div className="flex-1 space-y-2 overflow-y-auto p-3">
             {messages.length === 0 && (
               <div className="mt-8 text-center text-sm text-white/40">say hi to your gotchi 👻</div>
