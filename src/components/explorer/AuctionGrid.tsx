@@ -23,6 +23,7 @@ import { GotchiSvgById, FakeGotchiImage } from "./GotchiSvgById";
 import { Gavel } from "lucide-react";
 import { CORE_SUBGRAPH } from "@/lib/subgraph";
 import { GotchiExplorerCard } from "./GotchiExplorerCard";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 
 // The GBM diamond on Base exposes commitBid with selector 0xd2f699fc:
@@ -154,6 +155,14 @@ async function fetchGotchiBatch(ids: string[]): Promise<Record<string, GInfo>> {
 
 /** Live GBM auctions with inline bidding (GHST approve + commitBid). */
 export function AuctionGrid() {
+  return (
+    <ErrorBoundary label="The auctions view hit a snag. Reload it below.">
+      <AuctionGridInner />
+    </ErrorBoundary>
+  );
+}
+
+function AuctionGridInner() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const isOnBase = chainId === BASE_CHAIN_ID;

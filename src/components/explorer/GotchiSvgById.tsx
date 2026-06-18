@@ -22,8 +22,11 @@ export function GotchiSvgById({ id, className }: { id: string; className?: strin
     queryFn: () => fetchGotchiSvg(id),
     staleTime: 10 * 60_000,
   });
-  if (!data) return null;
-  return <span className={className} dangerouslySetInnerHTML={{ __html: data }} />;
+  // Always render the same <span> node (identity stable across loading → loaded),
+  // and only ever change its innerHTML. Returning null then a fresh element makes
+  // React insert/remove this node next to conditionally-rendered siblings, which
+  // can desync from the raw SVG's untracked child nodes and throw removeChild.
+  return <span className={className} dangerouslySetInnerHTML={{ __html: data ?? "" }} />;
 }
 
 // Fake Gotchis are a separate collection; their art is off-chain (irys) and
