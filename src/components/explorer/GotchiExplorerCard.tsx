@@ -1,4 +1,5 @@
 import { memo, useState, useRef, useEffect, useMemo } from "react";
+import { useAccount } from "wagmi";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { getRarityTier } from "@/lib/explorer/filters";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
@@ -50,6 +51,8 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   selected,
   rentalBadge,
 }: Props) {
+  const { address } = useAccount();
+  const isOwnListing = !!gotchi.listing?.seller && !!address && gotchi.listing.seller.toLowerCase() === address.toLowerCase();
   const tier = getRarityTier(gotchi.withSetsRarityScore);
   const colors = tierColors[tier] || tierColors.common;
   const wearableCount = gotchi.equippedWearables.filter((w) => w > 0).length;
@@ -323,14 +326,18 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
               </span>
             </div>
             {gotchi.listing?.id && (
-              <BuyButton
-                listingId={gotchi.listing.id}
-                tokenId={gotchi.tokenId}
-                priceInWei={gotchi.listing.priceInWei}
-                kind="erc721"
-                contractAddress={AAVEGOTCHI_DIAMOND_BASE}
-                label={`#${gotchi.tokenId}`}
-              />
+              isOwnListing ? (
+                <span className="inline-flex items-center h-7 px-2 rounded-md bg-muted/60 text-[10px] font-semibold text-muted-foreground">Your listing</span>
+              ) : (
+                <BuyButton
+                  listingId={gotchi.listing.id}
+                  tokenId={gotchi.tokenId}
+                  priceInWei={gotchi.listing.priceInWei}
+                  kind="erc721"
+                  contractAddress={AAVEGOTCHI_DIAMOND_BASE}
+                  label={`#${gotchi.tokenId}`}
+                />
+              )
             )}
           </div>
         )}

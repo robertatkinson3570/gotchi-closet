@@ -208,6 +208,41 @@ const GOTCHIS_BY_OWNER_EXPLORER = gql`
         minimumStake
         stakedAmount
       }
+      gotchisLentOut
+    }
+  }
+`;
+
+// Lent-out gotchis aren't under gotchisOwned during a rental (ownership moves
+// to the lending escrow), so resolve those entities by id to show them in the
+// owned view.
+const GOTCHIS_BY_IDS_EXPLORER = gql`
+  query GotchisByIdsExplorer($ids: [ID!]) {
+    aavegotchis(first: 1000, where: { id_in: $ids }) {
+      id
+      gotchiId
+      name
+      level
+      numericTraits
+      modifiedNumericTraits
+      withSetsNumericTraits
+      equippedWearables
+      baseRarityScore
+      modifiedRarityScore
+      withSetsRarityScore
+      hauntId
+      collateral
+      owner { id }
+      kinship
+      experience
+      escrow
+      equippedSetID
+      equippedSetName
+      usedSkillPoints
+      createdAt
+      lastInteracted
+      minimumStake
+      stakedAmount
     }
   }
 `;
@@ -470,7 +505,14 @@ export function useExplorerData(
         }
 
         const rawGotchis = result.data?.user?.gotchisOwned || [];
-        const gotchisWithListings = applyListingsToGotchis(rawGotchis.map(transformGotchi));
+        // Include gotchis the user has lent out (not under gotchisOwned).
+        const lentIds: string[] = result.data?.user?.gotchisLentOut || [];
+        let lentRaw: any[] = [];
+        if (lentIds.length > 0) {
+          const lentRes = await client.query(GOTCHIS_BY_IDS_EXPLORER, { ids: lentIds }).toPromise();
+          lentRaw = lentRes.data?.aavegotchis || [];
+        }
+        const gotchisWithListings = applyListingsToGotchis([...rawGotchis, ...lentRaw].map(transformGotchi));
         setGotchis(gotchisWithListings);
         setHasMore(false);
       } else if (mode === "baazaar" || sort.field === "price" || sort.field === "listingCreated" || filters.priceMin || filters.priceMax) {
