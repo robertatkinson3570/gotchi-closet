@@ -44,6 +44,17 @@ export function getDb(): Database.Database {
       tx_hash TEXT PRIMARY KEY, wallet TEXT NOT NULL, credited_at INTEGER NOT NULL
     );
   `);
+
+  // Idempotent migration: add credits column if it doesn't exist yet.
+  const cols = db.pragma("table_info(companion_entitlements)") as { name: string }[];
+  if (!cols.some((c) => c.name === "credits")) {
+    db.exec(`ALTER TABLE companion_entitlements ADD COLUMN credits INTEGER NOT NULL DEFAULT 0`);
+    // One-time grandfather: active time-based holders get 5000 credits.
+    db.prepare(
+      `UPDATE companion_entitlements SET credits = 5000 WHERE credits = 0 AND expires_at > ?`
+    ).run(Date.now());
+  }
+
   return db;
 }
 
@@ -82,20 +93,80 @@ export function getFacts(wallet: string, tokenId: string): string[] {
   ).all(wallet.toLowerCase(), String(tokenId)) as { fact: string }[]).map((r) => r.fact);
 }
 
-export interface Entitlement { wallet: string; tier: Tier; expires_at: number; last_tx_hash: string | null; }
+export interface Entitlement {
+  wallet: string;
+  tier: Tier;
+  expires_at: number;
+  last_tx_hash: string | null;
+  credits: number;
+}
 
 export function getEntitlement(wallet: string): Entitlement | null {
   return (getDb().prepare(`SELECT * FROM companion_entitlements WHERE wallet = ?`)
     .get(wallet.toLowerCase()) as Entitlement | undefined) ?? null;
 }
 
-export function isPremiumActive(wallet: string): boolean {
-  const e = getEntitlement(wallet);
-  return !!e && e.tier === "premium" && e.expires_at > Date.now();
+/** Returns current credit balance for a wallet (0 if no entitlement row). */
+export function getCredits(wallet: string): number {
+  const row = getDb()
+    .prepare(`SELECT credits FROM companion_entitlements WHERE wallet = ?`)
+    .get(wallet.toLowerCase()) as { credits: number } | undefined;
+  return row?.credits ?? 0;
 }
 
-// Idempotent premium grant. Throws "tx already credited" on replay. Extends from
-// max(now, current expiry) so early renewals don't lose paid time.
+/** True when the wallet has at least 1 credit remaining. */
+export function hasCredits(wallet: string): boolean {
+  return getCredits(wallet) > 0;
+}
+
+/**
+ * Idempotent: credits `amount` to `wallet` for `txHash`.
+ * Throws "tx already credited" if the txHash was seen before.
+ * Returns the new credit balance.
+ */
+export function addCredits(wallet: string, amount: number, txHash: string): number {
+  const d = getDb();
+  const w = wallet.toLowerCase();
+  const tx = d.transaction(() => {
+    if (d.prepare(`SELECT 1 FROM companion_premium_tx WHERE tx_hash = ?`).get(txHash)) {
+      throw new Error("tx already credited");
+    }
+    d.prepare(`INSERT INTO companion_premium_tx (tx_hash, wallet, credited_at) VALUES (?,?,?)`)
+      .run(txHash, w, Date.now());
+    d.prepare(
+      `INSERT INTO companion_entitlements (wallet, tier, expires_at, last_tx_hash, credits)
+       VALUES (?, 'premium', 0, ?, ?)
+       ON CONFLICT(wallet) DO UPDATE SET
+         credits = credits + excluded.credits,
+         last_tx_hash = excluded.last_tx_hash`
+    ).run(w, txHash, amount);
+  });
+  tx();
+  return getCredits(w);
+}
+
+/**
+ * Atomically burns 1 credit.
+ * Returns true if a credit was consumed, false if the wallet had 0 credits (no change).
+ * Never goes negative.
+ */
+export function burnCredit(wallet: string): boolean {
+  const info = getDb()
+    .prepare(`UPDATE companion_entitlements SET credits = credits - 1 WHERE wallet = ? AND credits > 0`)
+    .run(wallet.toLowerCase());
+  return info.changes === 1;
+}
+
+/**
+ * Premium is now "active" whenever the wallet has credits remaining.
+ * Kept for backward-compat with existing callers.
+ */
+export function isPremiumActive(wallet: string): boolean {
+  return hasCredits(wallet);
+}
+
+// Keep grantPremium for backward-compat (e.g. existing db.test.ts tests).
+// It continues to use the time-based expires_at field.
 export function grantPremium(wallet: string, expiresAt: number, txHash: string): Entitlement {
   const d = getDb();
   const w = wallet.toLowerCase();
@@ -107,8 +178,8 @@ export function grantPremium(wallet: string, expiresAt: number, txHash: string):
     const base = existing && existing.expires_at > Date.now() ? existing.expires_at : Date.now();
     const extended = base + (expiresAt - Date.now());
     d.prepare(
-      `INSERT INTO companion_entitlements (wallet, tier, expires_at, last_tx_hash)
-       VALUES (?, 'premium', ?, ?)
+      `INSERT INTO companion_entitlements (wallet, tier, expires_at, last_tx_hash, credits)
+       VALUES (?, 'premium', ?, ?, 0)
        ON CONFLICT(wallet) DO UPDATE SET tier='premium', expires_at=excluded.expires_at, last_tx_hash=excluded.last_tx_hash`
     ).run(w, extended, txHash);
     d.prepare(`INSERT INTO companion_premium_tx (tx_hash, wallet, credited_at) VALUES (?,?,?)`)

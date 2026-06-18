@@ -1,18 +1,18 @@
 import { ghstToWei } from "../lending/subscriptionPricing";
 
-export interface CompanionTier { days: number; priceGhst: number; }
+export interface CreditPack { priceGhst: number; credits: number; }
 
-// Keep in sync with the client "Go Premium" UI (Task 17).
-export const COMPANION_TIERS: CompanionTier[] = [
-  { days: 30, priceGhst: 500 },
-  { days: 90, priceGhst: 1000 },
+// Keep in sync with the client "Go Premium" UI.
+export const CREDIT_PACKS: CreditPack[] = [
+  { priceGhst: 500, credits: 5000 },
+  { priceGhst: 1000, credits: 12000 },
 ];
 
-export function companionTierFor(days: number): CompanionTier | null {
-  return COMPANION_TIERS.find((t) => t.days === days) ?? null;
+export function creditPackForGhst(priceGhst: number): CreditPack | null {
+  return CREDIT_PACKS.find((p) => p.priceGhst === priceGhst) ?? null;
 }
 
-export function expectedWeiForTier(days: number): bigint | null {
-  const t = companionTierFor(days);
-  return t ? ghstToWei(t.priceGhst) : null;
+export function expectedWeiForPack(priceGhst: number): bigint | null {
+  const p = creditPackForGhst(priceGhst);
+  return p ? ghstToWei(p.priceGhst) : null;
 }
