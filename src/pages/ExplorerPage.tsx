@@ -245,12 +245,15 @@ export default function ExplorerPage() {
 
   const handleModeChange = useCallback((newMode: DataMode) => {
     setMode(newMode);
-    if (newMode === "baazaar" && assetType === "gotchi") {
-      setGotchiSort(defaultBaazaarSort);
-    } else if (newMode === "baazaar" && assetType === "wearable") {
-      setWearableSort({ field: "listingCreated", direction: "desc" });
-    }
-  }, [setGotchiSort, setWearableSort, assetType]);
+  }, []);
+
+  // In the Baazaar scope, always default to newest-listing — both when entering
+  // Baazaar and when switching between the Gotchis/Wearables tabs there.
+  useEffect(() => {
+    if (mode !== "baazaar") return;
+    if (assetType === "gotchi") setGotchiSort(defaultBaazaarSort);
+    else if (assetType === "wearable") setWearableSort({ field: "listingCreated", direction: "desc" });
+  }, [mode, assetType, setGotchiSort, setWearableSort]);
 
   const filteredGotchisBySearch = useMemo(() => {
     // If searching by owner address, server-side filtering handles it
