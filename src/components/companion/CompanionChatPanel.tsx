@@ -24,7 +24,8 @@ export function CompanionChatPanel() {
   const [picking, setPicking] = useState(false);
   const [tab, setTab] = useState<"chat" | "global">("chat");
   const [premium, setPremium] = useState(false);
-  useEffect(() => { if (address) getPremium(address).then((s) => setPremium(s.active)).catch(() => {}); }, [address]);
+  const [credits, setCredits] = useState(0);
+  useEffect(() => { if (address) getPremium(address).then((s) => { setPremium(s.active); setCredits(s.credits); }).catch(() => {}); }, [address]);
   // Restore past conversation for this gotchi + owner (persists across browser close).
   useEffect(() => {
     if (address && selectedTokenId) getHistory(selectedTokenId, address).then(setMessages).catch(() => {});
@@ -109,7 +110,8 @@ export function CompanionChatPanel() {
         <>
           <div className="flex-1 space-y-2 overflow-y-auto p-3">
             {profile && <PersonalityCard profile={profile} />}
-            {env.companionPremiumEnabled && profile && !premium && <GoPremium onActivated={() => setPremium(true)} />}
+            {credits > 0 && <div className="px-3 pt-1 text-[10px] text-fuchsia-200/60">⚡ {credits.toLocaleString()} premium credits</div>}
+            {env.companionPremiumEnabled && profile && (!premium || credits < 200) && <GoPremium onActivated={() => getPremium(address!).then((s) => { setPremium(s.active); setCredits(s.credits); }).catch(() => {})} />}
             {messages.length === 0 && (
               <div className="pt-6 text-center text-sm text-white/40">
                 say hi to your gotchi 👻

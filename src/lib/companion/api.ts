@@ -33,16 +33,16 @@ export async function getHistory(tokenId: string, wallet: string): Promise<ChatM
   }
 }
 
-export async function getPremium(wallet: string): Promise<{ active: boolean; daysLeft: number }> {
+export async function getPremium(wallet: string): Promise<{ active: boolean; credits: number }> {
   const res = await fetch(`${BASE}/api/companion/premium/${wallet}`);
   return res.json();
 }
 
-export async function claimPremium(wallet: string, days: number, txHash: string) {
+export async function claimPremium(wallet: string, ghst: number, txHash: string) {
   const res = await fetch(`${BASE}/api/companion/premium/claim`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ wallet, days, txHash }),
+    body: JSON.stringify({ wallet, ghst, txHash }),
   });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `claim failed (${res.status})`);
   return res.json();
