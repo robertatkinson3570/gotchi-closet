@@ -8,6 +8,7 @@ import { postChat, getPremium, getHistory } from "@/lib/companion/api";
 import { PersonalityCard } from "./PersonalityCard";
 import { GoPremium } from "./GoPremium";
 import { CompanionGotchiPicker } from "./CompanionGotchiPicker";
+import { GlobalChatTab } from "./GlobalChatTab";
 import { env } from "@/lib/env";
 import { premiumMessage, PREMIUM_SIG_TTL_MS } from "@/lib/companion/premiumAuth";
 import type { ChatMessage } from "@/lib/companion/types";
@@ -21,6 +22,7 @@ export function CompanionChatPanel() {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [picking, setPicking] = useState(false);
+  const [tab, setTab] = useState<"chat" | "global">("chat");
   const [premium, setPremium] = useState(false);
   useEffect(() => { if (address) getPremium(address).then((s) => setPremium(s.active)).catch(() => {}); }, [address]);
   // Restore past conversation for this gotchi + owner (persists across browser close).
@@ -90,8 +92,18 @@ export function CompanionChatPanel() {
         <button className="-mr-1 shrink-0 rounded-lg px-2 py-1 text-base leading-none text-white/60 hover:bg-white/10 hover:text-white"
           onClick={() => setOpen(false)} aria-label="close">✕</button>
       </div>
+      <div className="flex shrink-0 gap-1 border-b border-white/10 px-2 py-1">
+        {(["chat", "global"] as const).map((t) => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`flex-1 rounded-lg py-1 text-xs ${tab === t ? "bg-fuchsia-500/20 text-white" : "text-white/50 hover:text-white"}`}>
+            {t === "chat" ? "Chat" : "Global"}
+          </button>
+        ))}
+      </div>
 
-      {picking ? (
+      {tab === "global" ? (
+        <GlobalChatTab active={tab === "global"} />
+      ) : picking ? (
         <div className="overflow-y-auto p-3"><CompanionGotchiPicker onPicked={() => setPicking(false)} /></div>
       ) : (
         <>
