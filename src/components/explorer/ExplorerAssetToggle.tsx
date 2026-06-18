@@ -1,5 +1,5 @@
 import type { AssetType } from "@/lib/explorer/wearableTypes";
-import { Ghost, Shirt, Sparkles, MapPin, Hammer, Grid3x3, Gavel, Aperture, Palette, Layers, Anvil } from "lucide-react";
+import { Ghost, Shirt, Sparkles, MapPin, Hammer, Grid3x3, Gavel, Aperture, Palette, Layers, Anvil, Shield } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface Props {
@@ -18,6 +18,7 @@ const TABS: { key: AssetType; label: string; icon: LucideIcon }[] = [
   { key: "fakegotchi", label: "FAKE Gotchis", icon: Palette },
   { key: "fakecard", label: "FAKE Cards", icon: Layers },
   { key: "forge", label: "Forge Items", icon: Anvil },
+  { key: "guardian", label: "Guardian Skins", icon: Shield },
   { key: "auction", label: "Auctions", icon: Gavel },
 ];
 

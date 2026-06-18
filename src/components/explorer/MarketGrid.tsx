@@ -119,7 +119,7 @@ export function MarketGrid({
   kind: "erc721" | "erc1155";
   category: number;
   contract: `0x${string}`;
-  itemKind: "item" | "parcel" | "installation" | "tile" | "portal" | "fakegotchi" | "fakecard" | "forge";
+  itemKind: "item" | "parcel" | "installation" | "tile" | "portal" | "fakegotchi" | "fakecard" | "forge" | "guardian";
   /** When set, fetch by contract across all categories (collections like Forge). */
   tokenAddress?: string;
 }) {
@@ -349,6 +349,8 @@ export function MarketGrid({
                   <FakeGotchiImage id={l.tokenId} className="max-h-16 max-w-16 object-contain rounded" fallback={<Palette className="w-6 h-6 text-fuchsia-400/70" />} />
                 ) : itemKind === "forge" ? (
                   <AssetImage candidates={[FORGE_TYPE_IMG[l.category ?? -1]].filter(Boolean)} alt={FORGE_TYPE_NAME[l.category ?? -1] ?? `#${l.tokenId}`} className="max-h-14 max-w-14 object-contain" />
+                ) : itemKind === "guardian" ? (
+                  <AssetImage candidates={["https://dapp.aavegotchi.com/brand/iconsv2/categories/guardian-skins.png"]} alt={`Guardian skin #${l.tokenId}`} className="max-h-14 max-w-14 object-contain" />
                 ) : (
                   <MapPin className="w-6 h-6 text-emerald-500/70" />
                 )}
