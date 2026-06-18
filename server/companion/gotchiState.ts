@@ -9,6 +9,7 @@ const QUERY = `query($id: ID!){
   aavegotchi(id: $id){
     name numericTraits modifiedNumericTraits withSetsNumericTraits
     kinship level createdAt equippedWearables
+    owner { id }
   }
 }`;
 
@@ -18,6 +19,7 @@ function nums(a: unknown): number[] | undefined {
 
 export interface GotchiState extends PersonalityInput {
   equippedWearables: number[];
+  owner?: string;
 }
 
 export async function fetchGotchiState(tokenId: string): Promise<GotchiState | null> {
@@ -40,6 +42,7 @@ export async function fetchGotchiState(tokenId: string): Promise<GotchiState | n
       level: g.level != null ? Number(g.level) : undefined,
       createdAt: g.createdAt != null ? Number(g.createdAt) : undefined,
       equippedWearables: nums(g.equippedWearables) ?? [],
+      owner: g.owner?.id ? String(g.owner.id).toLowerCase() : undefined,
     };
   } catch {
     return null;

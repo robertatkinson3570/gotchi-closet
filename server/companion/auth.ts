@@ -1,11 +1,8 @@
 import { recoverMessageAddress } from "viem";
-import { premiumMessage, isSignedAtFresh } from "../../src/lib/companion/premiumAuth";
+import { premiumMessage, globalRoomMessage, isSignedAtFresh } from "../../src/lib/companion/premiumAuth";
 
-// Verifies that `wallet` actually signed the premium-access message at `signedAt`.
-// EOA signatures only (personal_sign / recoverMessageAddress); smart-contract wallets
-// fall back to the free tier. Used to gate the OpenAI tier so a caller can't claim
-// another address's premium entitlement by putting it in the request body.
-export async function premiumSignatureValid(
+async function verifySigned(
+  buildMessage: (wallet: string, signedAt: number) => string,
   wallet: string,
   signedAt: number,
   signature: string
@@ -14,11 +11,21 @@ export async function premiumSignatureValid(
   if (!isSignedAtFresh(signedAt, Date.now())) return false;
   try {
     const recovered = await recoverMessageAddress({
-      message: premiumMessage(wallet, signedAt),
+      message: buildMessage(wallet, signedAt),
       signature: signature as `0x${string}`,
     });
     return recovered.toLowerCase() === wallet.toLowerCase();
   } catch {
     return false;
   }
+}
+
+// Premium (OpenAI) tier gate — unchanged behavior.
+export function premiumSignatureValid(wallet: string, signedAt: number, signature: string): Promise<boolean> {
+  return verifySigned(premiumMessage, wallet, signedAt, signature);
+}
+
+// Global Room join gate.
+export function verifyRoomSignature(wallet: string, signedAt: number, signature: string): Promise<boolean> {
+  return verifySigned(globalRoomMessage, wallet, signedAt, signature);
 }

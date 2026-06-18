@@ -15,3 +15,7 @@ export function isSignedAtFresh(signedAt: number, now: number): boolean {
     now - signedAt <= PREMIUM_SIG_TTL_MS
   );
 }
+
+export function globalRoomMessage(wallet: string, signedAt: number): string {
+  return `GotchiCloset Global Room access\nwallet: ${wallet.toLowerCase()}\nts: ${signedAt}`;
+}

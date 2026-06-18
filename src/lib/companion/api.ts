@@ -47,3 +47,32 @@ export async function claimPremium(wallet: string, days: number, txHash: string)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `claim failed (${res.status})`);
   return res.json();
 }
+
+export interface GlobalMessage { id: number; tokenId: string; name: string; text: string; isAI: boolean; ts: number; }
+
+export function globalStreamUrl(): string {
+  return `${BASE}/api/companion/global/stream`;
+}
+
+export async function getGlobalHistory(limit = 50): Promise<GlobalMessage[]> {
+  try {
+    const res = await fetch(`${BASE}/api/companion/global/history?limit=${limit}`);
+    if (!res.ok) return [];
+    const json = await res.json();
+    return Array.isArray(json?.messages) ? json.messages : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function postGlobal(args: {
+  tokenId: string; wallet: string; text: string; signature: string; signedAt: number;
+}): Promise<{ ok: boolean; message?: GlobalMessage; error?: string }> {
+  const res = await fetch(`${BASE}/api/companion/global/post`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) return { ok: false, error: (await res.json().catch(() => ({}))).error || `post failed (${res.status})` };
+  return res.json();
+}
