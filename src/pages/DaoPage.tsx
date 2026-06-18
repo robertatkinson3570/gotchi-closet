@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useAccount, useReadContracts } from "wagmi";
+import { useAccount } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import { createPublicClient, http } from "viem";
 import { Landmark, ExternalLink, Vote, Wrench, BookOpen, Megaphone, Bot, BarChart3, Loader2, Zap, CheckCircle2 } from "lucide-react";
@@ -7,65 +7,78 @@ import { Link } from "react-router-dom";
 import { SnapshotVotePanel } from "@/components/dao/SnapshotVotePanel";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
-import { BASE_CHAIN_ID } from "@/lib/chains";
-import { GHST_TOKEN_BASE, ALCHEMICA_TOKENS_BASE, ERC20_ABI } from "@/lib/lending/contracts";
 
 const SNAPSHOT_SPACE = "aavegotchi.eth";
 const DAO_TREASURY_BASE = "0x62DE034b1A69eF853c9d0D8a33D26DF5cF26682E" as const;
 
-// ---- Voting power (Snapshot, for the connected wallet) ----
+// ---- Voting power + breakdown by strategy (Snapshot, for the connected wallet) ----
+type VotingPower = { total: number; byStrategy: { name: string; vp: number }[] };
 function useVotingPower(address?: string) {
-  return useQuery({
+  return useQuery<VotingPower>({
     queryKey: ["snapshot-vp", address?.toLowerCase()],
     enabled: !!address,
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const query = `{ vp(voter: "${address}", space: "${SNAPSHOT_SPACE}"){ vp } }`;
+      const query = `{ vp(voter: "${address}", space: "${SNAPSHOT_SPACE}"){ vp vp_by_strategy } space(id: "${SNAPSHOT_SPACE}"){ strategies { name } } }`;
       const res = await fetch("https://hub.snapshot.org/graphql", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query }) });
       const json = await res.json();
-      return Number(json?.data?.vp?.vp ?? 0);
+      const byVp: number[] = json?.data?.vp?.vp_by_strategy ?? [];
+      const names: string[] = (json?.data?.space?.strategies ?? []).map((s: any) => s.name);
+      const byStrategy = byVp.map((v, i) => ({ name: names[i] || `Strategy ${i + 1}`, vp: Number(v) || 0 })).filter((s) => s.vp > 0);
+      return { total: Number(json?.data?.vp?.vp ?? 0), byStrategy };
     },
   });
 }
 
-// ---- Multi-chain treasury (best-effort; Ethereum/Polygon can rate-limit) ----
+// ---- Multi-chain treasury: sum each token across ALL DAO wallets per chain ----
+// (the dapp aggregates every DAO-controlled address, not a single treasury).
 const TREASURY_CHAINS = [
   {
+    name: "Base", rpc: "https://mainnet.base.org", explorer: "https://basescan.org/address/",
+    wallets: ["0x62DE034b1A69eF853c9d0D8a33D26DF5cF26682E"],
+    tokens: [
+      { sym: "GHST", addr: "0xcD2F22236DD9Dfe2356D7C543161D4d260FD9BcB", dec: 18 },
+      { sym: "USDC", addr: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913", dec: 6 },
+    ],
+  },
+  {
+    name: "Polygon", rpc: "https://polygon-bor-rpc.publicnode.com", explorer: "https://polygonscan.com/address/",
+    wallets: ["0xb208f8BB431f580CC4b216826AFfB128cd1431aB", "0x27DF5C6dcd360f372e23d5e63645eC0072D0C098", "0x939b67F6F6BE63E09B0258621c5A24eecB92631c", "0x62DE034b1A69eF853c9d0D8a33D26DF5cF26682E", "0x8c8E076Cd7D2A17Ba2a5e5AF7036c2b2B7F790f6", "0x48eA1d45142fC645fDcf78C133Ac082eF159Fe14", "0x921D8FDF089775D5AC61b2d6e8f34F1edd554D8f"],
+    tokens: [
+      { sym: "GHST", addr: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7", dec: 18 },
+      { sym: "USDC", addr: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", dec: 6 },
+    ],
+  },
+  {
     name: "Ethereum", rpc: "https://ethereum-rpc.publicnode.com", explorer: "https://etherscan.io/address/",
-    treasury: "0x53c3CA81EA03001a350166D2Cc0fcd9d4c1b7B62",
+    wallets: ["0x854dfAAb274E756f8e792E42AdA416786548FA07", "0x578580F4700A9721Eb965B151Ac0941fa2afcC6c", "0xFFE6280ae4E864D9aF836B562359FD828EcE8020", "0x53c3CA81EA03001a350166D2Cc0fcd9d4c1b7B62"],
     tokens: [
       { sym: "GHST", addr: "0x3F382DbD960E3a9bbCeaE22651E88158d2791550", dec: 18 },
       { sym: "DAI", addr: "0x6B175474E89094C44Da98b954EedeAC495271d0F", dec: 18 },
       { sym: "USDC", addr: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", dec: 6 },
     ],
   },
-  {
-    name: "Polygon", rpc: "https://polygon-bor-rpc.publicnode.com", explorer: "https://polygonscan.com/address/",
-    treasury: "0x939b67F6F6BE63E09B0258621c5A24eecB92631c",
-    tokens: [
-      { sym: "GHST", addr: "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7", dec: 18 },
-      { sym: "USDC", addr: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", dec: 6 },
-    ],
-  },
 ] as const;
 
 const BAL_ABI = [{ name: "balanceOf", type: "function", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] }] as const;
 
-function useMultiChainTreasury() {
+function useTreasury() {
   return useQuery({
-    queryKey: ["dao-treasury-multichain"],
+    queryKey: ["dao-treasury-summed"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const out: Record<string, Record<string, number | null>> = {};
       await Promise.all(
         TREASURY_CHAINS.map(async (c) => {
           out[c.name] = {};
-          const client = createPublicClient({ transport: http(c.rpc, { retryCount: 0 }) });
+          const client = createPublicClient({ transport: http(c.rpc, { retryCount: 1 }) });
           await Promise.all(
             c.tokens.map(async (t) => {
               try {
-                const b = (await client.readContract({ address: t.addr as `0x${string}`, abi: BAL_ABI, functionName: "balanceOf", args: [c.treasury as `0x${string}`] })) as bigint;
-                out[c.name][t.sym] = Number(b) / 10 ** t.dec;
+                const bals = await Promise.all(
+                  c.wallets.map((w) => client.readContract({ address: t.addr as `0x${string}`, abi: BAL_ABI, functionName: "balanceOf", args: [w as `0x${string}`] }) as Promise<bigint>)
+                );
+                out[c.name][t.sym] = bals.reduce((s, b) => s + Number(b) / 10 ** t.dec, 0);
               } catch {
                 out[c.name][t.sym] = null;
               }
@@ -208,6 +221,20 @@ function ProposalsSection({ address }: { address?: string }) {
                     <button onClick={() => setOpenId(open ? null : p.id)} className="h-7 px-3 rounded-md bg-primary/15 text-primary border border-primary/40 text-[11px] font-semibold shrink-0">{open ? "Close" : "Vote"}</button>
                   ) : null}
                 </div>
+                {p.scores.some((s) => s > 0) && (
+                  <div className="mt-2 space-y-1">
+                    {p.choices.map((c, i) => ({ c, score: p.scores[i] || 0, i })).sort((a, b) => b.score - a.score).slice(0, 4).map(({ c, score, i }) => {
+                      const total = p.scores.reduce((s, v) => s + v, 0) || 1;
+                      const pct = Math.round((score / total) * 100);
+                      return (
+                        <div key={i}>
+                          <div className="flex justify-between text-[10px] text-muted-foreground gap-2"><span className="truncate">{c}</span><span className="shrink-0">{pct}%</span></div>
+                          <div className="h-1.5 rounded-full bg-muted/40 overflow-hidden"><div className="h-full rounded-full bg-primary/70" style={{ width: `${pct}%` }} /></div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
                 {open && canVote && !voted && (
                   <SnapshotVotePanel proposalId={p.id} type={p.type} choices={p.choices} onVoted={() => { setOpenId(null); refetchVotes(); refetch(); }} />
                 )}
@@ -234,19 +261,7 @@ export default function DaoPage() {
   const { address, isConnected } = useAccount();
   const { data: vp, isLoading: vpLoading } = useVotingPower(address);
   const { data: stats } = useSpaceStats();
-
-  // Base treasury (reliable, via wagmi) — GHST + USDC + alchemica.
-  const baseTokens = useMemo(() => [
-    { sym: "GHST", address: GHST_TOKEN_BASE },
-    { sym: "USDC", address: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913" },
-    ...ALCHEMICA_TOKENS_BASE.map((t) => ({ sym: t.symbol, address: t.address })),
-  ], []);
-  const { data: baseData } = useReadContracts({
-    contracts: baseTokens.map((t) => ({ address: t.address as `0x${string}`, abi: ERC20_ABI, functionName: "balanceOf" as const, args: [DAO_TREASURY_BASE], chainId: BASE_CHAIN_ID })),
-  });
-  const baseBalances = useMemo(() => baseTokens.map((t, i) => ({ sym: t.sym, bal: baseData?.[i]?.status === "success" ? Number(baseData[i].result as bigint) / 1e18 : null })), [baseTokens, baseData]);
-
-  const { data: multi } = useMultiChainTreasury();
+  const { data: treasury } = useTreasury();
 
   return (
     <div className="container mx-auto max-w-[1000px] px-4 py-6">
@@ -268,7 +283,16 @@ export default function DaoPage() {
         ) : vpLoading ? (
           <div className="mt-1"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
         ) : (
-          <div className="mt-1 flex items-baseline gap-2"><span className="text-3xl font-bold tracking-tight">{(vp ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span><span className="text-sm text-muted-foreground">voting power (GHST-equivalent)</span></div>
+          <>
+            <div className="mt-1 flex items-baseline gap-2"><span className="text-3xl font-bold tracking-tight">{(vp?.total ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span><span className="text-sm text-muted-foreground">voting power (GHST-equivalent)</span></div>
+            {vp && vp.byStrategy.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {vp.byStrategy.map((s) => (
+                  <span key={s.name} className="text-[10px] rounded-full bg-background/60 border border-border/40 px-2 py-0.5"><span className="text-muted-foreground capitalize">{s.name}:</span> <span className="font-semibold">{s.vp.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></span>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -276,22 +300,12 @@ export default function DaoPage() {
       <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-muted/10 to-muted/30 p-5 ring-1 ring-primary/5 mb-5">
         <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground mb-3"><Landmark className="w-4 h-4" /> DAO treasury</div>
         <div className="space-y-4">
-          {/* Base */}
-          <div>
-            <div className="text-[11px] font-semibold text-muted-foreground mb-1.5">Base</div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-              {baseBalances.map((t) => (
-                <div key={t.sym} className="rounded-xl border border-border/40 bg-background/50 p-2.5"><div className="text-[11px] font-semibold text-primary">{t.sym}</div><div className="text-base font-bold tabular-nums">{num(t.bal)}</div></div>
-              ))}
-            </div>
-          </div>
-          {/* Ethereum + Polygon (best-effort) */}
           {TREASURY_CHAINS.map((c) => (
             <div key={c.name}>
-              <div className="text-[11px] font-semibold text-muted-foreground mb-1.5">{c.name}</div>
+              <div className="text-[11px] font-semibold text-muted-foreground mb-1.5">{c.name} <span className="text-muted-foreground/60">· {c.wallets.length} wallet{c.wallets.length > 1 ? "s" : ""}</span></div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
                 {c.tokens.map((t) => (
-                  <div key={t.sym} className="rounded-xl border border-border/40 bg-background/50 p-2.5"><div className="text-[11px] font-semibold text-primary">{t.sym}</div><div className="text-base font-bold tabular-nums">{multi ? num(multi[c.name]?.[t.sym]) : "…"}</div></div>
+                  <div key={t.sym} className="rounded-xl border border-border/40 bg-background/50 p-2.5"><div className="text-[11px] font-semibold text-primary">{t.sym}</div><div className="text-base font-bold tabular-nums">{treasury ? num(treasury[c.name]?.[t.sym]) : "…"}</div></div>
                 ))}
               </div>
             </div>
