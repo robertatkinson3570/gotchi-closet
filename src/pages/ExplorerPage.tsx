@@ -365,11 +365,18 @@ export default function ExplorerPage() {
                   />
                 ) : assetType === "auction" ? (
                   <div className="text-xs text-muted-foreground p-1">Live GBM auctions — click a card to view details and bid.</div>
-                ) : (
-                  // Market tabs (items/parcels/installations/tiles/portals) portal
-                  // their filters into this slot.
-                  <div id="market-filter-slot" className="space-y-2" />
-                )}
+                ) : null}
+                {/*
+                  Market tabs (items/parcels/installations/tiles/portals) portal
+                  their filters into this slot via createPortal. It MUST stay
+                  mounted across asset-type changes: if React removes this node
+                  in the same commit that unmounts a MarketGrid, the portal's
+                  removeChild cleanup targets a node that's already gone and
+                  throws NotFoundError, tripping the route error boundary
+                  (seen on rapid Portals -> Auctions switches). Always render it;
+                  it's empty/zero-height when no market tab is active.
+                */}
+                <div id="market-filter-slot" className="space-y-2" />
               </div>
               <button
                 onClick={() => setSidebarOpen(false)}
