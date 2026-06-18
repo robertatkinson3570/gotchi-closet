@@ -4,12 +4,18 @@ import { getRecentMessages, getFacts } from "../companion/db";
 import { newSoulDocument } from "../soul/soulDoc";
 import { buildDepth } from "../soul/depth";
 import { saveSoulDoc } from "../soul/soulStore";
+import { reconcileSoul } from "../soul/transfer";
 
 const router = Router();
 
 router.get("/:tokenId", async (req, res) => {
   try {
     const { tokenId } = req.params;
+
+    // Lazy reconcile: if the gotchi changed hands while we were offline,
+    // distill the old owner's memories into echoes before we build depth.
+    try { await reconcileSoul(tokenId); } catch (_) { /* non-fatal */ }
+
     const state = await fetchGotchiState(tokenId);
     if (!state) return res.status(404).json({ error: "Gotchi not found" });
 

@@ -40,6 +40,14 @@ function ensureSchema() {
       block_number INTEGER,
       sealed_at    INTEGER
     );
+
+    CREATE TABLE IF NOT EXISTS soul_transfers (
+      token_id     TEXT    NOT NULL,
+      new_owner    TEXT    NOT NULL,
+      block_number INTEGER NOT NULL,
+      processed_at INTEGER NOT NULL,
+      PRIMARY KEY (token_id, new_owner, block_number)
+    );
   `);
   ensuredDb = db;
 }
@@ -209,6 +217,45 @@ export function recordSeal(input: RecordSealInput): void {
       input.blockNumber ?? null,
       Date.now()
     );
+}
+
+// ---------------------------------------------------------------------------
+// Transfer tracking (idempotency)
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns true if this (tokenId, newOwner, blockNumber) triple has already
+ * been processed, preventing double-distillation on replay.
+ */
+export function wasTransferProcessed(
+  tokenId: string,
+  newOwner: string,
+  blockNumber: number
+): boolean {
+  ensureSchema();
+  const row = getDb()
+    .prepare(
+      `SELECT 1 FROM soul_transfers WHERE token_id = ? AND new_owner = ? AND block_number = ?`
+    )
+    .get(String(tokenId), newOwner.toLowerCase(), blockNumber);
+  return row != null;
+}
+
+/**
+ * Mark a transfer as processed so it is never replayed.
+ */
+export function markTransferProcessed(
+  tokenId: string,
+  newOwner: string,
+  blockNumber: number
+): void {
+  ensureSchema();
+  getDb()
+    .prepare(
+      `INSERT OR IGNORE INTO soul_transfers (token_id, new_owner, block_number, processed_at)
+       VALUES (?, ?, ?, ?)`
+    )
+    .run(String(tokenId), newOwner.toLowerCase(), blockNumber, Date.now());
 }
 
 /**
