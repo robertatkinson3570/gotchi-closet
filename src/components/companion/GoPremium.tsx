@@ -21,7 +21,8 @@ export function GoPremium({ onActivated }: { onActivated?: () => void }) {
   const [msg, setMsg] = useState<string | null>(null);
 
   async function buy(days: number, ghst: number) {
-    if (!address || !RECEIVING) { setMsg("premium not configured"); return; }
+    if (!address) { setMsg("connect your wallet first"); return; }
+    if (!RECEIVING || !/^0x[0-9a-fA-F]{40}$/.test(RECEIVING)) { setMsg("premium not configured"); return; }
     setBusy(true); setMsg("confirm the GHST payment in your wallet…");
     try {
       const txHash = await writeContractAsync({

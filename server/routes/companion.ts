@@ -11,10 +11,15 @@ import {
   grantPremium, getEntitlement,
 } from "../companion/db";
 import { verifyGhstPayment } from "../lending/verifyPayment";
-import { getOperatorAddress } from "../lending/relist";
 import { expectedWeiForTier, companionTierFor } from "../companion/pricing";
 
 const router = Router();
+
+// NOTE (v1 limitation): the wallet on /chat is self-reported (no signature/SIWE).
+// The free tier runs on a Groq key so the blast radius is rate-limit abuse only.
+// Before enabling the premium (OpenAI) tier in production, gate it behind a wallet
+// signature so a caller cannot claim another address's premium entitlement and
+// spend the operator's OpenAI key. See the design spec's phase-2 notes.
 
 // crude per-wallet token bucket (in-memory): 30 msgs / 10 min
 const buckets = new Map<string, { count: number; resetAt: number }>();
@@ -24,6 +29,12 @@ function rateLimited(wallet: string): boolean {
   if (!b || b.resetAt < now) { buckets.set(wallet, { count: 1, resetAt: now + 600_000 }); return false; }
   b.count += 1;
   return b.count > 30;
+}
+
+// A remembered fact is prepended to the system prompt, so reject anything that
+// could carry a prompt-injection payload (newlines, brackets/braces/backticks).
+function isSafeFact(fact: string): boolean {
+  return fact.length <= 100 && !/[<>{}\[\]`\n\r]/.test(fact);
 }
 
 router.get("/health", (_req, res) => res.json({ ok: true }));
@@ -67,7 +78,10 @@ router.post("/chat", async (req, res) => {
     appendMessage(wallet, tokenId, "assistant", reply);
 
     const factMatch = masked.match(/\b(i am|i'm|my)\b.{3,80}/i);
-    if (factMatch) upsertFact(wallet, tokenId, factMatch[0].trim());
+    if (factMatch) {
+      const fact = factMatch[0].trim();
+      if (isSafeFact(fact)) upsertFact(wallet, tokenId, fact);
+    }
 
     res.json({ reply, deflected: false, tier });
   } catch (err: any) {
@@ -89,8 +103,10 @@ router.post("/premium/claim", async (req, res) => {
     const expectedWei = expectedWeiForTier(days);
     if (!tier || expectedWei === null) return res.status(400).json({ error: `unsupported term: ${days} days` });
 
-    const operator = process.env.COMPANION_RECEIVING_WALLET || getOperatorAddress();
-    if (!operator) return res.status(503).json({ error: "receiving wallet not configured" });
+    // Require an explicit receiving wallet — never fall back to another module's
+    // hot wallet, which would silently misroute premium GHST payments.
+    const operator = process.env.COMPANION_RECEIVING_WALLET;
+    if (!operator) return res.status(503).json({ error: "COMPANION_RECEIVING_WALLET not configured" });
 
     const verify = await verifyGhstPayment({
       txHash: txHash as `0x${string}`,

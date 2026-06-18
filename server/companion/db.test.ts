@@ -41,4 +41,9 @@ describe("entitlements", () => {
     grantPremium("0xdef", Date.now() - 1000, "0xtx2");
     expect(isPremiumActive("0xdef")).toBe(false);
   });
+
+  it("rejects a replayed payment txHash (idempotency)", () => {
+    grantPremium("0xabc", Date.now() + 86400_000, "0xdup");
+    expect(() => grantPremium("0xabc", Date.now() + 86400_000, "0xdup")).toThrow(/already credited/);
+  });
 });
