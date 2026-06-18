@@ -67,4 +67,24 @@ router.post("/post", async (req, res) => {
   }
 });
 
+router.get("/stream", (req, res) => {
+  res.set({
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache, no-transform",
+    Connection: "keep-alive",
+  });
+  res.flushHeaders?.();
+  res.write(": connected\n\n");
+  sseClients.add(res);
+
+  const heartbeat = setInterval(() => {
+    try { res.write(": ping\n\n"); } catch { /* drop */ }
+  }, 25_000);
+
+  req.on("close", () => {
+    clearInterval(heartbeat);
+    sseClients.delete(res);
+  });
+});
+
 export default router;
