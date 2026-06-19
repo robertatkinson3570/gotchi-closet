@@ -68,11 +68,16 @@ type Auction = {
   startsAt: number;
   endsAt: number;
   buyNowPrice: string;
+  stepMin: string;
+  bidDecimals: string;
+  startBidPrice: string;
+  hammerTimeDuration: number;
+  endsAtOriginal: number;
 };
 
 async function fetchAuctions(): Promise<Auction[]> {
   const now = Math.floor(Date.now() / 1000);
-  const query = `query Live($now: BigInt!){ auctions(first: 200, where: { cancelled: false, claimed: false, endsAt_gt: $now }, orderBy: endsAt, orderDirection: asc){ id type tokenId contractAddress highestBid highestBidder seller totalBids quantity startsAt endsAt buyNowPrice } }`;
+  const query = `query Live($now: BigInt!){ auctions(first: 200, where: { cancelled: false, claimed: false, endsAt_gt: $now }, orderBy: endsAt, orderDirection: asc){ id type tokenId contractAddress highestBid highestBidder seller totalBids quantity startsAt endsAt buyNowPrice stepMin bidDecimals startBidPrice hammerTimeDuration endsAtOriginal } }`;
   const res = await fetch(GBM_BAAZAAR_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -93,7 +98,21 @@ async function fetchAuctions(): Promise<Auction[]> {
     startsAt: Number(a.startsAt),
     endsAt: Number(a.endsAt),
     buyNowPrice: a.buyNowPrice ?? "0",
+    stepMin: a.stepMin ?? "0",
+    bidDecimals: a.bidDecimals ?? "0",
+    startBidPrice: a.startBidPrice ?? "0",
+    hammerTimeDuration: Number(a.hammerTimeDuration) || 0,
+    endsAtOriginal: Number(a.endsAtOriginal) || Number(a.endsAt),
   }));
+}
+
+type Bid = { bidder: string; amount: string; bidTime: number; outbid: boolean };
+async function fetchBids(auctionId: string): Promise<Bid[]> {
+  const q = `{ bids(first: 30, where: { auction: "${auctionId}" }, orderBy: bidTime, orderDirection: desc){ bidder amount bidTime outbid } }`;
+  const res = await fetch(GBM_BAAZAAR_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+  const json = await res.json();
+  if (json.errors) return [];
+  return (json.data?.bids ?? []).map((b: any) => ({ bidder: (b.bidder ?? "").toLowerCase(), amount: b.amount ?? "0", bidTime: Number(b.bidTime), outbid: !!b.outbid }));
 }
 
 // Ended, unclaimed auctions where the connected user is the seller (claim =
@@ -110,7 +129,7 @@ async function fetchClaimable(address: string): Promise<Auction[]> {
   const res = await fetch(GBM_BAAZAAR_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q, variables: { now: String(now), a } }) });
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");
-  const map = (x: any): Auction => ({ id: x.id, type: x.type, tokenId: x.tokenId, contract: (x.contractAddress ?? "").toLowerCase(), highestBid: x.highestBid ?? "0", highestBidder: (x.highestBidder ?? "").toLowerCase(), seller: (x.seller ?? "").toLowerCase(), totalBids: Number(x.totalBids) || 0, quantity: x.quantity ?? "1", startsAt: Number(x.startsAt), endsAt: Number(x.endsAt), buyNowPrice: x.buyNowPrice ?? "0" });
+  const map = (x: any): Auction => ({ id: x.id, type: x.type, tokenId: x.tokenId, contract: (x.contractAddress ?? "").toLowerCase(), highestBid: x.highestBid ?? "0", highestBidder: (x.highestBidder ?? "").toLowerCase(), seller: (x.seller ?? "").toLowerCase(), totalBids: Number(x.totalBids) || 0, quantity: x.quantity ?? "1", startsAt: Number(x.startsAt), endsAt: Number(x.endsAt), buyNowPrice: x.buyNowPrice ?? "0", stepMin: "0", bidDecimals: "0", startBidPrice: "0", hammerTimeDuration: 0, endsAtOriginal: Number(x.endsAt) });
   const seen = new Set<string>();
   const out: Auction[] = [];
   for (const x of [...(json.data?.asSeller ?? []), ...(json.data?.asBidder ?? [])]) {
@@ -398,6 +417,21 @@ function AuctionDetailModal({
   setBidValue: (v: string) => void; onBid: () => void; onBuyNow: () => void; onClose: () => void;
 }) {
   const left = a.endsAt - nowSec;
+  // GBM minimum next bid: ceil(highestBid * (bidDecimals + stepMin) / bidDecimals);
+  // for an auction with no bids yet, the start bid floor (or any positive amount).
+  const minNextWei = useMemo(() => {
+    const hb = BigInt(a.highestBid || "0"), dec = BigInt(a.bidDecimals || "0"), step = BigInt(a.stepMin || "0");
+    if (a.totalBids > 0 && hb > 0n && dec > 0n) return (hb * (dec + step) + dec - 1n) / dec;
+    const sb = BigInt(a.startBidPrice || "0");
+    return sb > 0n ? sb : 1n;
+  }, [a]);
+  const minNext = Number(minNextWei) / 1e18;
+  const stepPct = Number(a.bidDecimals) > 0 ? (Number(a.stepMin) / Number(a.bidDecimals)) * 100 : 0;
+  const inHammer = left > 0 && a.hammerTimeDuration > 0 && left <= a.hammerTimeDuration;
+  const bidNum = Number(bidValue);
+  const bidValid = bidNum > 0 && bidNum >= minNext - 1e-9;
+  useEffect(() => { setBidValue(minNext > 0 ? String(Math.ceil(minNext * 100) / 100) : ""); /* prefill min next on open */ /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [a.id]);
+  const { data: bids } = useQuery({ queryKey: ["auction-bids", a.id], queryFn: () => fetchBids(a.id), staleTime: 30_000 });
   const isGotchi = a.contract === AAVEGOTCHI_DIAMOND_BASE.toLowerCase() && a.type === "erc721";
   const ownerUrl = (addr: string) => `/explorer?owner=${addr}`;
   const Addr = ({ label, addr }: { label: string; addr: string }) => (
@@ -456,14 +490,38 @@ function AuctionDetailModal({
 
           <div className="rounded-lg border border-border/60 p-3 space-y-2">
             <div className="text-sm font-semibold flex items-center gap-1.5"><Gavel className="w-4 h-4 text-primary" /> Place a bid</div>
-            <p className="text-[11px] text-muted-foreground">Bid is signed in your wallet (GHST approval + commitBid on the GBM diamond). Must exceed the current top bid.</p>
+            <p className="text-[11px] text-muted-foreground">
+              Minimum next bid <span className="font-semibold text-foreground">{minNext.toLocaleString(undefined, { maximumFractionDigits: 2 })} GHST</span>
+              {a.totalBids > 0 && stepPct > 0 ? ` (+${stepPct.toFixed(0)}% over the current top bid)` : a.totalBids === 0 ? " (opening bid)" : ""}. Signed in your wallet (GHST approval + commitBid).
+            </p>
             <div className="flex items-center gap-2">
-              <input autoFocus type="number" value={bidValue} onChange={(e) => setBidValue(e.target.value)} placeholder="Amount (GHST)" className="h-10 flex-1 min-w-0 rounded border border-border bg-background px-3 text-sm" />
-              <button disabled={busy || left <= 0} onClick={onBid} className="h-10 px-5 rounded bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 shrink-0 inline-flex items-center gap-1.5">
+              <input autoFocus type="number" value={bidValue} onChange={(e) => setBidValue(e.target.value)} placeholder={`≥ ${minNext}`} className="h-10 flex-1 min-w-0 rounded border border-border bg-background px-3 text-sm" />
+              <button disabled={busy || left <= 0 || !bidValid} onClick={onBid} className="h-10 px-5 rounded bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 shrink-0 inline-flex items-center gap-1.5">
                 {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Bidding…</> : "Place bid"}
               </button>
             </div>
+            {bidValue !== "" && !bidValid && <div className="text-[10px] text-red-500">Below the minimum next bid — a lower bid would revert and waste gas.</div>}
+            {inHammer && <div className="text-[10px] text-amber-500">⏱ Hammer time — a bid now extends the auction by ~{Math.round(a.hammerTimeDuration / 60)} min (anti-snipe).</div>}
           </div>
+
+          {bids && bids.length > 0 && (
+            <div className="rounded-lg border border-border/40">
+              <div className="px-3 py-1.5 text-xs font-semibold border-b border-border/40">Bid history · {bids.length}</div>
+              <div className="max-h-40 overflow-y-auto">
+                <table className="w-full text-[11px]">
+                  <tbody>
+                    {bids.map((b, i) => (
+                      <tr key={i} className="border-b border-border/20 last:border-0">
+                        <td className="px-3 py-1.5"><Link to={`/u/${b.bidder}`} onClick={onClose} className="font-mono text-primary hover:underline">{short(b.bidder)}</Link></td>
+                        <td className="px-3 py-1.5 text-right text-emerald-500 font-semibold">{ghst(b.amount)} GHST</td>
+                        <td className="px-3 py-1.5 text-right text-muted-foreground">{b.outbid ? "outbid" : "leading"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
