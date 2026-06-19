@@ -35,3 +35,9 @@ data/
 
 
 .vercel
+
+# Playwright MCP session dumps (test-time artifacts)
+.playwright-mcp/
+
+# Claude Code local settings/artifacts
+.claude/
