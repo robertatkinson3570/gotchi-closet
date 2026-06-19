@@ -51,6 +51,8 @@ const GBM_ABI = [
   // Settle an ended auction: the seller gets proceeds, the winning bidder gets
   // the asset. Either party calls claim(auctionId) once endsAt has passed.
   { name: "claim", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_auctionId", type: "uint256" }], outputs: [] },
+  // Instantly buy an auction that has a buy-it-now price set.
+  { name: "buyNow", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_auctionId", type: "uint256" }], outputs: [] },
 ] as const;
 
 type Auction = {
@@ -65,11 +67,12 @@ type Auction = {
   quantity: string;
   startsAt: number;
   endsAt: number;
+  buyNowPrice: string;
 };
 
 async function fetchAuctions(): Promise<Auction[]> {
   const now = Math.floor(Date.now() / 1000);
-  const query = `query Live($now: BigInt!){ auctions(first: 200, where: { cancelled: false, claimed: false, endsAt_gt: $now }, orderBy: endsAt, orderDirection: asc){ id type tokenId contractAddress highestBid highestBidder seller totalBids quantity startsAt endsAt } }`;
+  const query = `query Live($now: BigInt!){ auctions(first: 200, where: { cancelled: false, claimed: false, endsAt_gt: $now }, orderBy: endsAt, orderDirection: asc){ id type tokenId contractAddress highestBid highestBidder seller totalBids quantity startsAt endsAt buyNowPrice } }`;
   const res = await fetch(GBM_BAAZAAR_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -89,6 +92,7 @@ async function fetchAuctions(): Promise<Auction[]> {
     quantity: a.quantity ?? "1",
     startsAt: Number(a.startsAt),
     endsAt: Number(a.endsAt),
+    buyNowPrice: a.buyNowPrice ?? "0",
   }));
 }
 
@@ -106,7 +110,7 @@ async function fetchClaimable(address: string): Promise<Auction[]> {
   const res = await fetch(GBM_BAAZAAR_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q, variables: { now: String(now), a } }) });
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");
-  const map = (x: any): Auction => ({ id: x.id, type: x.type, tokenId: x.tokenId, contract: (x.contractAddress ?? "").toLowerCase(), highestBid: x.highestBid ?? "0", highestBidder: (x.highestBidder ?? "").toLowerCase(), seller: (x.seller ?? "").toLowerCase(), totalBids: Number(x.totalBids) || 0, quantity: x.quantity ?? "1", startsAt: Number(x.startsAt), endsAt: Number(x.endsAt) });
+  const map = (x: any): Auction => ({ id: x.id, type: x.type, tokenId: x.tokenId, contract: (x.contractAddress ?? "").toLowerCase(), highestBid: x.highestBid ?? "0", highestBidder: (x.highestBidder ?? "").toLowerCase(), seller: (x.seller ?? "").toLowerCase(), totalBids: Number(x.totalBids) || 0, quantity: x.quantity ?? "1", startsAt: Number(x.startsAt), endsAt: Number(x.endsAt), buyNowPrice: x.buyNowPrice ?? "0" });
   const seen = new Set<string>();
   const out: Auction[] = [];
   for (const x of [...(json.data?.asSeller ?? []), ...(json.data?.asBidder ?? [])]) {
@@ -271,6 +275,30 @@ function AuctionGridInner() {
     }
   };
 
+  const buyItNow = async (a: Auction) => {
+    if (!isConnected || !address || !publicClient) return toast({ title: "Connect wallet", variant: "destructive" });
+    if (!isOnBase) return toast({ title: "Switch to Base", variant: "destructive" });
+    const priceWei = BigInt(a.buyNowPrice || "0");
+    if (priceWei <= 0n) return;
+    setBusyId(a.id);
+    try {
+      const allowance = (await publicClient.readContract({ address: GHST_TOKEN_BASE, abi: ERC20_ABI, functionName: "allowance", args: [address, GBM_DIAMOND_BASE] })) as bigint;
+      if (allowance < priceWei) {
+        const ah = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: GHST_TOKEN_BASE, abi: ERC20_ABI, functionName: "approve", args: [GBM_DIAMOND_BASE, MAX_UINT256] });
+        await publicClient.waitForTransactionReceipt({ hash: ah, confirmations: 1 });
+      }
+      const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: GBM_DIAMOND_BASE, abi: GBM_ABI, functionName: "buyNow", args: [BigInt(a.id)] });
+      await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+      toast({ title: "Bought now", description: `Bought ${assetLabel(a)} #${a.tokenId} for ${ghst(a.buyNowPrice)} GHST.` });
+      setDetail(null);
+      refetch();
+    } catch (e) {
+      toast({ title: "Buy now failed", description: parseRevert(e).slice(0, 160), variant: "destructive" });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   if (error) return <div className="p-4 text-sm text-destructive">{(error as Error).message}</div>;
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   const live = detail ? rows.find((r) => r.id === detail.id) ?? detail : null;
@@ -355,6 +383,7 @@ function AuctionGridInner() {
           bidValue={bidValue}
           setBidValue={setBidValue}
           onBid={() => placeBid(live)}
+          onBuyNow={() => buyItNow(live)}
           onClose={() => setDetail(null)}
         />
       )}
@@ -363,10 +392,10 @@ function AuctionGridInner() {
 }
 
 function AuctionDetailModal({
-  a, nowSec, busy, bidValue, setBidValue, onBid, onClose,
+  a, nowSec, busy, bidValue, setBidValue, onBid, onBuyNow, onClose,
 }: {
   a: Auction; nowSec: number; busy: boolean; bidValue: string;
-  setBidValue: (v: string) => void; onBid: () => void; onClose: () => void;
+  setBidValue: (v: string) => void; onBid: () => void; onBuyNow: () => void; onClose: () => void;
 }) {
   const left = a.endsAt - nowSec;
   const isGotchi = a.contract === AAVEGOTCHI_DIAMOND_BASE.toLowerCase() && a.type === "erc721";
@@ -418,6 +447,12 @@ function AuctionDetailModal({
             <Addr label="Seller" addr={a.seller} />
             <Addr label="Highest bidder" addr={a.highestBidder} />
           </div>
+
+          {Number(a.buyNowPrice) > 0 && left > 0 && (
+            <button disabled={busy} onClick={onBuyNow} className="h-11 w-full rounded-lg bg-amber-500 text-black text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-1.5 hover:bg-amber-400">
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : `Buy now · ${ghst(a.buyNowPrice)} GHST`}
+            </button>
+          )}
 
           <div className="rounded-lg border border-border/60 p-3 space-y-2">
             <div className="text-sm font-semibold flex items-center gap-1.5"><Gavel className="w-4 h-4 text-primary" /> Place a bid</div>

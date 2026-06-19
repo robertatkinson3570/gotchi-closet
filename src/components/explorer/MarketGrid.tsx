@@ -363,9 +363,9 @@ export function MarketGrid({
               )}
               <div className="text-[11px] text-emerald-500 font-semibold text-center">{ghst(l.priceWei)} GHST</div>
               <BuyButton listingId={l.listingId} tokenId={l.tokenId} priceInWei={l.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`#${l.tokenId}`} />
-              {itemKind !== "portal" && itemKind !== "forge" && (
-                <MakeOfferButton kind={kind} category={category} tokenId={l.tokenId} contractAddress={contract} label={`#${l.tokenId}`} compact />
-              )}
+              {/* Buy orders work across categories incl. closed portals (erc721
+                  cat 0) and forge items (erc1155, per-item category). */}
+              <MakeOfferButton kind={kind} category={itemKind === "forge" && l.category != null ? Number(l.category) : category} tokenId={l.tokenId} contractAddress={contract} label={`#${l.tokenId}`} compact />
             </div>
           );
         })}
