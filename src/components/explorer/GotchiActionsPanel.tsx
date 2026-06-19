@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
-import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw, Clock, Lock, FlaskConical, Stamp } from "lucide-react";
+import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw, Clock, Lock, FlaskConical, Stamp, Gavel } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, ESCROW_FACET_ABI, GHST_TOKEN_BASE, LENDING_FACET_ABI } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
@@ -10,6 +10,7 @@ import { EquipWearablesModal } from "@/components/explorer/EquipWearablesModal";
 import { UseConsumablesBody } from "@/components/explorer/UseConsumablesBody";
 import { useBatchTransferEscrow, type EscrowBalance } from "@/hooks/useEscrowWithdraw";
 import { SoulCertificate } from "@/components/soul/SoulCertificate";
+import { CreateAuctionButton } from "@/components/explorer/CreateAuctionButton";
 
 const ACTIONS_ABI = [
   { name: "interact", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_tokenIds", type: "uint256[]" }], outputs: [] },
@@ -300,6 +301,13 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
                 <button disabled={busy} onClick={async () => { await cancelListing(); refetchDetail(); }} className="h-8 w-full rounded border border-border/60 text-xs font-medium text-muted-foreground hover:bg-muted/50 disabled:opacity-50">Cancel my listing</button>
               )}
             </Section>
+
+            {!locked && (
+              <Section icon={<Gavel className="w-4 h-4 text-amber-500" />} title="Auction (GBM)">
+                <p className="text-[11px] text-muted-foreground">Run a timed GBM auction. Your gotchi is escrowed until it settles.</p>
+                <CreateAuctionButton kind="erc721" category={3} tokenId={gotchiId} contractAddress={AAVEGOTCHI_DIAMOND_BASE} label={name || `Gotchi #${gotchiId}`} />
+              </Section>
+            )}
 
             <Section icon={<FlaskConical className="w-4 h-4 text-cyan-500" />} title="Use item (consumables)">
               <UseConsumablesBody gotchiId={gotchiId} />
