@@ -10,6 +10,8 @@ import { useToast } from "@/ui/use-toast";
 import { AssetImage, itemImageCandidates, installationImageCandidates, parcelImageCandidates, tileImageCandidates } from "./AssetImage";
 import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
 import { CreateAuctionButton } from "./CreateAuctionButton";
+import { RecentSales } from "./RecentSales";
+import { ParcelDetailModal } from "@/components/lending/ParcelDetailModal";
 import wearablesData from "../../../data/wearables.json";
 
 type OwnedKind = "item" | "installation" | "parcel" | "tile" | "wearable" | "forge" | "fakegotchi" | "portal" | "fakecard" | "guardian";
@@ -139,6 +141,9 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
   const { toast } = useToast();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sort, setSort] = useState<"id-desc" | "id-asc" | "qty-desc">("id-desc");
+  const [detailId, setDetailId] = useState<string | null>(null); // parcel detail open
+  const [dPrice, setDPrice] = useState("");
+  const [dBusy, setDBusy] = useState<"" | "list" | "cancel">("");
   const [price, setPrice] = useState("");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
@@ -202,6 +207,36 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
     }
   };
 
+  // Single-parcel list / cancel from the detail card.
+  const listOne = async (id: string) => {
+    const p = Number(dPrice);
+    if (!publicClient || !address || !(p > 0)) return;
+    if (!isOnBase) return toast({ title: "Switch to Base", variant: "destructive" });
+    setDBusy("list");
+    try {
+      const wei = BigInt(Math.round(p * 1e6)) * 10n ** 12n;
+      const approved = (await publicClient.readContract({ address: tokenContract, abi: APPROVAL_ABI, functionName: "isApprovedForAll", args: [address, AAVEGOTCHI_DIAMOND_BASE] })) as boolean;
+      if (!approved) { const ah = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: tokenContract, abi: APPROVAL_ABI, functionName: "setApprovalForAll", args: [AAVEGOTCHI_DIAMOND_BASE, true] }); await publicClient.waitForTransactionReceipt({ hash: ah, confirmations: 1 }); }
+      const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ERC721_MARKETPLACE_ABI, functionName: "addERC721Listing", args: [tokenContract, BigInt(id), BigInt(LISTING_CATEGORY[itemKind] ?? 4), wei] });
+      await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+      toast({ title: "Listed", description: `#${id} listed at ${p} GHST.` }); setDPrice(""); refetch();
+    } catch (e) { toast({ title: "List failed", description: parseRevert(e).slice(0, 140), variant: "destructive" }); } finally { setDBusy(""); }
+  };
+  const cancelOne = async (id: string) => {
+    if (!publicClient || !address) return;
+    setDBusy("cancel");
+    try {
+      const cat = LISTING_CATEGORY[itemKind] ?? 4;
+      const q = `{ erc721Listings(first:1, where:{ tokenId:"${id}", seller:"${address.toLowerCase()}", category:${cat}, cancelled:false, timePurchased:"0" }){ id } }`;
+      const r = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+      const lid = (await r.json()).data?.erc721Listings?.[0]?.id;
+      if (!lid) { toast({ title: "No active listing found" }); return; }
+      const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ERC721_MARKETPLACE_ABI, functionName: "cancelERC721Listing", args: [BigInt(lid)] });
+      await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+      toast({ title: "Listing cancelled" }); refetch();
+    } catch (e) { toast({ title: "Cancel failed", description: parseRevert(e).slice(0, 140), variant: "destructive" }); } finally { setDBusy(""); }
+  };
+
   const rows = useMemo(() => {
     const r = [...(owned ?? [])];
     if (sort === "id-asc") r.sort((a, b) => Number(a.id) - Number(b.id));
@@ -253,6 +288,9 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
                   onCreated={refetch}
                 />
               )}
+              {itemKind === "parcel" && (
+                <button type="button" onClick={() => { setDetailId(o.id); setDPrice(""); }} className="h-6 w-full rounded bg-primary/10 text-primary hover:bg-primary/20 text-[9px] font-semibold">Details</button>
+              )}
             </div>
           );
         })}
@@ -267,6 +305,25 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
           </button>
           <button onClick={() => setSelected(new Set())} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
         </div>
+      )}
+
+      {detailId && itemKind === "parcel" && (
+        <ParcelDetailModal
+          parcelId={detailId}
+          onClose={() => setDetailId(null)}
+          marketPanel={(
+            <>
+              <div className="text-sm font-semibold">Sell this parcel</div>
+              <div className="flex items-center gap-1.5">
+                <input type="number" value={dPrice} onChange={(e) => setDPrice(e.target.value)} placeholder="Price (GHST)" className="h-9 flex-1 min-w-0 rounded border border-border bg-background px-2 text-sm" />
+                <button disabled={dBusy !== "" || !(Number(dPrice) > 0)} onClick={() => listOne(detailId)} className="h-9 px-3 rounded bg-emerald-600 text-white text-sm font-semibold disabled:opacity-50 shrink-0">{dBusy === "list" ? "Listing…" : "List"}</button>
+                <button disabled={dBusy !== ""} onClick={() => cancelOne(detailId)} className="h-9 px-3 rounded border border-border/60 text-sm font-medium text-muted-foreground hover:bg-muted/50 disabled:opacity-50 shrink-0">{dBusy === "cancel" ? "…" : "Cancel"}</button>
+              </div>
+              <CreateAuctionButton kind="erc721" category={4} tokenId={detailId} contractAddress={tokenContract} label={`Parcel #${detailId}`} onCreated={refetch} />
+              <RecentSales kind="erc721" tokenId={detailId} />
+            </>
+          )}
+        />
       )}
     </div>
   );
