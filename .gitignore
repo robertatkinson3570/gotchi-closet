@@ -41,3 +41,7 @@ data/
 
 # Claude Code local settings/artifacts
 .claude/
+
+# Playwright test artifacts/reports
+test-results/
+playwright-report/

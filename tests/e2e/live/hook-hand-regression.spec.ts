@@ -48,8 +48,10 @@ const itemTypes = WEARABLE_IDS.map((id) => wearablesById.get(id)).filter(Boolean
 // dnd-kit's PointerSensor has an activation distance (4px); a plain dragAndDrop can
 // fail to start the drag. Do a manual pointer drag with intermediate moves.
 async function dndDrag(page: Page, sourceSelector: string, targetSelector: string) {
-  const source = page.locator(sourceSelector);
-  const target = page.locator(targetSelector);
+  // Editor instances render in a responsive desktop+mobile layout, so slot
+  // testids appear twice (one hidden). Target the visible one.
+  const source = page.locator(`${sourceSelector}:visible`).first();
+  const target = page.locator(`${targetSelector}:visible`).first();
   await source.scrollIntoViewIfNeeded();
   await target.scrollIntoViewIfNeeded();
   const sb = await source.boundingBox();

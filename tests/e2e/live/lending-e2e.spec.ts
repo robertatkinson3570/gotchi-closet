@@ -24,6 +24,13 @@ const BASE = process.env.BASE_URL || "http://localhost:5000";
 // Helpers ---------------------------------------------------------------------
 
 async function gotoPage(page: Page, path: string) {
+  // The Roast Arena backend (/api/roast/*) 500s on the local dev server (needs
+  // prod config). The app handles it gracefully (returns []), but the browser
+  // still logs the failed request, tripping no-console-error assertions. Stub it
+  // so the suite isn't flaky on local-env noise. (Prod serves these fine.)
+  await page.route("**/api/roast/**", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ queue: [], rows: [] }) })
+  );
   await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
 }
 

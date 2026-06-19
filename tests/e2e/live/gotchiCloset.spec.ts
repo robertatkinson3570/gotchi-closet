@@ -113,6 +113,12 @@ async function dndDrag(page: Page, source: Locator, target: Locator) {
 test.beforeEach(async ({ page }) => {
   await seedOwner(page, OWNER_WITH_GOTCHIS);
 
+  // Roast Arena backend 500s on the local dev server (needs prod config); the
+  // app degrades gracefully but the browser logs the failed request. Stub empty.
+  await page.route("**/api/roast/**", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ queue: [], rows: [] }) })
+  );
+
   // CORE subgraph: differentiate the Wearables (itemTypes) query from the
   // GotchisByOwner (user.gotchisOwned) query. Anything else (owner listings,
   // baazaar prices, lent-by-ids, etc.) gets an empty-but-well-formed payload so
@@ -422,7 +428,8 @@ test("invalid drop rejected with toast", async ({ page }) => {
   await dndDrag(page, source, target);
 
   // Rejected: the slot stays empty and an "Invalid Slot" toast appears.
-  await expect(page.getByText("Invalid Slot")).toBeVisible({ timeout: 20000 });
+  // (Toast title + description both contain the text → scope to the first.)
+  await expect(page.getByText("Invalid Slot").first()).toBeVisible({ timeout: 20000 });
   await expect
     .poll(async () => target.getAttribute("data-wearable-id"), { timeout: 5000 })
     .toBe(before || "");
