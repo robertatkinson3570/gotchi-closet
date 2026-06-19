@@ -149,6 +149,7 @@ function KnowledgeBaseModal({ onClose }: { onClose: () => void }) {
  * toggle so addresses, subgraph URLs and labels stay legible.
  */
 const DIAGRAMS = [
+  { id: "all", label: "Everything (one page)", src: "/diagrams/architecture-all.svg", caption: "All five views merged into one comprehensive diagram" },
   { id: "overview", label: "Overview", src: "/diagrams/gotchi-closet-architecture.svg", caption: "Client → Backend → On-chain (Base 8453), with subgraphs & diamond addresses" },
   { id: "soulseal", label: "SoulSeal flow", src: "/diagrams/soulseal-flow.svg", caption: "Seal → EIP-712 attestation → on-chain → public verify" },
   { id: "companion", label: "Companion chat", src: "/diagrams/companion-chat.svg", caption: "Free (Groq) vs premium (OpenAI) with auth / rate-limit / ownership gates" },
@@ -158,7 +159,7 @@ const DIAGRAMS = [
 
 function ArchitectureView() {
   const [fit, setFit] = useState(true);
-  const [active, setActive] = useState<(typeof DIAGRAMS)[number]["id"]>("overview");
+  const [active, setActive] = useState<(typeof DIAGRAMS)[number]["id"]>("all");
   const current = DIAGRAMS.find((d) => d.id === active) ?? DIAGRAMS[0];
 
   return (
