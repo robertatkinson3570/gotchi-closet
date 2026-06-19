@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
-import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw, Clock, Lock, FlaskConical } from "lucide-react";
+import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw, Clock, Lock, FlaskConical, Stamp } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, ESCROW_FACET_ABI, GHST_TOKEN_BASE, LENDING_FACET_ABI } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
@@ -9,6 +9,7 @@ import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { EquipWearablesModal } from "@/components/explorer/EquipWearablesModal";
 import { UseConsumablesBody } from "@/components/explorer/UseConsumablesBody";
 import { useBatchTransferEscrow, type EscrowBalance } from "@/hooks/useEscrowWithdraw";
+import { SoulCertificate } from "@/components/soul/SoulCertificate";
 
 const ACTIONS_ABI = [
   { name: "interact", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_tokenIds", type: "uint256[]" }], outputs: [] },
@@ -56,6 +57,10 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
 
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [equipOpen, setEquipOpen] = useState(false);
+  const [soulOpen, setSoulOpen] = useState(false);
+  // Lent-out gotchis are still owned (sealing works); borrowed ones are not —
+  // only the owner may seal, so hide the seal entry for borrowed gotchis.
+  const isBorrowed = (lockReason ?? "").toLowerCase().includes("borrow");
   const [newName, setNewName] = useState(name ?? "");
   const [sp, setSp] = useState<[string, string, string, string]>(["0", "0", "0", "0"]);
   const [to, setTo] = useState("");
@@ -139,6 +144,15 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
           {!locked && !listed && (
             <button onClick={() => setEquipOpen(true)} className="w-full h-11 rounded-xl bg-gradient-to-r from-primary/20 to-fuchsia-500/20 border border-primary/40 text-primary text-sm font-bold inline-flex items-center justify-center gap-2 hover:from-primary/30 hover:to-fuchsia-500/30 transition-colors">
               <Shirt className="w-4 h-4" /> Equip / change wearables
+            </button>
+          )}
+
+          {/* Soul certificate + on-chain seal — available to the owner even when
+              the gotchi is rented out or listed (sealing is independent of those).
+              Hidden for borrowed gotchis since only the owner can seal. */}
+          {!isBorrowed && (
+            <button onClick={() => setSoulOpen(true)} className="w-full h-11 rounded-xl bg-gradient-to-r from-violet-500/15 to-cyan-500/15 border border-violet-400/40 text-violet-200 text-sm font-bold inline-flex items-center justify-center gap-2 hover:from-violet-500/25 hover:to-cyan-500/25 transition-colors">
+              <Stamp className="w-4 h-4" /> Soul certificate &amp; Seal on Base
             </button>
           )}
 
@@ -253,6 +267,10 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
           numericTraits={numericTraits}
           onClose={() => setEquipOpen(false)}
         />
+      )}
+
+      {soulOpen && (
+        <SoulCertificate tokenId={gotchiId} onClose={() => setSoulOpen(false)} />
       )}
     </div>
   );

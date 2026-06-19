@@ -208,3 +208,80 @@ export async function readOnChainSeal(
     return null;
   }
 }
+
+/**
+ * Batch seal-status read for many tokenIds in a single Multicall3 eth_call.
+ * Returns a map tokenId -> sealed(boolean). Cache-aware: cached ids are served
+ * without RPC, only the unknowns are multicalled. Never throws — missing/failed
+ * ids fail safe to false (unsealed).
+ */
+export async function readOnChainSealsBatch(
+  tokenIds: string[]
+): Promise<Record<string, boolean>> {
+  const out: Record<string, boolean> = {};
+  const sealAddress = getSealAddress();
+  if (!sealAddress || tokenIds.length === 0) return out;
+
+  // De-dupe + serve from cache; collect the ids that still need an RPC read.
+  // A non-numeric id can't be a tokenId — fail it safe individually so one bad
+  // id can never poison the rest of the batch (BigInt() would otherwise throw
+  // while building the multicall args and zero out every other id).
+  const need: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of tokenIds) {
+    const id = String(raw);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    if (!/^\d+$/.test(id)) { out[id] = false; continue; }
+    const cached = _sealCache.get(id);
+    if (cached && cached.expires > Date.now()) out[id] = cached.value !== null;
+    else need.push(id);
+  }
+  if (need.length === 0) return out;
+
+  try {
+    const results = await sealClient().multicall({
+      allowFailure: true,
+      contracts: need.map((id) => ({
+        address: sealAddress as `0x${string}`,
+        abi: GET_SEAL_ABI,
+        functionName: "getSeal",
+        args: [BigInt(id)],
+      })),
+    });
+
+    results.forEach((r, i) => {
+      const id = need[i];
+      if (r.status === "success" && r.result) {
+        const rec = r.result as unknown as {
+          soulHash: `0x${string}`;
+          depthBips: number;
+          soulAgeDays: number;
+          blockNumber: bigint;
+        };
+        const sealed = rec.blockNumber !== 0n;
+        out[id] = sealed;
+        // Keep the cache consistent with readOnChainSeal's shape + TTLs.
+        if (sealed) {
+          _sealCache.set(id, {
+            value: {
+              soulHash: rec.soulHash,
+              depthBips: Number(rec.depthBips),
+              soulAgeDays: Number(rec.soulAgeDays),
+              blockNumber: Number(rec.blockNumber),
+            },
+            expires: Date.now() + SEALED_TTL_MS,
+          });
+        } else {
+          _sealCache.set(id, { value: null, expires: Date.now() + NULL_TTL_MS });
+        }
+      } else {
+        out[id] = false; // fail safe
+      }
+    });
+    return out;
+  } catch {
+    for (const id of need) if (!(id in out)) out[id] = false;
+    return out;
+  }
+}

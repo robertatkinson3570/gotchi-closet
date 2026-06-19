@@ -425,7 +425,7 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
     <AnimatePresence>
       <motion.div
         key="sc-backdrop"
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-8 backdrop-blur-sm"
+        className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/70 px-4 py-8 backdrop-blur-sm"
         initial={prefersReduced ? {} : { opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -433,7 +433,7 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
       >
         <motion.div
           key="sc-panel"
-          className="flex w-full max-w-sm flex-col gap-3"
+          className="flex max-h-[88vh] w-full max-w-sm flex-col gap-3 overflow-y-auto"
           initial={prefersReduced ? {} : { opacity: 0, y: 24, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={prefersReduced ? {} : { opacity: 0, y: 12, scale: 0.97 }}

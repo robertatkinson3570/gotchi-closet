@@ -33,6 +33,8 @@ import { BASE_CHAIN_ID } from "@/lib/chains";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
 import setsData from "../../data/setsByTraitDirection.json";
+import { env } from "@/lib/env";
+import { SoulCertificate } from "@/components/soul/SoulCertificate";
 
 const ADD_LISTING_ABI = [
   { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_category", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
@@ -81,6 +83,7 @@ export default function ExplorerPage() {
   const [mode, setMode] = useState<DataMode>("all");
   const [marketScope, setMarketScope] = useState<"buy" | "owned">("buy");
   const [manage, setManage] = useState<ManageGotchi | null>(null);
+  const [sealGotchi, setSealGotchi] = useState<string | null>(null);
   const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
   const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
@@ -281,6 +284,42 @@ export default function ExplorerPage() {
     );
   }, [gotchis, gotchiFilters.nameContains, gotchiFilters.ownerAddress, mode]);
 
+  // Soul seal status for the currently displayed gotchis (shown on every tab).
+  // One batched multicall on the server; cache-aware so paging only reads new ids.
+  const displayedGotchiIds = useMemo(
+    () => (assetType === "gotchi" ? filteredGotchisBySearch.map((g) => g.tokenId) : []),
+    [assetType, filteredGotchisBySearch]
+  );
+  const { data: sealMap } = useQuery({
+    queryKey: ["seal-status", displayedGotchiIds.join(",")],
+    enabled: assetType === "gotchi" && displayedGotchiIds.length > 0,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    // Keep the previous map while a load-more refetches under a new key, so
+    // badges don't blink off/on as the accumulated id-list grows each page.
+    placeholderData: (prev) => prev,
+    queryFn: async () => {
+      const apiBase = env.companionApiUrl || "";
+      // Deliberate product cap: at most 500 ids per request. Owners rarely hold
+      // >500; on the public "all" tab, cards past 500 simply show no badge.
+      const res = await fetch(`${apiBase}/api/soul/seals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tokenIds: displayedGotchiIds.slice(0, 500) }),
+      });
+      if (!res.ok) return {} as Record<string, boolean>;
+      const j = await res.json();
+      return (j.sealed ?? {}) as Record<string, boolean>;
+    },
+  });
+  const sealStatusFor = useCallback(
+    (g: { tokenId: string }): "sealed" | "unsealed" | null => {
+      if (!sealMap || !(g.tokenId in sealMap)) return null;
+      return sealMap[g.tokenId] ? "sealed" : "unsealed";
+    },
+    [sealMap]
+  );
+
   const filteredWearablesBySearch = useMemo(() => {
     const searchTerm = gotchiFilters.nameContains;
     if (!searchTerm.trim()) return wearables;
@@ -474,6 +513,8 @@ export default function ExplorerPage() {
                 manageLabel={mode === "mine" && selectMode ? "Select" : undefined}
                 selectedFor={mode === "mine" && selectMode ? (g) => selected.has(g.tokenId) : undefined}
                 rentalBadgeFor={mode === "mine" ? (g) => (rentalSets?.lentOut.has(g.tokenId) ? "Rented out" : rentalSets?.borrowed.has(g.tokenId) ? "Borrowed" : null) : undefined}
+                sealStatusFor={sealStatusFor}
+                onSealFor={mode === "mine" ? (g) => (!rentalSets || rentalSets.borrowed.has(g.tokenId) ? undefined : () => setSealGotchi(g.tokenId)) : undefined}
               />
             )
           ) : (
@@ -528,6 +569,7 @@ export default function ExplorerPage() {
       )}
 
       {manage && <GotchiManageModal gotchi={manage} onClose={() => setManage(null)} />}
+      {sealGotchi && <SoulCertificate tokenId={sealGotchi} onClose={() => setSealGotchi(null)} />}
     </div>
   );
 }

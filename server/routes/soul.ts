@@ -9,6 +9,7 @@ import {
   sealConfigured,
   buildSealAttestation,
   readOnChainSeal,
+  readOnChainSealsBatch,
 } from "../soul/seal";
 
 const router = Router();
@@ -116,6 +117,28 @@ router.get("/verify/:tokenId", async (req, res) => {
     });
   } catch (err) {
     console.error("[soul verify route]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /seals — batch seal-status for many tokenIds (one Multicall3 eth_call).
+// Registered before /:tokenId routes. Body: { tokenIds: string[] }.
+// Returns { configured, sealed: { [tokenId]: boolean } }.
+// ---------------------------------------------------------------------------
+
+router.post("/seals", async (req, res) => {
+  try {
+    const raw = (req.body && (req.body as { tokenIds?: unknown }).tokenIds) || [];
+    if (!Array.isArray(raw)) {
+      return res.json({ configured: sealConfigured(), sealed: {} });
+    }
+    // Bound the request: at most 500 ids, coerced to strings, deduped.
+    const ids = Array.from(new Set(raw.map((x) => String(x)))).slice(0, 500);
+    const sealed = await readOnChainSealsBatch(ids);
+    return res.json({ configured: sealConfigured(), sealed });
+  } catch (err) {
+    console.error("[soul seals batch route]", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });

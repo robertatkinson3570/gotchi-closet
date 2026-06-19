@@ -15,11 +15,15 @@ type Props = {
   onLoadMore: () => void;
   onManage?: (g: ExplorerGotchi) => void;
   rentalBadgeFor?: (g: ExplorerGotchi) => string | null;
+  sealStatusFor?: (g: ExplorerGotchi) => "sealed" | "unsealed" | null;
+  // Returns a seal handler for gotchis the connected user may seal (owner, not
+  // borrower), or undefined to show the status non-interactively.
+  onSealFor?: (g: ExplorerGotchi) => (() => void) | undefined;
   manageLabel?: string;
   selectedFor?: (g: ExplorerGotchi) => boolean;
 };
 
-export function ExplorerGrid({ gotchis, loading, hasMore, error, onLoadMore, onManage, rentalBadgeFor, manageLabel, selectedFor }: Props) {
+export function ExplorerGrid({ gotchis, loading, hasMore, error, onLoadMore, onManage, rentalBadgeFor, sealStatusFor, onSealFor, manageLabel, selectedFor }: Props) {
   const loaderRef = useRef<HTMLDivElement>(null);
   const cardRefsRef = useRef<Map<string, HTMLDivElement>>(new Map());
   const { loading: frequencyLoading, getRarities } = useTraitFrequency(gotchis);
@@ -151,6 +155,8 @@ export function ExplorerGrid({ gotchis, loading, hasMore, error, onLoadMore, onM
               manageLabel={manageLabel}
               selected={selectedFor ? selectedFor(gotchi) : undefined}
               rentalBadge={rentalBadgeFor ? rentalBadgeFor(gotchi) : undefined}
+              sealStatus={sealStatusFor ? sealStatusFor(gotchi) : undefined}
+              onSeal={onSealFor ? onSealFor(gotchi) : undefined}
               offerable={!onManage}
             />
           </div>
