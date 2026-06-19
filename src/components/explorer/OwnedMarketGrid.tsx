@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { Loader2, Tag, X } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-import { AAVEGOTCHI_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, REALM_DIAMOND_BASE, TILE_DIAMOND_BASE, FORGE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE, ERC1155_MARKETPLACE_ABI, ERC721_MARKETPLACE_ABI } from "@/lib/lending/contracts";
+import { AAVEGOTCHI_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, REALM_DIAMOND_BASE, TILE_DIAMOND_BASE, FORGE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE, FAKE_CARDS_DIAMOND_BASE, GUARDIAN_SKINS_DIAMOND_BASE, ERC1155_MARKETPLACE_ABI, ERC721_MARKETPLACE_ABI } from "@/lib/lending/contracts";
 import { GOTCHIVERSE_SUBGRAPH, CORE_SUBGRAPH } from "@/lib/subgraph";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
@@ -12,13 +12,25 @@ import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
 import { CreateAuctionButton } from "./CreateAuctionButton";
 import wearablesData from "../../../data/wearables.json";
 
-type OwnedKind = "item" | "installation" | "parcel" | "tile" | "wearable" | "forge" | "fakegotchi" | "portal";
+type OwnedKind = "item" | "installation" | "parcel" | "tile" | "wearable" | "forge" | "fakegotchi" | "portal" | "fakecard" | "guardian";
 type Owned = { id: string; bal: number };
 
-// Baazaar listing category per asset type. Forge items have per-item categories
-// (alloy/essence/cores span 7/8/9/11) so they're auction-only here (no single
-// bulk-list category). FAKE Gotchis list under 5, closed portals under 0.
-const LISTING_CATEGORY: Partial<Record<OwnedKind, number>> = { item: 2, installation: 4, parcel: 4, tile: 5, wearable: 0, fakegotchi: 5, portal: 0 };
+// Baazaar listing category per asset type. Forge items span categories 7/8/9/11
+// by tokenId (see forgeCategory) so they're handled per-item, not via this map.
+// FAKE Gotchis 5, portals 0, FAKE Cards 6, Guardian Skins 12.
+const LISTING_CATEGORY: Partial<Record<OwnedKind, number>> = { item: 2, installation: 4, parcel: 4, tile: 5, wearable: 0, fakegotchi: 5, portal: 0, fakecard: 6, guardian: 12 };
+
+// Forge Baazaar listing category from tokenId (verified from live listings):
+// <1e9 schematic(8), =1e9 alloy(7), 1e9+1..1e9+7 geode(9), >=1e9+8 core(11).
+function forgeCategory(id: number): number {
+  if (id < 1_000_000_000) return 8;
+  if (id === 1_000_000_000) return 7;
+  if (id <= 1_000_000_007) return 9;
+  return 11;
+}
+// Owned-enumeration id ranges for collections that expose only balanceOf/Batch.
+const FAKECARD_IDS = Array.from({ length: 30 }, (_, i) => i);        // 0..29
+const GUARDIAN_IDS = Array.from({ length: 40 }, (_, i) => i + 1);    // 1..40
 // Wearable item ids (category 0) — excluded from the consumable "item" tab.
 const WEARABLE_IDS = new Set<number>((wearablesData as { id: number; category: number }[]).filter((w) => w.category === 0).map((w) => w.id));
 
@@ -39,6 +51,10 @@ const BALANCE_OF_OWNER_ABI = [
 const TOKEN_IDS_OF_OWNER_ABI = [
   { name: "tokenIdsOfOwner", type: "function", stateMutability: "view", inputs: [{ name: "_owner", type: "address" }], outputs: [{ type: "uint32[]" }] },
 ] as const;
+// FAKE Cards / Guardian Skins expose no enumeration — scan a fixed id range.
+const BALANCE_OF_BATCH_ABI = [
+  { name: "balanceOfBatch", type: "function", stateMutability: "view", inputs: [{ name: "accounts", type: "address[]" }, { name: "ids", type: "uint256[]" }], outputs: [{ type: "uint256[]" }] },
+] as const;
 const APPROVAL_ABI = [
   { name: "isApprovedForAll", type: "function", stateMutability: "view", inputs: [{ name: "owner", type: "address" }, { name: "operator", type: "address" }], outputs: [{ type: "bool" }] },
   { name: "setApprovalForAll", type: "function", stateMutability: "nonpayable", inputs: [{ name: "operator", type: "address" }, { name: "approved", type: "bool" }], outputs: [] },
@@ -54,6 +70,8 @@ const TOKEN_CONTRACT: Record<OwnedKind, `0x${string}`> = {
   forge: FORGE_DIAMOND_BASE,
   fakegotchi: FAKE_GOTCHIS_NFT_BASE,
   portal: AAVEGOTCHI_DIAMOND_BASE,
+  fakecard: FAKE_CARDS_DIAMOND_BASE,
+  guardian: GUARDIAN_SKINS_DIAMOND_BASE,
 };
 
 async function fetchOwned(kind: OwnedKind, address: string, publicClient: NonNullable<ReturnType<typeof usePublicClient>>): Promise<Owned[]> {
@@ -87,6 +105,13 @@ async function fetchOwned(kind: OwnedKind, address: string, publicClient: NonNul
     const j = await r.json();
     return (j.data?.portals ?? []).map((p: { tokenId: string }) => ({ id: String(p.tokenId), bal: 1 }));
   }
+  if (kind === "fakecard" || kind === "guardian") {
+    // No on-chain enumeration — scan a fixed id range via balanceOfBatch.
+    const ids = kind === "fakecard" ? FAKECARD_IDS : GUARDIAN_IDS;
+    const addr = address as `0x${string}`;
+    const bals = (await publicClient.readContract({ address: TOKEN_CONTRACT[kind], abi: BALANCE_OF_BATCH_ABI, functionName: "balanceOfBatch", args: [ids.map(() => addr), ids.map((i) => BigInt(i))] })) as unknown as bigint[];
+    return ids.map((id, i) => ({ id: String(id), bal: Number(bals[i] ?? 0n) })).filter((b) => b.bal > 0);
+  }
   const q = `{ parcels(first: 500, where: { owner: "${address}" }){ tokenId } }`;
   const r = await fetch(GOTCHIVERSE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
   const j = await r.json();
@@ -98,9 +123,9 @@ function imgFor(kind: OwnedKind, id: string) {
   if (kind === "parcel") return parcelImageCandidates(id);
   if (kind === "tile") return tileImageCandidates(id);
   if (kind === "wearable") return getWearableIconUrlCandidates(Number(id));
-  // forge items / fakegotchis / portals have no shared brand-SVG endpoint here;
-  // AssetImage falls back to the tile background + #id label.
-  if (kind === "fakegotchi" || kind === "portal") return [] as string[];
+  // forge / fakegotchi / portal / fakecard / guardian have no shared brand-SVG
+  // endpoint here; AssetImage falls back to the tile background + #id label.
+  if (kind === "fakegotchi" || kind === "portal" || kind === "fakecard" || kind === "guardian") return [] as string[];
   return itemImageCandidates(id);
 }
 
@@ -118,9 +143,9 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
 
   const erc721 = itemKind === "parcel" || itemKind === "fakegotchi" || itemKind === "portal";
   const tokenContract = TOKEN_CONTRACT[itemKind];
-  // Bulk-list is available where a single Baazaar listing category applies
-  // (everything except forge, whose items span multiple categories).
-  const canList = LISTING_CATEGORY[itemKind] !== undefined;
+  // Bulk-list is available for everything (forge derives its category per-item
+  // via forgeCategory; all others have a single Baazaar listing category).
+  const canList = itemKind === "forge" || LISTING_CATEGORY[itemKind] !== undefined;
   // Whitelisted GBM auction kinds on Base (verified from live auctions). Wearables
   // and consumable items are NOT GBM-auctionable, so they get no auction button.
   const auctionKind: "erc721" | "erc1155" | null =
@@ -154,7 +179,7 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
       for (const id of ids) {
         try {
           const item = owned?.find((o) => o.id === id);
-          const cat = BigInt(LISTING_CATEGORY[itemKind] ?? 0);
+          const cat = BigInt(itemKind === "forge" ? forgeCategory(Number(id)) : (LISTING_CATEGORY[itemKind] ?? 0));
           const hash = erc721
             ? await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ERC721_MARKETPLACE_ABI, functionName: "addERC721Listing", args: [tokenContract, BigInt(id), cat, wei] })
             : await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ERC1155_MARKETPLACE_ABI, functionName: "setERC1155Listing", args: [tokenContract, BigInt(id), BigInt(item?.bal ?? 1), cat, wei] });

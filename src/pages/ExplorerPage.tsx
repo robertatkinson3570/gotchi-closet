@@ -471,10 +471,10 @@ export default function ExplorerPage() {
               // Owned enumeration verified on-chain for these market categories.
               // The single top-bar All/Owned/Baazaar toggle (mode) drives the view;
               // "mine" = Owned. FAKE Cards / Guardian expose no enumeration yet.
-              const ownable = assetType === "item" || assetType === "installation" || assetType === "parcel" || assetType === "tile" || assetType === "forge" || assetType === "fakegotchi" || assetType === "portal";
+              const ownable = assetType === "item" || assetType === "installation" || assetType === "parcel" || assetType === "tile" || assetType === "forge" || assetType === "fakegotchi" || assetType === "portal" || assetType === "fakecard" || assetType === "guardian";
               if (mode === "mine") {
                 return ownable
-                  ? <OwnedMarketGrid itemKind={assetType as "item" | "installation" | "parcel" | "tile" | "forge" | "fakegotchi" | "portal"} />
+                  ? <OwnedMarketGrid itemKind={assetType as "item" | "installation" | "parcel" | "tile" | "forge" | "fakegotchi" | "portal" | "fakecard" | "guardian"} />
                   : <div className="text-center py-12 text-muted-foreground text-sm">An owned view for this collection isn't available yet — it has no on-chain enumeration. Use the Baazaar tab to browse listings.</div>;
               }
               return <MarketGrid {...MARKET_TABS[assetType]} />;
