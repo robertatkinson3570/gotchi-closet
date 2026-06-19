@@ -20,7 +20,6 @@ const TOKENS = ["FUD", "FOMO", "ALPHA", "KEK"] as const;
 const DEC = BigInt(10) ** BigInt(18);
 
 const whole = (b?: bigint) => ((b ?? 0n) / DEC).toLocaleString();
-const perDay = (b?: bigint) => (((b ?? 0n) * 86400n) / DEC).toLocaleString();
 const when = (u: number) => (u > 0 ? new Date(u * 1000).toLocaleString() : "never");
 
 const DIMS: Record<number, string> = { 0: "8×8", 1: "16×16", 2: "32×64", 3: "64×32", 4: "64×64" };
@@ -282,7 +281,7 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId, market
                         <td className="px-2 py-1.5 font-medium">{t}</td>
                         <td className="px-2 py-1.5 text-right text-emerald-600 dark:text-emerald-400">{whole(detail.available[i])}</td>
                         <td className="px-2 py-1.5 text-right">{whole(detail.remaining[i])}</td>
-                        <td className="px-2 py-1.5 text-right">{perDay(detail.harvestRate[i])}</td>
+                        <td className="px-2 py-1.5 text-right">{whole(detail.harvestRate[i])}</td>
                         <td className="px-2 py-1.5 text-right">{whole(detail.capacity[i])}</td>
                         <td className="px-2 py-1.5 text-right text-muted-foreground">{whole(detail.totalClaimed[i])}</td>
                       </tr>

@@ -37,7 +37,8 @@ export default function ForgePage() {
 
   // Smelting/forging is done BY a gotchi — the user picks which one acts.
   const { gotchis } = useGotchisByOwner(address?.toLowerCase() ?? "");
-  const myGotchis = useMemo(() => (gotchis ?? []).map((g) => ({ id: String(g.gotchiId ?? g.id), name: g.name })).filter((g) => /^\d+$/.test(g.id)), [gotchis]);
+  // Exclude lent-out/locked gotchis — every forge/smelt path is onlyAavegotchiUnlocked and would revert.
+  const myGotchis = useMemo(() => (gotchis ?? []).filter((g) => !(g as { lentOut?: boolean }).lentOut && Number((g as { lending?: number | null }).lending ?? 0) === 0).map((g) => ({ id: String(g.gotchiId ?? g.id), name: g.name })).filter((g) => /^\d+$/.test(g.id)), [gotchis]);
   const myGotchiIds = useMemo(() => new Set(myGotchis.map((g) => g.id)), [myGotchis]);
   const [actor, setActor] = useState<string>("");
   const actorId = actor || myGotchis[0]?.id || "";
@@ -335,15 +336,19 @@ export default function ForgePage() {
         {!forgeBal ? (
           <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
         ) : materials.length === 0 ? (
-          <div className="text-sm text-muted-foreground py-4 text-center rounded-lg border border-border/40">No alloy or cores yet — smelt some wearables to earn materials.</div>
+          <div className="text-sm text-muted-foreground py-4 text-center rounded-lg border border-border/40">No forge materials yet — smelt wearables to earn Alloy, Schematics, Cores & Geodes.</div>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {materials.map((m) => (
-              <div key={m.id} className="rounded-lg border border-border/40 bg-background/60 px-3 py-2 text-center">
-                <div className="text-[10px] text-muted-foreground">Material #{m.id - FORGE_ITEM_MIN}</div>
-                <div className="text-base font-bold tabular-nums">{m.bal.toLocaleString()}</div>
-              </div>
-            ))}
+            {materials.map((m) => {
+              const d = m.id - FORGE_ITEM_MIN;
+              const label = m.id < FORGE_ITEM_MIN ? `Schematic #${m.id}` : d === 0 ? "Alloy" : d === 1 ? "Essence" : d <= 7 ? `Geode #${d - 1}` : `Core #${d - 7}`;
+              return (
+                <div key={m.id} className="rounded-lg border border-border/40 bg-background/60 px-3 py-2 text-center">
+                  <div className="text-[10px] text-muted-foreground">{label}</div>
+                  <div className="text-base font-bold tabular-nums">{m.bal.toLocaleString()}</div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

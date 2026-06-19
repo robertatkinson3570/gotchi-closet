@@ -83,4 +83,5 @@ export function useLendings() {
 
 export function invalidateLendingsCache() {
   cache = null;
+  inflight = null; // also drop any in-flight fetch so a post-tx refetch isn't served stale data
 }
