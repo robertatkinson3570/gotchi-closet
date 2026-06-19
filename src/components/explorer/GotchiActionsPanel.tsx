@@ -104,7 +104,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
     queryKey: ["manage-gotchi-detail", gotchiId],
     staleTime: 30_000,
     queryFn: async () => {
-      const q = `{ aavegotchi(id:"${gotchiId}"){ hauntId level experience kinship baseRarityScore withSetsRarityScore equippedSetName lastInteracted }
+      const q = `{ aavegotchi(id:"${gotchiId}"){ hauntId level experience kinship baseRarityScore withSetsRarityScore equippedSetName lastInteracted createdAt }
         listing: erc721Listings(first:1, where:{ tokenId:"${gotchiId}", category:3, cancelled:false, timePurchased:"0" }){ id priceInWei }
         offer: erc721BuyOrders(first:1, where:{ erc721TokenId:"${gotchiId}", category:3, canceled:false }, orderBy:priceInWei, orderDirection:desc){ id priceInWei buyer } }`;
       const res = await fetch(CORE_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
@@ -249,16 +249,37 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
             </div>
           )}
 
-          {ag && (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              <Stat label="Rarity" value={`${ag.withSetsRarityScore}`} sub={`base ${ag.baseRarityScore}`} />
-              <Stat label="Kinship" value={`${ag.kinship}`} />
-              <Stat label="Level" value={`${ag.level}`} sub={`${Number(ag.experience).toLocaleString()} XP`} />
-              <Stat label="Haunt" value={`H${ag.hauntId}`} />
-              {ag.equippedSetName ? <Stat label="Set" value={ag.equippedSetName} /> : null}
-              {topOfferWei ? <Stat label="Top offer" value={ghstFmt(topOfferWei)} sub="GHST" /> : null}
-            </div>
-          )}
+          {ag && (() => {
+            const lvl = Number(ag.level);
+            const xpNext = Math.max(0, 50 * lvl * lvl - Number(ag.experience)); // 50*L^2 = XP boundary for L+1
+            const ageDays = ag.createdAt ? Math.floor((nowSec - Number(ag.createdAt)) / 86400) : null;
+            const ageLabel = ageDays == null ? null : ageDays >= 730 ? "AANCIENT" : ageDays >= 365 ? "ANCIENT" : ageDays >= 180 ? "OLDE" : ageDays >= 90 ? "YOUNG" : "NEWBORN";
+            const TR = ["NRG", "AGG", "SPK", "BRN", "EYS", "EYC"];
+            return (
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  <Stat label="Rarity" value={`${ag.withSetsRarityScore}`} sub={`base ${ag.baseRarityScore}`} />
+                  <Stat label="Kinship" value={`${ag.kinship}`} />
+                  <Stat label="Level" value={`${lvl}`} sub={lvl >= 99 ? "max" : `${xpNext.toLocaleString()} XP to L${lvl + 1}`} />
+                  <Stat label="Haunt" value={`H${ag.hauntId}`} />
+                  {ageLabel ? <Stat label="Age" value={ageLabel} sub={`~${ageDays}d`} /> : null}
+                  {ag.equippedSetName ? <Stat label="Set" value={ag.equippedSetName} /> : null}
+                  {collateral ? <Stat label="Collateral" value={`${collateral.slice(0, 6)}…${collateral.slice(-4)}`} /> : null}
+                  {topOfferWei ? <Stat label="Top offer" value={ghstFmt(topOfferWei)} sub="GHST" /> : null}
+                </div>
+                {numericTraits && numericTraits.length >= 6 && (
+                  <div className="grid grid-cols-6 gap-1 text-center">
+                    {TR.map((t, i) => (
+                      <div key={t} className="rounded-md bg-muted/40 py-1">
+                        <div className="text-[9px] text-muted-foreground">{t}</div>
+                        <div className="text-xs font-semibold tabular-nums">{numericTraits[i]}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           <div className="grid sm:grid-cols-2 gap-3">
             <Section icon={<Heart className="w-4 h-4 text-rose-500" />} title="Pet (kinship)">
