@@ -375,7 +375,7 @@ export default function ExplorerPage() {
       <ExplorerTopBar
         mode={mode}
         onModeChange={handleModeChange}
-        search={gotchiFilters.ownerAddress || gotchiFilters.nameContains}
+        search={gotchiFilters.ownerAddress || gotchiFilters.nameContains || gotchiFilters.tokenId || ""}
         onSearchChange={handleSearchChange}
         sort={gotchiSort}
         onSortChange={setGotchiSort}
