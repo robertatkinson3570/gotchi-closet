@@ -12,7 +12,9 @@ test('home loads and shows GotchiCloset header', async ({ page }) => {
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
 
-  const header = page.getByRole('heading', { name: 'GotchiCloset' });
+  // The brand is the logo image (alt "GotchiCloset") in the global nav, not an
+  // <h1> heading (the old markup this spec was written against).
+  const header = page.getByRole('img', { name: 'GotchiCloset' }).first();
   const isVisible = await header.isVisible();
 
   if (!isVisible) {
