@@ -9,6 +9,7 @@ import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
 import { AssetImage, itemImageCandidates, installationImageCandidates, parcelImageCandidates, tileImageCandidates } from "./AssetImage";
 import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
+import { CreateAuctionButton } from "./CreateAuctionButton";
 import wearablesData from "../../../data/wearables.json";
 
 type OwnedKind = "item" | "installation" | "parcel" | "tile" | "wearable";
@@ -88,6 +89,10 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
 
   const erc721 = itemKind === "parcel";
   const tokenContract = TOKEN_CONTRACT[itemKind];
+  // Whitelisted GBM auction kinds on Base (verified from live auctions). Wearables
+  // and consumable items are NOT GBM-auctionable, so they get no auction button.
+  const auctionKind: "erc721" | "erc1155" | null =
+    itemKind === "parcel" ? "erc721" : itemKind === "tile" || itemKind === "installation" ? "erc1155" : null;
 
   const { data: owned, isLoading, refetch } = useQuery({
     queryKey: ["owned-market", itemKind, address?.toLowerCase()],
@@ -149,20 +154,32 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
         {rows.map((o) => {
           const sel = selected.has(o.id);
           return (
-            <button
+            <div
               key={o.id}
-              type="button"
-              onClick={() => toggle(o.id)}
-              className={`group rounded-xl border p-2 space-y-1.5 transition-all hover:-translate-y-0.5 text-left ${sel ? "border-emerald-500 ring-2 ring-emerald-500/50 bg-emerald-500/5" : "border-border/40 bg-background/60 hover:border-primary/40"}`}
+              className={`group rounded-xl border p-2 space-y-1.5 transition-all ${sel ? "border-emerald-500 ring-2 ring-emerald-500/50 bg-emerald-500/5" : "border-border/40 bg-background/60 hover:border-primary/40"}`}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-muted-foreground">#{o.id}{o.bal > 1 ? ` ×${o.bal}` : ""}</span>
-                {sel && <span className="text-emerald-500 text-xs">✓</span>}
-              </div>
-              <div className="h-16 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
-                <AssetImage candidates={imgFor(itemKind, o.id)} alt={`#${o.id}`} className="max-h-14 max-w-14 object-contain" />
-              </div>
-            </button>
+              <button type="button" onClick={() => toggle(o.id)} className="w-full text-left space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono text-muted-foreground">#{o.id}{o.bal > 1 ? ` ×${o.bal}` : ""}</span>
+                  {sel ? <span className="text-emerald-500 text-xs">✓ list</span> : <span className="text-[9px] text-muted-foreground opacity-0 group-hover:opacity-100">tap to list</span>}
+                </div>
+                <div className="h-16 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
+                  <AssetImage candidates={imgFor(itemKind, o.id)} alt={`#${o.id}`} className="max-h-14 max-w-14 object-contain" />
+                </div>
+              </button>
+              {auctionKind && (
+                <CreateAuctionButton
+                  kind={auctionKind}
+                  category={4}
+                  tokenId={o.id}
+                  contractAddress={tokenContract}
+                  label={`${itemKind} #${o.id}`}
+                  maxQuantity={o.bal}
+                  compact
+                  onCreated={refetch}
+                />
+              )}
+            </div>
           );
         })}
       </div>
