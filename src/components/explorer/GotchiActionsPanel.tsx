@@ -501,7 +501,7 @@ function EndRentalBody({ gotchiId }: { gotchiId: string }) {
     queryKey: ["gotchi-active-lending", gotchiId],
     staleTime: 30_000,
     queryFn: async () => {
-      const q = `{ gotchiLendings(first:1, where:{ gotchiTokenId:"${gotchiId}", completed:false, cancelled:false }){ timeAgreed period borrower } }`;
+      const q = `{ gotchiLendings(first:1, where:{ gotchiTokenId:"${gotchiId}", completed:false, cancelled:false }){ timeAgreed period borrower splitOwner splitBorrower splitOther upfrontCost } }`;
       const res = await fetch(CORE_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
       const j = await res.json();
       return j.data?.gotchiLendings?.[0] ?? null;
@@ -531,6 +531,13 @@ function EndRentalBody({ gotchiId }: { gotchiId: string }) {
   return (
     <div className="rounded-lg border border-amber-500/40 p-3 space-y-2 sm:col-span-2">
       <div className="flex items-center gap-1.5 text-sm font-semibold"><Clock className="w-4 h-4 text-amber-500" /> Rented out</div>
+      {lending.borrower && (
+        <div className="grid grid-cols-2 gap-2 text-[11px]">
+          <div className="rounded bg-muted/30 px-2 py-1.5"><span className="text-muted-foreground">Borrower </span><Link to={`/u/${String(lending.borrower).toLowerCase()}`} className="font-mono text-primary hover:underline">{String(lending.borrower).slice(0, 6)}…{String(lending.borrower).slice(-4)}</Link></div>
+          <div className="rounded bg-muted/30 px-2 py-1.5"><span className="text-muted-foreground">Split </span><span className="font-semibold">{lending.splitOwner ?? "?"}/{lending.splitBorrower ?? "?"}{Number(lending.splitOther) > 0 ? `/${lending.splitOther}` : ""}</span></div>
+          {Number(lending.upfrontCost) > 0 && <div className="rounded bg-muted/30 px-2 py-1.5 col-span-2"><span className="text-muted-foreground">Upfront </span><span className="font-semibold text-emerald-500">{ghstFmt(String(lending.upfrontCost))} GHST</span></div>}
+        </div>
+      )}
       <p className="text-[11px] text-muted-foreground">{expired ? `Rental period ended ${endDate}. You can end it now to reclaim your gotchi and the final revenue split.` : `Rented until ${endDate}. You can end it once the period elapses.`}</p>
       <button disabled={busy || !expired || !address} onClick={endRental} className="h-9 w-full rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/40 text-sm font-semibold disabled:opacity-50">
         {busy ? "Ending…" : expired ? "End rental" : "Rental still active"}
