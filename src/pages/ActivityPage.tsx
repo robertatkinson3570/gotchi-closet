@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Activity, Loader2, ArrowRightLeft, MapPin, X, Tag, Gavel, HandCoins, BarChart3 } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
+import { shortAddress as short } from "@/lib/format";
 import { CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE, WEARABLE_DIAMOND_BASE, FORGE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE } from "@/lib/lending/contracts";
 import { GBM_SUBGRAPH } from "@/lib/subgraph";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
@@ -163,7 +164,6 @@ async function fetchAuctions(): Promise<Row[]> {
   return enrichGotchiArt(rows);
 }
 
-const short = (a?: string) => (a && a !== "0x0000000000000000000000000000000000000000" ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—");
 // Show decimals for sub-1-GHST values so small offers (e.g. 0.019 GHST) don't
 // render as a misleading "0 GHST"; whole-GHST amounts stay clean (no decimals).
 const ghst = (wei: string) => {

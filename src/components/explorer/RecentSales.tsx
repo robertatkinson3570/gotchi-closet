@@ -2,11 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { CORE_SUBGRAPH } from "@/lib/subgraph";
+import { shortAddress as short } from "@/lib/format";
 
 type Sale = { seller: string; buyer?: string; priceWei: string; time: number };
 
-const ZERO = "0x0000000000000000000000000000000000000000";
-const short = (a?: string) => (a && a !== ZERO ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—");
 const ghst = (wei: string) => {
   const v = Number(wei) / 1e18;
   if (v > 0 && v < 1) return v.toLocaleString(undefined, { maximumFractionDigits: 4 });

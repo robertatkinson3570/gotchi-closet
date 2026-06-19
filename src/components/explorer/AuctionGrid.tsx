@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { qk } from "@/lib/queryKeys";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { shortAddress as short } from "@/lib/format";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { Loader2, X } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
@@ -139,7 +140,6 @@ async function fetchClaimable(address: string): Promise<Auction[]> {
 }
 
 const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
-const short = (a: string) => (a && a !== ZERO_ADDR ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—");
 
 // Best-effort human label for what's being auctioned, from contract + token type.
 function assetLabel(a: Auction): string {

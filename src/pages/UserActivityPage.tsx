@@ -5,6 +5,7 @@ import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi
 import { Loader2, Tag, HandCoins, Gavel, ShoppingCart, Receipt, Coins, Inbox } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
+import { shortAddress as short } from "@/lib/format";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE, GBM_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE, WEARABLE_DIAMOND_BASE, FORGE_DIAMOND_BASE, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
 import { CORE_SUBGRAPH, GBM_SUBGRAPH, GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
@@ -49,7 +50,6 @@ const GBM_MANAGE_ABI = [
 ] as const;
 
 const ZERO = "0x0000000000000000000000000000000000000000";
-const short = (a?: string) => (a && a !== ZERO ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—");
 const ghst = (wei: string) => {
   const v = Number(wei) / 1e18;
   if (v > 0 && v < 1) return v.toLocaleString(undefined, { maximumFractionDigits: 4 });

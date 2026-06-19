@@ -101,6 +101,7 @@ export const HISTORICAL_LENDINGS = gql`
         collateral
         numericTraits
         modifiedNumericTraits
+        withSetsNumericTraits
         equippedWearables
       }
     }

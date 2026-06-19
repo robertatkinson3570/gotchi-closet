@@ -58,11 +58,11 @@ export function BulkEditModal({ listings, onClose }: Props) {
   // "set" = override with the value entered below. Defaults to "keep" when
   // values differ across selections, "set" when they all match.
   const initial = useMemo(() => {
-    const periods = unique(listings.map((l) => l.period));
-    const upfronts = unique(listings.map((l) => l.upfrontCost));
-    const splitOwners = unique(listings.map((l) => l.splitOwner));
-    const whitelists = unique(listings.map((l) => l.whitelistId ?? "0"));
-    const channellings = unique(listings.map((l) => l.channellingAllowed));
+    const periods = [...new Set(listings.map((l) => l.period))];
+    const upfronts = [...new Set(listings.map((l) => l.upfrontCost))];
+    const splitOwners = [...new Set(listings.map((l) => l.splitOwner))];
+    const whitelists = [...new Set(listings.map((l) => l.whitelistId ?? "0"))];
+    const channellings = [...new Set(listings.map((l) => l.channellingAllowed))];
     return {
       period: periods.length === 1 ? periods[0] : 7 * 86400,
       periodMode: (periods.length === 1 ? "set" : "keep") as FieldMode,
@@ -596,17 +596,4 @@ function Step({
       </div>
     </div>
   );
-}
-
-function unique<T>(arr: T[]): T[] {
-  const seen = new Set<string>();
-  const out: T[] = [];
-  for (const v of arr) {
-    const k = String(v);
-    if (!seen.has(k)) {
-      seen.add(k);
-      out.push(v);
-    }
-  }
-  return out;
 }
