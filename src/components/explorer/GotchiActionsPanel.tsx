@@ -19,6 +19,10 @@ const ACTIONS_ABI = [
   { name: "decreaseAndDestroy", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_tokenId", type: "uint256" }, { name: "_toId", type: "uint256" }], outputs: [] },
   { name: "safeTransferFrom", type: "function", stateMutability: "nonpayable", inputs: [{ name: "from", type: "address" }, { name: "to", type: "address" }, { name: "tokenId", type: "uint256" }], outputs: [] },
   { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_category", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
+  // Fill a buy order on this gotchi (sell to the highest offerer). Verified sig.
+  { name: "executeERC721BuyOrder", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_buyOrderId", type: "uint256" }, { name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
+  { name: "isApprovedForAll", type: "function", stateMutability: "view", inputs: [{ name: "owner", type: "address" }, { name: "operator", type: "address" }], outputs: [{ type: "bool" }] },
+  { name: "setApprovalForAll", type: "function", stateMutability: "nonpayable", inputs: [{ name: "operator", type: "address" }, { name: "approved", type: "bool" }], outputs: [] },
   { name: "cancelERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_listingId", type: "uint256" }], outputs: [] },
   // Respec: resets the gotchi's traits to base and refunds all spent skill
   // points. First respec per gotchi is free; subsequent ones charge a fee
@@ -102,7 +106,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
     queryFn: async () => {
       const q = `{ aavegotchi(id:"${gotchiId}"){ hauntId level experience kinship baseRarityScore withSetsRarityScore equippedSetName lastInteracted }
         listing: erc721Listings(first:1, where:{ tokenId:"${gotchiId}", category:3, cancelled:false, timePurchased:"0" }){ id priceInWei }
-        offer: erc721BuyOrders(first:1, where:{ erc721TokenId:"${gotchiId}", category:3, canceled:false }, orderBy:priceInWei, orderDirection:desc){ priceInWei } }`;
+        offer: erc721BuyOrders(first:1, where:{ erc721TokenId:"${gotchiId}", category:3, canceled:false }, orderBy:priceInWei, orderDirection:desc){ id priceInWei buyer } }`;
       const res = await fetch(CORE_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
       const j = await res.json();
       return j.data ?? null;
@@ -110,7 +114,8 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
   });
   const ag = detail?.aavegotchi;
   const activeListing = detail?.listing?.[0] as { id: string; priceInWei: string } | undefined;
-  const topOfferWei = detail?.offer?.[0]?.priceInWei as string | undefined;
+  const topOffer = detail?.offer?.[0] as { id: string; priceInWei: string; buyer: string } | undefined;
+  const topOfferWei = topOffer?.priceInWei;
 
   // Pet cooldown countdown (ticks every 30s).
   const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
@@ -143,6 +148,25 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
       const lid = json.data?.erc721Listings?.[0]?.id;
       if (!lid) return setStatus({ kind: "err", label: "No open listing found for this gotchi" });
       await run("Cancel listing", "cancelERC721Listing", [BigInt(lid)]);
+    } catch (e) {
+      setStatus({ kind: "err", label: parseRevert(e).slice(0, 140) });
+    }
+  };
+
+  // Sell this gotchi to the highest open buy order (approve the diamond, then
+  // executeERC721BuyOrder). The buyer's escrowed GHST is released to you.
+  const acceptOffer = async () => {
+    if (!topOffer || !isConnected || !address || !publicClient) return setStatus({ kind: "err", label: "No offer to accept" });
+    if (!isOnBase) return setStatus({ kind: "err", label: "Switch to Base" });
+    try {
+      const approved = (await publicClient.readContract({ address: AAVEGOTCHI_DIAMOND_BASE, abi: ACTIONS_ABI, functionName: "isApprovedForAll", args: [address, AAVEGOTCHI_DIAMOND_BASE] })) as boolean;
+      if (!approved) {
+        setStatus({ kind: "busy", label: "Approve transfer…" });
+        const ah = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ACTIONS_ABI, functionName: "setApprovalForAll", args: [AAVEGOTCHI_DIAMOND_BASE, true] });
+        await publicClient.waitForTransactionReceipt({ hash: ah, confirmations: 1 });
+      }
+      await run("Accept offer", "executeERC721BuyOrder", [BigInt(topOffer.id), AAVEGOTCHI_DIAMOND_BASE, id, BigInt(topOffer.priceInWei)]);
+      refetchDetail();
     } catch (e) {
       setStatus({ kind: "err", label: parseRevert(e).slice(0, 140) });
     }
@@ -299,6 +323,11 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
               </div>
               {activeListing && (
                 <button disabled={busy} onClick={async () => { await cancelListing(); refetchDetail(); }} className="h-8 w-full rounded border border-border/60 text-xs font-medium text-muted-foreground hover:bg-muted/50 disabled:opacity-50">Cancel my listing</button>
+              )}
+              {topOffer && !locked && (
+                <button disabled={busy} onClick={acceptOffer} className="h-8 w-full rounded bg-emerald-600/90 text-white text-xs font-semibold hover:bg-emerald-600 disabled:opacity-50">
+                  Accept top offer · {ghstFmt(topOffer.priceInWei)} GHST
+                </button>
               )}
             </Section>
 
