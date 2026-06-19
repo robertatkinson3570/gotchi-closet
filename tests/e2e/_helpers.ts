@@ -21,6 +21,13 @@ export async function stubNetwork(page: Page) {
     if (u.includes("goldsky.com") || u.includes("/api/")) return route.fallback();
     return route.abort();
   });
+  // Public arena pages (/g, /arena) hit a backend API. Registered last so it
+  // wins precedence: return 404 so they render their not-found state instead of
+  // receiving the generic SVG-shaped /api/** stub (which would slip past the
+  // null guard and crash on the malformed body).
+  await page.route("**/api/arena/**", (route) =>
+    route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: "not_found" }) })
+  );
 }
 
 /** Collect uncaught page errors so a spec can assert the page never threw. */
