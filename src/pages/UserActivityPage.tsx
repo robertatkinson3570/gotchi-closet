@@ -2,12 +2,12 @@ import { useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
-import { Loader2, Tag, HandCoins, Gavel, ShoppingCart, Receipt, Coins } from "lucide-react";
+import { Loader2, Tag, HandCoins, Gavel, ShoppingCart, Receipt, Coins, Inbox } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-import { AAVEGOTCHI_DIAMOND_BASE, GBM_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
-import { CORE_SUBGRAPH, GBM_SUBGRAPH } from "@/lib/subgraph";
+import { AAVEGOTCHI_DIAMOND_BASE, GBM_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
+import { CORE_SUBGRAPH, GBM_SUBGRAPH, GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "@/components/explorer/AssetImage";
@@ -20,7 +20,29 @@ const MARKET_ABI = [
   { name: "cancelERC1155Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_listingId", type: "uint256" }], outputs: [] },
   { name: "cancelERC721BuyOrder", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_buyOrderId", type: "uint256" }], outputs: [] },
   { name: "cancelERC1155BuyOrder", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_buyOrderId", type: "uint256" }], outputs: [] },
+  // Re-pricing an active listing = call add/set again with the new price (the
+  // diamond updates the existing listing in place).
+  { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_category", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
+  { name: "setERC1155Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc1155TokenAddress", type: "address" }, { name: "_erc1155TypeId", type: "uint256" }, { name: "_quantity", type: "uint256" }, { name: "_category", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
+  // Fill a buy order made on an asset you own (accept an offer).
+  { name: "executeERC721BuyOrder", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_buyOrderId", type: "uint256" }, { name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
+  { name: "executeERC1155BuyOrder", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_buyOrderId", type: "uint256" }, { name: "_erc1155TokenAddress", type: "address" }, { name: "_erc1155TokenId", type: "uint256" }, { name: "_category", type: "uint256" }, { name: "_priceInWei", type: "uint256" }, { name: "_quantity", type: "uint256" }], outputs: [] },
+  { name: "isApprovedForAll", type: "function", stateMutability: "view", inputs: [{ name: "owner", type: "address" }, { name: "operator", type: "address" }], outputs: [{ type: "bool" }] },
+  { name: "setApprovalForAll", type: "function", stateMutability: "nonpayable", inputs: [{ name: "operator", type: "address" }, { name: "approved", type: "bool" }], outputs: [] },
 ] as const;
+
+// Token contract that holds an asset, by (kind, baazaar category). Needed for
+// re-pricing (add/set listing) and accepting offers (execute buy order).
+function contractFor(kind: "erc721" | "erc1155", category: number): `0x${string}` {
+  if (kind === "erc721") {
+    if (category === BAAZAAR_CATEGORY.REALM) return REALM_DIAMOND_BASE;       // parcel
+    if (category === 5) return FAKE_GOTCHIS_NFT_BASE;                          // fake gotchi
+    return AAVEGOTCHI_DIAMOND_BASE;                                            // gotchi (3) / portal (0)
+  }
+  if (category === BAAZAAR_CATEGORY.INSTALLATION) return INSTALLATION_DIAMOND_BASE;
+  if (category === BAAZAAR_CATEGORY.TILE) return TILE_DIAMOND_BASE;
+  return AAVEGOTCHI_DIAMOND_BASE;                                             // wearable (0) / item (2)
+}
 const GBM_MANAGE_ABI = [
   { name: "claim", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_auctionID", type: "uint256" }], outputs: [] },
   { name: "cancelAuction", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_auctionID", type: "uint256" }], outputs: [] },
@@ -46,7 +68,7 @@ async function gql(url: string, query: string, variables?: any) {
   return json.data;
 }
 
-type TabKey = "listings" | "offers" | "auctions" | "bids" | "purchases" | "sales";
+type TabKey = "listings" | "offers" | "received" | "auctions" | "bids" | "purchases" | "sales";
 type Item = {
   id: string;
   refId: string;
@@ -59,7 +81,7 @@ type Item = {
   counterparty?: string;
   time: number;
   status?: string;
-  action?: "cancelListing" | "cancelOffer" | "claim" | "cancelAuction";
+  action?: "cancelListing" | "cancelOffer" | "claim" | "cancelAuction" | "acceptOffer";
   auctionType?: string;
 };
 
@@ -129,13 +151,12 @@ async function fetchBids(addr: string): Promise<Item[]> {
 }
 
 async function fetchPurchases(addr: string): Promise<Item[]> {
+  // erc1155Listings has no per-buyer field (a listing can be partially sold to
+  // many buyers), so erc1155 purchase-by-buyer history isn't queryable here.
   const d = await gql(CORE_SUBGRAPH, `query($a: String!){
-    erc721Listings(first: 150, where: { buyer: $a, timePurchased_gt: "0" }, orderBy: timePurchased, orderDirection: desc){ id category tokenId priceInWei seller timePurchased }
-    erc1155Listings(first: 150, where: { buyer: $a, sold: true }, orderBy: timeLastPurchased, orderDirection: desc){ id category erc1155TypeId quantity priceInWei seller timeLastPurchased }
+    erc721Listings(first: 200, where: { buyer: $a, timePurchased_gt: "0" }, orderBy: timePurchased, orderDirection: desc){ id category tokenId priceInWei seller timePurchased }
   }`, { a: addr });
-  const a: Item[] = (d?.erc721Listings ?? []).map((l: any) => ({ id: `p721-${l.id}`, refId: l.id, kind: "erc721" as const, category: Number(l.category), tokenId: l.tokenId, quantity: 1, priceWei: l.priceInWei, counterparty: l.seller, time: Number(l.timePurchased) }));
-  const b: Item[] = (d?.erc1155Listings ?? []).map((l: any) => ({ id: `p1155-${l.id}`, refId: l.id, kind: "erc1155" as const, category: Number(l.category), tokenId: l.erc1155TypeId, quantity: Number(l.quantity) || 1, priceWei: l.priceInWei, counterparty: l.seller, time: Number(l.timeLastPurchased) }));
-  return [...a, ...b].sort((x, y) => y.time - x.time);
+  return (d?.erc721Listings ?? []).map((l: any) => ({ id: `p721-${l.id}`, refId: l.id, kind: "erc721" as const, category: Number(l.category), tokenId: l.tokenId, quantity: 1, priceWei: l.priceInWei, counterparty: l.seller, time: Number(l.timePurchased) }));
 }
 
 async function fetchSales(addr: string): Promise<Item[]> {
@@ -148,12 +169,35 @@ async function fetchSales(addr: string): Promise<Item[]> {
   return [...a, ...b].sort((x, y) => y.time - x.time);
 }
 
+// Offers RECEIVED: open buy orders placed on erc721 assets this address owns
+// (gotchis via core, parcels via gotchiverse) — actionable with Accept.
+async function fetchOffersReceived(addr: string): Promise<Item[]> {
+  const [core, gv] = await Promise.all([
+    gql(CORE_SUBGRAPH, `query($a: String!){ aavegotchis(first: 1000, where: { owner: $a }){ id } }`, { a: addr }),
+    gql(GOTCHIVERSE_SUBGRAPH, `query($a: String!){ parcels(first: 1000, where: { owner: $a }){ tokenId } }`, { a: addr }).catch(() => ({})),
+  ]);
+  const gids: string[] = (core?.aavegotchis ?? []).map((g: any) => String(g.id));
+  const pids: string[] = (gv?.parcels ?? []).map((p: any) => String(p.tokenId));
+  if (!gids.length && !pids.length) return [];
+  const inList = (arr: string[]) => arr.map((i) => `"${i}"`).join(",");
+  const parts: string[] = [];
+  if (gids.length) parts.push(`g: erc721BuyOrders(first: 400, where: { category: 3, canceled: false, erc721TokenId_in: [${inList(gids)}] }){ id category erc721TokenId priceInWei buyer createdAt duration executedAt }`);
+  if (pids.length) parts.push(`p: erc721BuyOrders(first: 400, where: { category: 4, canceled: false, erc721TokenId_in: [${inList(pids)}] }){ id category erc721TokenId priceInWei buyer createdAt duration executedAt }`);
+  const d = await gql(CORE_SUBGRAPH, `query{ ${parts.join("\n")} }`);
+  const now = Math.floor(Date.now() / 1000);
+  const raw = [...(d?.g ?? []), ...(d?.p ?? [])].filter((o: any) => o.executedAt == null && (Number(o.duration) === 0 || Number(o.createdAt) + Number(o.duration) > now));
+  return raw
+    .map((o: any) => ({ id: `recv-${o.id}`, refId: o.id, kind: "erc721" as const, category: Number(o.category), tokenId: o.erc721TokenId, quantity: 1, priceWei: o.priceInWei, counterparty: o.buyer, time: Number(o.createdAt), status: "Offer received", action: "acceptOffer" as const }))
+    .sort((x, y) => Number(y.priceWei) - Number(x.priceWei));
+}
+
 const FETCHERS: Record<TabKey, (a: string) => Promise<Item[]>> = {
-  listings: fetchListings, offers: fetchOffersMade, auctions: fetchAuctionsCreated, bids: fetchBids, purchases: fetchPurchases, sales: fetchSales,
+  listings: fetchListings, offers: fetchOffersMade, received: fetchOffersReceived, auctions: fetchAuctionsCreated, bids: fetchBids, purchases: fetchPurchases, sales: fetchSales,
 };
 const TABS: { key: TabKey; label: string; icon: typeof Tag }[] = [
   { key: "listings", label: "Listings", icon: Tag },
   { key: "offers", label: "Offers made", icon: HandCoins },
+  { key: "received", label: "Offers received", icon: Inbox },
   { key: "auctions", label: "Auctions", icon: Gavel },
   { key: "bids", label: "Bids", icon: Gavel },
   { key: "purchases", label: "Purchases", icon: ShoppingCart },
@@ -199,6 +243,8 @@ export default function UserActivityPage() {
 
   const [tab, setTab] = useState<TabKey>("listings");
   const [busy, setBusy] = useState<string | null>(null);
+  const [editPrice, setEditPrice] = useState<Record<string, string>>({});
+  const [catFilter, setCatFilter] = useState<string>("all");
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["user-activity", tab, routeAddr],
@@ -207,7 +253,11 @@ export default function UserActivityPage() {
     queryFn: () => FETCHERS[tab](routeAddr!),
   });
 
-  const rows = useMemo(() => data ?? [], [data]);
+  const rows = useMemo(() => {
+    const all = data ?? [];
+    return catFilter === "all" ? all : all.filter((it) => catLabel(it) === catFilter);
+  }, [data, catFilter]);
+  const CAT_FILTERS = ["all", "Gotchi", "Wearable", "Item", "Parcel", "Tile", "Installation"];
 
   const runAction = async (it: Item) => {
     if (!isSelf || !it.action || !publicClient) return;
@@ -221,11 +271,19 @@ export default function UserActivityPage() {
         hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: MARKET_ABI, functionName: it.kind === "erc721" ? "cancelERC721BuyOrder" : "cancelERC1155BuyOrder", args: [BigInt(it.refId)] });
       } else if (it.action === "claim") {
         hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: GBM_DIAMOND_BASE, abi: GBM_MANAGE_ABI, functionName: "claim", args: [BigInt(it.refId)] });
+      } else if (it.action === "acceptOffer") {
+        const tokenContract = contractFor(it.kind, it.category);
+        const approved = (await publicClient.readContract({ address: tokenContract, abi: MARKET_ABI, functionName: "isApprovedForAll", args: [connected as `0x${string}`, AAVEGOTCHI_DIAMOND_BASE] })) as boolean;
+        if (!approved) {
+          const ah = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: tokenContract, abi: MARKET_ABI, functionName: "setApprovalForAll", args: [AAVEGOTCHI_DIAMOND_BASE, true] });
+          await publicClient.waitForTransactionReceipt({ hash: ah, confirmations: 1 });
+        }
+        hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: MARKET_ABI, functionName: "executeERC721BuyOrder", args: [BigInt(it.refId), tokenContract, BigInt(it.tokenId), BigInt(it.priceWei)] });
       } else {
         hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: GBM_DIAMOND_BASE, abi: GBM_MANAGE_ABI, functionName: "cancelAuction", args: [BigInt(it.refId)] });
       }
       await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
-      const labels: Record<string, string> = { cancelListing: "Listing cancelled", cancelOffer: "Offer cancelled — GHST refunded", claim: "Auction claimed", cancelAuction: "Auction cancelled" };
+      const labels: Record<string, string> = { cancelListing: "Listing cancelled", cancelOffer: "Offer cancelled — GHST refunded", claim: "Auction claimed", cancelAuction: "Auction cancelled", acceptOffer: "Offer accepted — sold" };
       toast({ title: labels[it.action] });
       refetch();
     } catch (e) {
@@ -235,7 +293,28 @@ export default function UserActivityPage() {
     }
   };
 
-  const actionLabel: Record<NonNullable<Item["action"]>, string> = { cancelListing: "Cancel", cancelOffer: "Cancel", claim: "Claim", cancelAuction: "Cancel" };
+  const actionLabel: Record<NonNullable<Item["action"]>, string> = { cancelListing: "Cancel", cancelOffer: "Cancel", claim: "Claim", cancelAuction: "Cancel", acceptOffer: "Accept" };
+
+  // Re-price an active listing in place (add/set listing with the new price).
+  const updateListing = async (it: Item) => {
+    const p = Number(editPrice[it.id]);
+    if (!isSelf || !publicClient || !(p > 0)) return;
+    if (!isOnBase) return toast({ title: "Switch to Base", variant: "destructive" });
+    setBusy(it.id);
+    try {
+      const wei = BigInt(Math.round(p * 1e6)) * 10n ** 12n;
+      const tokenContract = contractFor(it.kind, it.category);
+      const hash = it.kind === "erc721"
+        ? await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: MARKET_ABI, functionName: "addERC721Listing", args: [tokenContract, BigInt(it.tokenId), BigInt(it.category), wei] })
+        : await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: MARKET_ABI, functionName: "setERC1155Listing", args: [tokenContract, BigInt(it.tokenId), BigInt(it.quantity), BigInt(it.category), wei] });
+      await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+      toast({ title: "Price updated" });
+      setEditPrice((m) => { const n = { ...m }; delete n[it.id]; return n; });
+      refetch();
+    } catch (e) {
+      toast({ title: "Update failed", description: parseRevert(e).slice(0, 150), variant: "destructive" });
+    } finally { setBusy(null); }
+  };
 
   return (
     <div className="container mx-auto max-w-[1100px] px-4 py-6">
@@ -249,11 +328,17 @@ export default function UserActivityPage() {
         <div className="text-center py-16 text-muted-foreground text-sm">Connect a wallet to see your marketplace activity.</div>
       ) : (
         <>
-          <div className="flex items-center gap-1.5 flex-wrap mb-4">
+          <div className="flex items-center gap-1.5 flex-wrap mb-3">
             {TABS.map((t) => (
               <button key={t.key} onClick={() => setTab(t.key)} className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm font-medium border ${tab === t.key ? "bg-primary/15 text-primary border-primary/40" : "border-border/40 text-muted-foreground hover:bg-muted/40"}`}>
                 <t.icon className="w-4 h-4" /> {t.label}
               </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1 flex-wrap mb-4">
+            <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">Category</span>
+            {CAT_FILTERS.map((c) => (
+              <button key={c} onClick={() => setCatFilter(c)} className={`h-7 px-2.5 rounded-md text-[11px] font-medium border capitalize ${catFilter === c ? "bg-primary/15 text-primary border-primary/40" : "border-border/40 text-muted-foreground hover:bg-muted/40"}`}>{c === "all" ? "All" : c}</button>
             ))}
           </div>
 
@@ -293,8 +378,14 @@ export default function UserActivityPage() {
                       <td className="px-3 py-1.5 text-right text-muted-foreground">{ago(it.time)}</td>
                       {isSelf && (
                         <td className="px-3 py-1.5 text-right">
-                          {it.action ? (
-                            <button disabled={busy === it.id} onClick={() => runAction(it)} className={`h-7 px-2.5 rounded text-[11px] font-semibold disabled:opacity-50 inline-flex items-center gap-1 ${it.action === "claim" ? "bg-amber-500 text-black" : "border border-border/60 text-muted-foreground hover:bg-muted/50"}`}>
+                          {tab === "listings" && it.action === "cancelListing" ? (
+                            <div className="flex items-center justify-end gap-1">
+                              <input type="number" value={editPrice[it.id] ?? ""} onChange={(e) => setEditPrice((m) => ({ ...m, [it.id]: e.target.value }))} placeholder="New price" className="h-7 w-20 rounded border border-border bg-background px-1.5 text-[11px]" />
+                              <button disabled={busy === it.id || !(Number(editPrice[it.id]) > 0)} onClick={() => updateListing(it)} className="h-7 px-2 rounded text-[11px] font-semibold bg-emerald-600 text-white disabled:opacity-50">Update</button>
+                              <button disabled={busy === it.id} onClick={() => runAction(it)} className="h-7 px-2 rounded text-[11px] font-semibold border border-border/60 text-muted-foreground hover:bg-muted/50 disabled:opacity-50">{busy === it.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Cancel"}</button>
+                            </div>
+                          ) : it.action ? (
+                            <button disabled={busy === it.id} onClick={() => runAction(it)} className={`h-7 px-2.5 rounded text-[11px] font-semibold disabled:opacity-50 inline-flex items-center gap-1 ${it.action === "claim" || it.action === "acceptOffer" ? "bg-amber-500 text-black" : "border border-border/60 text-muted-foreground hover:bg-muted/50"}`}>
                               {busy === it.id ? <Loader2 className="w-3 h-3 animate-spin" /> : actionLabel[it.action]}
                             </button>
                           ) : (
