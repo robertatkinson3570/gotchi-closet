@@ -552,9 +552,16 @@ export function RoastArenaModal() {
               </div>
             )}
 
-            {/* Replay breadcrumb */}
+            {/* Replay breadcrumb — always-visible escape back to the tabs/menu,
+                so you can return to the leaderboard without refreshing. */}
             {replayBattle && (
               <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-4 py-2">
+                <button
+                  onClick={() => setReplayBattle(null)}
+                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-white/60 transition hover:bg-white/10 hover:text-white"
+                >
+                  ← Menu
+                </button>
                 <span className="text-[11px] uppercase tracking-widest text-white/30">Replay</span>
               </div>
             )}
@@ -566,8 +573,10 @@ export function RoastArenaModal() {
               </div>
             )}
 
-            {/* Body */}
-            <div className="flex-1 overflow-y-auto px-4 py-4">
+            {/* Body — min-h-0 is REQUIRED: without it this flex child keeps its
+                content's intrinsic height (default min-height:auto), overflows the
+                capped panel, gets clipped by overflow-hidden, and never scrolls. */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
               <AnimatePresence mode="wait">
                 {replayBattle ? (
                   <motion.div

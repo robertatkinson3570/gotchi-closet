@@ -126,34 +126,62 @@ export async function buildSealAttestation(
   return { payload: p, attestorSig, contract: sealAddress };
 }
 
-/**
- * Read the on-chain seal record for a token.
- * Returns null when SOUL_SEAL_ADDRESS is unset, on any RPC error,
- * or when the gotchi has never been sealed (blockNumber === 0).
- */
-export async function readOnChainSeal(
-  tokenId: string
-): Promise<{
+// ---------------------------------------------------------------------------
+// On-chain seal read — singleton client + bounded RPC + monotonic cache
+// ---------------------------------------------------------------------------
+
+export interface OnChainSeal {
   soulHash: string;
   depthBips: number;
   soulAgeDays: number;
   blockNumber: number;
-} | null> {
+}
+
+// One Base public client for the whole process, bounded so a degraded public RPC
+// can never stall the GET /api/soul/:id hot path: 2.5s timeout, a single retry.
+let _sealClient: ReturnType<typeof createPublicClient> | null = null;
+function sealClient() {
+  if (!_sealClient) {
+    _sealClient = createPublicClient({
+      chain:     base,
+      transport: http(getBaseRpcUrl(), { timeout: 2500, retryCount: 1 }),
+    });
+  }
+  return _sealClient;
+}
+
+// A seal is monotonic on-chain (once sealed, always sealed), so a positive read
+// is cached for minutes to (a) remove per-request RPC cost on the hot path and
+// (b) stop a lagging read-replica's blockNumber===0 from flipping a sealed badge
+// back to "unsealed". Negative reads cache briefly so a fresh seal still shows up
+// soon, while still bounding RPC fan-out.
+const _sealCache = new Map<string, { value: OnChainSeal | null; expires: number }>();
+const SEALED_TTL_MS = 5 * 60_000;
+const NULL_TTL_MS = 20_000;
+
+/**
+ * Read the on-chain seal record for a token.
+ * Returns null when SOUL_SEAL_ADDRESS is unset, on any RPC error/timeout,
+ * or when the gotchi has never been sealed (blockNumber === 0).
+ * Never throws — the GET /api/soul/:id path depends on this failing safe.
+ */
+export async function readOnChainSeal(
+  tokenId: string
+): Promise<OnChainSeal | null> {
   const sealAddress = getSealAddress();
   if (!sealAddress) return null;
 
-  try {
-    const client = createPublicClient({
-      chain:     base,
-      transport: http(getBaseRpcUrl()),
-    });
+  const key = String(tokenId);
+  const cached = _sealCache.get(key);
+  if (cached && cached.expires > Date.now()) return cached.value;
 
-    const result = await client.readContract({
+  try {
+    const result = (await sealClient().readContract({
       address:      sealAddress as `0x${string}`,
       abi:          GET_SEAL_ABI,
       functionName: "getSeal",
       args:         [BigInt(tokenId)],
-    }) as {
+    })) as {
       soulHash:    `0x${string}`;
       depthBips:   number;
       soulAgeDays: number;
@@ -161,16 +189,99 @@ export async function readOnChainSeal(
       sealedBy:    `0x${string}`;
     };
 
-    // blockNumber === 0n means this tokenId has never been sealed
-    if (!result || result.blockNumber === 0n) return null;
+    // blockNumber === 0n means this tokenId has never been sealed.
+    if (!result || result.blockNumber === 0n) {
+      _sealCache.set(key, { value: null, expires: Date.now() + NULL_TTL_MS });
+      return null;
+    }
 
-    return {
+    const out: OnChainSeal = {
       soulHash:    result.soulHash,
       depthBips:   Number(result.depthBips),
       soulAgeDays: Number(result.soulAgeDays),
       blockNumber: Number(result.blockNumber),
     };
+    _sealCache.set(key, { value: out, expires: Date.now() + SEALED_TTL_MS });
+    return out;
   } catch {
+    // Transient RPC failure — don't cache; fail safe to "unsealed".
     return null;
+  }
+}
+
+/**
+ * Batch seal-status read for many tokenIds in a single Multicall3 eth_call.
+ * Returns a map tokenId -> sealed(boolean). Cache-aware: cached ids are served
+ * without RPC, only the unknowns are multicalled. Never throws — missing/failed
+ * ids fail safe to false (unsealed).
+ */
+export async function readOnChainSealsBatch(
+  tokenIds: string[]
+): Promise<Record<string, boolean>> {
+  const out: Record<string, boolean> = {};
+  const sealAddress = getSealAddress();
+  if (!sealAddress || tokenIds.length === 0) return out;
+
+  // De-dupe + serve from cache; collect the ids that still need an RPC read.
+  // A non-numeric id can't be a tokenId — fail it safe individually so one bad
+  // id can never poison the rest of the batch (BigInt() would otherwise throw
+  // while building the multicall args and zero out every other id).
+  const need: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of tokenIds) {
+    const id = String(raw);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    if (!/^\d+$/.test(id)) { out[id] = false; continue; }
+    const cached = _sealCache.get(id);
+    if (cached && cached.expires > Date.now()) out[id] = cached.value !== null;
+    else need.push(id);
+  }
+  if (need.length === 0) return out;
+
+  try {
+    const results = await sealClient().multicall({
+      allowFailure: true,
+      contracts: need.map((id) => ({
+        address: sealAddress as `0x${string}`,
+        abi: GET_SEAL_ABI,
+        functionName: "getSeal",
+        args: [BigInt(id)],
+      })),
+    });
+
+    results.forEach((r, i) => {
+      const id = need[i];
+      if (r.status === "success" && r.result) {
+        const rec = r.result as unknown as {
+          soulHash: `0x${string}`;
+          depthBips: number;
+          soulAgeDays: number;
+          blockNumber: bigint;
+        };
+        const sealed = rec.blockNumber !== 0n;
+        out[id] = sealed;
+        // Keep the cache consistent with readOnChainSeal's shape + TTLs.
+        if (sealed) {
+          _sealCache.set(id, {
+            value: {
+              soulHash: rec.soulHash,
+              depthBips: Number(rec.depthBips),
+              soulAgeDays: Number(rec.soulAgeDays),
+              blockNumber: Number(rec.blockNumber),
+            },
+            expires: Date.now() + SEALED_TTL_MS,
+          });
+        } else {
+          _sealCache.set(id, { value: null, expires: Date.now() + NULL_TTL_MS });
+        }
+      } else {
+        out[id] = false; // fail safe
+      }
+    });
+    return out;
+  } catch {
+    for (const id of need) if (!(id in out)) out[id] = false;
+    return out;
   }
 }

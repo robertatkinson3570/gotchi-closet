@@ -9,6 +9,7 @@ import {
   sealConfigured,
   buildSealAttestation,
   readOnChainSeal,
+  readOnChainSealsBatch,
 } from "../soul/seal";
 
 const router = Router();
@@ -121,6 +122,28 @@ router.get("/verify/:tokenId", async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// POST /seals — batch seal-status for many tokenIds (one Multicall3 eth_call).
+// Registered before /:tokenId routes. Body: { tokenIds: string[] }.
+// Returns { configured, sealed: { [tokenId]: boolean } }.
+// ---------------------------------------------------------------------------
+
+router.post("/seals", async (req, res) => {
+  try {
+    const raw = (req.body && (req.body as { tokenIds?: unknown }).tokenIds) || [];
+    if (!Array.isArray(raw)) {
+      return res.json({ configured: sealConfigured(), sealed: {} });
+    }
+    // Bound the request: at most 500 ids, coerced to strings, deduped.
+    const ids = Array.from(new Set(raw.map((x) => String(x)))).slice(0, 500);
+    const sealed = await readOnChainSealsBatch(ids);
+    return res.json({ configured: sealConfigured(), sealed });
+  } catch (err) {
+    console.error("[soul seals batch route]", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // POST /:tokenId/seal
 // ---------------------------------------------------------------------------
 
@@ -137,8 +160,11 @@ router.post("/:tokenId/seal", async (req, res) => {
     const attestation = await buildSealAttestation({
       tokenId,
       soulHash:    ctx.hash,
-      depthBips:   Math.round(ctx.depth.score * 100),
-      soulAgeDays: ctx.bondedDays,
+      // depthBips/soulAgeDays are uint16 in the contract — clamp defensively so
+      // an out-of-range value can never make viem throw mid-seal. depthBips maxes
+      // at 10000 (depth ≤ 100); soulAgeDays only nears 65535 after ~179 years.
+      depthBips:   Math.min(65535, Math.round(ctx.depth.score * 100)),
+      soulAgeDays: Math.min(65535, ctx.bondedDays),
       nonce:       Date.now().toString(),
     });
 
@@ -162,11 +188,15 @@ router.get("/:tokenId", async (req, res) => {
 
     const { state, owner, doc, depth, bondedDays, streak, facts } = ctx;
 
-    // sealStatus: "unconfigured" when no contract address is set, else "unsealed"
-    // (full on-chain seal lookup is done via /verify/:tokenId).
-    const sealStatus: "unconfigured" | "unsealed" = sealConfigured()
-      ? "unsealed"
-      : "unconfigured";
+    // sealStatus reflects real on-chain state: "unconfigured" (no contract set),
+    // "sealed" (a seal record exists on Base for this token), or "unsealed".
+    // The on-chain read is best-effort — any RPC failure degrades to "unsealed"
+    // and never blocks the certificate from loading.
+    let sealStatus: "unconfigured" | "unsealed" | "sealed" = "unconfigured";
+    if (sealConfigured()) {
+      const onChain = await readOnChainSeal(tokenId).catch(() => null);
+      sealStatus = onChain ? "sealed" : "unsealed";
+    }
 
     const pastLivesEchoes = doc.pastLives.map(({ eraHint, fragment }) => ({
       eraHint,

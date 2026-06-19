@@ -29,6 +29,10 @@ type Props = {
   manageLabel?: string;
   selected?: boolean;
   rentalBadge?: string | null;
+  // Soul seal status on Base, shown on every gotchi card. null/undefined hides it.
+  sealStatus?: "sealed" | "unsealed" | null;
+  // Owner (non-borrower) only: clicking the "unsealed" badge opens the seal flow.
+  onSeal?: () => void;
   // Buy-side only: show a "Make Offer" (buy order) action. Set by the browse
   // grid, not by auction/lending views.
   offerable?: boolean;
@@ -55,6 +59,8 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   manageLabel,
   selected,
   rentalBadge,
+  sealStatus,
+  onSeal,
   offerable,
 }: Props) {
   const { address } = useAccount();
@@ -376,6 +382,36 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
       {rentalBadge && (
         <span className="absolute top-1 left-1 z-10 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/90 text-white shadow">{rentalBadge}</span>
       )}
+
+      {/* Soul seal status (every card). Sealed = quiet emerald. Unsealed =
+          standout, clickable violet pill for the owner (opens the seal flow);
+          a faint informational chip for everyone else. */}
+      {sealStatus === "sealed" && (onSeal ? (
+        <button
+          onClick={(e) => { e.stopPropagation(); onSeal(); }}
+          className="absolute top-1 right-1 z-10 inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/90 text-white shadow ring-1 ring-emerald-300/50 hover:bg-emerald-400 transition-colors"
+          title="Soul sealed on Base — view certificate"
+        >
+          🔏 Sealed
+        </button>
+      ) : (
+        <span className="absolute top-1 right-1 z-10 inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/90 text-white shadow" title="Soul sealed on Base">
+          🔏 Sealed
+        </span>
+      ))}
+      {sealStatus === "unsealed" && (onSeal ? (
+        <button
+          onClick={(e) => { e.stopPropagation(); onSeal(); }}
+          className="absolute top-1 right-1 z-10 inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-600 text-white shadow ring-1 ring-violet-300/70 hover:bg-violet-500 transition-colors"
+          title="This soul isn't sealed on Base yet — tap to seal it"
+        >
+          🔏 Seal soul
+        </button>
+      ) : (
+        <span className="absolute top-1 right-1 z-10 inline-flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 rounded bg-black/45 text-white/70 shadow" title="Soul not sealed on Base">
+          Unsealed
+        </span>
+      ))}
 
       {showDetails && (
         <GotchiInfoOverlay gotchi={gotchi} onClose={() => setShowDetails(false)} />
