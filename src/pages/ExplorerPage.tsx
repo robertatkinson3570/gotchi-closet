@@ -469,7 +469,7 @@ export default function ExplorerPage() {
 
           {MARKET_TABS[assetType] ? (
             (() => {
-              const ownable = assetType === "item" || assetType === "installation" || assetType === "parcel" || assetType === "tile";
+              const ownable = assetType === "item" || assetType === "installation" || assetType === "parcel" || assetType === "tile" || assetType === "forge" || assetType === "fakegotchi" || assetType === "portal";
               return (
                 <div>
                   {ownable && (
@@ -482,7 +482,7 @@ export default function ExplorerPage() {
                     </div>
                   )}
                   {ownable && marketScope === "owned"
-                    ? <OwnedMarketGrid itemKind={assetType as "item" | "installation" | "parcel" | "tile"} />
+                    ? <OwnedMarketGrid itemKind={assetType as "item" | "installation" | "parcel" | "tile" | "forge" | "fakegotchi" | "portal"} />
                     : <MarketGrid {...MARKET_TABS[assetType]} />}
                 </div>
               );

@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { Loader2, Tag, X } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-import { AAVEGOTCHI_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, REALM_DIAMOND_BASE, TILE_DIAMOND_BASE, ERC1155_MARKETPLACE_ABI, ERC721_MARKETPLACE_ABI } from "@/lib/lending/contracts";
-import { GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
+import { AAVEGOTCHI_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, REALM_DIAMOND_BASE, TILE_DIAMOND_BASE, FORGE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE, ERC1155_MARKETPLACE_ABI, ERC721_MARKETPLACE_ABI } from "@/lib/lending/contracts";
+import { GOTCHIVERSE_SUBGRAPH, CORE_SUBGRAPH } from "@/lib/subgraph";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
 import { AssetImage, itemImageCandidates, installationImageCandidates, parcelImageCandidates, tileImageCandidates } from "./AssetImage";
@@ -12,12 +12,13 @@ import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
 import { CreateAuctionButton } from "./CreateAuctionButton";
 import wearablesData from "../../../data/wearables.json";
 
-type OwnedKind = "item" | "installation" | "parcel" | "tile" | "wearable";
+type OwnedKind = "item" | "installation" | "parcel" | "tile" | "wearable" | "forge" | "fakegotchi" | "portal";
 type Owned = { id: string; bal: number };
 
-// Baazaar listing category per asset type (3 gotchi, 2 consumable, 4 realm,
-// 4 installation, 5 tile, 0 wearable). Used as the _category arg for add/setListing.
-const LISTING_CATEGORY: Record<OwnedKind, number> = { item: 2, installation: 4, parcel: 4, tile: 5, wearable: 0 };
+// Baazaar listing category per asset type. Forge items have per-item categories
+// (alloy/essence/cores span 7/8/9/11) so they're auction-only here (no single
+// bulk-list category). FAKE Gotchis list under 5, closed portals under 0.
+const LISTING_CATEGORY: Partial<Record<OwnedKind, number>> = { item: 2, installation: 4, parcel: 4, tile: 5, wearable: 0, fakegotchi: 5, portal: 0 };
 // Wearable item ids (category 0) — excluded from the consumable "item" tab.
 const WEARABLE_IDS = new Set<number>((wearablesData as { id: number; category: number }[]).filter((w) => w.category === 0).map((w) => w.id));
 
@@ -29,6 +30,14 @@ const INSTALLATIONS_BALANCES_ABI = [
 ] as const;
 const TILES_BALANCES_ABI = [
   { name: "tilesBalances", type: "function", stateMutability: "view", inputs: [{ name: "_account", type: "address" }], outputs: [{ type: "tuple[]", components: [{ name: "tileId", type: "uint256" }, { name: "balance", type: "uint256" }] }] },
+] as const;
+// Forge items: balanceOfOwner(address) -> (tokenId,balance)[]. FAKE Gotchis are
+// ERC721Enumerable-style: tokenIdsOfOwner(address) -> uint32[].
+const BALANCE_OF_OWNER_ABI = [
+  { name: "balanceOfOwner", type: "function", stateMutability: "view", inputs: [{ name: "_account", type: "address" }], outputs: [{ type: "tuple[]", components: [{ name: "tokenId", type: "uint256" }, { name: "balance", type: "uint256" }] }] },
+] as const;
+const TOKEN_IDS_OF_OWNER_ABI = [
+  { name: "tokenIdsOfOwner", type: "function", stateMutability: "view", inputs: [{ name: "_owner", type: "address" }], outputs: [{ type: "uint32[]" }] },
 ] as const;
 const APPROVAL_ABI = [
   { name: "isApprovedForAll", type: "function", stateMutability: "view", inputs: [{ name: "owner", type: "address" }, { name: "operator", type: "address" }], outputs: [{ type: "bool" }] },
@@ -42,6 +51,9 @@ const TOKEN_CONTRACT: Record<OwnedKind, `0x${string}`> = {
   parcel: REALM_DIAMOND_BASE,
   tile: TILE_DIAMOND_BASE,
   wearable: AAVEGOTCHI_DIAMOND_BASE,
+  forge: FORGE_DIAMOND_BASE,
+  fakegotchi: FAKE_GOTCHIS_NFT_BASE,
+  portal: AAVEGOTCHI_DIAMOND_BASE,
 };
 
 async function fetchOwned(kind: OwnedKind, address: string, publicClient: NonNullable<ReturnType<typeof usePublicClient>>): Promise<Owned[]> {
@@ -61,6 +73,20 @@ async function fetchOwned(kind: OwnedKind, address: string, publicClient: NonNul
     const res = (await publicClient.readContract({ address: TILE_DIAMOND_BASE, abi: TILES_BALANCES_ABI, functionName: "tilesBalances", args: [address as `0x${string}`] })) as unknown as { tileId: bigint; balance: bigint }[];
     return res.map((b) => ({ id: b.tileId.toString(), bal: Number(b.balance) })).filter((b) => b.bal > 0);
   }
+  if (kind === "forge") {
+    const res = (await publicClient.readContract({ address: FORGE_DIAMOND_BASE, abi: BALANCE_OF_OWNER_ABI, functionName: "balanceOfOwner", args: [address as `0x${string}`] })) as unknown as { tokenId: bigint; balance: bigint }[];
+    return res.map((b) => ({ id: b.tokenId.toString(), bal: Number(b.balance) })).filter((b) => b.bal > 0);
+  }
+  if (kind === "fakegotchi") {
+    const ids = (await publicClient.readContract({ address: FAKE_GOTCHIS_NFT_BASE, abi: TOKEN_IDS_OF_OWNER_ABI, functionName: "tokenIdsOfOwner", args: [address as `0x${string}`] })) as unknown as readonly (bigint | number)[];
+    return ids.map((id) => ({ id: String(id), bal: 1 }));
+  }
+  if (kind === "portal") {
+    const q = `{ portals(first: 500, where: { owner: "${address}", status_lt: 3 }){ tokenId } }`;
+    const r = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+    const j = await r.json();
+    return (j.data?.portals ?? []).map((p: { tokenId: string }) => ({ id: String(p.tokenId), bal: 1 }));
+  }
   const q = `{ parcels(first: 500, where: { owner: "${address}" }){ tokenId } }`;
   const r = await fetch(GOTCHIVERSE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
   const j = await r.json();
@@ -72,6 +98,9 @@ function imgFor(kind: OwnedKind, id: string) {
   if (kind === "parcel") return parcelImageCandidates(id);
   if (kind === "tile") return tileImageCandidates(id);
   if (kind === "wearable") return getWearableIconUrlCandidates(Number(id));
+  // forge items / fakegotchis / portals have no shared brand-SVG endpoint here;
+  // AssetImage falls back to the tile background + #id label.
+  if (kind === "fakegotchi" || kind === "portal") return [] as string[];
   return itemImageCandidates(id);
 }
 
@@ -87,12 +116,17 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
   const [price, setPrice] = useState("");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
-  const erc721 = itemKind === "parcel";
+  const erc721 = itemKind === "parcel" || itemKind === "fakegotchi" || itemKind === "portal";
   const tokenContract = TOKEN_CONTRACT[itemKind];
+  // Bulk-list is available where a single Baazaar listing category applies
+  // (everything except forge, whose items span multiple categories).
+  const canList = LISTING_CATEGORY[itemKind] !== undefined;
   // Whitelisted GBM auction kinds on Base (verified from live auctions). Wearables
   // and consumable items are NOT GBM-auctionable, so they get no auction button.
   const auctionKind: "erc721" | "erc1155" | null =
-    itemKind === "parcel" ? "erc721" : itemKind === "tile" || itemKind === "installation" ? "erc1155" : null;
+    itemKind === "parcel" || itemKind === "fakegotchi" || itemKind === "portal" ? "erc721"
+    : itemKind === "tile" || itemKind === "installation" || itemKind === "forge" ? "erc1155"
+    : null;
 
   const { data: owned, isLoading, refetch } = useQuery({
     queryKey: ["owned-market", itemKind, address?.toLowerCase()],
@@ -120,7 +154,7 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
       for (const id of ids) {
         try {
           const item = owned?.find((o) => o.id === id);
-          const cat = BigInt(LISTING_CATEGORY[itemKind]);
+          const cat = BigInt(LISTING_CATEGORY[itemKind] ?? 0);
           const hash = erc721
             ? await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ERC721_MARKETPLACE_ABI, functionName: "addERC721Listing", args: [tokenContract, BigInt(id), cat, wei] })
             : await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ERC1155_MARKETPLACE_ABI, functionName: "setERC1155Listing", args: [tokenContract, BigInt(id), BigInt(item?.bal ?? 1), cat, wei] });
@@ -158,10 +192,10 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
               key={o.id}
               className={`group rounded-xl border p-2 space-y-1.5 transition-all ${sel ? "border-emerald-500 ring-2 ring-emerald-500/50 bg-emerald-500/5" : "border-border/40 bg-background/60 hover:border-primary/40"}`}
             >
-              <button type="button" onClick={() => toggle(o.id)} className="w-full text-left space-y-1.5">
+              <button type="button" onClick={() => canList && toggle(o.id)} className="w-full text-left space-y-1.5" disabled={!canList}>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono text-muted-foreground">#{o.id}{o.bal > 1 ? ` ×${o.bal}` : ""}</span>
-                  {sel ? <span className="text-emerald-500 text-xs">✓ list</span> : <span className="text-[9px] text-muted-foreground opacity-0 group-hover:opacity-100">tap to list</span>}
+                  {canList ? (sel ? <span className="text-emerald-500 text-xs">✓ list</span> : <span className="text-[9px] text-muted-foreground opacity-0 group-hover:opacity-100">tap to list</span>) : <span className="text-[9px] text-muted-foreground">owned</span>}
                 </div>
                 <div className="h-16 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
                   <AssetImage candidates={imgFor(itemKind, o.id)} alt={`#${o.id}`} className="max-h-14 max-w-14 object-contain" />
