@@ -138,6 +138,7 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
   const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [sort, setSort] = useState<"id-desc" | "id-asc" | "qty-desc">("id-desc");
   const [price, setPrice] = useState("");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
@@ -201,7 +202,13 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
     }
   };
 
-  const rows = useMemo(() => owned ?? [], [owned]);
+  const rows = useMemo(() => {
+    const r = [...(owned ?? [])];
+    if (sort === "id-asc") r.sort((a, b) => Number(a.id) - Number(b.id));
+    else if (sort === "qty-desc") r.sort((a, b) => b.bal - a.bal || Number(b.id) - Number(a.id));
+    else r.sort((a, b) => Number(b.id) - Number(a.id)); // id-desc (default)
+    return r;
+  }, [owned, sort]);
 
   if (!isConnected) return <div className="text-center py-12 text-muted-foreground text-sm">Connect a wallet to see your {itemKind}s.</div>;
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
@@ -209,6 +216,14 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
 
   return (
     <div className="p-2">
+      <div className="flex items-center justify-between gap-2 px-1 pb-2">
+        <span className="text-[11px] text-muted-foreground">{rows.length} owned</span>
+        <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} className="h-7 rounded-md border border-border/50 bg-background px-2 text-[11px]">
+          <option value="id-desc">ID ↓ (newest)</option>
+          <option value="id-asc">ID ↑</option>
+          <option value="qty-desc">Quantity ↓</option>
+        </select>
+      </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 pb-20">
         {rows.map((o) => {
           const sel = selected.has(o.id);

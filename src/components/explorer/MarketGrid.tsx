@@ -133,7 +133,7 @@ export function MarketGrid({
   const [idQuery, setIdQuery] = useState("");
   const [minP, setMinP] = useState("");
   const [maxP, setMaxP] = useState("");
-  const [sort, setSort] = useState<"recent" | "price-asc" | "price-desc" | "id-asc" | "id-desc">("recent");
+  const [sort, setSort] = useState<"recent" | "price-asc" | "price-desc" | "id-asc" | "id-desc" | "size-asc" | "size-desc">("recent");
   const [sizeF, setSizeF] = useState("");
   const [districtF, setDistrictF] = useState("");
   const [levelF, setLevelF] = useState("");
@@ -217,6 +217,8 @@ export function MarketGrid({
       if (sort === "price-asc") return Number(a.priceWei) - Number(b.priceWei);
       if (sort === "price-desc") return Number(b.priceWei) - Number(a.priceWei);
       if (sort === "id-asc") return Number(a.tokenId) - Number(b.tokenId);
+      if (sort === "size-asc") return Number(parcelMeta?.[a.tokenId]?.size ?? 99) - Number(parcelMeta?.[b.tokenId]?.size ?? 99);
+      if (sort === "size-desc") return Number(parcelMeta?.[b.tokenId]?.size ?? -1) - Number(parcelMeta?.[a.tokenId]?.size ?? -1);
       return Number(b.tokenId) - Number(a.tokenId);
     });
     return arr;
@@ -263,6 +265,8 @@ export function MarketGrid({
           <option value="price-desc">Price: high → low</option>
           <option value="id-asc">ID: low → high</option>
           <option value="id-desc">ID: high → low</option>
+          {itemKind === "parcel" && <option value="size-desc">Size: large → small</option>}
+          {itemKind === "parcel" && <option value="size-asc">Size: small → large</option>}
         </select>
         <span className="text-[11px] text-muted-foreground ml-auto">{rows.length} of {all.length}</span>
       </div>
