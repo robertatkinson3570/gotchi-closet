@@ -7,6 +7,7 @@ import { encodeEventTopics, encodeAbiParameters, parseAbiItem } from "viem";
 // parseAbiItem / decodeEventLog so log decoding is exercised for real.
 // ---------------------------------------------------------------------------
 const mockGetTransactionReceipt = vi.fn();
+const mockGetBlockNumber = vi.fn();
 
 vi.mock("viem", async (importActual) => {
   const actual = await importActual<typeof import("viem")>();
@@ -14,6 +15,7 @@ vi.mock("viem", async (importActual) => {
     ...actual,
     createPublicClient: vi.fn(() => ({
       getTransactionReceipt: mockGetTransactionReceipt,
+      getBlockNumber: mockGetBlockNumber,
     })),
     http: vi.fn(() => ({})),
   };
@@ -57,6 +59,9 @@ function receipt(logs: any[], status: "success" | "reverted" = "success") {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Default: chain head far ahead of the receipt block (123n) so the
+  // confirmation-depth gate passes; individual tests override as needed.
+  mockGetBlockNumber.mockResolvedValue(200n);
 });
 
 describe("verifyGhstPayment", () => {
@@ -234,14 +239,30 @@ describe("verifyGhstPayment", () => {
     if (!r.ok) expect(r.error).toBe("network boom");
   });
 
-  // Characterization note: verifyGhstPayment currently has NO confirmation-depth
-  // check. A receipt with status:"success" is accepted regardless of how many
-  // blocks deep it is. Plan 002 is expected to add a min-confirmations gate;
-  // when it lands, add a rejection test here.
-  it("accepts a 1-confirmation receipt (no confirmation-depth gate today)", async () => {
+  // Confirmation-depth gate (plan 002): a matching transfer that is not yet
+  // MIN_CONFIRMATIONS (5) blocks deep must be rejected to resist reorgs.
+  it("rejects a matching tx without enough confirmations", async () => {
     mockGetTransactionReceipt.mockResolvedValue(
       receipt([transferLog({ address: GHST_BASE, from: FROM, to: TO, value })])
     );
+    mockGetBlockNumber.mockResolvedValue(124n); // receipt at 123n => 1 confirmation < 5
+
+    const r = await verifyGhstPayment({
+      txHash: TX,
+      expectedFrom: FROM,
+      expectedTo: TO,
+      expectedValueWei: value,
+    });
+
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/confirmation/i);
+  });
+
+  it("accepts a matching tx confirmed deep enough (>= MIN_CONFIRMATIONS)", async () => {
+    mockGetTransactionReceipt.mockResolvedValue(
+      receipt([transferLog({ address: GHST_BASE, from: FROM, to: TO, value })])
+    );
+    mockGetBlockNumber.mockResolvedValue(123n + 5n); // exactly 5 confirmations
 
     const r = await verifyGhstPayment({
       txHash: TX,

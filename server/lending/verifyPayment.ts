@@ -3,6 +3,10 @@ import { base } from "viem/chains";
 
 const RPC_URL = process.env.BASE_RPC_URL || "https://mainnet.base.org";
 const GHST_BASE = "0xcD2F22236DD9Dfe2356D7C543161D4d260FD9BcB" as const;
+// Require this many confirmations before accepting a payment, so a tx that lands
+// in a block that later reorgs out cannot be used to claim credits/subscriptions.
+// Base has ~2s blocks, so 5 confirmations is ~10s — negligible UX cost, real safety.
+const MIN_CONFIRMATIONS = 5n;
 
 let client: ReturnType<typeof createPublicClient> | null = null;
 function getClient() {
@@ -26,6 +30,7 @@ export type VerifyResult =
  *  - emits an ERC-20 Transfer event from `expectedFrom` to `expectedTo`
  *  - value equals `expectedValueWei` (exact)
  *  - emitter is the GHST contract address
+ *  - the tx is at least MIN_CONFIRMATIONS blocks deep (reorg protection)
  */
 export async function verifyGhstPayment(args: {
   txHash: `0x${string}`;
@@ -57,6 +62,11 @@ export async function verifyGhstPayment(args: {
           to.toLowerCase() === toLc &&
           value === args.expectedValueWei
         ) {
+          // Found the matching transfer — require it to be confirmed deep enough.
+          const head = await c.getBlockNumber();
+          if (head - receipt.blockNumber < MIN_CONFIRMATIONS) {
+            return { ok: false, error: "insufficient confirmations" };
+          }
           return {
             ok: true,
             from,
