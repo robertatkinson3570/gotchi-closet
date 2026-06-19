@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="26.0.0">
+  <diagram name="soulseal-flow">
+    <mxGraphModel dx="1400" dy="900" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1560" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="SoulSeal — seal &amp; public verify (Base 8453)" style="text;html=1;fontStyle=1;fontSize=15;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="30" y="6" width="700" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="aOwner" value="Owner / Wallet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="30" y="36" width="160" height="46" as="geometry" /></mxCell>
+        <mxCell id="aFront" value="Frontend (Soul UI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="270" y="36" width="160" height="46" as="geometry" /></mxCell>
+        <mxCell id="aBack" value="Backend /soul" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="540" y="36" width="160" height="46" as="geometry" /></mxCell>
+        <mxCell id="aSub" value="Core Subgraph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="800" y="36" width="160" height="46" as="geometry" /></mxCell>
+        <mxCell id="aSeal" value="SoulSeal contract (Base)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1070" y="36" width="160" height="46" as="geometry" /></mxCell>
+        <mxCell id="aVer" value="Verify page (public)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1330" y="36" width="160" height="46" as="geometry" /></mxCell>
+
+        <mxCell id="lOwner" style="endArrow=none;dashed=1;html=1;strokeColor=#9673a6;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="110" y="82" as="sourcePoint"/><mxPoint x="110" y="850" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="lFront" style="endArrow=none;dashed=1;html=1;strokeColor=#6c8ebf;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="350" y="82" as="sourcePoint"/><mxPoint x="350" y="850" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="lBack" style="endArrow=none;dashed=1;html=1;strokeColor=#d79b00;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="620" y="82" as="sourcePoint"/><mxPoint x="620" y="850" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="lSub" style="endArrow=none;dashed=1;html=1;strokeColor=#82b366;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="880" y="82" as="sourcePoint"/><mxPoint x="880" y="850" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="lSeal" style="endArrow=none;dashed=1;html=1;strokeColor=#b85450;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1150" y="82" as="sourcePoint"/><mxPoint x="1150" y="850" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="lVer" style="endArrow=none;dashed=1;html=1;strokeColor=#d6b656;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1410" y="82" as="sourcePoint"/><mxPoint x="1410" y="850" as="targetPoint"/></mxGeometry></mxCell>
+
+        <mxCell id="m1" value="“Seal my gotchi”" style="html=1;endArrow=block;rounded=0;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="110" y="120" as="sourcePoint"/><mxPoint x="350" y="120" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="m2" value="POST /soul/:tokenId/seal" style="html=1;endArrow=block;rounded=0;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="350" y="160" as="sourcePoint"/><mxPoint x="620" y="160" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="m3" value="fetch gotchi state + owner" style="html=1;endArrow=block;rounded=0;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="620" y="200" as="sourcePoint"/><mxPoint x="880" y="200" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="m4" value="traits · kinship · owner" style="html=1;endArrow=open;dashed=1;rounded=0;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="880" y="234" as="sourcePoint"/><mxPoint x="620" y="234" as="targetPoint"/></mxGeometry></mxCell>
+
+        <mxCell id="n1" value="compute soulHash · depthBips · soulAgeDays · nonce&#xa;→ build EIP-712 SealPayload" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=center;" vertex="1" parent="1"><mxGeometry x="470" y="262" width="300" height="40" as="geometry" /></mxCell>
+        <mxCell id="n2" value="sign EIP-712 with attestor key (server env) — value never exposed" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;align=center;" vertex="1" parent="1"><mxGeometry x="460" y="312" width="320" height="40" as="geometry" /></mxCell>
+
+        <mxCell id="m5" value="{ payload, attestorSig, contract }" style="html=1;endArrow=open;dashed=1;rounded=0;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="620" y="372" as="sourcePoint"/><mxPoint x="350" y="372" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="m6" value="submit seal tx (payload + attestorSig) · owner pays gas" style="html=1;endArrow=block;rounded=0;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="350" y="414" as="sourcePoint"/><mxPoint x="1150" y="414" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="n3" value="verify attestor sig · record soulHash, depthBips, soulAgeDays, block, sealedBy" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;align=center;" vertex="1" parent="1"><mxGeometry x="1010" y="436" width="280" height="44" as="geometry" /></mxCell>
+        <mxCell id="n4" value="record soul_seals (tx_hash, block) in companion.db" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" vertex="1" parent="1"><mxGeometry x="490" y="494" width="260" height="34" as="geometry" /></mxCell>
+
+        <mxCell id="div" value="── public verify (anyone, no auth) ──" style="text;html=1;fontStyle=2;fontSize=11;align=center;fontColor=#666666;" vertex="1" parent="1"><mxGeometry x="540" y="544" width="480" height="20" as="geometry" /></mxCell>
+
+        <mxCell id="m7" value="GET /soul/verify/:tokenId" style="html=1;endArrow=block;rounded=0;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1410" y="600" as="sourcePoint"/><mxPoint x="620" y="600" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="m8" value="read getSeal(tokenId) · Base RPC (cached)" style="html=1;endArrow=block;rounded=0;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="620" y="644" as="sourcePoint"/><mxPoint x="1150" y="644" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="m9" value="onChain seal (soulHash, depthBips, block)" style="html=1;endArrow=open;dashed=1;rounded=0;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1150" y="684" as="sourcePoint"/><mxPoint x="620" y="684" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="m10" value="{ onChain, serverDepth, level, soulHash } — tamper-evident" style="html=1;endArrow=open;dashed=1;rounded=0;fontSize=11;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="620" y="724" as="sourcePoint"/><mxPoint x="1410" y="724" as="targetPoint"/></mxGeometry></mxCell>
+
+        <mxCell id="legend" value="Solid = request · Dashed = response. Batch status via POST /soul/seals (Multicall3). No private keys leave the server." style="text;html=1;fontSize=10;align=left;fontColor=#666666;" vertex="1" parent="1"><mxGeometry x="30" y="800" width="1100" height="20" as="geometry" /></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

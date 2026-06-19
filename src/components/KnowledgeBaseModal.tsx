@@ -144,20 +144,40 @@ function KnowledgeBaseModal({ onClose }: { onClose: () => void }) {
 }
 
 /**
- * Web-friendly architecture diagram tab. Renders the exported SVG
- * (public/diagrams/gotchi-closet-architecture.svg) inline with a fit/actual-size
- * toggle so the on-chain addresses & subgraph URLs stay legible.
+ * Web-friendly architecture diagram tab. Renders the exported SVGs
+ * (public/diagrams/*.svg) inline with a diagram picker and a fit/actual-size
+ * toggle so addresses, subgraph URLs and labels stay legible.
  */
+const DIAGRAMS = [
+  { id: "overview", label: "Overview", src: "/diagrams/gotchi-closet-architecture.svg", caption: "Client → Backend → On-chain (Base 8453), with subgraphs & diamond addresses" },
+  { id: "soulseal", label: "SoulSeal flow", src: "/diagrams/soulseal-flow.svg", caption: "Seal → EIP-712 attestation → on-chain → public verify" },
+  { id: "companion", label: "Companion chat", src: "/diagrams/companion-chat.svg", caption: "Free (Groq) vs premium (OpenAI) with auth / rate-limit / ownership gates" },
+  { id: "data", label: "Data model", src: "/diagrams/data-model.svg", caption: "SQLite stores — companion · soul · roast · auto-renew" },
+  { id: "imports", label: "Frontend modules", src: "/diagrams/frontend-imports.svg", caption: "src/ subsystem import graph (auto-generated)" },
+] as const;
+
 function ArchitectureView() {
   const [fit, setFit] = useState(true);
-  const src = "/diagrams/gotchi-closet-architecture.svg";
+  const [active, setActive] = useState<(typeof DIAGRAMS)[number]["id"]>("overview");
+  const current = DIAGRAMS.find((d) => d.id === active) ?? DIAGRAMS[0];
 
   return (
     <div className="flex flex-1 min-h-0 flex-col">
-      <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-2.5 border-b border-border/40">
-        <div className="text-sm font-semibold min-w-0 truncate">
-          App architecture <span className="text-muted-foreground font-normal">· Client → Backend → On-chain (Base 8453)</span>
-        </div>
+      {/* diagram picker */}
+      <div className="flex items-center gap-1 px-4 sm:px-6 pt-2.5 flex-wrap">
+        {DIAGRAMS.map((d) => (
+          <button
+            key={d.id}
+            type="button"
+            onClick={() => setActive(d.id)}
+            className={`px-2.5 h-7 rounded-lg text-xs font-medium transition-colors ${d.id === active ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
+          >
+            {d.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-2 border-b border-border/40">
+        <div className="text-xs text-muted-foreground min-w-0 truncate">{current.caption}</div>
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
@@ -166,20 +186,21 @@ function ArchitectureView() {
           >
             {fit ? "Actual size" : "Fit width"}
           </button>
-          <a href={src} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-medium text-primary hover:underline">
+          <a href={current.src} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-medium text-primary hover:underline">
             Open full size ↗
           </a>
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-auto bg-white">
         <img
-          src={src}
-          alt="GotchiCloset architecture diagram — client, backend and on-chain layers on Base (8453)"
+          key={current.id}
+          src={current.src}
+          alt={`GotchiCloset — ${current.label} diagram`}
           className={fit ? "w-full h-auto" : "max-w-none"}
         />
       </div>
       <div className="shrink-0 px-4 sm:px-6 py-2 text-[11px] text-muted-foreground border-t border-border/40">
-        Full subgraph endpoints and Base diamond / token addresses are in the on-chain layer — switch to “Actual size” to read them, or open full size.
+        Switch to “Actual size” to read addresses / labels, or open full size. Diagrams are static SVGs generated from the codebase — no secrets included.
       </div>
     </div>
   );
