@@ -6,7 +6,7 @@ import { Loader2, Tag, HandCoins, Gavel, ShoppingCart, Receipt, Coins, Inbox } f
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-import { AAVEGOTCHI_DIAMOND_BASE, GBM_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
+import { AAVEGOTCHI_DIAMOND_BASE, GBM_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE, WEARABLE_DIAMOND_BASE, FORGE_DIAMOND_BASE, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
 import { CORE_SUBGRAPH, GBM_SUBGRAPH, GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
@@ -114,6 +114,9 @@ function gbmKind(contract: string, type: string): { kind: "erc721" | "erc1155"; 
   if (c === INSTALLATION_DIAMOND_BASE.toLowerCase()) return { kind: "erc1155", category: BAAZAAR_CATEGORY.INSTALLATION };
   if (c === TILE_DIAMOND_BASE.toLowerCase()) return { kind: "erc1155", category: BAAZAAR_CATEGORY.TILE };
   if (c === AAVEGOTCHI_DIAMOND_BASE.toLowerCase()) return type === "erc1155" ? { kind: "erc1155", category: BAAZAAR_CATEGORY.CONSUMABLE } : { kind: "erc721", category: BAAZAAR_CATEGORY.AAVEGOTCHI };
+  if (c === WEARABLE_DIAMOND_BASE.toLowerCase()) return { kind: "erc1155", category: BAAZAAR_CATEGORY.WEARABLE };
+  if (c === FORGE_DIAMOND_BASE.toLowerCase()) return { kind: "erc1155", category: BAAZAAR_CATEGORY.CONSUMABLE };
+  if (c === FAKE_GOTCHIS_NFT_BASE.toLowerCase()) return { kind: "erc721", category: 5 };
   return { kind: type === "erc1155" ? "erc1155" : "erc721", category: -1 };
 }
 
@@ -136,18 +139,28 @@ async function fetchAuctionsCreated(addr: string): Promise<Item[]> {
 
 async function fetchBids(addr: string): Promise<Item[]> {
   const now = Math.floor(Date.now() / 1000);
-  const d = await gql(GBM_SUBGRAPH, `query($a: String!){ auctions(first: 200, where: { highestBidder: $a, cancelled: false }, orderBy: endsAt, orderDirection: desc){ id type tokenId contractAddress highestBid seller totalBids endsAt claimed } }`, { a: addr });
-  return (d?.auctions ?? []).map((au: any) => {
+  const a = addr.toLowerCase();
+  // Query the bids the user PLACED (not just auctions they currently top) so
+  // outbid/lost bids show too. Dedupe to the latest bid per auction.
+  const d = await gql(GBM_SUBGRAPH, `query($a: String!){ bids(first: 300, where: { bidder: $a }, orderBy: bidTime, orderDirection: desc){ amount auction{ id type tokenId contractAddress highestBid highestBidder seller endsAt claimed cancelled } } }`, { a });
+  const seen = new Set<string>();
+  const out: Item[] = [];
+  for (const b of d?.bids ?? []) {
+    const au = b.auction;
+    if (!au || seen.has(au.id)) continue;
+    seen.add(au.id);
     const { kind, category } = gbmKind(au.contractAddress, au.type);
     const ended = Number(au.endsAt) <= now;
     const claimed = !!au.claimed;
-    return {
+    const won = (au.highestBidder ?? "").toLowerCase() === a;
+    const status = au.cancelled ? "Cancelled" : claimed ? "Claimed" : ended ? (won ? "Won — claim" : "Lost") : (won ? "Winning" : "Outbid");
+    out.push({
       id: `bid-${au.id}`, refId: au.id, kind, category, contract: (au.contractAddress ?? "").toLowerCase(), tokenId: au.tokenId, quantity: 1,
-      priceWei: au.highestBid ?? "0", counterparty: (au.seller ?? "").toLowerCase(), time: Number(au.endsAt), auctionType: au.type,
-      status: claimed ? "Claimed" : ended ? "Won — claim" : "Winning",
-      action: !claimed && ended ? "claim" : undefined,
-    } as Item;
-  });
+      priceWei: b.amount ?? "0", counterparty: (au.seller ?? "").toLowerCase(), time: Number(au.endsAt), auctionType: au.type,
+      status, action: !claimed && ended && won ? "claim" : undefined,
+    } as Item);
+  }
+  return out;
 }
 
 async function fetchPurchases(addr: string): Promise<Item[]> {
