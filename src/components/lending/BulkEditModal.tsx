@@ -22,7 +22,7 @@ import { useWhitelistsForAddress } from "@/hooks/useWhitelists";
 import { useToast } from "@/ui/use-toast";
 import { useAddressState } from "@/lib/addressState";
 import { switchToBaseChain } from "@/lib/chains";
-import { ghstFromWei } from "@/lib/lending/transform";
+import { ghstFromWei, ghstToWei } from "@/lib/lending/transform";
 import { ALCHEMICA_TOKEN_ADDRESSES_BASE } from "@/lib/lending/contracts";
 import type { Lending } from "@/lib/lending/types";
 
@@ -36,13 +36,6 @@ type Props = {
 const ZERO = "0x0000000000000000000000000000000000000000";
 
 type FieldMode = "keep" | "set";
-
-function ghstToWei(n: number): bigint {
-  if (!n) return BigInt(0);
-  const [whole, frac = ""] = String(n).split(".");
-  const fracPad = (frac + "000000000000000000").slice(0, 18);
-  return BigInt(whole) * (BigInt(10) ** BigInt(18)) + BigInt(fracPad);
-}
 
 export function BulkEditModal({ listings, onClose }: Props) {
   const { address } = useAccount();

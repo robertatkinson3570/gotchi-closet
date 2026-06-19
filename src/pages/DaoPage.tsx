@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createPublicClient, http } from "viem";
 import { Landmark, ExternalLink, Vote, Wrench, BookOpen, Megaphone, Bot, BarChart3, Loader2, Zap, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { SnapshotVotePanel } from "@/components/dao/SnapshotVotePanel";
+import LazySnapshotVotePanel from "@/components/dao/LazySnapshotVotePanel";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 
@@ -236,7 +236,7 @@ function ProposalsSection({ address }: { address?: string }) {
                   </div>
                 )}
                 {open && canVote && !voted && (
-                  <SnapshotVotePanel proposalId={p.id} type={p.type} choices={p.choices} onVoted={() => { setOpenId(null); refetchVotes(); refetch(); }} />
+                  <LazySnapshotVotePanel proposalId={p.id} type={p.type} choices={p.choices} onVoted={() => { setOpenId(null); refetchVotes(); refetch(); }} />
                 )}
               </div>
             );
