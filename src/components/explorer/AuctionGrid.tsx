@@ -48,6 +48,9 @@ const GBM_ABI = [
     ],
     outputs: [],
   },
+  // Settle an ended auction: the seller gets proceeds, the winning bidder gets
+  // the asset. Either party calls claim(auctionId) once endsAt has passed.
+  { name: "claim", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_auctionId", type: "uint256" }], outputs: [] },
 ] as const;
 
 type Auction = {
@@ -87,6 +90,29 @@ async function fetchAuctions(): Promise<Auction[]> {
     startsAt: Number(a.startsAt),
     endsAt: Number(a.endsAt),
   }));
+}
+
+// Ended, unclaimed auctions where the connected user is the seller (claim =
+// collect proceeds + unsold asset) or the highest bidder (claim = receive the
+// won asset). Two queries (seller / bidder) merged — avoids relying on `or:`.
+async function fetchClaimable(address: string): Promise<Auction[]> {
+  const now = Math.floor(Date.now() / 1000);
+  const a = address.toLowerCase();
+  const fields = `id type tokenId contractAddress highestBid highestBidder seller totalBids quantity startsAt endsAt`;
+  const q = `query Claimable($now: BigInt!, $a: String!){
+    asSeller: auctions(first: 100, where: { cancelled: false, claimed: false, endsAt_lt: $now, seller: $a }, orderBy: endsAt, orderDirection: desc){ ${fields} }
+    asBidder: auctions(first: 100, where: { cancelled: false, claimed: false, endsAt_lt: $now, highestBidder: $a }, orderBy: endsAt, orderDirection: desc){ ${fields} }
+  }`;
+  const res = await fetch(GBM_BAAZAAR_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q, variables: { now: String(now), a } }) });
+  const json = await res.json();
+  if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");
+  const map = (x: any): Auction => ({ id: x.id, type: x.type, tokenId: x.tokenId, contract: (x.contractAddress ?? "").toLowerCase(), highestBid: x.highestBid ?? "0", highestBidder: (x.highestBidder ?? "").toLowerCase(), seller: (x.seller ?? "").toLowerCase(), totalBids: Number(x.totalBids) || 0, quantity: x.quantity ?? "1", startsAt: Number(x.startsAt), endsAt: Number(x.endsAt) });
+  const seen = new Set<string>();
+  const out: Auction[] = [];
+  for (const x of [...(json.data?.asSeller ?? []), ...(json.data?.asBidder ?? [])]) {
+    if (seen.has(x.id)) continue; seen.add(x.id); out.push(map(x));
+  }
+  return out;
 }
 
 const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
@@ -196,6 +222,30 @@ function AuctionGridInner() {
     queryFn: () => fetchGotchiBatch(gotchiIds),
   });
 
+  const { data: claimable, refetch: refetchClaim } = useQuery({
+    queryKey: ["gbm-claimable", address?.toLowerCase()],
+    enabled: isConnected && !!address,
+    staleTime: 30_000,
+    queryFn: () => fetchClaimable(address!),
+  });
+
+  const doClaim = async (a: Auction) => {
+    if (!isConnected || !address || !publicClient) return toast({ title: "Connect wallet", variant: "destructive" });
+    if (!isOnBase) return toast({ title: "Switch to Base", variant: "destructive" });
+    setBusyId(a.id);
+    try {
+      const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: GBM_DIAMOND_BASE, abi: GBM_ABI, functionName: "claim", args: [BigInt(a.id)] });
+      await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+      const won = a.highestBidder === address.toLowerCase();
+      toast({ title: "Auction claimed", description: won ? `Claimed your won ${assetLabel(a)} #${a.tokenId}.` : `Settled auction #${a.id}.` });
+      refetchClaim();
+    } catch (e) {
+      toast({ title: "Claim failed", description: parseRevert(e).slice(0, 160), variant: "destructive" });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const placeBid = async (a: Auction) => {
     if (!isConnected || !address || !publicClient) return toast({ title: "Connect wallet", variant: "destructive" });
     if (!isOnBase) return toast({ title: "Switch to Base", variant: "destructive" });
@@ -223,12 +273,35 @@ function AuctionGridInner() {
 
   if (error) return <div className="p-4 text-sm text-destructive">{(error as Error).message}</div>;
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
-  if (rows.length === 0) return <div className="text-center py-12 text-muted-foreground text-sm">No live auctions right now.</div>;
-
   const live = detail ? rows.find((r) => r.id === detail.id) ?? detail : null;
+  const claimRows = claimable ?? [];
+
+  if (rows.length === 0 && claimRows.length === 0)
+    return <div className="text-center py-12 text-muted-foreground text-sm">No live auctions right now.</div>;
 
   return (
     <>
+      {claimRows.length > 0 && (
+        <div className="p-2">
+          <div className="flex items-center gap-1.5 px-1 pb-1.5 text-sm font-semibold text-amber-500"><Gavel className="w-4 h-4" /> Ready to claim ({claimRows.length})</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {claimRows.map((a) => {
+              const won = a.highestBidder === (address?.toLowerCase() ?? "");
+              return (
+                <div key={a.id} className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs"><span className="font-mono text-muted-foreground">#{a.tokenId}</span><span className="uppercase text-[9px] bg-muted/50 px-1 rounded">{a.type}</span></div>
+                  <div className="h-20 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40"><AuctionItemImage a={a} /></div>
+                  <div className="text-[10px] text-muted-foreground">{won ? "You won this" : a.totalBids > 0 ? `Sold · ${ghst(a.highestBid)} GHST` : "Ended · no bids"}</div>
+                  <button disabled={busyId === a.id} onClick={() => doClaim(a)} className="h-7 w-full rounded bg-amber-500 text-black text-xs font-semibold disabled:opacity-50 inline-flex items-center justify-center gap-1">{busyId === a.id ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Claiming…</> : "Claim"}</button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {rows.length === 0 ? (
+        <div className="text-center py-10 text-muted-foreground text-sm">No live auctions right now.</div>
+      ) : (
       <div className="p-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {rows.map((a) => {
           const left = a.endsAt - nowSec;
@@ -272,6 +345,7 @@ function AuctionGridInner() {
           );
         })}
       </div>
+      )}
 
       {live && (
         <AuctionDetailModal
