@@ -115,11 +115,6 @@ export function computeTotalBRS(params: {
   );
 }
 
-// Backwards-compatible exports
-export function traitBrsForValue(value: number): number {
-  return traitToBRS(value);
-}
-
 export function sumTraitBrs(traits: number[]): number {
   return traitsToBRS(traits);
 }

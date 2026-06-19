@@ -1,0 +1,118 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Aavegotchi Logo" [ref=e7]:
+          - /url: /
+          - img "Aavegotchi Logo" [ref=e8]
+        - generic [ref=e11]:
+          - button "Trade" [ref=e13]:
+            - heading "Trade" [level=5] [ref=e14]
+          - button "Play and Earn" [ref=e16]:
+            - heading "Play and Earn" [level=5] [ref=e17]
+          - button "GHST" [ref=e19]:
+            - heading "GHST" [level=5] [ref=e20]
+          - button "Community" [ref=e22]:
+            - heading "Community" [level=5] [ref=e23]
+          - button "About" [ref=e25]:
+            - heading "About" [level=5] [ref=e26]
+          - link "Announcements" [ref=e28]:
+            - /url: /announcements
+            - heading "Announcements" [level=5] [ref=e29]
+      - generic [ref=e32]:
+        - button "Sign in to play" [ref=e33]:
+          - generic [ref=e34]: Sign in to play
+          - img [ref=e36]
+          - img [ref=e40]
+          - img [ref=e44]
+          - img [ref=e48]
+          - img [ref=e52]
+          - img [ref=e56]
+          - img [ref=e60]
+          - img [ref=e64]
+          - img [ref=e68]
+          - img [ref=e72]
+          - img [ref=e76]
+          - img [ref=e80]
+          - img [ref=e84]
+          - img [ref=e88]
+          - img [ref=e92]
+          - img [ref=e96]
+          - img [ref=e100]
+          - img [ref=e104]
+          - img [ref=e108]
+          - img [ref=e112]
+        - button [ref=e117]:
+          - img [ref=e122]
+    - generic [ref=e124]:
+      - heading "Marketplace Aavegotchis" [level=1] [ref=e125]
+      - generic [ref=e126]:
+        - generic [ref=e127]:
+          - generic [ref=e130]:
+            - link "Baazaar" [ref=e132]:
+              - /url: /baazaar/aavegotchis?chainId=8453
+              - paragraph [ref=e134]: Baazaar
+            - link "Auctions" [ref=e137]:
+              - /url: /auction?status=live&itemType=all&chainId=8453
+              - paragraph [ref=e139]: Auctions
+            - link "Activity" [ref=e141]:
+              - /url: /activity?p=baazaar&itemType=all&chainId=8453&type=purchases
+              - paragraph [ref=e143]: Activity
+            - link "Stats" [ref=e145]:
+              - /url: /stats?chainId=8453
+              - paragraph [ref=e147]: Stats
+          - generic [ref=e151]:
+            - generic [ref=e152]:
+              - button "categories Filters" [ref=e153]:
+                - img "categories" [ref=e154]
+                - generic [ref=e155]: Filters
+              - button "myth eye icon Double Myth" [ref=e157]:
+                - img "myth eye icon" [ref=e158]
+                - generic [ref=e159]: Double Myth
+            - generic [ref=e161]:
+              - button [ref=e162]:
+                - img [ref=e163]
+              - textbox "Enter Name/ID" [ref=e165]
+        - generic [ref=e169]:
+          - generic [ref=e173]:
+            - paragraph [ref=e174]: Category
+            - generic [ref=e175]:
+              - button "Switch to detailed view" [ref=e176]:
+                - img [ref=e178]
+              - button [ref=e180]:
+                - img [ref=e181]
+          - button "price" [ref=e190]:
+            - paragraph [ref=e191]: price
+          - button "rarity" [ref=e194]:
+            - paragraph [ref=e195]: rarity
+          - button "age" [ref=e198]:
+            - paragraph [ref=e199]: age
+          - button "Level" [ref=e202]:
+            - paragraph [ref=e203]: Level
+          - button "spirit force" [ref=e206]:
+            - paragraph [ref=e207]: spirit force
+          - button "traits" [ref=e210]:
+            - paragraph [ref=e211]: traits
+          - button "Clear All" [disabled] [ref=e213]
+        - generic [ref=e220]:
+          - generic [ref=e224]:
+            - paragraph [ref=e225]: Category
+            - generic [ref=e226]:
+              - button "Switch to detailed view" [ref=e227]:
+                - img [ref=e229]
+              - button [ref=e231]:
+                - img [ref=e232]
+          - button "price" [ref=e241]:
+            - paragraph [ref=e242]: price
+          - button "rarity" [ref=e245]:
+            - paragraph [ref=e246]: rarity
+          - button "age" [ref=e249]:
+            - paragraph [ref=e250]: age
+          - button "Level" [ref=e253]:
+            - paragraph [ref=e254]: Level
+          - button "spirit force" [ref=e257]:
+            - paragraph [ref=e258]: spirit force
+          - button "traits" [ref=e261]:
+            - paragraph [ref=e262]: traits
+          - button "Clear All" [disabled] [ref=e264]
+  - button [ref=e265]

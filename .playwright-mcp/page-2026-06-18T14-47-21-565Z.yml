@@ -1,0 +1,113 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Aavegotchi Logo" [ref=e7]:
+          - /url: /
+          - img "Aavegotchi Logo" [ref=e8]
+        - generic [ref=e11]:
+          - button "Trade" [ref=e13]:
+            - heading "Trade" [level=5] [ref=e14]
+          - button "Play and Earn" [ref=e16]:
+            - heading "Play and Earn" [level=5] [ref=e17]
+          - button "GHST" [ref=e19]:
+            - heading "GHST" [level=5] [ref=e20]
+          - button "Community" [ref=e22]:
+            - heading "Community" [level=5] [ref=e23]
+          - button "About" [ref=e25]:
+            - heading "About" [level=5] [ref=e26]
+          - link "Announcements" [ref=e28]:
+            - /url: /announcements
+            - heading "Announcements" [level=5] [ref=e29]
+      - generic [ref=e32]:
+        - button "Sign in to play" [ref=e33]:
+          - generic [ref=e34]: Sign in to play
+          - img [ref=e36]
+          - img [ref=e40]
+          - img [ref=e44]
+          - img [ref=e48]
+          - img [ref=e52]
+          - img [ref=e56]
+          - img [ref=e60]
+          - img [ref=e64]
+          - img [ref=e68]
+          - img [ref=e72]
+          - img [ref=e76]
+          - img [ref=e80]
+          - img [ref=e84]
+          - img [ref=e88]
+          - img [ref=e92]
+          - img [ref=e96]
+          - img [ref=e100]
+          - img [ref=e104]
+          - img [ref=e108]
+          - img [ref=e112]
+        - button [ref=e117]:
+          - img [ref=e122]
+    - generic [ref=e126]:
+      - generic [ref=e127]:
+        - generic [ref=e130]:
+          - link "← Back" [ref=e132]:
+            - /url: /baazaar/aavegotchis
+            - paragraph [ref=e134]: ← Back
+          - link "baazaar" [ref=e136]:
+            - /url: /activity?p=baazaar&itemType=all
+            - paragraph [ref=e138]: baazaar
+          - link "auction" [ref=e140]:
+            - /url: /activity?p=auction&itemType=all
+            - paragraph [ref=e142]: auction
+          - link "bids" [ref=e144]:
+            - /url: /activity?p=bids&itemType=all&status=bids
+            - paragraph [ref=e146]: bids
+          - link "offers" [ref=e148]:
+            - /url: /activity?p=offers&itemType=all&status=all
+            - paragraph [ref=e150]: offers
+        - generic [ref=e155]:
+          - generic [ref=e156]:
+            - button "categories Filters" [ref=e157]:
+              - img "categories" [ref=e158]
+              - generic [ref=e159]: Filters
+            - generic [ref=e161]: Connect wallet to see offer filters
+          - generic [ref=e163]:
+            - button [ref=e164]:
+              - img [ref=e165]
+            - textbox "Enter Name/ID" [ref=e167]
+      - generic [ref=e168]:
+        - generic [ref=e171]:
+          - generic [ref=e175]:
+            - paragraph [ref=e176]: Category
+            - generic [ref=e177]:
+              - button "Switch to detailed view" [ref=e178]:
+                - img [ref=e180]
+              - button [ref=e182]:
+                - img [ref=e183]
+          - button "Clear All" [disabled] [ref=e191]
+        - generic [ref=e195]:
+          - paragraph [ref=e196]: Item
+          - paragraph
+          - generic [ref=e197]:
+            - generic [ref=e198]: price
+            - img "dropdown" [ref=e200]
+          - paragraph
+          - paragraph
+          - generic [ref=e201]:
+            - generic [ref=e202]: quantity
+            - img "dropdown" [ref=e204]
+          - paragraph
+          - paragraph [ref=e205]: by
+          - paragraph [ref=e206]: status
+          - paragraph
+          - generic [ref=e207]:
+            - generic [ref=e208]: time
+            - img "dropdown" [ref=e210]
+          - paragraph
+      - generic [ref=e213]:
+        - generic [ref=e217]:
+          - paragraph [ref=e218]: Category
+          - generic [ref=e219]:
+            - button "Switch to detailed view" [ref=e220]:
+              - img [ref=e222]
+            - button [ref=e224]:
+              - img [ref=e225]
+        - button "Clear All" [disabled] [ref=e233]
+  - button [ref=e234]

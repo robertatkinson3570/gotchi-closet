@@ -168,7 +168,6 @@ export function autoPrice(
   }
 
   const candidates: AutoPriceCandidate[] = [];
-  const candidateModes: AutoPriceMode[] = [];
 
   for (const periodDays of periodOptions) {
     const periodSec = periodDays * 86400;
@@ -254,22 +253,15 @@ export function autoPrice(
       score,
       reasons,
     });
-    candidateModes.push(mode);
   }
 
   candidates.sort((a, b) => b.score - a.score);
   const best = candidates[0];
-  const bestIdx = best
-    ? candidates.findIndex((c) => c === best)
-    : -1;
-  // bestIdx points to sorted index; we need original to look up mode
-  // Easier: re-derive mode from reasons
+  // Re-derive the winning mode from the top candidate's reasons.
   const bestIsChannelling = best?.reasons.some((r) =>
     r.includes("channelling-mode") || r.includes("alch-yield") || r.includes("alch yield")
   ) ?? false;
   const finalMode: AutoPriceMode = bestIsChannelling ? "channelling" : "battler";
-  void bestIdx;
-  void candidateModes;
 
   if (finalMode === "channelling") {
     notes.push(

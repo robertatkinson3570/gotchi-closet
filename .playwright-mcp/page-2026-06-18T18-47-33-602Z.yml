@@ -1,0 +1,106 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img "Aavegotchi is moving beyond the one studio model." [ref=e7]
+          - paragraph [ref=e8]:
+            - text: Aavegotchi is moving beyond the one studio model.
+            - link "Read the announcement" [ref=e9]:
+              - /url: https://blog.aavegotchi.com/aavegotchi-beyond-the-one-studio-model/
+        - img [ref=e11]
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - link "Aavegotchi Logo" [ref=e15]:
+            - /url: /
+            - img "Aavegotchi Logo" [ref=e16]
+          - generic [ref=e19]:
+            - button "Trade" [ref=e21]:
+              - heading "Trade" [level=5] [ref=e22]
+            - button "Play and Earn" [ref=e24]:
+              - heading "Play and Earn" [level=5] [ref=e25]
+            - button "GHST" [ref=e27]:
+              - heading "GHST" [level=5] [ref=e28]
+            - button "Community" [ref=e30]:
+              - heading "Community" [level=5] [ref=e31]
+            - button "About" [ref=e33]:
+              - heading "About" [level=5] [ref=e34]
+            - link "Announcements" [ref=e36]:
+              - /url: /announcements
+              - heading "Announcements" [level=5] [ref=e37]: Announcements
+        - generic [ref=e41]:
+          - button "Sign in to play" [ref=e42]:
+            - generic [ref=e43]: Sign in to play
+            - img [ref=e45]
+            - img [ref=e49]
+            - img [ref=e53]
+            - img [ref=e57]
+            - img [ref=e61]
+            - img [ref=e65]
+            - img [ref=e69]
+            - img [ref=e73]
+            - img [ref=e77]
+            - img [ref=e81]
+            - img [ref=e85]
+            - img [ref=e89]
+            - img [ref=e93]
+            - img [ref=e97]
+            - img [ref=e101]
+            - img [ref=e105]
+            - img [ref=e109]
+            - img [ref=e113]
+            - img [ref=e117]
+            - img [ref=e121]
+          - button [ref=e126]:
+            - img [ref=e131]
+      - generic [ref=e133]:
+        - heading "Marketplace Stats" [level=1] [ref=e134]
+        - generic [ref=e135]:
+          - generic [ref=e136]:
+            - generic [ref=e139]:
+              - link "Baazaar" [ref=e141]:
+                - /url: /baazaar/aavegotchis?chainId=8453
+                - paragraph [ref=e143]: Baazaar
+              - link "Auctions" [ref=e145]:
+                - /url: /auction?status=live&itemType=all&chainId=8453
+                - paragraph [ref=e147]: Auctions
+              - link "Activity" [ref=e149]:
+                - /url: /activity?p=baazaar&itemType=all&chainId=8453&type=purchases
+                - paragraph [ref=e151]: Activity
+              - link "Stats" [ref=e153]:
+                - /url: /stats?chainId=8453
+                - paragraph [ref=e155]: Stats
+            - generic [ref=e158]:
+              - generic [ref=e159]:
+                - generic [ref=e160]: Marketplace Volume Overview
+                - paragraph [ref=e161]:
+                  - text: "Chain:"
+                  - img "base logo" [ref=e162]
+                  - text: base
+              - generic [ref=e163]:
+                - button "24H" [ref=e164]:
+                  - generic [ref=e165]: 24H
+                - button "7D" [ref=e166]:
+                  - generic [ref=e167]: 7D
+                - button "30D" [ref=e168]:
+                  - generic [ref=e169]: 30D
+                - button "3M" [ref=e170]:
+                  - generic [ref=e171]: 3M
+          - generic [ref=e174]:
+            - generic [ref=e175]:
+              - generic [ref=e176]:
+                - generic [ref=e177]:
+                  - paragraph [ref=e178]: Baazaar
+                  - generic [ref=e179]: 24H
+                - generic [ref=e182]: Total settled volume recorded on-chain for the selected window.
+              - generic [ref=e183]:
+                - generic [ref=e184]:
+                  - paragraph [ref=e185]: Auctions
+                  - generic [ref=e186]: 24H
+                - generic [ref=e189]: Total settled volume recorded on-chain for the selected window.
+            - generic [ref=e205]:
+              - paragraph [ref=e208]: Baazaar volume (24H)
+              - paragraph [ref=e213]: Auction volume (24H)
+    - button [ref=e218]:
+      - img [ref=e219]
+  - alert [ref=e221]

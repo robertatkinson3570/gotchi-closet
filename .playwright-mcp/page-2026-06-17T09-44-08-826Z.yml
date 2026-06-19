@@ -1,0 +1,113 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img "Aavegotchi is moving beyond the one studio model." [ref=e7]
+          - paragraph [ref=e8]:
+            - text: Aavegotchi is moving beyond the one studio model.
+            - link "Read the announcement" [ref=e9]:
+              - /url: https://blog.aavegotchi.com/aavegotchi-beyond-the-one-studio-model/
+        - img [ref=e11]
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - link "Aavegotchi Logo" [ref=e15]:
+            - /url: /
+            - img "Aavegotchi Logo" [ref=e16]
+          - generic [ref=e19]:
+            - button "Trade" [ref=e21]:
+              - heading "Trade" [level=5] [ref=e22]
+            - button "Play and Earn" [ref=e24]:
+              - heading "Play and Earn" [level=5] [ref=e25]
+            - button "GHST" [ref=e27]:
+              - heading "GHST" [level=5] [ref=e28]
+            - button "Community" [ref=e30]:
+              - heading "Community" [level=5] [ref=e31]
+            - button "About" [ref=e33]:
+              - heading "About" [level=5] [ref=e34]
+            - link "Announcements" [ref=e36]:
+              - /url: /announcements
+              - heading "Announcements" [level=5] [ref=e37]: Announcements
+        - generic [ref=e41]:
+          - button "Sign in to play" [ref=e42]:
+            - generic [ref=e43]: Sign in to play
+            - img [ref=e45]
+            - img [ref=e49]
+            - img [ref=e53]
+            - img [ref=e57]
+            - img [ref=e61]
+            - img [ref=e65]
+            - img [ref=e69]
+            - img [ref=e73]
+            - img [ref=e77]
+            - img [ref=e81]
+            - img [ref=e85]
+            - img [ref=e89]
+            - img [ref=e93]
+            - img [ref=e97]
+            - img [ref=e101]
+            - img [ref=e105]
+            - img [ref=e109]
+            - img [ref=e113]
+            - img [ref=e117]
+            - img [ref=e121]
+          - button [ref=e126]:
+            - img [ref=e131]
+      - generic [ref=e133]:
+        - heading "Earn Rewards on Aavegotchi" [level=1] [ref=e134]
+        - generic [ref=e135]:
+          - generic [ref=e136]:
+            - heading "Earn" [level=3] [ref=e137]
+            - generic [ref=e138]: Earn rewards through Rarity Farming and Staking
+            - generic [ref=e139]:
+              - link "Rarity Farming" [ref=e141]:
+                - /url: /earn?tab=rarity-farming
+                - paragraph [ref=e143]: Rarity Farming
+              - link "Staking" [ref=e146]:
+                - /url: /earn?tab=staking
+                - paragraph [ref=e148]: Staking
+          - generic [ref=e150]:
+            - generic [ref=e152]:
+              - heading "SZN 12 ROUND 4" [level=3] [ref=e153]
+              - heading "SNAPSHOT" [level=3] [ref=e154]
+              - heading "6 months ago" [level=3] [ref=e155]
+            - generic [ref=e156]:
+              - generic [ref=e157]:
+                - generic [ref=e159]:
+                  - button [ref=e160]:
+                    - img [ref=e161]
+                  - textbox "Enter Name/ID" [ref=e163]
+                - generic [ref=e164]:
+                  - generic [ref=e165]:
+                    - button "Rarity" [ref=e166]:
+                      - img [ref=e167]
+                      - generic [ref=e169]: Rarity
+                      - img [ref=e170]
+                    - generic:
+                      - button "Rarity"
+                      - button "Kinship"
+                      - button "Experience"
+                  - generic [ref=e172]:
+                    - button "All" [ref=e173]:
+                      - img [ref=e174]
+                      - generic [ref=e176]: All
+                      - img [ref=e177]
+                    - generic:
+                      - button "All"
+                      - button "Only Mine"
+              - generic [ref=e179]:
+                - generic [ref=e181]:
+                  - textbox "Block" [ref=e182]
+                  - button [ref=e183]:
+                    - img [ref=e184]
+                - button "Export to CSV" [ref=e186]:
+                  - generic [ref=e187]: Export to CSV
+                - generic [ref=e188]:
+                  - button [disabled] [ref=e189]:
+                    - img [ref=e190]
+                  - generic [ref=e192]: 1 / 1
+                  - button [disabled] [ref=e193]:
+                    - img [ref=e194]
+    - button [ref=e318]:
+      - img [ref=e319]
+  - alert [ref=e321]

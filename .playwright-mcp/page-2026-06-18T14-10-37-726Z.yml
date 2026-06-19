@@ -1,0 +1,263 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img "Aavegotchi is moving beyond the one studio model." [ref=e7]
+          - paragraph [ref=e8]:
+            - text: Aavegotchi is moving beyond the one studio model.
+            - link "Read the announcement" [ref=e9]:
+              - /url: https://blog.aavegotchi.com/aavegotchi-beyond-the-one-studio-model/
+        - img [ref=e11]
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - link "Aavegotchi Logo" [ref=e15]:
+            - /url: /
+            - img "Aavegotchi Logo" [ref=e16]
+          - generic [ref=e19]:
+            - button "Trade" [ref=e21]:
+              - heading "Trade" [level=5] [ref=e22]
+            - button "Play and Earn" [ref=e24]:
+              - heading "Play and Earn" [level=5] [ref=e25]
+            - button "GHST" [ref=e27]:
+              - heading "GHST" [level=5] [ref=e28]
+            - button "Community" [ref=e30]:
+              - heading "Community" [level=5] [ref=e31]
+            - button "About" [ref=e33]:
+              - heading "About" [level=5] [ref=e34]
+            - link "Announcements" [ref=e36]:
+              - /url: /announcements
+              - heading "Announcements" [level=5] [ref=e37]: Announcements
+        - generic [ref=e41]:
+          - button "Sign in to play" [ref=e42]:
+            - generic [ref=e43]: Sign in to play
+            - img [ref=e45]
+            - img [ref=e49]
+            - img [ref=e53]
+            - img [ref=e57]
+            - img [ref=e61]
+            - img [ref=e65]
+            - img [ref=e69]
+            - img [ref=e73]
+            - img [ref=e77]
+            - img [ref=e81]
+            - img [ref=e85]
+            - img [ref=e89]
+            - img [ref=e93]
+            - img [ref=e97]
+            - img [ref=e101]
+            - img [ref=e105]
+            - img [ref=e109]
+            - img [ref=e113]
+            - img [ref=e117]
+            - img [ref=e121]
+          - button [ref=e126]:
+            - img [ref=e131]
+      - generic [ref=e135]:
+        - generic [ref=e136]:
+          - generic [ref=e139]:
+            - link "← Back" [ref=e141]:
+              - /url: /baazaar/aavegotchis
+              - paragraph [ref=e143]: ← Back
+            - link "baazaar" [ref=e145]:
+              - /url: /activity?p=baazaar&itemType=all
+              - paragraph [ref=e147]: baazaar
+            - link "auction" [ref=e149]:
+              - /url: /activity?p=auction&itemType=all
+              - paragraph [ref=e151]: auction
+            - link "bids" [ref=e153]:
+              - /url: /activity?p=bids&itemType=all&status=bids
+              - paragraph [ref=e155]: bids
+            - link "offers" [ref=e157]:
+              - /url: /activity?p=offers&itemType=all&status=all
+              - paragraph [ref=e159]: offers
+          - generic [ref=e164]:
+            - generic [ref=e165]:
+              - button "categories Filters" [ref=e166]:
+                - img "categories" [ref=e167]
+                - generic [ref=e168]: Filters
+              - generic [ref=e170]: Connect wallet to see offer filters
+            - generic [ref=e172]:
+              - button [ref=e173]:
+                - img [ref=e174]
+              - textbox "Enter Name/ID" [ref=e176]
+        - generic [ref=e177]:
+          - generic [ref=e180]:
+            - generic [ref=e182]:
+              - generic [ref=e184]:
+                - paragraph [ref=e185]: Category
+                - generic [ref=e186]:
+                  - button "Switch to detailed view" [ref=e187]:
+                    - img [ref=e189]
+                  - button [ref=e191]:
+                    - img [ref=e192]
+              - generic [ref=e195]:
+                - generic [ref=e196]:
+                  - generic [ref=e197]: All
+                  - link "ALL" [ref=e199]:
+                    - /url: /activity?p=offers&itemType=all
+                    - generic "All Categories" [ref=e200]: ALL
+                - generic [ref=e201]:
+                  - generic [ref=e202]: Aavegotchi
+                  - generic [ref=e203]:
+                    - link "aavegotchis" [ref=e205]:
+                      - /url: /activity?p=offers&itemType=aavegotchis
+                      - generic "aavegotchis" [ref=e206]:
+                        - img "aavegotchis" [ref=e207]
+                    - link "wearables" [ref=e209]:
+                      - /url: /activity?p=offers&itemType=wearables
+                      - generic "wearables" [ref=e210]:
+                        - img "wearables" [ref=e211]
+                    - link "portals" [ref=e213]:
+                      - /url: /activity?p=offers&itemType=portals
+                      - generic "portals" [ref=e214]:
+                        - img "portals" [ref=e215]
+                    - link "forge" [ref=e217]:
+                      - /url: /activity?p=offers&itemType=forge
+                      - generic "forge" [ref=e218]:
+                        - img "forge" [ref=e219]
+                    - link "consumables" [ref=e221]:
+                      - /url: /activity?p=offers&itemType=consumables
+                      - generic "consumables" [ref=e222]:
+                        - img "consumables" [ref=e223]
+                    - link "gotchi-domain" [ref=e225]:
+                      - /url: /activity?p=offers&itemType=gotchi-domain
+                      - generic "gotchi-domain" [ref=e226]:
+                        - img "gotchi-domain" [ref=e227]
+                - generic [ref=e228]:
+                  - generic [ref=e229]: Gotchiverse
+                  - generic [ref=e230]:
+                    - link "parcels" [ref=e232]:
+                      - /url: /activity?p=offers&itemType=parcels
+                      - generic "parcels" [ref=e233]:
+                        - img "parcels" [ref=e234]
+                    - link "installations" [ref=e236]:
+                      - /url: /activity?p=offers&itemType=installations
+                      - generic "installations" [ref=e237]:
+                        - img "installations" [ref=e238]
+                    - link "tiles" [ref=e240]:
+                      - /url: /activity?p=offers&itemType=tiles
+                      - generic "tiles" [ref=e241]:
+                        - img "tiles" [ref=e242]
+                - generic [ref=e243]:
+                  - generic [ref=e244]: FAKE Gotchis
+                  - generic [ref=e245]:
+                    - link "fakegotchis" [ref=e247]:
+                      - /url: /activity?p=offers&itemType=fakegotchis
+                      - generic "fakegotchis" [ref=e248]:
+                        - img "fakegotchis" [ref=e249]
+                    - link "fakecards" [ref=e251]:
+                      - /url: /activity?p=offers&itemType=fakecards
+                      - generic "fakecards" [ref=e252]:
+                        - img "fakecards" [ref=e253]
+                - generic [ref=e254]:
+                  - generic [ref=e255]: Gotchi Guardians
+                  - generic [ref=e256]:
+                    - link "guardian-skins" [ref=e258]:
+                      - /url: /activity?p=offers&itemType=guardian-skins
+                      - generic "guardian-skins" [ref=e259]:
+                        - img "guardian-skins" [ref=e260]
+                    - link "guardians-profile" [ref=e262]:
+                      - /url: /activity?p=offers&itemType=guardians-profile
+                      - generic "guardians-profile" [ref=e263]:
+                        - img "guardians-profile" [ref=e264]
+            - button "Clear All" [disabled] [ref=e266]
+          - generic [ref=e270]:
+            - paragraph [ref=e271]: Item
+            - paragraph [ref=e272]:
+              - generic [ref=e273]:
+                - generic [ref=e274]: price
+                - img "dropdown" [ref=e276]
+            - paragraph [ref=e277]:
+              - generic [ref=e278]:
+                - generic [ref=e279]: quantity
+                - img "dropdown" [ref=e281]
+            - paragraph [ref=e282]: by
+            - paragraph [ref=e283]: status
+            - paragraph [ref=e284]:
+              - generic [ref=e285]:
+                - generic [ref=e286]: time
+                - img "dropdown" [ref=e288]
+        - generic [ref=e291]:
+          - generic [ref=e293]:
+            - generic [ref=e295]:
+              - paragraph [ref=e296]: Category
+              - generic [ref=e297]:
+                - button "Switch to detailed view" [ref=e298]:
+                  - img [ref=e300]
+                - button [ref=e302]:
+                  - img [ref=e303]
+            - generic [ref=e306]:
+              - generic [ref=e307]:
+                - generic [ref=e308]: All
+                - link "ALL" [ref=e310]:
+                  - /url: /activity?p=offers&itemType=all
+                  - generic "All Categories" [ref=e311]: ALL
+              - generic [ref=e312]:
+                - generic [ref=e313]: Aavegotchi
+                - generic [ref=e314]:
+                  - link "aavegotchis" [ref=e316]:
+                    - /url: /activity?p=offers&itemType=aavegotchis
+                    - generic "aavegotchis" [ref=e317]:
+                      - img "aavegotchis" [ref=e318]
+                  - link "wearables" [ref=e320]:
+                    - /url: /activity?p=offers&itemType=wearables
+                    - generic "wearables" [ref=e321]:
+                      - img "wearables" [ref=e322]
+                  - link "portals" [ref=e324]:
+                    - /url: /activity?p=offers&itemType=portals
+                    - generic "portals" [ref=e325]:
+                      - img "portals" [ref=e326]
+                  - link "forge" [ref=e328]:
+                    - /url: /activity?p=offers&itemType=forge
+                    - generic "forge" [ref=e329]:
+                      - img "forge" [ref=e330]
+                  - link "consumables" [ref=e332]:
+                    - /url: /activity?p=offers&itemType=consumables
+                    - generic "consumables" [ref=e333]:
+                      - img "consumables" [ref=e334]
+                  - link "gotchi-domain" [ref=e336]:
+                    - /url: /activity?p=offers&itemType=gotchi-domain
+                    - generic "gotchi-domain" [ref=e337]:
+                      - img "gotchi-domain" [ref=e338]
+              - generic [ref=e339]:
+                - generic [ref=e340]: Gotchiverse
+                - generic [ref=e341]:
+                  - link "parcels" [ref=e343]:
+                    - /url: /activity?p=offers&itemType=parcels
+                    - generic "parcels" [ref=e344]:
+                      - img "parcels" [ref=e345]
+                  - link "installations" [ref=e347]:
+                    - /url: /activity?p=offers&itemType=installations
+                    - generic "installations" [ref=e348]:
+                      - img "installations" [ref=e349]
+                  - link "tiles" [ref=e351]:
+                    - /url: /activity?p=offers&itemType=tiles
+                    - generic "tiles" [ref=e352]:
+                      - img "tiles" [ref=e353]
+              - generic [ref=e354]:
+                - generic [ref=e355]: FAKE Gotchis
+                - generic [ref=e356]:
+                  - link "fakegotchis" [ref=e358]:
+                    - /url: /activity?p=offers&itemType=fakegotchis
+                    - generic "fakegotchis" [ref=e359]:
+                      - img "fakegotchis" [ref=e360]
+                  - link "fakecards" [ref=e362]:
+                    - /url: /activity?p=offers&itemType=fakecards
+                    - generic "fakecards" [ref=e363]:
+                      - img "fakecards" [ref=e364]
+              - generic [ref=e365]:
+                - generic [ref=e366]: Gotchi Guardians
+                - generic [ref=e367]:
+                  - link "guardian-skins" [ref=e369]:
+                    - /url: /activity?p=offers&itemType=guardian-skins
+                    - generic "guardian-skins" [ref=e370]:
+                      - img "guardian-skins" [ref=e371]
+                  - link "guardians-profile" [ref=e373]:
+                    - /url: /activity?p=offers&itemType=guardians-profile
+                    - generic "guardians-profile" [ref=e374]:
+                      - img "guardians-profile" [ref=e375]
+          - button "Clear All" [disabled] [ref=e377]
+    - button [ref=e378]:
+      - img [ref=e379]
+  - alert [ref=e381]

@@ -9,7 +9,6 @@ function getGotchiSvgUrl(gotchi: Gotchi): string {
 export function usePreloadAssets(gotchis: Gotchi[]) {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
-  const [failedIds, setFailedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (gotchis.length === 0) {
@@ -18,7 +17,6 @@ export function usePreloadAssets(gotchis: Gotchi[]) {
     }
 
     let loadedCount = 0;
-    const failed = new Set<string>();
     const total = gotchis.length;
 
     const loadImage = (gotchi: Gotchi): Promise<void> => {
@@ -31,7 +29,6 @@ export function usePreloadAssets(gotchis: Gotchi[]) {
         };
         img.onerror = () => {
           loadedCount++;
-          failed.add(gotchi.id);
           setProgress(Math.round((loadedCount / total) * 100));
           resolve();
         };
@@ -40,10 +37,9 @@ export function usePreloadAssets(gotchis: Gotchi[]) {
     };
 
     Promise.all(gotchis.map(loadImage)).then(() => {
-      setFailedIds(failed);
       setLoading(false);
     });
   }, [gotchis]);
 
-  return { loading, progress, failedIds };
+  return { loading, progress };
 }
