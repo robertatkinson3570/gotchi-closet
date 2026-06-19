@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { qk } from "@/lib/queryKeys";
 import { client } from "@/graphql/client";
 import { HISTORICAL_LENDINGS } from "@/graphql/lendingQueries";
 
@@ -44,9 +45,6 @@ export type HistoricalLending = {
 
 const PAGE = 1000;
 const MAX_PAGES = 6; // up to 6000 historical lendings
-
-const cache = new Map<number, { ts: number; data: HistoricalLending[] }>();
-const CACHE_TTL_MS = 5 * 60_000;
 
 function normalizeArray(value: unknown, length: number): number[] {
   const arr = Array.isArray(value) ? value : [];
@@ -108,9 +106,6 @@ function transform(raw: any): HistoricalLending {
 }
 
 async function fetchAll(sinceUnix: number): Promise<HistoricalLending[]> {
-  const cached = cache.get(sinceUnix);
-  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) return cached.data;
-
   const all: HistoricalLending[] = [];
   let lastId = "";
   for (let i = 0; i < MAX_PAGES; i++) {
@@ -128,37 +123,19 @@ async function fetchAll(sinceUnix: number): Promise<HistoricalLending[]> {
     if (batch.length < PAGE) break;
     lastId = batch[batch.length - 1].id;
   }
-  cache.set(sinceUnix, { ts: Date.now(), data: all });
   return all;
 }
 
 export function useHistoricalLendings(days = 90) {
-  const [lendings, setLendings] = useState<HistoricalLending[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const since = Math.floor(Date.now() / 1000) - days * 24 * 60 * 60;
-    setLoading(true);
-    setError(null);
-    fetchAll(since)
-      .then((data) => {
-        if (!cancelled) {
-          setLendings(data);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err?.message || "Failed to load historical lendings");
-          setLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [days]);
-
-  return { lendings, loading, error };
+  const { data, isLoading, error } = useQuery({
+    queryKey: qk.historicalLendings(days),
+    queryFn: () => fetchAll(Math.floor(Date.now() / 1000) - days * 24 * 60 * 60),
+    staleTime: 5 * 60_000,
+    gcTime: 5 * 60_000,
+  });
+  return {
+    lendings: data ?? [],
+    loading: isLoading,
+    error: error ? (error as Error).message : null,
+  };
 }

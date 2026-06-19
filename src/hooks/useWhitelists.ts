@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAccount } from "wagmi";
 import { client } from "@/graphql/client";
 import { WHITELISTS_FOR_ADDRESS } from "@/graphql/lendingQueries";
+import { qk } from "@/lib/queryKeys";
+import { queryClient } from "@/lib/queryClient";
 
 export type WhitelistRef = {
   id: string;
@@ -10,80 +12,45 @@ export type WhitelistRef = {
   maxBorrowLimit: number | null;
 };
 
-type State = {
-  asMember: WhitelistRef[];
-  asOwner: WhitelistRef[];
-  loading: boolean;
-  error: string | null;
-};
-
-const initial: State = { asMember: [], asOwner: [], loading: false, error: null };
-
-const cache = new Map<string, { ts: number; data: State }>();
-const CACHE_TTL_MS = 60_000;
+type WhitelistsData = { asMember: WhitelistRef[]; asOwner: WhitelistRef[] };
 
 export function invalidateWhitelistsCache(address?: string) {
-  if (address) cache.delete(address.toLowerCase());
-  else cache.clear();
+  queryClient.invalidateQueries({
+    queryKey: address ? qk.whitelists(address.toLowerCase()) : qk.whitelists(),
+  });
+}
+
+const transform = (rows: any[] | undefined): WhitelistRef[] =>
+  (rows ?? []).map((r) => ({
+    id: String(r.id),
+    name: r.name ?? null,
+    ownerAddress: String(r.ownerAddress ?? ""),
+    maxBorrowLimit: r.maxBorrowLimit != null ? Number(r.maxBorrowLimit) : null,
+  }));
+
+async function fetchWhitelists(lower: string): Promise<WhitelistsData> {
+  const res = await client.query(WHITELISTS_FOR_ADDRESS, { address: lower }).toPromise();
+  if (res.error) throw new Error(res.error.message);
+  return {
+    asMember: transform(res.data?.asMember),
+    asOwner: transform(res.data?.asOwner),
+  };
 }
 
 export function useWhitelistsForAddress(address: string | null | undefined) {
-  const [state, setState] = useState<State>(initial);
-
-  useEffect(() => {
-    if (!address) {
-      setState(initial);
-      return;
-    }
-    const lower = address.toLowerCase();
-    const cached = cache.get(lower);
-    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-      setState(cached.data);
-      return;
-    }
-
-    let cancelled = false;
-    setState((s) => ({ ...s, loading: true, error: null }));
-    client
-      .query(WHITELISTS_FOR_ADDRESS, { address: lower })
-      .toPromise()
-      .then((res) => {
-        if (cancelled) return;
-        if (res.error) {
-          setState({ asMember: [], asOwner: [], loading: false, error: res.error.message });
-          return;
-        }
-        const transform = (rows: any[] | undefined): WhitelistRef[] =>
-          (rows ?? []).map((r) => ({
-            id: String(r.id),
-            name: r.name ?? null,
-            ownerAddress: String(r.ownerAddress ?? ""),
-            maxBorrowLimit: r.maxBorrowLimit != null ? Number(r.maxBorrowLimit) : null,
-          }));
-        const next: State = {
-          asMember: transform(res.data?.asMember),
-          asOwner: transform(res.data?.asOwner),
-          loading: false,
-          error: null,
-        };
-        cache.set(lower, { ts: Date.now(), data: next });
-        setState(next);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setState({
-          asMember: [],
-          asOwner: [],
-          loading: false,
-          error: err?.message || "Failed to load whitelists",
-        });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [address]);
-
-  return state;
+  const lower = address ? address.toLowerCase() : null;
+  const { data, isLoading, error } = useQuery({
+    queryKey: qk.whitelists(lower),
+    queryFn: () => fetchWhitelists(lower!),
+    enabled: !!lower,
+    staleTime: 60_000,
+  });
+  return {
+    asMember: data?.asMember ?? [],
+    asOwner: data?.asOwner ?? [],
+    loading: !!lower && isLoading,
+    error: error ? (error as Error).message : null,
+  };
 }
 
 export function useMyWhitelistMemberIds(): Set<string> | null {
