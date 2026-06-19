@@ -505,8 +505,15 @@ export default function ExplorerPage() {
                 hasMore={gotchiHasMore}
                 error={gotchiError}
                 onLoadMore={gotchiLoadMore}
-                onManage={mode === "mine" ? (g) => (selectMode ? toggleSel(g.tokenId) : setManage({ gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables, locked: rentalSets?.lentOut.has(g.tokenId) || rentalSets?.borrowed.has(g.tokenId), lockReason: rentalSets?.lentOut.has(g.tokenId) ? "Rented out" : rentalSets?.borrowed.has(g.tokenId) ? "Borrowed" : undefined, listed: !!g.listing?.id })) : undefined}
-                manageLabel={mode === "mine" && selectMode ? "Select" : undefined}
+                onManage={(g) => {
+                  if (mode === "mine") {
+                    if (selectMode) return toggleSel(g.tokenId);
+                    return setManage({ gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables, locked: rentalSets?.lentOut.has(g.tokenId) || rentalSets?.borrowed.has(g.tokenId), lockReason: rentalSets?.lentOut.has(g.tokenId) ? "Rented out" : rentalSets?.borrowed.has(g.tokenId) ? "Borrowed" : undefined, listed: !!g.listing?.id });
+                  }
+                  // Not owned → read-only Details view.
+                  setManage({ gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables, readOnly: true });
+                }}
+                manageLabel={mode === "mine" ? (selectMode ? "Select" : undefined) : "Details"}
                 selectedFor={mode === "mine" && selectMode ? (g) => selected.has(g.tokenId) : undefined}
                 rentalBadgeFor={mode === "mine" ? (g) => (rentalSets?.lentOut.has(g.tokenId) ? "Rented out" : rentalSets?.borrowed.has(g.tokenId) ? "Borrowed" : null) : undefined}
                 sealStatusFor={sealStatusFor}

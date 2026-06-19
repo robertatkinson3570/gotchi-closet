@@ -11,6 +11,8 @@ import { UseConsumablesBody } from "@/components/explorer/UseConsumablesBody";
 import { useBatchTransferEscrow, type EscrowBalance } from "@/hooks/useEscrowWithdraw";
 import { SoulCertificate } from "@/components/soul/SoulCertificate";
 import { CreateAuctionButton } from "@/components/explorer/CreateAuctionButton";
+import { RecentSales } from "@/components/explorer/RecentSales";
+import { MakeOfferButton } from "@/components/explorer/MakeOfferButton";
 
 const ACTIONS_ABI = [
   { name: "interact", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_tokenIds", type: "uint256[]" }], outputs: [] },
@@ -63,6 +65,8 @@ export type ManageGotchi = {
   lockReason?: string;
   /** Listed for sale — only petting + editing the listing are allowed. */
   listed?: boolean;
+  /** Viewer doesn't own this gotchi — show a read-only Details view (no actions). */
+  readOnly?: boolean;
 };
 
 const TRAITS = ["NRG", "AGG", "SPK", "BRN"] as const;
@@ -70,7 +74,7 @@ type Status = { kind: "idle" } | { kind: "busy"; label: string } | { kind: "ok";
 
 /** Large, controlled modal to view + manage a gotchi (opened from the profile). */
 export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; onClose: () => void }) {
-  const { gotchiId, name, hauntId, collateral, numericTraits, equippedWearables, locked, lockReason, listed } = gotchi;
+  const { gotchiId, name, hauntId, collateral, numericTraits, equippedWearables, locked, lockReason, listed, readOnly } = gotchi;
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const isOnBase = chainId === BASE_CHAIN_ID;
@@ -213,13 +217,13 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
         </div>
 
         <div className="p-4 space-y-3">
-          {locked && (
+          {!readOnly && locked && (
             <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-[12px] text-amber-700 dark:text-amber-300">
               This gotchi is {(lockReason || "rented").toLowerCase()} — only <span className="font-semibold">petting</span> is available right now. Channel &amp; claim its alchemica from <span className="font-semibold">Land Management</span>. Other actions unlock when the rental ends.
             </div>
           )}
 
-          {!locked && !listed && (
+          {!readOnly && !locked && !listed && (
             <button onClick={() => setEquipOpen(true)} className="w-full h-11 rounded-xl bg-gradient-to-r from-primary/20 to-fuchsia-500/20 border border-primary/40 text-primary text-sm font-bold inline-flex items-center justify-center gap-2 hover:from-primary/30 hover:to-fuchsia-500/30 transition-colors">
               <Shirt className="w-4 h-4" /> Equip / change wearables
             </button>
@@ -228,13 +232,13 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
           {/* Soul certificate + on-chain seal — available to the owner even when
               the gotchi is rented out or listed (sealing is independent of those).
               Hidden for borrowed gotchis since only the owner can seal. */}
-          {!isBorrowed && (
+          {!readOnly && !isBorrowed && (
             <button onClick={() => setSoulOpen(true)} className="w-full h-11 rounded-xl bg-gradient-to-r from-violet-500/15 to-cyan-500/15 border border-violet-400/40 text-violet-200 text-sm font-bold inline-flex items-center justify-center gap-2 hover:from-violet-500/25 hover:to-cyan-500/25 transition-colors">
               <Stamp className="w-4 h-4" /> Soul certificate &amp; Seal on Base
             </button>
           )}
 
-          {listed && !locked && (
+          {!readOnly && listed && !locked && (
             <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5 text-[12px] text-emerald-700 dark:text-emerald-400">
               This gotchi is <span className="font-semibold">listed for sale</span> — only <span className="font-semibold">petting</span> and editing the listing are available. Cancel the listing to unlock other actions.
             </div>
@@ -281,6 +285,13 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
             );
           })()}
 
+          <RecentSales kind="erc721" tokenId={gotchiId} />
+
+          {readOnly && (
+            <MakeOfferButton kind="erc721" category={BAAZAAR_CATEGORY.AAVEGOTCHI} tokenId={gotchiId} contractAddress={AAVEGOTCHI_DIAMOND_BASE} label={name || `Gotchi #${gotchiId}`} />
+          )}
+
+          {!readOnly && (
           <div className="grid sm:grid-cols-2 gap-3">
             <Section icon={<Heart className="w-4 h-4 text-rose-500" />} title="Pet (kinship)">
               <button disabled={busy || !petReady} onClick={async () => { await run("Pet", "interact", [[id]]); refetchDetail(); }} className="h-9 w-full rounded-lg bg-rose-500/15 text-rose-500 border border-rose-500/30 text-sm font-semibold disabled:opacity-50 hover:bg-rose-500/25">{petReady ? "Pet now" : "On cooldown"}</button>
@@ -391,6 +402,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
             </>)}
             </>)}
           </div>
+          )}
         </div>
       </div>
 
