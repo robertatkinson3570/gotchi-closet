@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw, Clock, Lock, FlaskConical } from "lucide-react";
@@ -27,6 +27,23 @@ const ACTIONS_ABI = [
 const RESPEC_COUNT_ABI = [
   { name: "respecCount", type: "function", stateMutability: "view", inputs: [{ name: "_tokenId", type: "uint32" }], outputs: [{ name: "", type: "uint256" }] },
 ] as const;
+
+// Skill points available to spend (AavegotchiGameFacet). Verified on Base.
+const AVAILABLE_SP_ABI = [
+  { name: "availableSkillPoints", type: "function", stateMutability: "view", inputs: [{ name: "_tokenId", type: "uint256" }], outputs: [{ type: "uint256" }] },
+] as const;
+
+// Pet (interact) cooldown: 12h.
+const PET_COOLDOWN = 43200;
+
+const ghstFmt = (wei?: string) => (wei ? (Number(wei) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 2 }) : "0");
+function fmtCountdown(sec: number): string {
+  if (sec <= 0) return "now";
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m`;
+  return `${sec}s`;
+}
 
 export type ManageGotchi = {
   gotchiId: string;
@@ -68,6 +85,35 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
   const { data: respecCountData } = useReadContract({ address: AAVEGOTCHI_DIAMOND_BASE, abi: RESPEC_COUNT_ABI, functionName: "respecCount", args: [Number(gotchiId)], chainId: BASE_CHAIN_ID });
   const respecCount = respecCountData != null ? Number(respecCountData) : null;
 
+  // Available skill points to spend (gate the Spend action + show the count).
+  const { data: availPtsData } = useReadContract({ address: AAVEGOTCHI_DIAMOND_BASE, abi: AVAILABLE_SP_ABI, functionName: "availableSkillPoints", args: [BigInt(gotchiId)], chainId: BASE_CHAIN_ID });
+  const availablePoints = availPtsData != null ? Number(availPtsData) : null;
+
+  // Live gotchi detail + listing/offer state (rarity, kinship, level, last pet, listed price, top offer).
+  const { data: detail, refetch: refetchDetail } = useQuery({
+    queryKey: ["manage-gotchi-detail", gotchiId],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const q = `{ aavegotchi(id:"${gotchiId}"){ hauntId level experience kinship baseRarityScore withSetsRarityScore equippedSetName lastInteracted }
+        listing: erc721Listings(first:1, where:{ tokenId:"${gotchiId}", category:3, cancelled:false, timePurchased:"0" }){ id priceInWei }
+        offer: erc721BuyOrders(first:1, where:{ erc721TokenId:"${gotchiId}", category:3, canceled:false }, orderBy:priceInWei, orderDirection:desc){ priceInWei } }`;
+      const res = await fetch(CORE_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+      const j = await res.json();
+      return j.data ?? null;
+    },
+  });
+  const ag = detail?.aavegotchi;
+  const activeListing = detail?.listing?.[0] as { id: string; priceInWei: string } | undefined;
+  const topOfferWei = detail?.offer?.[0]?.priceInWei as string | undefined;
+
+  // Pet cooldown countdown (ticks every 30s).
+  const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => { const t = setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 30_000); return () => clearInterval(t); }, []);
+  const lastInteracted = ag ? Number(ag.lastInteracted) : 0;
+  const nextPet = lastInteracted + PET_COOLDOWN;
+  const petReady = !lastInteracted || nowSec >= nextPet;
+  const spSum = sp.reduce((s, v) => s + Math.max(0, Math.trunc(Number(v) || 0)), 0);
+
   const run = async (label: string, functionName: string, args: any[]) => {
     if (!isConnected || !address || !publicClient) return setStatus({ kind: "err", label: "Connect your wallet first" });
     if (!isOnBase) return setStatus({ kind: "err", label: "Switch to Base" });
@@ -107,6 +153,13 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
   );
   const field = "h-9 flex-1 min-w-0 rounded-lg border border-border bg-background px-2.5 text-sm focus:ring-1 focus:ring-primary/40 outline-none";
   const goBtn = "h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 shrink-0 hover:brightness-110";
+  const Stat = ({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) => (
+    <div className="rounded-lg border border-border/40 bg-muted/20 px-2 py-1.5 text-center">
+      <div className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-sm font-bold truncate" title={typeof value === "string" ? value : undefined}>{value}</div>
+      {sub && <div className="text-[9px] text-muted-foreground">{sub}</div>}
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-3" onClick={onClose}>
@@ -157,9 +210,24 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
             </div>
           )}
 
+          {ag && (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              <Stat label="Rarity" value={`${ag.withSetsRarityScore}`} sub={`base ${ag.baseRarityScore}`} />
+              <Stat label="Kinship" value={`${ag.kinship}`} />
+              <Stat label="Level" value={`${ag.level}`} sub={`${Number(ag.experience).toLocaleString()} XP`} />
+              <Stat label="Haunt" value={`H${ag.hauntId}`} />
+              {ag.equippedSetName ? <Stat label="Set" value={ag.equippedSetName} /> : null}
+              {topOfferWei ? <Stat label="Top offer" value={ghstFmt(topOfferWei)} sub="GHST" /> : null}
+            </div>
+          )}
+
           <div className="grid sm:grid-cols-2 gap-3">
             <Section icon={<Heart className="w-4 h-4 text-rose-500" />} title="Pet (kinship)">
-              <button disabled={busy} onClick={() => run("Pet", "interact", [[id]])} className="h-9 w-full rounded-lg bg-rose-500/15 text-rose-500 border border-rose-500/30 text-sm font-semibold disabled:opacity-50 hover:bg-rose-500/25">Pet now</button>
+              <button disabled={busy || !petReady} onClick={async () => { await run("Pet", "interact", [[id]]); refetchDetail(); }} className="h-9 w-full rounded-lg bg-rose-500/15 text-rose-500 border border-rose-500/30 text-sm font-semibold disabled:opacity-50 hover:bg-rose-500/25">{petReady ? "Pet now" : "On cooldown"}</button>
+              <div className={`text-[10px] text-center ${petReady ? "text-emerald-500" : "text-muted-foreground"}`}>
+                {petReady ? "Ready to pet" : `Next pet in ${fmtCountdown(nextPet - nowSec)}`}
+                {lastInteracted > 0 && ` · last pet ${fmtCountdown(nowSec - lastInteracted)} ago`}
+              </div>
             </Section>
 
             <EndRentalBody gotchiId={gotchiId} />
@@ -174,15 +242,20 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
             </Section>
 
             <Section icon={<Sparkles className="w-4 h-4 text-amber-500" />} title="Spend skill points">
+              <div className="text-[11px] mb-0.5">
+                <span className={availablePoints ? "text-amber-500 font-semibold" : "text-muted-foreground"}>{availablePoints ?? "…"} point{availablePoints === 1 ? "" : "s"} to spend</span>
+              </div>
               <div className="grid grid-cols-4 gap-1.5">
                 {TRAITS.map((t, i) => (
                   <label key={t} className="text-[11px] text-muted-foreground">
                     {t}
-                    <input type="number" value={sp[i]} onChange={(e) => setSp((p) => { const n = [...p] as typeof p; n[i] = e.target.value; return n; })} className="h-8 w-full rounded border border-border bg-background px-1.5 text-sm" />
+                    <input type="number" disabled={!availablePoints} value={sp[i]} onChange={(e) => setSp((p) => { const n = [...p] as typeof p; n[i] = e.target.value; return n; })} className="h-8 w-full rounded border border-border bg-background px-1.5 text-sm disabled:opacity-50" />
                   </label>
                 ))}
               </div>
-              <button disabled={busy} onClick={() => run("Spend skill points", "spendSkillPoints", [id, sp.map((v) => Math.trunc(Number(v) || 0))])} className="h-9 w-full rounded bg-amber-500/15 text-amber-600 border border-amber-500/30 text-sm font-semibold disabled:opacity-50">Spend</button>
+              <button disabled={busy || !availablePoints || spSum <= 0 || spSum > (availablePoints || 0)} onClick={async () => { await run("Spend skill points", "spendSkillPoints", [id, sp.map((v) => Math.trunc(Number(v) || 0))]); refetchDetail(); }} className="h-9 w-full rounded bg-amber-500/15 text-amber-600 border border-amber-500/30 text-sm font-semibold disabled:opacity-50">
+                {!availablePoints ? "No points to spend" : spSum > (availablePoints || 0) ? `Only ${availablePoints} available` : "Spend"}
+              </button>
             </Section>
 
             <Section icon={<RotateCcw className="w-4 h-4 text-violet-500" />} title="Respec (reset skill points)">
@@ -202,11 +275,16 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
             </>)}
 
             <Section icon={<Tag className="w-4 h-4 text-emerald-500" />} title="List for sale">
+              {activeListing && (
+                <div className="text-[12px] text-emerald-600 dark:text-emerald-400">Currently listed for <span className="font-semibold">{ghstFmt(activeListing.priceInWei)} GHST</span></div>
+              )}
               <div className="flex items-center gap-1.5">
-                <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price (GHST)" className={field} />
-                <button disabled={busy || !(Number(price) > 0)} onClick={() => run("List", "addERC721Listing", [AAVEGOTCHI_DIAMOND_BASE, id, 3n, BigInt(Math.floor(Number(price) * 1e18))])} className={`${goBtn} bg-emerald-600`}>List</button>
+                <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={activeListing ? "New price (GHST)" : "Price (GHST)"} className={field} />
+                <button disabled={busy || !(Number(price) > 0)} onClick={async () => { await run(activeListing ? "Update listing" : "List", "addERC721Listing", [AAVEGOTCHI_DIAMOND_BASE, id, 3n, BigInt(Math.floor(Number(price) * 1e18))]); refetchDetail(); }} className={`${goBtn} bg-emerald-600`}>{activeListing ? "Update" : "List"}</button>
               </div>
-              <button disabled={busy} onClick={cancelListing} className="h-8 w-full rounded border border-border/60 text-xs font-medium text-muted-foreground hover:bg-muted/50 disabled:opacity-50">Cancel my listing</button>
+              {activeListing && (
+                <button disabled={busy} onClick={async () => { await cancelListing(); refetchDetail(); }} className="h-8 w-full rounded border border-border/60 text-xs font-medium text-muted-foreground hover:bg-muted/50 disabled:opacity-50">Cancel my listing</button>
+              )}
             </Section>
 
             <Section icon={<FlaskConical className="w-4 h-4 text-cyan-500" />} title="Use item (consumables)">
