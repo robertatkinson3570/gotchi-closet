@@ -82,7 +82,6 @@ export default function ExplorerPage() {
     return "gotchi";
   });
   const [mode, setMode] = useState<DataMode>("all");
-  const [marketScope, setMarketScope] = useState<"buy" | "owned">("buy");
   const [manage, setManage] = useState<ManageGotchi | null>(null);
   const [sealGotchi, setSealGotchi] = useState<string | null>(null);
   const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
@@ -469,23 +468,16 @@ export default function ExplorerPage() {
 
           {MARKET_TABS[assetType] ? (
             (() => {
+              // Owned enumeration verified on-chain for these market categories.
+              // The single top-bar All/Owned/Baazaar toggle (mode) drives the view;
+              // "mine" = Owned. FAKE Cards / Guardian expose no enumeration yet.
               const ownable = assetType === "item" || assetType === "installation" || assetType === "parcel" || assetType === "tile" || assetType === "forge" || assetType === "fakegotchi" || assetType === "portal";
-              return (
-                <div>
-                  {ownable && (
-                    <div className="flex items-center gap-1 px-2 pt-2">
-                      {(["buy", "owned"] as const).map((s) => (
-                        <button key={s} onClick={() => setMarketScope(s)} className={`h-7 px-3 rounded-md text-[11px] font-semibold border capitalize ${marketScope === s ? "bg-primary/15 text-primary border-primary/40" : "border-border/40 text-muted-foreground hover:bg-muted/40"}`}>
-                          {s === "owned" ? "Owned · bulk list" : "Buy"}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {ownable && marketScope === "owned"
-                    ? <OwnedMarketGrid itemKind={assetType as "item" | "installation" | "parcel" | "tile" | "forge" | "fakegotchi" | "portal"} />
-                    : <MarketGrid {...MARKET_TABS[assetType]} />}
-                </div>
-              );
+              if (mode === "mine") {
+                return ownable
+                  ? <OwnedMarketGrid itemKind={assetType as "item" | "installation" | "parcel" | "tile" | "forge" | "fakegotchi" | "portal"} />
+                  : <div className="text-center py-12 text-muted-foreground text-sm">An owned view for this collection isn't available yet — it has no on-chain enumeration. Use the Baazaar tab to browse listings.</div>;
+              }
+              return <MarketGrid {...MARKET_TABS[assetType]} />;
             })()
           ) : assetType === "auction" ? (
             <AuctionGrid />

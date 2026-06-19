@@ -102,9 +102,9 @@ export function ExplorerTopBar({
             <ExplorerAssetToggle value={assetType} onChange={onAssetTypeChange} />
           )}
 
-          {isMarket ? (
+          {assetType === "auction" ? (
             <span className="text-xs text-muted-foreground shrink-0 px-1">
-              {assetType === "auction" ? "Live GBM auctions · place a bid" : "Cheapest open listings · select to bulk-buy"}
+              Live GBM auctions · place a bid
             </span>
           ) : (
             <div className="flex border rounded-lg overflow-hidden shrink-0">
