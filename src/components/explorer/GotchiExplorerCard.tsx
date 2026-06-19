@@ -386,11 +386,19 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
       {/* Soul seal status (every card). Sealed = quiet emerald. Unsealed =
           standout, clickable violet pill for the owner (opens the seal flow);
           a faint informational chip for everyone else. */}
-      {sealStatus === "sealed" && (
+      {sealStatus === "sealed" && (onSeal ? (
+        <button
+          onClick={(e) => { e.stopPropagation(); onSeal(); }}
+          className="absolute top-1 right-1 z-10 inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/90 text-white shadow ring-1 ring-emerald-300/50 hover:bg-emerald-400 transition-colors"
+          title="Soul sealed on Base — view certificate"
+        >
+          🔏 Sealed
+        </button>
+      ) : (
         <span className="absolute top-1 right-1 z-10 inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/90 text-white shadow" title="Soul sealed on Base">
           🔏 Sealed
         </span>
-      )}
+      ))}
       {sealStatus === "unsealed" && (onSeal ? (
         <button
           onClick={(e) => { e.stopPropagation(); onSeal(); }}

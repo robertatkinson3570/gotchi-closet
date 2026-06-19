@@ -6,6 +6,7 @@ import { getSoulDepth, type SoulDepthData } from "@/lib/companion/soulApi";
 import { GotchiSvgById } from "@/components/explorer/GotchiSvgById";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { env } from "@/lib/env";
+import { useSealedTokens } from "@/state/useSealedTokens";
 
 // ABI for SoulSeal.seal(...) — the owner submits this from their own wallet to
 // anchor the soul on Base. The contract verifies the attestor signature AND that
@@ -276,6 +277,7 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
   const isOnBase = chainId === BASE_CHAIN_ID;
   const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
   const { writeContractAsync } = useWriteContract();
+  const markSealed = useSealedTokens((s) => s.markSealed);
 
   // Step indicator: ✓ done · • active · ○ pending.
   const sealPhaseIdx = SEAL_PHASES.indexOf(sealPhase);
@@ -295,8 +297,12 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
     setError(false);
     getSoulDepth(tokenId)
       .then((d) => {
-        if (d) setData(d);
-        else setError(true);
+        if (d) {
+          // If we sealed this token this session, trust that over a possibly
+          // lagging server read so a reopened cert never shows it as unsealed.
+          const justSealed = useSealedTokens.getState().sealed[String(tokenId)];
+          setData(justSealed && d.sealStatus !== "sealed" ? { ...d, sealStatus: "sealed" } : d);
+        } else setError(true);
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
@@ -380,9 +386,11 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
         throw new Error("The seal transaction reverted on-chain. You may not be the current owner of this gotchi.");
       }
       setSealPhase("done");
+      markSealed(tokenId); // flip the Explorer badge instantly, no refresh needed
       setData((d) => (d ? { ...d, sealStatus: "sealed" } : d));
+      // We just sealed — force "sealed" even if the server read still lags.
       getSoulDepth(tokenId)
-        .then((d) => { if (d) setData(d); })
+        .then((d) => { if (d) setData({ ...d, sealStatus: "sealed" }); })
         .catch(() => { /* optimistic state already applied */ });
     } catch (e) {
       const err = e as { shortMessage?: string; message?: string };

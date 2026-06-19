@@ -35,6 +35,7 @@ import { useToast } from "@/ui/use-toast";
 import setsData from "../../data/setsByTraitDirection.json";
 import { env } from "@/lib/env";
 import { SoulCertificate } from "@/components/soul/SoulCertificate";
+import { useSealedTokens } from "@/state/useSealedTokens";
 
 const ADD_LISTING_ABI = [
   { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_category", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
@@ -312,12 +313,15 @@ export default function ExplorerPage() {
       return (j.sealed ?? {}) as Record<string, boolean>;
     },
   });
+  const justSealed = useSealedTokens((s) => s.sealed);
   const sealStatusFor = useCallback(
     (g: { tokenId: string }): "sealed" | "unsealed" | null => {
+      // Just-sealed-this-session wins so the badge flips immediately (no refresh).
+      if (justSealed[g.tokenId]) return "sealed";
       if (!sealMap || !(g.tokenId in sealMap)) return null;
       return sealMap[g.tokenId] ? "sealed" : "unsealed";
     },
-    [sealMap]
+    [sealMap, justSealed]
   );
 
   const filteredWearablesBySearch = useMemo(() => {
