@@ -161,7 +161,6 @@ export default function BulkListPage() {
     } else {
       setSplitOwner(20);
     }
-    void modeBattler;
   };
 
   // Chunked-batch submit. With revenueTokens populated each addGotchiListing

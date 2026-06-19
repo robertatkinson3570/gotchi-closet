@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "react-router-dom";
-import { X, ExternalLink } from "lucide-react";
+import { X } from "lucide-react";
 import { GotchiSvg, prefetchGotchiSvg } from "@/components/gotchi/GotchiSvg";
 import type { HistoricalLending } from "@/hooks/useHistoricalLendings";
 import { quantile } from "@/lib/lending/analytics";
@@ -195,6 +195,3 @@ function Stat({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
-// Re-export ExternalLink for callers that want it
-export { ExternalLink };

@@ -9,10 +9,9 @@ const NAKED: number[] = new Array(16).fill(0);
 type Props = {
   lendings: HistoricalLending[];
   limit?: number;
-  onMore?: () => void;
 };
 
-export function RecentLendingsFeed({ lendings, limit = 18, onMore }: Props) {
+export function RecentLendingsFeed({ lendings, limit = 18 }: Props) {
   const [, setSearchParams] = useSearchParams();
   const items = lendings.slice(0, limit);
 
@@ -51,15 +50,6 @@ export function RecentLendingsFeed({ lendings, limit = 18, onMore }: Props) {
     <div className="rounded-xl glass p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold">Recent rentals</h3>
-        {onMore && (
-          <button
-            type="button"
-            onClick={onMore}
-            className="text-xs text-primary hover:underline"
-          >
-            See all
-          </button>
-        )}
       </div>
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
         {items.map((l) => {

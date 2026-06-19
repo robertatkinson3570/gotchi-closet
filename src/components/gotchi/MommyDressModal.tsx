@@ -42,7 +42,6 @@ export function MommyDressModal({
     };
     if (goal === "traitShape") {
       baseOptions.traitShapeType = traitShapeType;
-      baseOptions.aggressiveRespectChanges = true;
     }
     return baseOptions;
   }, [goal, traitShapeType, highestAllowedRarity]);
