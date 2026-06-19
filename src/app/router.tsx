@@ -24,6 +24,7 @@ const LandManagementPage = lazy(() => import("@/pages/LandManagementPage"));
 const WhitelistsPage = lazy(() => import("@/pages/WhitelistsPage"));
 const BulkListPage = lazy(() => import("@/pages/BulkListPage"));
 const ActivityPage = lazy(() => import("@/pages/ActivityPage"));
+const UserActivityPage = lazy(() => import("@/pages/UserActivityPage"));
 const StatsPage = lazy(() => import("@/pages/StatsPage"));
 const DaoPage = lazy(() => import("@/pages/DaoPage"));
 const GetTokensPage = lazy(() => import("@/pages/GetTokensPage"));
@@ -52,6 +53,9 @@ export const router = createBrowserRouter([
       { path: "explorer", element: <ExplorerPage /> },
       { path: "baazaar", element: <ExplorerPage /> },
       { path: "me", element: <Navigate to="/explorer?scope=owned" replace /> },
+      { path: "me/activity", element: <UserActivityPage /> },
+      { path: "u/:address", element: <UserActivityPage /> },
+      { path: "u/:address/activity", element: <UserActivityPage /> },
       { path: "activity", element: <ActivityPage /> },
       { path: "stats", element: <StatsPage /> },
       { path: "dao", element: <DaoPage /> },

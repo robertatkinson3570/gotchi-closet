@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Outlet, useLocation, Link } from "react-router-dom";
 import { useAccount, useDisconnect } from "wagmi";
 import { Loader2 } from "lucide-react";
-import { Coins, Search, Shirt, MapPin, Activity, Flame, Landmark } from "lucide-react";
+import { Coins, Search, Shirt, MapPin, Activity, Flame, Landmark, Receipt } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -54,6 +54,13 @@ export function RootLayout() {
                 </Button>
               </Link>
             ))}
+            {isConnected && address && (
+              <Link to="/me/activity" title="My activity — listings, offers, bids, auctions, sales">
+                <Button size="sm" variant="ghost" className={`h-8 px-2 ${location.pathname.startsWith("/me/activity") || location.pathname.startsWith("/u/") ? "bg-primary/15 text-primary shadow-glow-sm" : ""}`}>
+                  <Receipt className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
             <div className="ml-0.5 hidden sm:block">
               {isConnected && address ? (
                 <button
