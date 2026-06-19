@@ -25,15 +25,22 @@ const router = Router();
 // ---------------------------------------------------------------------------
 
 const battleBuckets = new Map<string, { count: number; resetAt: number }>();
-function rateLimited(wallet: string): boolean {
+function hit(key: string, limit: number, windowMs: number): boolean {
   const now = Date.now();
-  const b = battleBuckets.get(wallet);
+  const b = battleBuckets.get(key);
   if (!b || b.resetAt < now) {
-    battleBuckets.set(wallet, { count: 1, resetAt: now + 60_000 });
+    battleBuckets.set(key, { count: 1, resetAt: now + windowMs });
     return false;
   }
   b.count += 1;
-  return b.count > 3;
+  return b.count > limit;
+}
+// 3 battles / 60s per wallet, plus a per-IP cap so wallet rotation from one host
+// can't bypass it (req.ip via app.ts trust proxy).
+function rateLimited(wallet: string, ip?: string): boolean {
+  const w = hit("w:" + wallet, 3, 60_000);
+  const i = ip ? hit("ip:" + ip, 10, 60_000) : false;
+  return w || i;
 }
 
 // ---------------------------------------------------------------------------
@@ -165,7 +172,7 @@ router.post("/battle", async (req: Request, res: Response) => {
     }
 
     // 2. Rate-limit by wallet
-    if (rateLimited(wallet)) {
+    if (rateLimited(wallet, req.ip)) {
       return res.status(429).json({ error: "too many battles — slow down, fren" });
     }
 

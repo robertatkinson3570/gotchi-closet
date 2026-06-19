@@ -14,6 +14,9 @@ import { startAutoRenewCron } from "./lending/cron";
 
 export function createApp() {
   const app = express();
+  // Behind nginx on the VPS — trust one proxy hop so req.ip is the real client
+  // IP (used by the per-IP rate limiters in the routes), not the proxy address.
+  app.set("trust proxy", 1);
 
   // Production origins. Allowed unconditionally — these are the only places
   // the SPA legitimately runs from.

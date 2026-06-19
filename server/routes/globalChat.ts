@@ -22,12 +22,18 @@ export const sseClients = clients;
 
 // per-wallet token bucket: 5 msgs / 30s
 const buckets = new Map<string, { count: number; resetAt: number }>();
-function rateLimited(wallet: string): boolean {
+function hit(key: string, limit: number, windowMs: number): boolean {
   const now = Date.now();
-  const b = buckets.get(wallet);
-  if (!b || b.resetAt < now) { buckets.set(wallet, { count: 1, resetAt: now + 30_000 }); return false; }
+  const b = buckets.get(key);
+  if (!b || b.resetAt < now) { buckets.set(key, { count: 1, resetAt: now + windowMs }); return false; }
   b.count += 1;
-  return b.count > 5;
+  return b.count > limit;
+}
+// 5 msgs / 30s per wallet, plus a per-IP cap (req.ip via app.ts trust proxy).
+function rateLimited(wallet: string, ip?: string): boolean {
+  const w = hit("w:" + wallet, 5, 30_000);
+  const i = ip ? hit("ip:" + ip, 20, 30_000) : false;
+  return w || i;
 }
 
 router.get("/history", (req, res) => {
@@ -46,7 +52,7 @@ router.post("/post", async (req, res) => {
     if (!tokenId || !wallet.startsWith("0x") || !rawText) {
       return res.status(400).json({ error: "tokenId, wallet (0x), text required" });
     }
-    if (rateLimited(wallet)) return res.status(429).json({ error: "slow down, fren 👻" });
+    if (rateLimited(wallet, req.ip)) return res.status(429).json({ error: "slow down, fren 👻" });
 
     if (!(await verifyRoomSignature(wallet, signedAt, signature))) {
       return res.status(401).json({ error: "join signature required" });

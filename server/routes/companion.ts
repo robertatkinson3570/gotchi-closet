@@ -23,14 +23,21 @@ const router = Router();
 // signature so a caller cannot claim another address's premium entitlement and
 // spend the operator's OpenAI key. See the design spec's phase-2 notes.
 
-// crude per-wallet token bucket (in-memory): 30 msgs / 10 min
+// in-memory token buckets: 30 msgs / 10 min per wallet, plus a per-IP cap so a
+// caller can't bypass the wallet limit by rotating wallets from one host.
+// (req.ip is the real client only because app.ts sets trust proxy.)
 const buckets = new Map<string, { count: number; resetAt: number }>();
-function rateLimited(wallet: string): boolean {
+function hit(key: string, limit: number, windowMs: number): boolean {
   const now = Date.now();
-  const b = buckets.get(wallet);
-  if (!b || b.resetAt < now) { buckets.set(wallet, { count: 1, resetAt: now + 600_000 }); return false; }
+  const b = buckets.get(key);
+  if (!b || b.resetAt < now) { buckets.set(key, { count: 1, resetAt: now + windowMs }); return false; }
   b.count += 1;
-  return b.count > 30;
+  return b.count > limit;
+}
+function rateLimited(wallet: string, ip?: string): boolean {
+  const w = hit("w:" + wallet, 30, 600_000);
+  const i = ip ? hit("ip:" + ip, 100, 600_000) : false;
+  return w || i;
 }
 
 // A remembered fact is prepended to the system prompt, so reject anything that
@@ -50,7 +57,7 @@ router.post("/chat", async (req, res) => {
     if (!tokenId || !wallet.startsWith("0x") || !rawMessage.trim()) {
       return res.status(400).json({ error: "tokenId, wallet (0x), message required" });
     }
-    if (rateLimited(wallet)) return res.status(429).json({ error: "slow down, fren 👻" });
+    if (rateLimited(wallet, req.ip)) return res.status(429).json({ error: "slow down, fren 👻" });
 
     const { masked, deflected } = filterInbound(rawMessage);
 
