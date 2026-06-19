@@ -345,12 +345,15 @@ export default function ExplorerPage() {
   }, [setGotchiFilters]);
 
   const handleSearchChange = useCallback((value: string) => {
-    // Detect if this is a wallet address (0x followed by 40 hex chars)
-    const isAddress = /^0x[a-fA-F0-9]{40}$/.test(value.trim());
+    const v = value.trim();
+    const isAddress = /^0x[a-fA-F0-9]{40}$/.test(v);
+    const isTokenId = /^\d+$/.test(v); // pure number → look up by gotchi token id
     if (isAddress) {
-      setGotchiFilters({ ...gotchiFilters, nameContains: "", ownerAddress: value.trim() });
+      setGotchiFilters({ ...gotchiFilters, nameContains: "", tokenId: "", ownerAddress: v });
+    } else if (isTokenId) {
+      setGotchiFilters({ ...gotchiFilters, nameContains: "", ownerAddress: "", tokenId: v });
     } else {
-      setGotchiFilters({ ...gotchiFilters, nameContains: value, ownerAddress: "" });
+      setGotchiFilters({ ...gotchiFilters, nameContains: value, ownerAddress: "", tokenId: "" });
     }
   }, [gotchiFilters, setGotchiFilters]);
 

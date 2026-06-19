@@ -303,6 +303,19 @@ function getBaazaarOrderBy(field: SortField): string {
       return "timeCreated";
     case "price":
       return "priceInWei";
+    // Sort the listings by the linked gotchi's stats server-side (nested orderBy)
+    // so the global top surfaces, not just the newest page. Trait sorts
+    // (nrg/agg/…) stay page-local — the subgraph rejects gotchi__numericTraits.
+    case "rarity":
+      return "gotchi__withSetsRarityScore";
+    case "kinship":
+      return "gotchi__kinship";
+    case "xp":
+      return "gotchi__experience";
+    case "level":
+      return "gotchi__level";
+    case "tokenId":
+      return "gotchi__gotchiId";
     default:
       return "timeCreated";
   }

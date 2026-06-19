@@ -31,8 +31,8 @@ async function fetchListings(kind: "erc721" | "erc1155", category: number, token
   const where1155 = byAddr ? `erc1155TokenAddress: "${tokenAddress!.toLowerCase()}", cancelled: false, sold: false, quantity_gt: 0` : `category: $c, cancelled: false, sold: false, quantity_gt: 0`;
   const query =
     kind === "erc721"
-      ? `query($c: Int!){ erc721Listings(first: 200, where: { ${where721} }, orderBy: timeCreated, orderDirection: desc){ id tokenId priceInWei timeCreated category } }`
-      : `query($c: Int!){ erc1155Listings(first: 200, where: { ${where1155} }, orderBy: timeCreated, orderDirection: desc){ id erc1155TypeId priceInWei quantity timeCreated category } }`;
+      ? `query($c: Int!){ erc721Listings(first: 1000, where: { ${where721} }, orderBy: timeCreated, orderDirection: desc){ id tokenId priceInWei timeCreated category } }`
+      : `query($c: Int!){ erc1155Listings(first: 1000, where: { ${where1155} }, orderBy: timeCreated, orderDirection: desc){ id erc1155TypeId priceInWei quantity timeCreated category } }`;
   const res = await fetch(CORE_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
