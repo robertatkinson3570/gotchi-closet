@@ -40,9 +40,12 @@ type Props = {
   onClose: () => void;
   actions?: ReturnType<typeof useRealmActions>;
   gotchiId?: number;
+  /** Optional Baazaar action panel (buy/offer or list/cancel + sale history),
+   *  rendered under the header when this modal is opened from the Explorer. */
+  marketPanel?: React.ReactNode;
 };
 
-export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Props) {
+export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId, marketPanel }: Props) {
   const { detail, isLoading, error } = useParcelDetail(parcelId);
   const { address } = useAccount();
   const inventory = useInstallationInventory(address);
@@ -233,6 +236,8 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId }: Prop
                 </button>
               )}
             </div>
+
+            {marketPanel && <div className="rounded-lg border border-border/40 bg-muted/10 p-3 space-y-2.5">{marketPanel}</div>}
 
             {/* Tabs */}
             <div className="flex items-center gap-1 border-b border-border/30">

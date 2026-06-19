@@ -6,6 +6,7 @@ import { Loader2, ShoppingCart, MapPin, SlidersHorizontal, X } from "lucide-reac
 import { BuyButton } from "./BuyButton";
 import { MakeOfferButton } from "./MakeOfferButton";
 import { RecentSales } from "./RecentSales";
+import { ParcelDetailModal } from "@/components/lending/ParcelDetailModal";
 import { useMarketplaceBuy, type BuyParams } from "@/hooks/useMarketplaceBuy";
 import { useToast } from "@/ui/use-toast";
 import { CORE_SUBGRAPH_URL } from "@/lib/lending/contracts";
@@ -399,21 +400,38 @@ export function MarketGrid({
         </div>
       )}
 
-      {detail && (() => {
+      {detail && itemKind === "parcel" && (
+        <ParcelDetailModal
+          parcelId={detail.tokenId}
+          onClose={() => setDetail(null)}
+          marketPanel={(
+            <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Listed price</div>
+                  <div className="text-xl font-bold text-emerald-500">{ghst(detail.priceWei)} GHST</div>
+                </div>
+              </div>
+              <BuyButton listingId={detail.listingId} tokenId={detail.tokenId} priceInWei={detail.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`Parcel #${detail.tokenId}`} />
+              <MakeOfferButton kind={kind} category={category} tokenId={detail.tokenId} contractAddress={contract} label={`Parcel #${detail.tokenId}`} />
+              <RecentSales kind={kind} tokenId={detail.tokenId} />
+            </>
+          )}
+        />
+      )}
+      {detail && itemKind !== "parcel" && (() => {
         const label = ({ item: "Item", parcel: "Parcel", installation: "Installation", tile: "Tile", portal: "Closed Portal", fakegotchi: "FAKE Gotchi", fakecard: "FAKE Card", forge: "Forge", guardian: "Guardian Skin" } as Record<string, string>)[itemKind] ?? "Item";
-        const pm = itemKind === "parcel" ? parcelMeta?.[detail.tokenId] : undefined;
         const tm = isTyped ? typeMeta?.[detail.tokenId] : undefined;
         return (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-3" onClick={() => setDetail(null)}>
           <div className="w-[min(480px,96vw)] max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 sticky top-0 bg-background z-10">
-              <div className="text-base font-bold truncate">{pm?.name || (tm?.name) || label} <span className="text-muted-foreground font-mono text-sm">#{detail.tokenId}</span></div>
+              <div className="text-base font-bold truncate">{tm?.name || label} <span className="text-muted-foreground font-mono text-sm">#{detail.tokenId}</span></div>
               <button onClick={() => setDetail(null)} className="p-1.5 rounded hover:bg-muted/50 shrink-0"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-4 space-y-3">
               <div className="w-40 h-40 mx-auto rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 flex items-center justify-center [&_img]:max-h-36 [&_img]:max-w-36 [&_img]:object-contain [&>svg]:w-full [&>svg]:h-full">
                 {itemKind === "portal" ? <PortalImage tokenId={detail.tokenId} />
-                  : itemKind === "parcel" ? <AssetImage candidates={parcelImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} className="max-h-full max-w-full object-contain rounded" />
                   : itemKind === "installation" ? <AssetImage candidates={installationImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} />
                   : itemKind === "tile" ? <AssetImage candidates={tileImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} />
                   : itemKind === "forge" ? <AssetImage candidates={[FORGE_TYPE_IMG[detail.category ?? -1]].filter(Boolean)} alt={`#${detail.tokenId}`} />
@@ -422,13 +440,6 @@ export function MarketGrid({
                   : <AssetImage candidates={itemImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} />}
               </div>
 
-              {pm && (
-                <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
-                  <div className="rounded bg-muted/30 py-1.5"><div className="text-muted-foreground">District</div><div className="font-semibold">{pm.district || "—"}</div></div>
-                  <div className="rounded bg-muted/30 py-1.5"><div className="text-muted-foreground">Size</div><div className="font-semibold">{PARCEL_SIZES[pm.size] ?? "—"}</div></div>
-                  <div className="rounded bg-muted/30 py-1.5"><div className="text-muted-foreground">Coords</div><div className="font-semibold">{pm.x ?? "?"}, {pm.y ?? "?"}</div></div>
-                </div>
-              )}
               {tm?.name && <div className="text-center text-sm font-semibold">{tm.name}{tm.level ? ` · Level ${tm.level}` : ""}</div>}
 
               <div className="text-center">
