@@ -3,19 +3,20 @@ import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { Loader2, Tag, X } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-import { AAVEGOTCHI_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, REALM_DIAMOND_BASE, ERC1155_MARKETPLACE_ABI, ERC721_MARKETPLACE_ABI } from "@/lib/lending/contracts";
+import { AAVEGOTCHI_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, REALM_DIAMOND_BASE, TILE_DIAMOND_BASE, ERC1155_MARKETPLACE_ABI, ERC721_MARKETPLACE_ABI } from "@/lib/lending/contracts";
 import { GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
-import { AssetImage, itemImageCandidates, installationImageCandidates, parcelImageCandidates } from "./AssetImage";
+import { AssetImage, itemImageCandidates, installationImageCandidates, parcelImageCandidates, tileImageCandidates } from "./AssetImage";
+import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
 import wearablesData from "../../../data/wearables.json";
 
-type OwnedKind = "item" | "installation" | "parcel";
+type OwnedKind = "item" | "installation" | "parcel" | "tile" | "wearable";
 type Owned = { id: string; bal: number };
 
 // Baazaar listing category per asset type (3 gotchi, 2 consumable, 4 realm,
-// 4 installation, 5 tile). Used as the _category arg for add/setListing.
-const LISTING_CATEGORY: Record<OwnedKind, number> = { item: 2, installation: 4, parcel: 4 };
+// 4 installation, 5 tile, 0 wearable). Used as the _category arg for add/setListing.
+const LISTING_CATEGORY: Record<OwnedKind, number> = { item: 2, installation: 4, parcel: 4, tile: 5, wearable: 0 };
 // Wearable item ids (category 0) — excluded from the consumable "item" tab.
 const WEARABLE_IDS = new Set<number>((wearablesData as { id: number; category: number }[]).filter((w) => w.category === 0).map((w) => w.id));
 
@@ -24,6 +25,9 @@ const ITEM_BALANCES_ABI = [
 ] as const;
 const INSTALLATIONS_BALANCES_ABI = [
   { name: "installationsBalances", type: "function", stateMutability: "view", inputs: [{ name: "_account", type: "address" }], outputs: [{ type: "tuple[]", components: [{ name: "installationId", type: "uint256" }, { name: "balance", type: "uint256" }] }] },
+] as const;
+const TILES_BALANCES_ABI = [
+  { name: "tilesBalances", type: "function", stateMutability: "view", inputs: [{ name: "_account", type: "address" }], outputs: [{ type: "tuple[]", components: [{ name: "tileId", type: "uint256" }, { name: "balance", type: "uint256" }] }] },
 ] as const;
 const APPROVAL_ABI = [
   { name: "isApprovedForAll", type: "function", stateMutability: "view", inputs: [{ name: "owner", type: "address" }, { name: "operator", type: "address" }], outputs: [{ type: "bool" }] },
@@ -35,17 +39,26 @@ const TOKEN_CONTRACT: Record<OwnedKind, `0x${string}`> = {
   item: AAVEGOTCHI_DIAMOND_BASE,
   installation: INSTALLATION_DIAMOND_BASE,
   parcel: REALM_DIAMOND_BASE,
+  tile: TILE_DIAMOND_BASE,
+  wearable: AAVEGOTCHI_DIAMOND_BASE,
 };
 
 async function fetchOwned(kind: OwnedKind, address: string, publicClient: NonNullable<ReturnType<typeof usePublicClient>>): Promise<Owned[]> {
-  if (kind === "item") {
+  if (kind === "item" || kind === "wearable") {
     const res = (await publicClient.readContract({ address: AAVEGOTCHI_DIAMOND_BASE, abi: ITEM_BALANCES_ABI, functionName: "itemBalances", args: [address as `0x${string}`] })) as unknown as { itemId: bigint; balance: bigint }[];
-    // Items tab = consumables only (wearables have their own tab).
-    return res.map((b) => ({ id: b.itemId.toString(), bal: Number(b.balance) })).filter((b) => b.bal > 0 && !WEARABLE_IDS.has(Number(b.id)));
+    // itemBalances returns wearables + consumables together; split by tab.
+    // wearable tab = category-0 ids; item tab = everything else (consumables).
+    return res
+      .map((b) => ({ id: b.itemId.toString(), bal: Number(b.balance) }))
+      .filter((b) => b.bal > 0 && (kind === "wearable" ? WEARABLE_IDS.has(Number(b.id)) : !WEARABLE_IDS.has(Number(b.id))));
   }
   if (kind === "installation") {
     const res = (await publicClient.readContract({ address: INSTALLATION_DIAMOND_BASE, abi: INSTALLATIONS_BALANCES_ABI, functionName: "installationsBalances", args: [address as `0x${string}`] })) as unknown as { installationId: bigint; balance: bigint }[];
     return res.map((b) => ({ id: b.installationId.toString(), bal: Number(b.balance) })).filter((b) => b.bal > 0);
+  }
+  if (kind === "tile") {
+    const res = (await publicClient.readContract({ address: TILE_DIAMOND_BASE, abi: TILES_BALANCES_ABI, functionName: "tilesBalances", args: [address as `0x${string}`] })) as unknown as { tileId: bigint; balance: bigint }[];
+    return res.map((b) => ({ id: b.tileId.toString(), bal: Number(b.balance) })).filter((b) => b.bal > 0);
   }
   const q = `{ parcels(first: 500, where: { owner: "${address}" }){ tokenId } }`;
   const r = await fetch(GOTCHIVERSE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
@@ -56,6 +69,8 @@ async function fetchOwned(kind: OwnedKind, address: string, publicClient: NonNul
 function imgFor(kind: OwnedKind, id: string) {
   if (kind === "installation") return installationImageCandidates(id);
   if (kind === "parcel") return parcelImageCandidates(id);
+  if (kind === "tile") return tileImageCandidates(id);
+  if (kind === "wearable") return getWearableIconUrlCandidates(Number(id));
   return itemImageCandidates(id);
 }
 

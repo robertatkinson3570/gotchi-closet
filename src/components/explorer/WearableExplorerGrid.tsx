@@ -68,6 +68,7 @@ export function WearableExplorerGrid({
             quantity={mode === "mine" ? quantities[wearable.id] : undefined}
             price={mode === "baazaar" ? prices[wearable.id] : undefined}
             listing={mode === "baazaar" ? baazaarPrices[wearable.id] : undefined}
+            canOffer={mode !== "mine"}
             onClick={() => onCardClick?.(wearable)}
           />
         ))}

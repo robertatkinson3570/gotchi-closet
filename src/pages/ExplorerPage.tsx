@@ -469,7 +469,7 @@ export default function ExplorerPage() {
 
           {MARKET_TABS[assetType] ? (
             (() => {
-              const ownable = assetType === "item" || assetType === "installation" || assetType === "parcel";
+              const ownable = assetType === "item" || assetType === "installation" || assetType === "parcel" || assetType === "tile";
               return (
                 <div>
                   {ownable && (
@@ -482,7 +482,7 @@ export default function ExplorerPage() {
                     </div>
                   )}
                   {ownable && marketScope === "owned"
-                    ? <OwnedMarketGrid itemKind={assetType as "item" | "installation" | "parcel"} />
+                    ? <OwnedMarketGrid itemKind={assetType as "item" | "installation" | "parcel" | "tile"} />
                     : <MarketGrid {...MARKET_TABS[assetType]} />}
                 </div>
               );
@@ -521,6 +521,9 @@ export default function ExplorerPage() {
                 onSealFor={mode === "mine" ? (g) => (!rentalSets || rentalSets.borrowed.has(g.tokenId) ? undefined : () => setSealGotchi(g.tokenId)) : undefined}
               />
             )
+          ) : mode === "mine" ? (
+            // Owned wearables: selectable bulk-list grid (no Make Offer on your own items).
+            <OwnedMarketGrid itemKind="wearable" />
           ) : (
             <WearableExplorerGrid
               wearables={filteredWearablesBySearch}
