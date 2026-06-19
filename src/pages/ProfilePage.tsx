@@ -197,7 +197,7 @@ export default function ProfilePage() {
                 onClick={() =>
                   selectMode
                     ? toggleSel(gid)
-                    : setManage({ gotchiId: gid, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables })
+                    : setManage({ gotchiId: gid, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables, listed: !!listingPrices?.[gid], locked: isLent(g), lockReason: isLent(g) ? "Rented out" : undefined })
                 }
                 title={selectMode ? "Select to list" : "Manage gotchi"}
                 className={`text-left rounded-lg border bg-background/60 p-1.5 hover:-translate-y-0.5 transition-all ${

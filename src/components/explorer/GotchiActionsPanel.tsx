@@ -13,6 +13,9 @@ import { SoulCertificate } from "@/components/soul/SoulCertificate";
 import { CreateAuctionButton } from "@/components/explorer/CreateAuctionButton";
 import { RecentSales } from "@/components/explorer/RecentSales";
 import { MakeOfferButton } from "@/components/explorer/MakeOfferButton";
+import { BuyButton } from "@/components/explorer/BuyButton";
+import { Link } from "react-router-dom";
+import { getEyeShapeName, getEyeColorName } from "@/lib/explorer/traitFrequency";
 
 const ACTIONS_ABI = [
   { name: "interact", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_tokenIds", type: "uint256[]" }], outputs: [] },
@@ -67,6 +70,11 @@ export type ManageGotchi = {
   listed?: boolean;
   /** Viewer doesn't own this gotchi — show a read-only Details view (no actions). */
   readOnly?: boolean;
+  /** Current owner (for the read-only Details view). */
+  owner?: string;
+  /** Active fixed-price listing (read-only Details → one-click Buy). */
+  listingId?: string;
+  listingPriceWei?: string;
 };
 
 const TRAITS = ["NRG", "AGG", "SPK", "BRN"] as const;
@@ -74,7 +82,7 @@ type Status = { kind: "idle" } | { kind: "busy"; label: string } | { kind: "ok";
 
 /** Large, controlled modal to view + manage a gotchi (opened from the profile). */
 export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; onClose: () => void }) {
-  const { gotchiId, name, hauntId, collateral, numericTraits, equippedWearables, locked, lockReason, listed, readOnly } = gotchi;
+  const { gotchiId, name, hauntId, collateral, numericTraits, equippedWearables, locked, lockReason, listed, readOnly, owner, listingId, listingPriceWei } = gotchi;
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const isOnBase = chainId === BASE_CHAIN_ID;
@@ -264,7 +272,8 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   <Stat label="Rarity" value={`${ag.withSetsRarityScore}`} sub={`base ${ag.baseRarityScore}`} />
                   <Stat label="Kinship" value={`${ag.kinship}`} />
-                  <Stat label="Level" value={`${lvl}`} sub={lvl >= 99 ? "max" : `${xpNext.toLocaleString()} XP to L${lvl + 1}`} />
+                  <Stat label="Level" value={`${lvl}`} sub={lvl >= 99 ? "max" : `${xpNext.toLocaleString()} to L${lvl + 1}`} />
+                  <Stat label="XP" value={Number(ag.experience).toLocaleString()} />
                   <Stat label="Haunt" value={`H${ag.hauntId}`} />
                   {ageLabel ? <Stat label="Age" value={ageLabel} sub={`~${ageDays}d`} /> : null}
                   {ag.equippedSetName ? <Stat label="Set" value={ag.equippedSetName} /> : null}
@@ -272,14 +281,17 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
                   {topOfferWei ? <Stat label="Top offer" value={ghstFmt(topOfferWei)} sub="GHST" /> : null}
                 </div>
                 {numericTraits && numericTraits.length >= 6 && (
-                  <div className="grid grid-cols-6 gap-1 text-center">
-                    {TR.map((t, i) => (
-                      <div key={t} className="rounded-md bg-muted/40 py-1">
-                        <div className="text-[9px] text-muted-foreground">{t}</div>
-                        <div className="text-xs font-semibold tabular-nums">{numericTraits[i]}</div>
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    <div className="grid grid-cols-6 gap-1 text-center">
+                      {TR.map((t, i) => (
+                        <div key={t} className="rounded-md bg-muted/40 py-1">
+                          <div className="text-[9px] text-muted-foreground">{t}</div>
+                          <div className="text-xs font-semibold tabular-nums">{numericTraits[i]}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground text-center">Eyes: <span className="text-foreground font-medium">{getEyeShapeName(numericTraits[4])}</span> · <span className="text-foreground font-medium">{getEyeColorName(numericTraits[5])}</span></div>
+                  </>
                 )}
               </div>
             );
@@ -288,7 +300,18 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
           <RecentSales kind="erc721" tokenId={gotchiId} />
 
           {readOnly && (
-            <MakeOfferButton kind="erc721" category={BAAZAAR_CATEGORY.AAVEGOTCHI} tokenId={gotchiId} contractAddress={AAVEGOTCHI_DIAMOND_BASE} label={name || `Gotchi #${gotchiId}`} />
+            <div className="space-y-2">
+              {owner && (
+                <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Owner</span><Link to={`/u/${owner}`} onClick={onClose} className="font-mono text-primary hover:underline">{owner.slice(0, 6)}…{owner.slice(-4)}</Link></div>
+              )}
+              {listingId && listingPriceWei && (
+                <>
+                  <div className="text-center"><div className="text-[10px] uppercase tracking-wide text-muted-foreground">Listed for sale</div><div className="text-xl font-bold text-emerald-500">{ghstFmt(listingPriceWei)} GHST</div></div>
+                  <BuyButton listingId={listingId} tokenId={gotchiId} priceInWei={listingPriceWei} kind="erc721" contractAddress={AAVEGOTCHI_DIAMOND_BASE} quantity={1} label={name || `Gotchi #${gotchiId}`} className="inline-flex items-center justify-center gap-1.5 h-11 w-full rounded-lg bg-emerald-600 text-white hover:bg-emerald-600/90 disabled:opacity-50 text-sm font-semibold" />
+                </>
+              )}
+              <MakeOfferButton kind="erc721" category={BAAZAAR_CATEGORY.AAVEGOTCHI} tokenId={gotchiId} contractAddress={AAVEGOTCHI_DIAMOND_BASE} label={name || `Gotchi #${gotchiId}`} />
+            </div>
           )}
 
           {!readOnly && (

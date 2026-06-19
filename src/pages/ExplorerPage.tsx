@@ -513,8 +513,8 @@ export default function ExplorerPage() {
                     if (selectMode) return toggleSel(g.tokenId);
                     return setManage({ gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables, locked: rentalSets?.lentOut.has(g.tokenId) || rentalSets?.borrowed.has(g.tokenId), lockReason: rentalSets?.lentOut.has(g.tokenId) ? "Rented out" : rentalSets?.borrowed.has(g.tokenId) ? "Borrowed" : undefined, listed: !!g.listing?.id });
                   }
-                  // Not owned → read-only Details view.
-                  setManage({ gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables, readOnly: true });
+                  // Not owned → read-only Details view (with owner + listing for Buy).
+                  setManage({ gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables, readOnly: true, owner: g.owner, listingId: g.listing?.id, listingPriceWei: g.listing?.priceInWei });
                 }}
                 manageLabel={mode === "mine" ? (selectMode ? "Select" : undefined) : "Details"}
                 selectedFor={mode === "mine" && selectMode ? (g) => selected.has(g.tokenId) : undefined}
