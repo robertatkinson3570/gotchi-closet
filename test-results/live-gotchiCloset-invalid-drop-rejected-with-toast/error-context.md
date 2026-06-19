@@ -1,0 +1,293 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "GotchiCloset GotchiCloset" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "GotchiCloset" [ref=e7]
+          - generic [ref=e8]: GotchiCloset
+        - generic [ref=e9]:
+          - link [ref=e10] [cursor=pointer]:
+            - /url: /explorer
+            - button "Explorer / Baazaar" [ref=e11]:
+              - img [ref=e12]
+          - link [ref=e15] [cursor=pointer]:
+            - /url: /dress
+            - button "Dress" [ref=e16]:
+              - img [ref=e17]
+          - link [ref=e19] [cursor=pointer]:
+            - /url: /activity
+            - button "Activity" [ref=e20]:
+              - img [ref=e21]
+          - link [ref=e23] [cursor=pointer]:
+            - /url: /forge
+            - button "Forge" [ref=e24]:
+              - img [ref=e25]
+          - link [ref=e27] [cursor=pointer]:
+            - /url: /lending
+            - button "Lending" [ref=e28]:
+              - img [ref=e29]
+          - link [ref=e34] [cursor=pointer]:
+            - /url: /lending/lands
+            - button "Land Management" [ref=e35]:
+              - img [ref=e36]
+          - link [ref=e39] [cursor=pointer]:
+            - /url: /dao
+            - button "DAO & Community" [ref=e40]:
+              - img [ref=e41]
+          - button "Connect Wallet" [ref=e44] [cursor=pointer]
+          - button "Guide — how GotchiCloset & Aavegotchi work" [ref=e45] [cursor=pointer]:
+            - img [ref=e46]
+          - button "Toggle theme" [ref=e49] [cursor=pointer]:
+            - img [ref=e50]
+    - main [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e55]:
+          - generic [ref=e57]:
+            - img [ref=e58]
+            - generic [ref=e62]:
+              - text: 0x1cf0...db82
+              - button "Remove wallet" [ref=e63] [cursor=pointer]:
+                - img [ref=e64]
+          - button "Connect Wallet" [ref=e68] [cursor=pointer]
+        - generic [ref=e69]:
+          - generic [ref=e70]: "0x1cf07f7c5853599dcaa5b3bb67ac0cf1ae7bdb82"
+          - generic [ref=e71]:
+            - generic [ref=e73]:
+              - generic [ref=e74]:
+                - button "Collection" [ref=e75] [cursor=pointer]:
+                  - img [ref=e76]
+                  - generic [ref=e81]: Collection
+                - button "Baazaar" [ref=e82] [cursor=pointer]:
+                  - img [ref=e83]
+                  - generic [ref=e87]: Baazaar
+              - img [ref=e88]
+              - textbox "Search entire Aavegotchi collection by name or ID..." [ref=e91]
+              - button "Catwalk" [ref=e92] [cursor=pointer]:
+                - generic [ref=e93]:
+                  - img [ref=e94]
+                  - text: Catwalk
+            - generic [ref=e97]:
+              - button "Lock All" [ref=e98] [cursor=pointer]:
+                - img [ref=e99]
+              - button "Unlock All" [disabled] [ref=e102]:
+                - img [ref=e103]
+              - generic [ref=e106]: "|"
+              - button "BRS" [ref=e107] [cursor=pointer]:
+                - generic [ref=e108]: BRS
+                - img [ref=e109]
+            - generic [ref=e111]:
+              - button "Scroll left" [ref=e112] [cursor=pointer]:
+                - img [ref=e113]
+              - generic [ref=e115]:
+                - generic [ref=e116]:
+                  - button "Unlock Set (allow equipped wearables)" [ref=e117] [cursor=pointer]:
+                    - img [ref=e118]
+                  - generic [ref=e123] [cursor=pointer]:
+                    - generic [ref=e124]:
+                      - img [ref=e127]
+                      - generic [ref=e130]:
+                        - heading "AlphaGotchi" [level=3] [ref=e131]
+                        - paragraph [ref=e132]: "ID: 21401"
+                    - generic [ref=e133]:
+                      - generic [ref=e134]: Rarity Score 523 (600)
+                      - generic [ref=e135]:
+                        - generic [ref=e136]: Trait BRS (base)
+                        - generic [ref=e137]: "600"
+                        - generic [ref=e138]: Total BRS
+                        - generic [ref=e139]: "523"
+                    - generic [ref=e140]:
+                      - generic [ref=e142]:
+                        - generic [ref=e143]: NRG
+                        - generic [ref=e146]: "2"
+                      - generic [ref=e148]:
+                        - generic [ref=e149]: AGG
+                        - generic [ref=e152]: "98"
+                      - generic [ref=e154]:
+                        - generic [ref=e155]: SPK
+                        - generic [ref=e158]: "5"
+                      - generic [ref=e160]:
+                        - generic [ref=e161]: BRN
+                        - generic [ref=e164]: "95"
+                - generic [ref=e165]:
+                  - button "Unlock Set (allow equipped wearables)" [ref=e166] [cursor=pointer]:
+                    - img [ref=e167]
+                  - generic [ref=e172] [cursor=pointer]:
+                    - generic [ref=e173]:
+                      - img [ref=e176]
+                      - generic [ref=e179]:
+                        - heading "BetaGotchi" [level=3] [ref=e180]
+                        - paragraph [ref=e181]: "ID: 21402"
+                    - generic [ref=e182]:
+                      - generic [ref=e183]: Rarity Score 437 (440)
+                      - generic [ref=e184]:
+                        - generic [ref=e185]: Trait BRS (base)
+                        - generic [ref=e186]: "440"
+                        - generic [ref=e187]: Total BRS
+                        - generic [ref=e188]: "437"
+                    - generic [ref=e189]:
+                      - generic [ref=e191]:
+                        - generic [ref=e192]: NRG
+                        - generic [ref=e195]: "20"
+                      - generic [ref=e197]:
+                        - generic [ref=e198]: AGG
+                        - generic [ref=e201]: "80"
+                      - generic [ref=e203]:
+                        - generic [ref=e204]: SPK
+                        - generic [ref=e207]: "30"
+                      - generic [ref=e209]:
+                        - generic [ref=e210]: BRN
+                        - generic [ref=e213]: "70"
+                - generic [ref=e214]:
+                  - button "Unlock Set (allow equipped wearables)" [ref=e215] [cursor=pointer]:
+                    - img [ref=e216]
+                  - generic [ref=e221] [cursor=pointer]:
+                    - generic [ref=e222]:
+                      - img [ref=e225]
+                      - generic [ref=e228]:
+                        - heading "GammaGotchi" [level=3] [ref=e229]
+                        - paragraph [ref=e230]: "ID: 21403"
+                    - generic [ref=e231]:
+                      - generic [ref=e232]: Rarity Score 347 (306)
+                      - generic [ref=e233]:
+                        - generic [ref=e234]: Trait BRS (base)
+                        - generic [ref=e235]: "306"
+                        - generic [ref=e236]: Total BRS
+                        - generic [ref=e237]: "347"
+                    - generic [ref=e238]:
+                      - generic [ref=e240]:
+                        - generic [ref=e241]: NRG
+                        - generic [ref=e244]: "48"
+                      - generic [ref=e246]:
+                        - generic [ref=e247]: AGG
+                        - generic [ref=e250]: "52"
+                      - generic [ref=e252]:
+                        - generic [ref=e253]: SPK
+                        - generic [ref=e256]: "47"
+                      - generic [ref=e258]:
+                        - generic [ref=e259]: BRN
+                        - generic [ref=e262]: "53"
+              - button "Scroll right" [ref=e263] [cursor=pointer]:
+                - img [ref=e264]
+        - generic [ref=e267]:
+          - generic [ref=e275]:
+            - generic "Remove from editor" [ref=e276] [cursor=pointer]:
+              - img [ref=e277]
+            - generic [ref=e281]:
+              - generic [ref=e282]:
+                - img [ref=e287]
+                - generic [ref=e290]:
+                  - button "Filter best wearables" [ref=e291] [cursor=pointer]:
+                    - img [ref=e292]
+                  - button "Nakey" [ref=e294] [cursor=pointer]:
+                    - img [ref=e295]
+                  - button "Restore original" [ref=e297] [cursor=pointer]:
+                    - img [ref=e298]
+                  - button "Lock & Set" [ref=e301] [cursor=pointer]:
+                    - img [ref=e302]
+                  - button "Mommy Dress Me™" [ref=e305] [cursor=pointer]:
+                    - generic [ref=e306]:
+                      - img [ref=e307]
+                      - text: Mommy
+                    - generic [ref=e310]: Dress Me™
+              - generic [ref=e311]:
+                - generic [ref=e315] [cursor=pointer]:
+                  - generic [ref=e317]:
+                    - heading "AlphaGotchi" [level=3] [ref=e318]
+                    - paragraph [ref=e319]: "ID: 21401"
+                  - generic [ref=e320]:
+                    - generic [ref=e321]: Rarity Score 523 (600)
+                    - generic [ref=e322]:
+                      - generic [ref=e323]: Trait BRS (base)
+                      - generic [ref=e324]: "600"
+                      - generic [ref=e325]: Total BRS
+                      - generic [ref=e326]: "523"
+                  - button "Best Sets" [ref=e328]:
+                    - img [ref=e329]
+                    - generic [ref=e331]: Best Sets
+                    - img [ref=e332]
+                  - generic [ref=e334]:
+                    - generic [ref=e335]:
+                      - generic [ref=e336]: Traits
+                      - button "Respec" [ref=e338]
+                    - generic [ref=e340]:
+                      - generic [ref=e341]: NRG
+                      - generic [ref=e344]: "2"
+                    - generic [ref=e346]:
+                      - generic [ref=e347]: AGG
+                      - generic [ref=e350]: "98"
+                    - generic [ref=e352]:
+                      - generic [ref=e353]: SPK
+                      - generic [ref=e356]: "5"
+                    - generic [ref=e358]:
+                      - generic [ref=e359]: BRN
+                      - generic [ref=e362]: "95"
+                - generic [ref=e364]:
+                  - generic "Body" [ref=e367] [cursor=pointer]:
+                    - generic [ref=e368]: Body
+                    - img [ref=e371]
+                  - generic "Face" [ref=e375] [cursor=pointer]:
+                    - generic [ref=e376]: Face
+                    - img [ref=e379]
+                  - generic "Eyes" [ref=e383] [cursor=pointer]:
+                    - generic [ref=e384]: Eyes
+                    - img [ref=e387]
+                  - generic "Head" [ref=e391] [cursor=pointer]:
+                    - generic [ref=e392]: Head
+                    - img [ref=e395]
+                  - generic "Left Hand" [ref=e399] [cursor=pointer]:
+                    - generic [ref=e400]: Left Hand
+                    - img [ref=e403]
+                  - generic "Right Hand" [ref=e407] [cursor=pointer]:
+                    - generic [ref=e408]: Right Hand
+                    - img [ref=e411]
+                  - generic "Pet" [ref=e415] [cursor=pointer]:
+                    - generic [ref=e416]: Pet
+                    - img [ref=e419]
+                  - generic "Background" [ref=e423] [cursor=pointer]:
+                    - generic [ref=e424]: Background
+                    - img [ref=e427]
+          - generic [ref=e430]:
+            - generic [ref=e431]:
+              - generic [ref=e432]:
+                - textbox "Search..." [ref=e433]: 10 Gallon Hat
+                - generic [ref=e434]:
+                  - button "All" [ref=e435] [cursor=pointer]
+                  - button "Owned" [ref=e436] [cursor=pointer]
+                  - button "Baazaar" [ref=e437] [cursor=pointer]
+                - button "Clear all filters" [ref=e438] [cursor=pointer]:
+                  - img [ref=e439]
+              - generic [ref=e442]:
+                - combobox [ref=e443] [cursor=pointer]:
+                  - generic: Slots All
+                  - img [ref=e444]
+                - combobox [ref=e446] [cursor=pointer]:
+                  - generic: Rarity All
+                  - img [ref=e447]
+                - combobox [ref=e449] [cursor=pointer]:
+                  - generic: Sets All
+                  - img [ref=e450]
+            - generic "10 Gallon Hat • Rarity 1 • BRN +1" [ref=e456]:
+              - img [ref=e460]:
+                - generic [ref=e466]: no image
+              - generic [ref=e468]: BRN +1
+      - status [ref=e469]
+    - contentinfo [ref=e470]:
+      - generic [ref=e471]:
+        - text: Built by
+        - link "GrimLabs" [ref=e472] [cursor=pointer]:
+          - /url: https://grimlabs.xyz
+    - button "open gotchi companion" [ref=e473] [cursor=pointer]:
+      - generic [ref=e474]: 👻
+  - region "Notifications (F8)":
+    - list [ref=e477]:
+      - listitem [ref=e478]:
+        - generic [ref=e479]:
+          - generic [ref=e480]: Invalid Slot
+          - generic [ref=e481]: 10 Gallon Hat cannot be equipped in that slot
+        - button [ref=e482] [cursor=pointer]:
+          - img [ref=e483]
+```

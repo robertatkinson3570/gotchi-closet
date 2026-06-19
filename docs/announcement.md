@@ -1,12 +1,18 @@
 # GotchiCloset Announcement
 
-With the recent Gotchiverse shutdown, and as some of you saw, I built a Land Management page in GotchiCloset so land owners can still do their land activities. I posted it in the gotchiverse channel.
+## Tweet
 
-I'm also a bit concerned that one day we could show up and have no dapp. Maybe that never happens, but I want to be sure I can still manage my assets either way. So I went ahead and added Aavegotchi asset management to GotchiCloset too: Baazaar, auctions, lending, the DAO, owned assets, and more.
+Meet your Gotchi Companion 👻
 
-For fun I also added a Gotchi Companion. Its personality is based on your gotchi's traits, and you can use it as a chatbot to ask questions, chat with other gotchis, and enter Roast battles. Each gotchi can also build a free Soul. Its bond with you (kinship, XP, and how consistently you show up) builds soul depth over time. You can record that depth on chain with a SoulSeal and get a free Soul Certificate, and the Soul transfers with the gotchi if it changes hands.
+A chatbot with a personality built from YOUR gotchi's real traits, age, XP & kinship. Ask it anything, let it chat with other gotchis, and throw it into Roast Arena battles.
 
-Totally fine if folks do not use it. I built as my safety net. But if you ever walk in one day with no dapp, GotchiCloset is here and free for the community. I welcome support, and I am happy to add more if people want it (it is fun, and I am weird that way). Most of it is tested, and I will keep perfecting.
+Every gotchi can also grow a free Soul. Bond depth comes from kinship, XP & showing up, sealed on-chain with a SoulSeal plus a free Soul Certificate. The Soul transfers with the gotchi if it changes hands.
+
+It all lives in GotchiCloset, which now does full Aavegotchi asset management too: Baazaar, GBM auctions, offers, lending, Forge, Land, and gasless DAO voting, all in one place.
+
+Free for the community 💜 Happy to add more if people want it.
+
+---
 
 ## Full list of features
 

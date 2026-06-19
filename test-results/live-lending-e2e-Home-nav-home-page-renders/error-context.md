@@ -1,0 +1,110 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "GotchiCloset GotchiCloset" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "GotchiCloset" [ref=e7]
+          - generic [ref=e8]: GotchiCloset
+        - generic [ref=e9]:
+          - link [ref=e10] [cursor=pointer]:
+            - /url: /explorer
+            - button "Explorer / Baazaar" [ref=e11]:
+              - img [ref=e12]
+          - link [ref=e15] [cursor=pointer]:
+            - /url: /dress
+            - button "Dress" [ref=e16]:
+              - img [ref=e17]
+          - link [ref=e19] [cursor=pointer]:
+            - /url: /activity
+            - button "Activity" [ref=e20]:
+              - img [ref=e21]
+          - link [ref=e23] [cursor=pointer]:
+            - /url: /forge
+            - button "Forge" [ref=e24]:
+              - img [ref=e25]
+          - link [ref=e27] [cursor=pointer]:
+            - /url: /lending
+            - button "Lending" [ref=e28]:
+              - img [ref=e29]
+          - link [ref=e34] [cursor=pointer]:
+            - /url: /lending/lands
+            - button "Land Management" [ref=e35]:
+              - img [ref=e36]
+          - link [ref=e39] [cursor=pointer]:
+            - /url: /dao
+            - button "DAO & Community" [ref=e40]:
+              - img [ref=e41]
+          - button "Connect Wallet" [ref=e44] [cursor=pointer]
+          - button "Guide — how GotchiCloset & Aavegotchi work" [ref=e45] [cursor=pointer]:
+            - img [ref=e46]
+          - button "Toggle theme" [ref=e49] [cursor=pointer]:
+            - img [ref=e50]
+    - main [ref=e52]:
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - img "GotchiCloset" [ref=e59]
+            - heading "Your Gotchi's Been in the Closet Long Enough" [level=1] [ref=e60]
+            - paragraph [ref=e61]: Put an outfit on it already.
+            - button "Guide" [ref=e63] [cursor=pointer]:
+              - img [ref=e64]
+              - generic [ref=e67]: Guide
+          - generic [ref=e68]:
+            - generic [ref=e69]:
+              - text: Add Wallet Address
+              - generic [ref=e70]:
+                - textbox "0x..." [ref=e71]
+                - button [disabled]:
+                  - img
+            - generic [ref=e74]: or connect
+            - button "Connect Wallet" [ref=e76] [cursor=pointer]
+            - button "Dress Gotchis" [disabled]
+        - generic [ref=e77]:
+          - generic [ref=e78]:
+            - link "Explorer" [ref=e79] [cursor=pointer]:
+              - /url: /explorer
+              - img [ref=e81]
+              - generic [ref=e84]: Explorer
+            - link "Lending" [ref=e85] [cursor=pointer]:
+              - /url: /lending
+              - img [ref=e87]
+              - generic [ref=e92]: Lending
+            - link "Sets" [ref=e93] [cursor=pointer]:
+              - /url: /sets
+              - img [ref=e95]
+              - generic [ref=e99]: Sets
+            - link "Traits" [ref=e100] [cursor=pointer]:
+              - /url: /traits/nrg
+              - img [ref=e102]
+              - generic [ref=e104]: Traits
+            - link "Rarity" [ref=e105] [cursor=pointer]:
+              - /url: /rarity-score
+              - img [ref=e107]
+              - generic [ref=e109]: Rarity
+          - generic [ref=e110]:
+            - generic [ref=e111]:
+              - heading "What it does" [level=2] [ref=e112]
+              - paragraph [ref=e113]: Preview wearables, compare sets, and see trait changes instantly.
+            - generic [ref=e114]:
+              - heading "For power users" [level=2] [ref=e115]
+              - paragraph [ref=e116]: Fast previews, side-by-side comparisons, zero clutter.
+          - generic [ref=e118]:
+            - img [ref=e120]
+            - generic [ref=e122]:
+              - generic [ref=e123]: Support GotchiCloset
+              - paragraph [ref=e124]: GotchiCloset is free and built for the community. If this tool saves you time or helps with builds, feel free to toss a little support my way. Totally optional.
+              - generic [ref=e125]: Donation address not configured.
+    - contentinfo [ref=e126]:
+      - generic [ref=e127]:
+        - text: Built by
+        - link "GrimLabs" [ref=e128] [cursor=pointer]:
+          - /url: https://grimlabs.xyz
+    - button "open gotchi companion" [ref=e129] [cursor=pointer]:
+      - generic [ref=e130]: 👻
+  - region "Notifications (F8)":
+    - list
+```

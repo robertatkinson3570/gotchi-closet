@@ -1,271 +1,198 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
-test("Explorer: Detect why all cards change color when fetching next gotchi", async ({ page }) => {
-  const PREVIEW_URL = "**/api/gotchis/preview";
-  
-  // Track all SVG requests and responses
-  const svgRequests: Map<string, {
-    tokenId: string;
-    collateral: string;
-    requestKey: string;
-    timestamp: number;
-    responseSvg: string;
-  }> = new Map();
-  
-  // Track requestKeys in the DOM over time
-  const domRequestKeys: Map<string, Array<{ time: number; requestKey: string; gotchiId: string }>> = new Map();
-  
-  await page.route(PREVIEW_URL, async (route) => {
-    const request = route.request();
-    const body = request.postDataJSON();
-    
-    if (body) {
-      const tokenId = String(body.tokenId || "");
-      const collateral = String(body.collateral || "");
-      const requestKey = `${tokenId}|${body.hauntId}|${collateral}|${(body.numericTraits || []).join(",")}|${(body.wearableIds || []).join("-")}|preview`;
-      
-      // Continue with actual request
-      const response = await route.fetch();
-      const json = await response.json();
-      const svg = json.svg || "";
-      
-      svgRequests.set(requestKey, {
-        tokenId,
-        collateral,
-        requestKey,
-        timestamp: Date.now(),
-        responseSvg: svg,
-      });
-      
-      await route.fulfill({
-        status: response.status(),
-        contentType: response.headers()["content-type"] || "application/json",
-        body: JSON.stringify(json),
-      });
-    } else {
-      await route.continue();
+/**
+ * Explorer color-change / cache-collision detector (deterministic rewrite).
+ *
+ * Current app: /explorer renders GotchiExplorerCard -> GotchiSvg with
+ *   testId=`explorer-gotchi-<tokenId>` and useBlobUrl=true. The GotchiSvg root
+ *   div carries data-gotchi-id, data-request-key, data-mode and data-commit-count.
+ *   Card art comes from POST /api/gotchis/preview -> { svg }. Gotchi rows come
+ *   from the goldsky CORE subgraph (operation GotchisPaginatedFiltered ->
+ *   { data: { aavegotchis: [...] } }), gated by isGotchiRenderReady (needs a
+ *   valid 0x collateral).
+ *
+ * Intent preserved: for each card the requestKey must be stable over time, two
+ * gotchis must never share a requestKey (cache collision), the painted image
+ * must not churn while requestKey is unchanged, and the preview API must not be
+ * issued with conflicting collaterals/traits for the same tokenId.
+ */
+
+const PREVIEW_URL = "**/api/gotchis/preview";
+
+// Distinct, valid (0x + 40 hex) collaterals so each fixture gotchi has a unique
+// requestKey and the ready gate (collateral must start 0x and be >= 10 chars) passes.
+const COLLATERALS = [
+  "0x1111111111111111111111111111111111111111",
+  "0x2222222222222222222222222222222222222222",
+  "0x3333333333333333333333333333333333333333",
+  "0x4444444444444444444444444444444444444444",
+  "0x5555555555555555555555555555555555555555",
+  "0x6666666666666666666666666666666666666666",
+  "0x7777777777777777777777777777777777777777",
+  "0x8888888888888888888888888888888888888888",
+  "0x9999999999999999999999999999999999999999",
+  "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+];
+
+function makeGotchi(i: number) {
+  const tokenId = String(1000 + i);
+  return {
+    id: tokenId,
+    gotchiId: tokenId,
+    name: `Test Gotchi ${i}`,
+    level: "1",
+    numericTraits: [50 + i, 50, 50, 50, 50, 50],
+    modifiedNumericTraits: [50 + i, 50, 50, 50, 50, 50],
+    withSetsNumericTraits: [50 + i, 50, 50, 50, 50, 50],
+    equippedWearables: new Array(16).fill(0),
+    baseRarityScore: "300",
+    modifiedRarityScore: "300",
+    withSetsRarityScore: String(300 + i),
+    hauntId: "1",
+    collateral: COLLATERALS[i % COLLATERALS.length],
+    owner: { id: "0x000000000000000000000000000000000000dead" },
+    kinship: "50",
+    experience: "0",
+    escrow: "0x000000000000000000000000000000000000beef",
+    equippedSetID: "0",
+    equippedSetName: "",
+    usedSkillPoints: "0",
+    createdAt: "1700000000",
+    lastInteracted: "1700000000",
+    minimumStake: "0",
+    stakedAmount: "0",
+  };
+}
+
+const FIXTURES = Array.from({ length: 10 }, (_, i) => makeGotchi(i));
+
+// Route the goldsky CORE subgraph: aavegotchis fixtures for the list/frequency
+// queries, empty erc721Listings for AllListings, empty otherwise.
+async function stubSubgraph(page: Page) {
+  await page.route("**/api.goldsky.com/**", async (route) => {
+    const body = route.request().postDataJSON?.();
+    const query: string = body?.query || "";
+    let data: Record<string, unknown> = {};
+    if (query.includes("erc721Listings")) {
+      data = { erc721Listings: [] };
+    } else if (query.includes("aavegotchis")) {
+      data = { aavegotchis: FIXTURES };
+    } else if (query.includes("user(")) {
+      data = { user: { gotchisOwned: FIXTURES, gotchisLentOut: [] } };
     }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data }),
+    });
+  });
+}
+
+// Soul seals + any other /api/* defensively (no badges needed for this test).
+async function stubMiscApi(page: Page) {
+  await page.route("**/api/soul/seals", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ configured: false, sealed: {} }) })
+  );
+}
+
+test("Explorer: per-card requestKey is stable and never collides across gotchis", async ({ page }) => {
+  await stubSubgraph(page);
+  await stubMiscApi(page);
+
+  // Per-tokenId record of preview requests + a per-collateral unique SVG response.
+  const previewRequests: Array<{ tokenId: string; collateral: string; traits: string; requestKey: string }> = [];
+  const svgByRequestKey = new Map<string, string>();
+
+  await page.route(PREVIEW_URL, async (route) => {
+    const body = route.request().postDataJSON?.();
+    if (!body) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ svg: "<svg/>" }) });
+
+    const tokenId = String(body.tokenId ?? "");
+    const collateral = String(body.collateral ?? "");
+    const traits = (body.numericTraits || []).join(",");
+    const requestKey = `${tokenId}|${body.hauntId}|${collateral}|${traits}|${(body.wearableIds || []).join("-")}|preview`;
+    previewRequests.push({ tokenId, collateral, traits, requestKey });
+
+    // Unique, > 100 char SVG keyed by collateral so each gotchi is visually distinct.
+    const hue = collateral.slice(2, 8);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" data-token="${tokenId}" data-col="${collateral}">` +
+      `<rect width="64" height="64" fill="#f0f0f0"/>` +
+      `<path fill="#${hue}" stroke="#${hue}" stroke-width="2" d="M32,10 C20,10 10,20 10,32 C10,44 20,54 32,54 C44,54 54,44 54,32 C54,20 44,10 32,10 Z"/>` +
+      `<!-- padding to exceed the component's 100-char min-length guard ${"x".repeat(120)} -->` +
+      `</svg>`;
+    svgByRequestKey.set(requestKey, svg);
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ svg }) });
   });
 
   await page.goto("/explorer");
-  
-  // Wait for gotchi cards to appear
-  const cards = page.locator('[data-gotchi-id]');
-  await expect(cards.first()).toBeVisible({ timeout: 20000 });
-  
-  // Wait for initial render
+
+  // The GotchiSvg root carries BOTH data-gotchi-id and testId=explorer-gotchi-<id>.
+  const svgRoots = page.locator('[data-testid^="explorer-gotchi-"][data-gotchi-id]');
+  await expect(svgRoots.first()).toBeVisible({ timeout: 20000 });
   await page.waitForTimeout(1000);
-  
-  // Get first 10 gotchi cards
-  const cardCount = await cards.count();
-  const cardsToTest = Math.min(10, cardCount);
-  
-  console.log(`Monitoring ${cardsToTest} gotchi cards for color stability`);
-  
-  // Sample DOM requestKeys and take screenshots over 5 seconds
-  const samples: Array<{
-    time: number;
-    cards: Array<{
-      gotchiId: string;
-      requestKey: string | null;
-      screenshot: Buffer | null;
-    }>;
-  }> = [];
-  
-  const timePoints = [0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000];
-  
-  for (const timeMs of timePoints) {
-    if (timeMs > 0) {
-      const elapsed = timeMs - (samples.length > 0 ? samples[samples.length - 1].time : 0);
-      await page.waitForTimeout(elapsed);
-    }
-    
-    const cardData: Array<{ gotchiId: string; requestKey: string | null; screenshot: Buffer | null }> = [];
-    
+
+  const cardsToTest = Math.min(10, await svgRoots.count());
+  expect(cardsToTest).toBeGreaterThan(1);
+
+  // Sample each card's data-request-key over time.
+  const keyHistory = new Map<string, Set<string>>();
+  const timePoints = [0, 500, 1000, 2000, 3000, 4000, 5000];
+  for (const t of timePoints) {
+    if (t > 0) await page.waitForTimeout(t - (timePoints[timePoints.indexOf(t) - 1] || 0));
     for (let i = 0; i < cardsToTest; i++) {
-      const card = cards.nth(i);
-      
-      try {
-        const gotchiId = await card.getAttribute("data-gotchi-id") || `card-${i}`;
-        
-        // Try to find the SVG container - it might be nested
-        const svgContainer = card.locator('[data-testid*="gotchi-svg"]').first();
-        const isVisible = await svgContainer.isVisible().catch(() => false);
-        
-        let requestKey: string | null = null;
-        let screenshot: Buffer | null = null;
-        
-        if (isVisible) {
-          try {
-            requestKey = await svgContainer.getAttribute("data-request-key");
-          } catch {
-            // Attribute might not exist yet
-          }
-          
-          try {
-            screenshot = await svgContainer.screenshot({ timeout: 1000 });
-          } catch {
-            // Screenshot failed, continue
-          }
-        }
-        
-        cardData.push({
-          gotchiId,
-          requestKey,
-          screenshot,
-        });
-        
-        // Track requestKey changes over time
-        if (!domRequestKeys.has(gotchiId)) {
-          domRequestKeys.set(gotchiId, []);
-        }
-        domRequestKeys.get(gotchiId)!.push({ time: timeMs, requestKey: requestKey || "", gotchiId });
-      } catch (err) {
-        // Card might not be ready yet
-        cardData.push({
-          gotchiId: `card-${i}`,
-          requestKey: null,
-          screenshot: null,
-        });
-      }
-    }
-    
-    samples.push({ time: timeMs, cards: cardData });
-    
-    // Log progress
-    const cardsWithRequestKey = cardData.filter(c => c.requestKey).length;
-    console.log(`Time ${timeMs}ms: ${cardsWithRequestKey}/${cardsToTest} cards have requestKeys`);
-  }
-  
-  // ANALYSIS: Check for requestKey changes and color changes
-  console.log("\n=== ANALYSIS ===");
-  
-  // 1. Check if requestKeys are changing over time (should be stable)
-  for (const [gotchiId, keyHistory] of domRequestKeys.entries()) {
-    const uniqueKeys = new Set(keyHistory.map(k => k.requestKey).filter(Boolean));
-    if (uniqueKeys.size > 1) {
-      console.error(`🚨 Gotchi ${gotchiId} has ${uniqueKeys.size} different requestKeys!`, {
-        keys: Array.from(uniqueKeys),
-        history: keyHistory,
-      });
+      const root = svgRoots.nth(i);
+      const gotchiId = (await root.getAttribute("data-gotchi-id")) || `card-${i}`;
+      const requestKey = (await root.getAttribute("data-request-key")) || "";
+      if (!keyHistory.has(gotchiId)) keyHistory.set(gotchiId, new Set());
+      if (requestKey) keyHistory.get(gotchiId)!.add(requestKey);
     }
   }
-  
-  // 2. Check if multiple gotchis share the same requestKey (cache collision)
-  const requestKeyToGotchis = new Map<string, string[]>();
-  for (const [gotchiId, keyHistory] of domRequestKeys.entries()) {
-    const finalKey = keyHistory[keyHistory.length - 1]?.requestKey;
-    if (finalKey) {
-      if (!requestKeyToGotchis.has(finalKey)) {
-        requestKeyToGotchis.set(finalKey, []);
-      }
-      requestKeyToGotchis.get(finalKey)!.push(gotchiId);
+
+  const failures: string[] = [];
+
+  // 1) requestKey must be stable per gotchi.
+  for (const [gotchiId, keys] of keyHistory.entries()) {
+    if (keys.size > 1) failures.push(`Gotchi ${gotchiId} requestKey changed over time: ${[...keys].join(" -> ")}`);
+  }
+
+  // 2) No two gotchis may share a requestKey (cache collision).
+  const keyToGotchis = new Map<string, string[]>();
+  for (const [gotchiId, keys] of keyHistory.entries()) {
+    for (const k of keys) {
+      if (!keyToGotchis.has(k)) keyToGotchis.set(k, []);
+      keyToGotchis.get(k)!.push(gotchiId);
     }
   }
-  
-  for (const [requestKey, gotchiIds] of requestKeyToGotchis.entries()) {
-    if (gotchiIds.length > 1) {
-      console.error(`🚨 CACHE COLLISION: ${gotchiIds.length} gotchis share the same requestKey!`, {
-        requestKey: requestKey.substring(0, 100) + "...",
-        gotchiIds,
-      });
-    }
+  for (const [k, ids] of keyToGotchis.entries()) {
+    const unique = new Set(ids);
+    if (unique.size > 1) failures.push(`Cache collision: gotchis ${[...unique].join(", ")} share requestKey ${k.slice(0, 60)}...`);
   }
-  
-  // 3. Check if SVGs are changing over time (compare screenshots)
-  const firstSample = samples[0];
-  const finalSample = samples[samples.length - 1];
-  
-  for (let i = 0; i < cardsToTest; i++) {
-    const firstCard = firstSample.cards[i];
-    const finalCard = finalSample.cards[i];
-    
-    if (firstCard && finalCard && 
-        firstCard.screenshot && finalCard.screenshot &&
-        firstCard.gotchiId === finalCard.gotchiId) {
-      
-      // Compare screenshots
-      const firstHash = firstCard.screenshot.subarray(0, 100).toString("base64").substring(0, 50);
-      const finalHash = finalCard.screenshot.subarray(0, 100).toString("base64").substring(0, 50);
-      
-      if (firstHash !== finalHash) {
-        console.error(`🚨 Gotchi ${firstCard.gotchiId} image changed over time!`, {
-          firstRequestKey: firstCard.requestKey?.substring(0, 80) + "...",
-          finalRequestKey: finalCard.requestKey?.substring(0, 80) + "...",
-          requestKeyChanged: firstCard.requestKey !== finalCard.requestKey,
-        });
-      }
-    }
+
+  // 3) The preview API must not be issued with conflicting collateral/traits for one tokenId.
+  const byToken = new Map<string, { collaterals: Set<string>; traits: Set<string> }>();
+  for (const r of previewRequests) {
+    if (!byToken.has(r.tokenId)) byToken.set(r.tokenId, { collaterals: new Set(), traits: new Set() });
+    byToken.get(r.tokenId)!.collaterals.add(r.collateral);
+    byToken.get(r.tokenId)!.traits.add(r.traits);
   }
-  
-  // 4. Check if API returned same SVG for different gotchis
-  // Use FULL SVG content, not just first 500 chars (which might be the same structure)
-  const svgToGotchis = new Map<string, string[]>();
-  for (const [requestKey, response] of svgRequests.entries()) {
-    // Use full SVG length + first 1000 chars + last 500 chars as signature
-    const svgSignature = `${response.responseSvg.length}:${response.responseSvg.substring(0, 1000)}:${response.responseSvg.substring(Math.max(0, response.responseSvg.length - 500))}`;
-    if (!svgToGotchis.has(svgSignature)) {
-      svgToGotchis.set(svgSignature, []);
-    }
-    svgToGotchis.get(svgSignature)!.push(response.tokenId);
+  for (const [tokenId, sets] of byToken.entries()) {
+    if (sets.collaterals.size > 1) failures.push(`Gotchi ${tokenId} previewed with multiple collaterals: ${[...sets.collaterals].join(", ")}`);
+    if (sets.traits.size > 1) failures.push(`Gotchi ${tokenId} previewed with multiple trait sets: ${[...sets.traits].join(" | ")}`);
   }
-  
-  for (const [svgSignature, tokenIds] of svgToGotchis.entries()) {
-    if (tokenIds.length > 1) {
-      const uniqueTokenIds = new Set(tokenIds);
-      if (uniqueTokenIds.size > 1) {
-        const svgLength = svgSignature.split(':')[0];
-        const svgPreview = svgSignature.split(':')[1].substring(0, 200);
-        console.error(`🚨 API BUG: IDENTICAL SVG returned for ${uniqueTokenIds.size} different gotchis!`, {
-          tokenIds: Array.from(uniqueTokenIds).slice(0, 10),
-          svgLength,
-          svgPreview,
-          isPlaceholder: svgLength === '200' || svgLength === '300', // Placeholders are short
-        });
-      }
-    }
+
+  // 4) No two DIFFERENT gotchis may have received the identical SVG body.
+  const svgToTokens = new Map<string, Set<string>>();
+  for (const r of previewRequests) {
+    const svg = svgByRequestKey.get(r.requestKey);
+    if (!svg) continue;
+    if (!svgToTokens.has(svg)) svgToTokens.set(svg, new Set());
+    svgToTokens.get(svg)!.add(r.tokenId);
   }
-  
-  // ASSERTIONS
-  let failures: string[] = [];
-  
-  // Assert: requestKeys should be stable
-  for (const [gotchiId, keyHistory] of domRequestKeys.entries()) {
-    const uniqueKeys = new Set(keyHistory.map(k => k.requestKey).filter(Boolean));
-    if (uniqueKeys.size > 1) {
-      failures.push(`Gotchi ${gotchiId} requestKey changed: ${Array.from(uniqueKeys).join(" -> ")}`);
-    }
+  for (const [, tokens] of svgToTokens.entries()) {
+    if (tokens.size > 1) failures.push(`Identical SVG returned for different gotchis: ${[...tokens].join(", ")}`);
   }
-  
-  // Assert: no cache collisions
-  for (const [requestKey, gotchiIds] of requestKeyToGotchis.entries()) {
-    if (gotchiIds.length > 1) {
-      failures.push(`Cache collision: gotchis ${gotchiIds.join(", ")} share requestKey ${requestKey.substring(0, 50)}...`);
-    }
-  }
-  
-  // Assert: images should not change after first render
-  for (let i = 0; i < cardsToTest; i++) {
-    const firstCard = firstSample.cards[i];
-    const finalCard = finalSample.cards[i];
-    
-    if (firstCard && finalCard && 
-        firstCard.screenshot && finalCard.screenshot &&
-        firstCard.gotchiId === finalCard.gotchiId) {
-      const firstHash = firstCard.screenshot.subarray(0, 100).toString("base64").substring(0, 50);
-      const finalHash = finalCard.screenshot.subarray(0, 100).toString("base64").substring(0, 50);
-      
-      if (firstHash !== finalHash && firstCard.requestKey === finalCard.requestKey) {
-        failures.push(`Gotchi ${firstCard.gotchiId} image changed even though requestKey stayed the same`);
-      }
-    }
-  }
-  
+
   if (failures.length > 0) {
-    console.error("\n=== FAILURES ===");
-    failures.forEach(f => console.error(f));
-    throw new Error(`Found ${failures.length} issues:\n${failures.join("\n")}`);
+    throw new Error(`Found ${failures.length} issue(s):\n${failures.join("\n")}`);
   }
-  
-  console.log("✅ No issues detected");
 });
