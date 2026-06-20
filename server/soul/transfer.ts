@@ -18,6 +18,9 @@ import { screenOutbound } from "../../src/lib/companion/contentFilter";
 /** Maximum number of past-life echoes kept on the document. */
 const MAX_ECHOES = 12;
 
+/** Bounded concurrency for the per-memory LLM depersonalize step (cost-safety). */
+const DEPERSONALIZE_BATCH = 4;
+
 /** Generic fallback fragment used when the LLM returns nothing. */
 const FALLBACK_FRAGMENT = "a past keeper once walked these halls…";
 
@@ -85,35 +88,38 @@ export async function distillToEchoes(memories: Episode[]): Promise<Echo[]> {
   // Step 1 — drop sensitive episodes.
   const eligible = memories.filter((m) => m.privacy !== "sensitive");
 
-  // Steps 2–4 — process each eligible memory in parallel.
-  const fragments = await Promise.all(
-    eligible.map(async (m) => {
-      const scrubbed = heuristicStrip(m.summary);
-      const depersonalized = await llmDepersonalize(scrubbed);
-      const filtered = screenOutbound(depersonalized);
-      return filtered || FALLBACK_FRAGMENT;
-    })
-  );
+  // Only the newest (MAX_ECHOES - 1) memories survive as individual echoes; older
+  // ones collapse into a single blur. So LLM-process ONLY the survivors — never one
+  // call per memory regardless of how many a soul accumulated — and run them in
+  // bounded batches so a transfer never fans out an unbounded burst of LLM calls.
+  const hasOverflow = eligible.length > MAX_ECHOES;
+  const survivors = hasOverflow
+    ? eligible.slice(eligible.length - (MAX_ECHOES - 1))
+    : eligible;
 
-  const raw: Echo[] = fragments.map((fragment) => ({
+  // Steps 2–4 — process survivors in bounded batches (not one giant Promise.all).
+  const fragments: string[] = [];
+  for (let i = 0; i < survivors.length; i += DEPERSONALIZE_BATCH) {
+    const batch = survivors.slice(i, i + DEPERSONALIZE_BATCH);
+    const out = await Promise.all(
+      batch.map(async (m) => {
+        const scrubbed = heuristicStrip(m.summary);
+        const depersonalized = await llmDepersonalize(scrubbed);
+        const filtered = screenOutbound(depersonalized);
+        return filtered || FALLBACK_FRAGMENT;
+      })
+    );
+    fragments.push(...out);
+  }
+
+  const echoes: Echo[] = fragments.map((fragment) => ({
     eraHint: "a past life",
     fragment,
   }));
 
-  // Step 5 — cap at MAX_ECHOES.
-  if (raw.length <= MAX_ECHOES) return raw;
-
-  // Keep the newest MAX_ECHOES - 1 and merge the oldest into a blur echo.
-  const overflow = raw.slice(0, raw.length - (MAX_ECHOES - 1));
-  const kept = raw.slice(raw.length - (MAX_ECHOES - 1));
-  const blurEcho: Echo = {
-    eraHint: "many keepers ago",
-    fragment:
-      overflow.length === 1
-        ? (overflow[0]?.fragment ?? BLUR_FRAGMENT)
-        : BLUR_FRAGMENT,
-  };
-  return [blurEcho, ...kept];
+  // Step 5 — older memories beyond the cap collapse into one blur echo (no LLM).
+  if (!hasOverflow) return echoes;
+  return [{ eraHint: "many keepers ago", fragment: BLUR_FRAGMENT }, ...echoes];
 }
 
 // ---------------------------------------------------------------------------
