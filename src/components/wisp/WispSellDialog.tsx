@@ -174,7 +174,7 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 12, scale: 0.97 }}
           transition={{ type: "spring", stiffness: 280, damping: 26 }}
-          className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-violet-500/30 bg-gradient-to-br from-[#160a23] via-[#0d1426] to-[#0a1a1a] p-6 shadow-2xl shadow-violet-900/40"
+          className="relative max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-violet-500/30 bg-gradient-to-br from-[#160a23] via-[#0d1426] to-[#0a1a1a] p-7 shadow-2xl shadow-violet-900/40"
         >
           <button
             onClick={onClose}
@@ -198,14 +198,64 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
             </p>
           </div>
 
+          {/* How it works */}
+          <div className="mt-5">
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-white/40">How it works</div>
+            <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+              {[
+                ["1", "Ask Wisp", "Your agent pulls the character's persona, memory and context"],
+                ["2", "Run your model", "Generate with your own LLM and keys. No markup, no lock-in"],
+                ["3", "It remembers", "The soul persists, deepens with use, and seals on-chain"],
+              ].map(([n, t, d]) => (
+                <div key={n} className="rounded-lg border border-white/8 bg-white/5 p-2.5">
+                  <div className="mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-violet-500/30 text-[10px] font-bold text-violet-200">{n}</div>
+                  <div className="mt-1 text-[11px] font-semibold text-white/80">{t}</div>
+                  <div className="mt-0.5 text-[10px] leading-snug text-white/45">{d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* What you get */}
-          <div className="mt-5 grid grid-cols-2 gap-2">
+          <div className="mt-5">
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-white/40">The tools (your model does the talking)</div>
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2">
             {TOOLS.map(([name, desc]) => (
               <div key={name} className="rounded-lg border border-white/8 bg-white/5 px-3 py-2">
                 <div className="font-mono text-[11px] text-cyan-300">{name}</div>
                 <div className="text-[10px] text-white/45">{desc}</div>
               </div>
             ))}
+          </div>
+
+          {/* Why Wisp */}
+          <div className="mt-6">
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-white/40">Why Wisp</div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {[
+                ["🧠", "The hard part, done", "A persistent personality and memory that any model can embody. Plug it in instead of building it from scratch."],
+                ["🔑", "You own the stack", "Bring your own model and keys. No per-token markup, no vendor lock-in, full control of cost and quality."],
+                ["🌱", "Souls that grow", "Not a static prompt. Memory carries across sessions and a soul's depth deepens with real, repeated use."],
+                ["⛓️", "On-chain and verifiable", "Seal a soul's depth and fingerprint on Base. Permanent, publicly verifiable, and it travels with the NFT."],
+              ].map(([icon, t, d]) => (
+                <div key={t} className="rounded-lg border border-white/8 bg-white/5 p-3">
+                  <div className="text-[12px] font-semibold text-white/80">{icon} {t}</div>
+                  <div className="mt-0.5 text-[11px] leading-snug text-white/45">{d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* On-chain callout */}
+          <div className="mt-3 rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-4">
+            <div className="text-[12px] font-semibold text-cyan-200">⛓️ On-chain by design</div>
+            <div className="mt-1.5 text-[11px] leading-relaxed text-white/60">
+              Each soul can be sealed on Base as an EIP-712 attestation of its depth and fingerprint: permanent,
+              publicly verifiable, and it transfers with the asset when it changes hands. Accounts and billing are
+              wallet-native too. You sign in with your wallet and pay in ETH or USDC, with no emails or passwords,
+              and Wisp is non-custodial, so it never holds your funds or your model keys.
+            </div>
           </div>
 
           {/* Pricing */}

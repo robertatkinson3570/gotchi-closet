@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { WispSellDialog } from "./WispSellDialog";
 
 /**
@@ -20,7 +21,7 @@ export function PoweredByWisp({ className = "" }: { className?: string }) {
         </span>
         <span className="hidden text-white/30 group-hover:inline">· want it for your project?</span>
       </button>
-      {open && <WispSellDialog onClose={() => setOpen(false)} />}
+      {open && createPortal(<WispSellDialog onClose={() => setOpen(false)} />, document.body)}
     </>
   );
 }
