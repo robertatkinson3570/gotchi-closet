@@ -1,8 +1,8 @@
-// Wisp pricing — shared by the in-app sell dialog (display) and the server
+// Wisp pricing, shared by the in-app sell dialog (display) and the server
 // (payment-amount validation). USD-denominated; paid in ETH/USDC on Base.
-// gotchi-closet itself pays nothing (it's customer #1, used internally) — these
+// gotchi-closet itself pays nothing (it's customer #1, used internally); these
 // tiers are for EXTERNAL developers/projects only.
-// Pure module: no DOM, no env, no Date.now — safe to import on client and server.
+// Pure module: no DOM, no env, no Date.now; safe to import on client and server.
 
 export type WispPlan = "free" | "pro" | "studio";
 
@@ -21,7 +21,7 @@ export const WISP_PLANS: Record<Exclude<WispPlan, "free">, PlanInfo> = {
     usdPerMonth: 29,
     tagline: "For indie devs & builders",
     features: [
-      "Persistent memory — souls remember across sessions",
+      "Persistent memory: souls remember across sessions",
       "On-chain soul seals",
       "Up to 3 collections",
       "~25k requests / month",

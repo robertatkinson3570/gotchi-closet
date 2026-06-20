@@ -13,7 +13,7 @@ export function PoweredByWisp({ className = "" }: { className?: string }) {
       <button
         onClick={() => setOpen(true)}
         className={`group inline-flex items-center gap-1.5 rounded-full border border-violet-500/20 bg-violet-500/5 px-3 py-1 text-[11px] text-white/45 transition hover:border-violet-400/40 hover:bg-violet-500/10 hover:text-white/80 ${className}`}
-        title="Wisp — give any agent a gotchi's soul. Click to learn more."
+        title="Wisp: the soul, personality & memory engine behind this companion, as an MCP for your own project. Click to learn more."
       >
         <span>
           🔮 Powered by <span className="font-semibold text-violet-200/80">Wisp</span>

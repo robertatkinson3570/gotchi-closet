@@ -27,7 +27,7 @@ const ERC20_TRANSFER = [
 ] as const;
 
 const TOOLS = [
-  ["get_persona", "Load a gotchi's soul into your model"],
+  ["get_persona", "Load a character's soul into your model"],
   ["build_chat_context", "Ready chat turn → your model replies"],
   ["get_roast_setup", "Battle scaffold → your model roasts"],
   ["get_soul / verify_soul", "Depth, level, on-chain seal status"],
@@ -62,7 +62,7 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
     setStatus(null);
     try {
       await ensureKey();
-      setStatus("Free key created — copy it below 👇");
+      setStatus("Free key created, copy it below 👇");
     } catch (e: any) {
       setStatus(e?.message || "could not create key");
     } finally {
@@ -149,7 +149,7 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
       if (!sig) return;
       const { apiKey: k } = await rotateWispKey(sig);
       setApiKey(k);
-      setStatus("✓ key rotated — old key revoked, copy the new one below");
+      setStatus("✓ key rotated, old key revoked, copy the new one below");
     } catch (e: any) {
       const raw = e?.shortMessage || e?.message || "rotate failed";
       setStatus(/rejected|denied/i.test(raw) ? "Signature cancelled." : raw);
@@ -189,12 +189,12 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
               🔮 Wisp
             </div>
             <h2 className="mt-1 bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-2xl font-black text-transparent">
-              Give any agent a gotchi's soul.
+              Give any agent a soul.
             </h2>
             <p className="mt-1.5 text-sm text-white/60">
-              The soul, personality &amp; memory engine powering GotchiCloset's companion — as an
+              The soul, personality &amp; memory engine that powers GotchiCloset's companion, now an
               <span className="text-white/80"> MCP you plug into your own project</span>. You bring the
-              model; Wisp brings the soul. <span className="text-white/40">Zero LLM cost to you.</span>
+              model; Wisp brings the soul. <span className="text-white/40">No per-token fees to Wisp, you use your own keys.</span>
             </p>
           </div>
 
@@ -265,7 +265,7 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
 
             <div className="mt-3 flex items-center justify-between">
               <div className="text-sm text-white/70">
-                {WISP_PLANS[plan].name} · {months}mo —{" "}
+                {WISP_PLANS[plan].name} · {months}mo:{" "}
                 <span className="font-bold text-white">${usd}</span>{" "}
                 <span className="text-[11px] text-white/40">in {asset.toUpperCase()}</span>
               </div>
@@ -320,13 +320,13 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
                     rotate
                   </button>
                 </div>
-                <div className="mt-1 text-[10px] text-white/40">Save it now — it's shown once. Use it as the bearer token for the Wisp MCP.</div>
+                <div className="mt-1 text-[10px] text-white/40">Save it now, it's shown once. Use it as the bearer token for the Wisp MCP.</div>
               </div>
             )}
           </div>
 
           <p className="mt-4 text-center text-[10px] text-white/25">
-            GotchiCloset is customer #1 of Wisp — this is the same engine, for your project.
+            GotchiCloset is customer #1 of Wisp. The same engine, for your project.
           </p>
         </motion.div>
       </motion.div>

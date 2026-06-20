@@ -8,5 +8,5 @@ export { isSignedAtFresh };
 
 /** The message a wallet signs to prove ownership of its Wisp account. */
 export function wispManageMessage(wallet: string, signedAt: number): string {
-  return `Wisp — manage account\nwallet: ${wallet.toLowerCase()}\nts: ${signedAt}`;
+  return `Wisp: manage account\nwallet: ${wallet.toLowerCase()}\nts: ${signedAt}`;
 }

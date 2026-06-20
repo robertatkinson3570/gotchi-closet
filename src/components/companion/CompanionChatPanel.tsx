@@ -10,6 +10,7 @@ import { SoulDepthMeter } from "./SoulDepthMeter";
 import { GoPremium } from "./GoPremium";
 import { CompanionGotchiPicker } from "./CompanionGotchiPicker";
 import { GlobalChatTab } from "./GlobalChatTab";
+import { PoweredByWisp } from "@/components/wisp/PoweredByWisp";
 import { env } from "@/lib/env";
 import { premiumMessage, PREMIUM_SIG_TTL_MS } from "@/lib/companion/premiumAuth";
 import type { ChatMessage } from "@/lib/companion/types";
@@ -102,6 +103,9 @@ export function CompanionChatPanel() {
           <button className="-mr-1 rounded-lg px-2 py-1 text-base leading-none text-white/60 hover:bg-white/10 hover:text-white"
             onClick={() => setOpen(false)} aria-label="close">✕</button>
         </div>
+      </div>
+      <div className="flex shrink-0 items-center justify-end border-b border-white/10 px-2 py-1">
+        <PoweredByWisp />
       </div>
       <div className="flex shrink-0 gap-1 border-b border-white/10 px-2 py-1">
         {(["chat", "global"] as const).map((t) => (
