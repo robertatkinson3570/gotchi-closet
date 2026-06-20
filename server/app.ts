@@ -9,6 +9,7 @@ import globalChatRoutes from "./routes/globalChat";
 import roastRoutes from "./routes/roast";
 import soulRoutes from "./routes/soul";
 import arenaRoutes from "./routes/arena";
+import mcpBillingRoutes from "./routes/mcpBilling";
 import { getDebugStats } from "./aavegotchi/serverSvgService";
 import { startAutoRenewCron } from "./lending/cron";
 
@@ -79,6 +80,8 @@ export function createApp() {
   app.use("/api/soul", soulRoutes);
   // Public arena — no auth middleware. Must stay after authed routes to avoid shadowing.
   app.use("/api/arena", arenaRoutes);
+  // Wisp MCP billing — external developer accounts + ETH/USDC plan purchases. Additive.
+  app.use("/api/mcp", mcpBillingRoutes);
 
   // Boot auto-renew cron (no-op if AUTORENEW_HOT_WALLET_KEY not set)
   startAutoRenewCron();

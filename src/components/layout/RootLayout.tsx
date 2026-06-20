@@ -11,6 +11,7 @@ import { shortenAddress } from "@/lib/address";
 import { FooterAttribution } from "@/components/FooterAttribution";
 import { CompanionRoot } from "@/components/companion/CompanionRoot";
 import { KnowledgeBaseButton } from "@/components/KnowledgeBaseModal";
+import { PoweredByWisp } from "@/components/wisp/PoweredByWisp";
 
 // Every page shows the full nav so all sections are reachable everywhere.
 const NAV: { to: string; title: string; icon: LucideIcon }[] = [
@@ -79,7 +80,10 @@ export function RootLayout() {
           <Outlet />
         </Suspense>
       </main>
-      <FooterAttribution className="px-4 py-4 text-center" />
+      <footer className="flex flex-col items-center gap-2 px-4 py-4">
+        <PoweredByWisp />
+        <FooterAttribution className="text-center" />
+      </footer>
       <CompanionRoot />
     </div>
   );
