@@ -39,8 +39,14 @@ data/
 # Playwright MCP session dumps (test-time artifacts)
 .playwright-mcp/
 
-# Claude Code local settings/artifacts
-.claude/
+# Claude Code local settings/artifacts (keep shared skills in the repo)
+.claude/*
+!.claude/skills/
+!.claude/skills/**
+
+# gotchi-kb: never commit exported chat data / index (lives at C:\tools\dce by default)
+tools/gotchi-kb/data/
+tools/gotchi-kb/**/*.jsonl
 
 # Playwright test artifacts/reports
 test-results/
