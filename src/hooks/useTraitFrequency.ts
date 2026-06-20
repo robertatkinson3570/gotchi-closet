@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useMemo } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { qk } from "@/lib/queryKeys";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { env } from "@/lib/env";
 
@@ -8,8 +10,6 @@ type FrequencyMaps = {
   comboCount: Map<string, number>;
   total: number;
 };
-
-type HauntFrequencyCache = Map<number, FrequencyMaps>;
 
 const GOTCHIS_FOR_FREQUENCY = `
   query GotchisForFrequency($first: Int!, $skip: Int!, $hauntId: String!) {
@@ -26,9 +26,6 @@ const GOTCHIS_FOR_FREQUENCY = `
     }
   }
 `;
-
-const frequencyCache: HauntFrequencyCache = new Map();
-const loadingHaunts = new Set<number>();
 
 async function fetchAllGotchisForHaunt(hauntId: number): Promise<{ gotchiId: string; numericTraits: number[] }[]> {
   const allGotchis: { gotchiId: string; numericTraits: number[] }[] = [];
@@ -98,77 +95,36 @@ function buildFrequencyMaps(gotchis: { gotchiId: string; numericTraits: number[]
   return { shapeCount, colorCount, comboCount, total: gotchis.length };
 }
 
-async function loadHauntFrequency(hauntId: number): Promise<FrequencyMaps | null> {
-  if (frequencyCache.has(hauntId)) {
-    return frequencyCache.get(hauntId)!;
-  }
-
-  if (loadingHaunts.has(hauntId)) {
-    return null;
-  }
-
-  loadingHaunts.add(hauntId);
-
-  try {
-    const gotchis = await fetchAllGotchisForHaunt(hauntId);
-    const maps = buildFrequencyMaps(gotchis);
-    frequencyCache.set(hauntId, maps);
-    return maps;
-  } catch (err) {
-    console.error("Failed to build frequency maps:", err);
-    return null;
-  } finally {
-    loadingHaunts.delete(hauntId);
-  }
-}
-
 export function useTraitFrequency(gotchis: ExplorerGotchi[]) {
-  const [frequencyMaps, setFrequencyMaps] = useState<Map<number, FrequencyMaps>>(new Map());
-  const [loading, setLoading] = useState(false);
+  const hauntsNeeded = useMemo(
+    () => Array.from(new Set(gotchis.map((g) => g.hauntId))),
+    [gotchis]
+  );
 
-  const hauntsNeeded = Array.from(new Set(gotchis.map((g) => g.hauntId)));
+  // One query per haunt. staleTime: Infinity reproduces the old "load once and
+  // keep forever" module cache; react-query dedupes concurrent loads of the
+  // same haunt, replacing the hand-rolled loadingHaunts guard.
+  const results = useQueries({
+    queries: hauntsNeeded.map((hauntId) => ({
+      queryKey: qk.traitFrequency(hauntId),
+      queryFn: async () => buildFrequencyMaps(await fetchAllGotchisForHaunt(hauntId)),
+      staleTime: Infinity,
+      gcTime: Infinity,
+    })),
+  });
 
-  useEffect(() => {
-    let cancelled = false;
+  const statusSig = results.map((r) => r.status).join(",");
+  const frequencyMaps = useMemo(() => {
+    const m = new Map<number, FrequencyMaps>();
+    hauntsNeeded.forEach((h, i) => {
+      const d = results[i]?.data;
+      if (d) m.set(h, d);
+    });
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusSig, hauntsNeeded]);
 
-    async function loadAll() {
-      const missingHaunts = hauntsNeeded.filter((h) => !frequencyCache.has(h));
-      if (missingHaunts.length === 0) {
-        const cached = new Map<number, FrequencyMaps>();
-        for (const h of hauntsNeeded) {
-          if (frequencyCache.has(h)) {
-            cached.set(h, frequencyCache.get(h)!);
-          }
-        }
-        setFrequencyMaps(cached);
-        return;
-      }
-
-      setLoading(true);
-
-      for (const hauntId of missingHaunts) {
-        if (cancelled) break;
-        await loadHauntFrequency(hauntId);
-      }
-
-      if (!cancelled) {
-        const newMaps = new Map<number, FrequencyMaps>();
-        for (const h of hauntsNeeded) {
-          if (frequencyCache.has(h)) {
-            newMaps.set(h, frequencyCache.get(h)!);
-          }
-        }
-        setFrequencyMaps(newMaps);
-        setLoading(false);
-      }
-    }
-
-    loadAll();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [hauntsNeeded.join(",")]);
+  const loading = results.some((r) => r.isLoading);
 
   const getEyeShapeRarity = useCallback(
     (gotchi: ExplorerGotchi): number | null => {

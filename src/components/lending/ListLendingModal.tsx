@@ -11,6 +11,7 @@ import { useWhitelistsForAddress } from "@/hooks/useWhitelists";
 import { useAddressState } from "@/lib/addressState";
 import { switchToBaseChain } from "@/lib/chains";
 import { env } from "@/lib/env";
+import { ghstToWei } from "@/lib/lending/transform";
 
 type Props = {
   gotchiTokenId: string;
@@ -107,12 +108,7 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
       // won't actually relist until a paid subscription record is in place; the
       // subscription payment step happens after this success state.
       if (env.autoRenewApiUrl) {
-        const ghst = Number(upfrontGhst) || 0;
-        const [whole, frac = ""] = String(ghst).split(".");
-        const fracPad = (frac + "000000000000000000").slice(0, 18);
-        const wei = ghst
-          ? BigInt(whole) * (BigInt(10) ** BigInt(18)) + BigInt(fracPad)
-          : BigInt(0);
+        const wei = ghstToWei(upfrontGhst);
         fetch(`${env.autoRenewApiUrl}/listings`, {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -181,9 +177,7 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
     if (!autoRenewOperator) return;
     const tier = tierFor(subscriptionMonths);
     // GHST has 18 decimals. Use string math to avoid float drift on 2.5 / 4.5.
-    const [whole, frac = ""] = String(tier.priceGhst).split(".");
-    const fracPad = (frac + "000000000000000000").slice(0, 18);
-    const wei = BigInt(whole) * (BigInt(10) ** BigInt(18)) + BigInt(fracPad);
+    const wei = ghstToWei(tier.priceGhst);
     subPay.send(autoRenewOperator as `0x${string}`, wei);
   };
 
@@ -198,14 +192,7 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
     }
   }, [list.step, list.errorMsg, toast]);
 
-  const ghstNum = Number(upfrontGhst) || 0;
-  const initialCostWei = useMemo(() => {
-    if (!ghstNum) return BigInt(0);
-    // Convert GHST to wei (1e18)
-    const [whole, frac = ""] = String(ghstNum).split(".");
-    const fracPad = (frac + "000000000000000000").slice(0, 18);
-    return BigInt(whole) * (BigInt(10) ** BigInt(18)) + BigInt(fracPad);
-  }, [ghstNum]);
+  const initialCostWei = useMemo(() => ghstToWei(upfrontGhst), [upfrontGhst]);
 
   const splitsValid = splitOwner + splitBorrower === 100;
   const periodSec = periodUnit === "days" ? periodValue * 86400 : periodValue * 3600;

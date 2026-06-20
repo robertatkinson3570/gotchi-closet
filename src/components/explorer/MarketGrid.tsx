@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2, ShoppingCart, MapPin, SlidersHorizontal, X } from "lucide-react";
 import { BuyButton } from "./BuyButton";
 import { MakeOfferButton } from "./MakeOfferButton";
+import { RecentSales } from "./RecentSales";
+import { ParcelDetailModal } from "@/components/lending/ParcelDetailModal";
 import { useMarketplaceBuy, type BuyParams } from "@/hooks/useMarketplaceBuy";
 import { useToast } from "@/ui/use-toast";
 import { CORE_SUBGRAPH_URL } from "@/lib/lending/contracts";
@@ -29,8 +31,8 @@ async function fetchListings(kind: "erc721" | "erc1155", category: number, token
   const where1155 = byAddr ? `erc1155TokenAddress: "${tokenAddress!.toLowerCase()}", cancelled: false, sold: false, quantity_gt: 0` : `category: $c, cancelled: false, sold: false, quantity_gt: 0`;
   const query =
     kind === "erc721"
-      ? `query($c: Int!){ erc721Listings(first: 200, where: { ${where721} }, orderBy: timeCreated, orderDirection: desc){ id tokenId priceInWei timeCreated category } }`
-      : `query($c: Int!){ erc1155Listings(first: 200, where: { ${where1155} }, orderBy: timeCreated, orderDirection: desc){ id erc1155TypeId priceInWei quantity timeCreated category } }`;
+      ? `query($c: Int!){ erc721Listings(first: 1000, where: { ${where721} }, orderBy: timeCreated, orderDirection: desc){ id tokenId priceInWei timeCreated category } }`
+      : `query($c: Int!){ erc1155Listings(first: 1000, where: { ${where1155} }, orderBy: timeCreated, orderDirection: desc){ id erc1155TypeId priceInWei quantity timeCreated category } }`;
   const res = await fetch(CORE_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -81,13 +83,13 @@ async function fetchTypeMeta(kind: "installation" | "tile", tokenIds: string[]):
   return out;
 }
 
-type ParcelMeta = { size: string; district: string };
+type ParcelMeta = { size: string; district: string; name?: string; x?: string; y?: string };
 
-// Enrich listed parcels with size + district from the gotchiverse subgraph so
-// they can be filtered like the dapp. Keyed by parcel tokenId.
+// Enrich listed parcels with name + size + district + coords from the
+// gotchiverse subgraph so cards match the dapp. Keyed by parcel tokenId.
 async function fetchParcelMeta(tokenIds: string[]): Promise<Record<string, ParcelMeta>> {
   if (tokenIds.length === 0) return {};
-  const query = `query($ids: [ID!]){ parcels(first: 1000, where: { id_in: $ids }){ id size district } }`;
+  const query = `query($ids: [ID!]){ parcels(first: 1000, where: { id_in: $ids }){ id parcelHash size district coordinateX coordinateY } }`;
   const res = await fetch(GOTCHIVERSE_SUBGRAPH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -95,7 +97,7 @@ async function fetchParcelMeta(tokenIds: string[]): Promise<Record<string, Parce
   });
   const json = await res.json();
   const out: Record<string, ParcelMeta> = {};
-  for (const p of json.data?.parcels ?? []) out[p.id] = { size: String(p.size ?? ""), district: String(p.district ?? "") };
+  for (const p of json.data?.parcels ?? []) out[p.id] = { size: String(p.size ?? ""), district: String(p.district ?? ""), name: p.parcelHash || undefined, x: p.coordinateX != null ? String(p.coordinateX) : undefined, y: p.coordinateY != null ? String(p.coordinateY) : undefined };
   return out;
 }
 
@@ -131,7 +133,7 @@ export function MarketGrid({
   const [idQuery, setIdQuery] = useState("");
   const [minP, setMinP] = useState("");
   const [maxP, setMaxP] = useState("");
-  const [sort, setSort] = useState<"recent" | "price-asc" | "price-desc" | "id-asc" | "id-desc">("recent");
+  const [sort, setSort] = useState<"recent" | "price-asc" | "price-desc" | "id-asc" | "id-desc" | "size-asc" | "size-desc">("recent");
   const [sizeF, setSizeF] = useState("");
   const [districtF, setDistrictF] = useState("");
   const [levelF, setLevelF] = useState("");
@@ -215,6 +217,8 @@ export function MarketGrid({
       if (sort === "price-asc") return Number(a.priceWei) - Number(b.priceWei);
       if (sort === "price-desc") return Number(b.priceWei) - Number(a.priceWei);
       if (sort === "id-asc") return Number(a.tokenId) - Number(b.tokenId);
+      if (sort === "size-asc") return Number(parcelMeta?.[a.tokenId]?.size ?? 99) - Number(parcelMeta?.[b.tokenId]?.size ?? 99);
+      if (sort === "size-desc") return Number(parcelMeta?.[b.tokenId]?.size ?? -1) - Number(parcelMeta?.[a.tokenId]?.size ?? -1);
       return Number(b.tokenId) - Number(a.tokenId);
     });
     return arr;
@@ -261,6 +265,8 @@ export function MarketGrid({
           <option value="price-desc">Price: high → low</option>
           <option value="id-asc">ID: low → high</option>
           <option value="id-desc">ID: high → low</option>
+          {itemKind === "parcel" && <option value="size-desc">Size: large → small</option>}
+          {itemKind === "parcel" && <option value="size-asc">Size: small → large</option>}
         </select>
         <span className="text-[11px] text-muted-foreground ml-auto">{rows.length} of {all.length}</span>
       </div>
@@ -334,7 +340,7 @@ export function MarketGrid({
                 <span className="text-[10px] font-mono text-muted-foreground">#{l.tokenId}{l.quantity > 1 ? ` ×${l.quantity}` : ""}</span>
                 <input type="checkbox" checked={selected} onChange={() => toggle(l)} className="cursor-pointer accent-primary" />
               </div>
-              <div className="h-20 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 group-hover:from-primary/5 group-hover:to-primary/15 transition-colors">
+              <div onClick={() => setDetail(l)} title="View details, sale history & actions" className="h-20 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 group-hover:from-primary/5 group-hover:to-primary/15 transition-colors cursor-pointer">
                 {itemKind === "item" ? (
                   <AssetImage candidates={itemImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-16 max-w-16 object-contain" />
                 ) : itemKind === "installation" ? (
@@ -361,11 +367,17 @@ export function MarketGrid({
               {itemKind === "forge" && l.category != null && (
                 <div className="text-[9px] text-muted-foreground text-center truncate">{FORGE_TYPE_NAME[l.category] ?? "Forge"}</div>
               )}
+              {itemKind === "parcel" && parcelMeta?.[l.tokenId] && (
+                <div className="text-center leading-tight">
+                  {parcelMeta[l.tokenId].name && <div className="text-[9px] font-semibold truncate" title={parcelMeta[l.tokenId].name}>{parcelMeta[l.tokenId].name}</div>}
+                  <div className="text-[8px] text-muted-foreground">Dist {parcelMeta[l.tokenId].district || "—"} · {PARCEL_SIZES[parcelMeta[l.tokenId].size] ?? "—"}</div>
+                </div>
+              )}
               <div className="text-[11px] text-emerald-500 font-semibold text-center">{ghst(l.priceWei)} GHST</div>
               <BuyButton listingId={l.listingId} tokenId={l.tokenId} priceInWei={l.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`#${l.tokenId}`} />
-              {itemKind !== "portal" && itemKind !== "forge" && (
-                <MakeOfferButton kind={kind} category={category} tokenId={l.tokenId} contractAddress={contract} label={`#${l.tokenId}`} compact />
-              )}
+              {/* Buy orders work across categories incl. closed portals (erc721
+                  cat 0) and forge items (erc1155, per-item category). */}
+              <MakeOfferButton kind={kind} category={itemKind === "forge" && l.category != null ? Number(l.category) : category} tokenId={l.tokenId} contractAddress={contract} label={`#${l.tokenId}`} compact />
             </div>
           );
         })}
@@ -392,27 +404,63 @@ export function MarketGrid({
         </div>
       )}
 
-      {detail && (
+      {detail && itemKind === "parcel" && (
+        <ParcelDetailModal
+          parcelId={detail.tokenId}
+          onClose={() => setDetail(null)}
+          marketPanel={(
+            <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Listed price</div>
+                  <div className="text-xl font-bold text-emerald-500">{ghst(detail.priceWei)} GHST</div>
+                </div>
+              </div>
+              <BuyButton listingId={detail.listingId} tokenId={detail.tokenId} priceInWei={detail.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`Parcel #${detail.tokenId}`} />
+              <MakeOfferButton kind={kind} category={category} tokenId={detail.tokenId} contractAddress={contract} label={`Parcel #${detail.tokenId}`} />
+              <RecentSales kind={kind} tokenId={detail.tokenId} />
+            </>
+          )}
+        />
+      )}
+      {detail && itemKind !== "parcel" && (() => {
+        const label = ({ item: "Item", parcel: "Parcel", installation: "Installation", tile: "Tile", portal: "Closed Portal", fakegotchi: "FAKE Gotchi", fakecard: "FAKE Card", forge: "Forge", guardian: "Guardian Skin" } as Record<string, string>)[itemKind] ?? "Item";
+        const tm = isTyped ? typeMeta?.[detail.tokenId] : undefined;
+        return (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-3" onClick={() => setDetail(null)}>
-          <div className="w-[min(460px,96vw)] rounded-2xl border border-border bg-background shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
-              <div className="text-base font-bold">Closed Portal #{detail.tokenId}</div>
-              <button onClick={() => setDetail(null)} className="p-1.5 rounded hover:bg-muted/50"><X className="w-5 h-5" /></button>
+          <div className="w-[min(480px,96vw)] max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 sticky top-0 bg-background z-10">
+              <div className="text-base font-bold truncate">{tm?.name || label} <span className="text-muted-foreground font-mono text-sm">#{detail.tokenId}</span></div>
+              <button onClick={() => setDetail(null)} className="p-1.5 rounded hover:bg-muted/50 shrink-0"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-4 space-y-3">
-              <div className="w-40 h-40 mx-auto rounded-xl overflow-hidden bg-gradient-to-b from-fuchsia-500/10 to-fuchsia-500/30 flex items-center justify-center">
-                <PortalImage tokenId={detail.tokenId} />
+              <div className="w-40 h-40 mx-auto rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 flex items-center justify-center [&_img]:max-h-36 [&_img]:max-w-36 [&_img]:object-contain [&>svg]:w-full [&>svg]:h-full">
+                {itemKind === "portal" ? <PortalImage tokenId={detail.tokenId} />
+                  : itemKind === "installation" ? <AssetImage candidates={installationImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} />
+                  : itemKind === "tile" ? <AssetImage candidates={tileImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} />
+                  : itemKind === "forge" ? <AssetImage candidates={[FORGE_TYPE_IMG[detail.category ?? -1]].filter(Boolean)} alt={`#${detail.tokenId}`} />
+                  : itemKind === "fakegotchi" || itemKind === "fakecard" ? <FakeGotchiImage id={detail.tokenId} className="max-h-36 max-w-36 object-contain rounded" fallback={<Palette className="w-10 h-10 text-fuchsia-400/70" />} />
+                  : itemKind === "guardian" ? <AssetImage candidates={["https://dapp.aavegotchi.com/brand/iconsv2/categories/guardian-skins.png"]} alt={`#${detail.tokenId}`} />
+                  : <AssetImage candidates={itemImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} />}
               </div>
+
+              {tm?.name && <div className="text-center text-sm font-semibold">{tm.name}{tm.level ? ` · Level ${tm.level}` : ""}</div>}
+
               <div className="text-center">
-                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Price</div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Listed price</div>
                 <div className="text-2xl font-bold text-emerald-500">{ghst(detail.priceWei)} GHST</div>
               </div>
-              <p className="text-[11px] text-muted-foreground text-center">A closed portal contains 10 random Aavegotchis. Buy it, then open it on your profile to summon and claim one.</p>
-              <BuyButton listingId={detail.listingId} tokenId={detail.tokenId} priceInWei={detail.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`Portal #${detail.tokenId}`} />
+
+              <BuyButton listingId={detail.listingId} tokenId={detail.tokenId} priceInWei={detail.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`#${detail.tokenId}`} />
+              <MakeOfferButton kind={kind} category={itemKind === "forge" && detail.category != null ? Number(detail.category) : category} tokenId={detail.tokenId} contractAddress={contract} label={`#${detail.tokenId}`} />
+              {itemKind === "portal" && <p className="text-[11px] text-muted-foreground text-center">A closed portal contains 10 random Aavegotchis. Buy it, then open it to summon and claim one.</p>}
+
+              <RecentSales kind={kind} tokenId={detail.tokenId} />
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

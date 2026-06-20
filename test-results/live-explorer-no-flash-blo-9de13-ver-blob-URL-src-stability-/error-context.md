@@ -1,0 +1,837 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "GotchiCloset GotchiCloset" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "GotchiCloset" [ref=e7]
+          - generic [ref=e8]: GotchiCloset
+        - generic [ref=e9]:
+          - link [ref=e10] [cursor=pointer]:
+            - /url: /explorer
+            - button "Explorer / Baazaar" [ref=e11]:
+              - img [ref=e12]
+          - link [ref=e15] [cursor=pointer]:
+            - /url: /dress
+            - button "Dress" [ref=e16]:
+              - img [ref=e17]
+          - link [ref=e19] [cursor=pointer]:
+            - /url: /activity
+            - button "Activity" [ref=e20]:
+              - img [ref=e21]
+          - link [ref=e23] [cursor=pointer]:
+            - /url: /forge
+            - button "Forge" [ref=e24]:
+              - img [ref=e25]
+          - link [ref=e27] [cursor=pointer]:
+            - /url: /lending
+            - button "Lending" [ref=e28]:
+              - img [ref=e29]
+          - link [ref=e34] [cursor=pointer]:
+            - /url: /lending/lands
+            - button "Land Management" [ref=e35]:
+              - img [ref=e36]
+          - link [ref=e39] [cursor=pointer]:
+            - /url: /dao
+            - button "DAO & Community" [ref=e40]:
+              - img [ref=e41]
+          - button "Connect Wallet" [ref=e44] [cursor=pointer]
+          - button "Guide — how GotchiCloset & Aavegotchi work" [ref=e45] [cursor=pointer]:
+            - img [ref=e46]
+          - button "Toggle theme" [ref=e49] [cursor=pointer]:
+            - img [ref=e50]
+    - main [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - button "Gotchis" [ref=e58] [cursor=pointer]:
+              - img [ref=e59]
+              - generic: Gotchis
+            - button "Wearables" [ref=e61] [cursor=pointer]:
+              - img [ref=e62]
+              - generic: Wearables
+            - button "Items" [ref=e64] [cursor=pointer]:
+              - img [ref=e65]
+              - generic: Items
+            - button "Parcels" [ref=e67] [cursor=pointer]:
+              - img [ref=e68]
+              - generic: Parcels
+            - button "Installations" [ref=e71] [cursor=pointer]:
+              - img [ref=e72]
+              - generic: Installations
+            - button "Tiles" [ref=e76] [cursor=pointer]:
+              - img [ref=e77]
+              - generic: Tiles
+            - button "Portals" [ref=e79] [cursor=pointer]:
+              - img [ref=e80]
+              - generic: Portals
+            - button "FAKE Gotchis" [ref=e86] [cursor=pointer]:
+              - img [ref=e87]
+              - generic: FAKE Gotchis
+            - button "FAKE Cards" [ref=e93] [cursor=pointer]:
+              - img [ref=e94]
+              - generic: FAKE Cards
+            - button "Forge Items" [ref=e98] [cursor=pointer]:
+              - img [ref=e99]
+              - generic: Forge Items
+            - button "Guardian Skins" [ref=e103] [cursor=pointer]:
+              - img [ref=e104]
+              - generic: Guardian Skins
+            - button "Auctions" [ref=e106] [cursor=pointer]:
+              - img [ref=e107]
+              - generic: Auctions
+          - generic [ref=e113]:
+            - button "All" [ref=e114] [cursor=pointer]
+            - button "Owned" [ref=e115] [cursor=pointer]
+            - button "Baazaar" [ref=e116] [cursor=pointer]
+          - generic [ref=e117]:
+            - generic [ref=e118]:
+              - img [ref=e119]
+              - textbox "Search name, ID, or address..." [ref=e122]
+            - button "Highest Rarity" [ref=e124] [cursor=pointer]:
+              - generic [ref=e125]: Highest Rarity
+              - img [ref=e126]
+        - generic [ref=e128]:
+          - complementary [ref=e129]:
+            - generic [ref=e131]:
+              - generic [ref=e132]:
+                - generic [ref=e133]:
+                  - button "Rarity" [ref=e134] [cursor=pointer]:
+                    - generic [ref=e135]: Rarity
+                    - img [ref=e136]
+                  - generic [ref=e140]:
+                    - generic [ref=e141]: Score Range
+                    - generic [ref=e142]:
+                      - spinbutton [ref=e143]
+                      - generic [ref=e144]: to
+                      - spinbutton [ref=e145]
+                - generic [ref=e146]:
+                  - button "Traits" [ref=e147] [cursor=pointer]:
+                    - generic [ref=e148]: Traits
+                    - img [ref=e149]
+                  - generic [ref=e151]:
+                    - generic [ref=e152]:
+                      - generic [ref=e153]: NRG (Energy)
+                      - generic [ref=e154]:
+                        - spinbutton [ref=e155]
+                        - generic [ref=e156]: to
+                        - spinbutton [ref=e157]
+                    - generic [ref=e158]:
+                      - generic [ref=e159]: AGG (Aggression)
+                      - generic [ref=e160]:
+                        - spinbutton [ref=e161]
+                        - generic [ref=e162]: to
+                        - spinbutton [ref=e163]
+                    - generic [ref=e164]:
+                      - generic [ref=e165]: SPK (Spookiness)
+                      - generic [ref=e166]:
+                        - spinbutton [ref=e167]
+                        - generic [ref=e168]: to
+                        - spinbutton [ref=e169]
+                    - generic [ref=e170]:
+                      - generic [ref=e171]: BRN (Brain)
+                      - generic [ref=e172]:
+                        - spinbutton [ref=e173]
+                        - generic [ref=e174]: to
+                        - spinbutton [ref=e175]
+                    - generic [ref=e176]:
+                      - generic [ref=e177] [cursor=pointer]:
+                        - checkbox "Extreme (≤10 or ≥90)" [ref=e178]
+                        - text: Extreme (≤10 or ≥90)
+                      - generic [ref=e179] [cursor=pointer]:
+                        - checkbox "Balanced (40-60)" [ref=e180]
+                        - text: Balanced (40-60)
+                - generic [ref=e181]:
+                  - button "Level" [ref=e182] [cursor=pointer]:
+                    - generic [ref=e183]: Level
+                    - img [ref=e184]
+                  - generic [ref=e187]:
+                    - generic [ref=e188]: Level Range
+                    - generic [ref=e189]:
+                      - spinbutton [ref=e190]
+                      - generic [ref=e191]: to
+                      - spinbutton [ref=e192]
+                - generic [ref=e193]:
+                  - button "Wearables" [ref=e194] [cursor=pointer]:
+                    - generic [ref=e195]: Wearables
+                    - img [ref=e196]
+                  - generic [ref=e198]:
+                    - generic [ref=e199]:
+                      - generic [ref=e200]:
+                        - checkbox "Has Wearables" [ref=e201]
+                        - text: Has Wearables
+                      - generic [ref=e202]:
+                        - checkbox "No Wearables" [ref=e203]
+                        - text: No Wearables
+                    - generic [ref=e204]:
+                      - generic [ref=e205]: Wearable Count
+                      - generic [ref=e206]:
+                        - spinbutton [ref=e207]
+                        - generic [ref=e208]: to
+                        - spinbutton [ref=e209]
+                - generic [ref=e210]:
+                  - button "Haunt" [ref=e211] [cursor=pointer]:
+                    - generic [ref=e212]: Haunt
+                    - img [ref=e213]
+                  - generic [ref=e216]:
+                    - generic [ref=e217] [cursor=pointer]:
+                      - checkbox "Haunt 1" [ref=e218]
+                      - text: Haunt 1
+                    - generic [ref=e219] [cursor=pointer]:
+                      - checkbox "Haunt 2" [ref=e220]
+                      - text: Haunt 2
+                - generic [ref=e221]:
+                  - button "GHST Pocket" [ref=e222] [cursor=pointer]:
+                    - generic [ref=e223]: GHST Pocket
+                    - img [ref=e224]
+                  - generic [ref=e226]:
+                    - generic [ref=e227]:
+                      - generic [ref=e228]:
+                        - checkbox "Has GHST in Pocket" [ref=e229]
+                        - text: Has GHST in Pocket
+                      - generic [ref=e230]:
+                        - checkbox "No GHST in Pocket" [ref=e231]
+                        - text: No GHST in Pocket
+                    - generic [ref=e232]:
+                      - generic [ref=e233]: GHST Balance
+                      - generic [ref=e234]:
+                        - spinbutton [ref=e235]
+                        - generic [ref=e236]: to
+                        - spinbutton [ref=e237]
+                - generic [ref=e238]:
+                  - button "Equipped Set" [ref=e239] [cursor=pointer]:
+                    - generic [ref=e240]: Equipped Set
+                    - img [ref=e241]
+                  - generic [ref=e243]:
+                    - generic [ref=e244]:
+                      - generic [ref=e245]:
+                        - checkbox "Has Complete Set" [ref=e246]
+                        - text: Has Complete Set
+                      - generic [ref=e247]:
+                        - checkbox "No Complete Set" [ref=e248]
+                        - text: No Complete Set
+                    - generic [ref=e249]:
+                      - generic [ref=e250]: Filter by Set
+                      - generic [ref=e251]:
+                        - generic [ref=e252] [cursor=pointer]:
+                          - checkbox "APY Visionary" [ref=e253]
+                          - generic [ref=e254]: APY Visionary
+                        - generic [ref=e255] [cursor=pointer]:
+                          - checkbox "Aagent" [ref=e256]
+                          - generic [ref=e257]: Aagent
+                        - generic [ref=e258] [cursor=pointer]:
+                          - checkbox "Aair Gotchi" [ref=e259]
+                          - generic [ref=e260]: Aair Gotchi
+                        - generic [ref=e261] [cursor=pointer]:
+                          - checkbox "Aarcher" [ref=e262]
+                          - generic [ref=e263]: Aarcher
+                        - generic [ref=e264] [cursor=pointer]:
+                          - checkbox "Aastronaut" [ref=e265]
+                          - generic [ref=e266]: Aastronaut
+                        - generic [ref=e267] [cursor=pointer]:
+                          - checkbox "Aave Hero" [ref=e268]
+                          - generic [ref=e269]: Aave Hero
+                        - generic [ref=e270] [cursor=pointer]:
+                          - checkbox "Apex Sergey" [ref=e271]
+                          - generic [ref=e272]: Apex Sergey
+                        - generic [ref=e273] [cursor=pointer]:
+                          - checkbox "Apex Stani" [ref=e274]
+                          - generic [ref=e275]: Apex Stani
+                        - generic [ref=e276] [cursor=pointer]:
+                          - checkbox "Apex Vitalik Visionary" [ref=e277]
+                          - generic [ref=e278]: Apex Vitalik Visionary
+                        - generic [ref=e279] [cursor=pointer]:
+                          - checkbox "Baarbarian" [ref=e280]
+                          - generic [ref=e281]: Baarbarian
+                        - generic [ref=e282] [cursor=pointer]:
+                          - checkbox "Battle Santa" [ref=e283]
+                          - generic [ref=e284]: Battle Santa
+                        - generic [ref=e285] [cursor=pointer]:
+                          - checkbox "Blue Vacationer" [ref=e286]
+                          - generic [ref=e287]: Blue Vacationer
+                        - generic [ref=e288] [cursor=pointer]:
+                          - checkbox "Bushidogotchi" [ref=e289]
+                          - generic [ref=e290]: Bushidogotchi
+                        - generic [ref=e291] [cursor=pointer]:
+                          - checkbox "Captain Aave" [ref=e292]
+                          - generic [ref=e293]: Captain Aave
+                        - generic [ref=e294] [cursor=pointer]:
+                          - checkbox "Carpentooor" [ref=e295]
+                          - generic [ref=e296]: Carpentooor
+                        - generic [ref=e297] [cursor=pointer]:
+                          - checkbox "Carpentor" [ref=e298]
+                          - generic [ref=e299]: Carpentor
+                        - generic [ref=e300] [cursor=pointer]:
+                          - checkbox "Casual Gamer" [ref=e301]
+                          - generic [ref=e302]: Casual Gamer
+                        - generic [ref=e303] [cursor=pointer]:
+                          - checkbox "Citaadel Knight" [ref=e304]
+                          - generic [ref=e305]: Citaadel Knight
+                        - generic [ref=e306] [cursor=pointer]:
+                          - checkbox "Crypto OG" [ref=e307]
+                          - generic [ref=e308]: Crypto OG
+                        - generic [ref=e309] [cursor=pointer]:
+                          - checkbox "Curve Surfer" [ref=e310]
+                          - generic [ref=e311]: Curve Surfer
+                        - generic [ref=e312] [cursor=pointer]:
+                          - checkbox "Cyberpunk" [ref=e313]
+                          - generic [ref=e314]: Cyberpunk
+                        - generic [ref=e315] [cursor=pointer]:
+                          - checkbox "Cyborg" [ref=e316]
+                          - generic [ref=e317]: Cyborg
+                        - generic [ref=e318] [cursor=pointer]:
+                          - checkbox "DAO Summoner" [ref=e319]
+                          - generic [ref=e320]: DAO Summoner
+                        - generic [ref=e321] [cursor=pointer]:
+                          - checkbox "Daimyogotchi" [ref=e322]
+                          - generic [ref=e323]: Daimyogotchi
+                        - generic [ref=e324] [cursor=pointer]:
+                          - checkbox "DeFi Degen" [ref=e325]
+                          - generic [ref=e326]: DeFi Degen
+                        - generic [ref=e327] [cursor=pointer]:
+                          - checkbox "Degen Gamblooor" [ref=e328]
+                          - generic [ref=e329]: Degen Gamblooor
+                        - generic [ref=e330] [cursor=pointer]:
+                          - checkbox "ETH Maxi" [ref=e331]
+                          - generic [ref=e332]: ETH Maxi
+                        - generic [ref=e333] [cursor=pointer]:
+                          - checkbox "Elven Aarcher" [ref=e334]
+                          - generic [ref=e335]: Elven Aarcher
+                        - generic [ref=e336] [cursor=pointer]:
+                          - checkbox "Elven Raanger" [ref=e337]
+                          - generic [ref=e338]: Elven Raanger
+                        - generic [ref=e339] [cursor=pointer]:
+                          - checkbox "Engagement Farmer" [ref=e340]
+                          - generic [ref=e341]: Engagement Farmer
+                        - generic [ref=e342] [cursor=pointer]:
+                          - checkbox "FAKE Artist" [ref=e343]
+                          - generic [ref=e344]: FAKE Artist
+                        - generic [ref=e345] [cursor=pointer]:
+                          - checkbox "FU Money" [ref=e346]
+                          - generic [ref=e347]: FU Money
+                        - generic [ref=e348] [cursor=pointer]:
+                          - checkbox "Fairy" [ref=e349]
+                          - generic [ref=e350]: Fairy
+                        - generic [ref=e351] [cursor=pointer]:
+                          - checkbox "Farmer" [ref=e352]
+                          - generic [ref=e353]: Farmer
+                        - generic [ref=e354] [cursor=pointer]:
+                          - checkbox "Farmer Alf" [ref=e355]
+                          - generic [ref=e356]: Farmer Alf
+                        - generic [ref=e357] [cursor=pointer]:
+                          - checkbox "Foxy Meta" [ref=e358]
+                          - generic [ref=e359]: Foxy Meta
+                        - generic [ref=e360] [cursor=pointer]:
+                          - checkbox "Full Pajamas" [ref=e361]
+                          - generic [ref=e362]: Full Pajamas
+                        - generic [ref=e363] [cursor=pointer]:
+                          - checkbox "Geckogotchi" [ref=e364]
+                          - generic [ref=e365]: Geckogotchi
+                        - generic [ref=e366] [cursor=pointer]:
+                          - checkbox "Geisha" [ref=e367]
+                          - generic [ref=e368]: Geisha
+                        - generic [ref=e369] [cursor=pointer]:
+                          - checkbox "Gentleman" [ref=e370]
+                          - generic [ref=e371]: Gentleman
+                        - generic [ref=e372] [cursor=pointer]:
+                          - checkbox "Gentleman Farmer" [ref=e373]
+                          - generic [ref=e374]: Gentleman Farmer
+                        - generic [ref=e375] [cursor=pointer]:
+                          - checkbox "Godli Locks" [ref=e376]
+                          - generic [ref=e377]: Godli Locks
+                        - generic [ref=e378] [cursor=pointer]:
+                          - checkbox "Godlike Sergey" [ref=e379]
+                          - generic [ref=e380]: Godlike Sergey
+                        - generic [ref=e381] [cursor=pointer]:
+                          - checkbox "Godlike Stani" [ref=e382]
+                          - generic [ref=e383]: Godlike Stani
+                        - generic [ref=e384] [cursor=pointer]:
+                          - checkbox "Godlike Wizard" [ref=e385]
+                          - generic [ref=e386]: Godlike Wizard
+                        - generic [ref=e387] [cursor=pointer]:
+                          - checkbox "Gotchi Baron" [ref=e388]
+                          - generic [ref=e389]: Gotchi Baron
+                        - generic [ref=e390] [cursor=pointer]:
+                          - checkbox "Gotchi Elf" [ref=e391]
+                          - generic [ref=e392]: Gotchi Elf
+                        - generic [ref=e393] [cursor=pointer]:
+                          - checkbox "Gotchi Emperor" [ref=e394]
+                          - generic [ref=e395]: Gotchi Emperor
+                        - generic [ref=e396] [cursor=pointer]:
+                          - checkbox "Gotchi King" [ref=e397]
+                          - generic [ref=e398]: Gotchi King
+                        - generic [ref=e399] [cursor=pointer]:
+                          - checkbox "Gotchi Lord" [ref=e400]
+                          - generic [ref=e401]: Gotchi Lord
+                        - generic [ref=e402] [cursor=pointer]:
+                          - checkbox "Gotchi Princess" [ref=e403]
+                          - generic [ref=e404]: Gotchi Princess
+                        - generic [ref=e405] [cursor=pointer]:
+                          - checkbox "Gotchi Queen" [ref=e406]
+                          - generic [ref=e407]: Gotchi Queen
+                        - generic [ref=e408] [cursor=pointer]:
+                          - checkbox "Gotchidator" [ref=e409]
+                          - generic [ref=e410]: Gotchidator
+                        - generic [ref=e411] [cursor=pointer]:
+                          - checkbox "Gunslinger" [ref=e412]
+                          - generic [ref=e413]: Gunslinger
+                        - generic [ref=e414] [cursor=pointer]:
+                          - checkbox "Hacker Aanon" [ref=e415]
+                          - generic [ref=e416]: Hacker Aanon
+                        - generic [ref=e417] [cursor=pointer]:
+                          - checkbox "Infantry" [ref=e418]
+                          - generic [ref=e419]: Infantry
+                        - generic [ref=e420] [cursor=pointer]:
+                          - checkbox "Jacob Maarley" [ref=e421]
+                          - generic [ref=e422]: Jacob Maarley
+                        - generic [ref=e423] [cursor=pointer]:
+                          - checkbox "Jordan" [ref=e424]
+                          - generic [ref=e425]: Jordan
+                        - generic [ref=e426] [cursor=pointer]:
+                          - checkbox "Knight" [ref=e427]
+                          - generic [ref=e428]: Knight
+                        - generic [ref=e429] [cursor=pointer]:
+                          - checkbox "Lady" [ref=e430]
+                          - generic [ref=e431]: Lady
+                        - generic [ref=e432] [cursor=pointer]:
+                          - checkbox "Laozigotchi" [ref=e433]
+                          - generic [ref=e434]: Laozigotchi
+                        - generic [ref=e435] [cursor=pointer]:
+                          - checkbox "Lil Bubble" [ref=e436]
+                          - generic [ref=e437]: Lil Bubble
+                        - generic [ref=e438] [cursor=pointer]:
+                          - checkbox "Lil Pumpagotchi" [ref=e439]
+                          - generic [ref=e440]: Lil Pumpagotchi
+                        - generic [ref=e441] [cursor=pointer]:
+                          - checkbox "Link Marine" [ref=e442]
+                          - generic [ref=e443]: Link Marine
+                        - generic [ref=e444] [cursor=pointer]:
+                          - checkbox "Long Distance Runner" [ref=e445]
+                          - generic [ref=e446]: Long Distance Runner
+                        - generic [ref=e447] [cursor=pointer]:
+                          - checkbox "Man of Culture" [ref=e448]
+                          - generic [ref=e449]: Man of Culture
+                        - generic [ref=e450] [cursor=pointer]:
+                          - checkbox "Marc" [ref=e451]
+                          - generic [ref=e452]: Marc
+                        - generic [ref=e453] [cursor=pointer]:
+                          - checkbox "Master Creatooor" [ref=e454]
+                          - generic [ref=e455]: Master Creatooor
+                        - generic [ref=e456] [cursor=pointer]:
+                          - checkbox "Master Creator" [ref=e457]
+                          - generic [ref=e458]: Master Creator
+                        - generic [ref=e459] [cursor=pointer]:
+                          - checkbox "Master Shaaman" [ref=e460]
+                          - generic [ref=e461]: Master Shaaman
+                        - generic [ref=e462] [cursor=pointer]:
+                          - checkbox "Master Sushi Chef" [ref=e463]
+                          - generic [ref=e464]: Master Sushi Chef
+                        - generic [ref=e465] [cursor=pointer]:
+                          - checkbox "Miner" [ref=e466]
+                          - generic [ref=e467]: Miner
+                        - generic [ref=e468] [cursor=pointer]:
+                          - checkbox "Mythical Farmer" [ref=e469]
+                          - generic [ref=e470]: Mythical Farmer
+                        - generic [ref=e471] [cursor=pointer]:
+                          - checkbox "Mythical Sergey" [ref=e472]
+                          - generic [ref=e473]: Mythical Sergey
+                        - generic [ref=e474] [cursor=pointer]:
+                          - checkbox "Mythical Wizard" [ref=e475]
+                          - generic [ref=e476]: Mythical Wizard
+                        - generic [ref=e477] [cursor=pointer]:
+                          - checkbox "Noble Savage" [ref=e478]
+                          - generic [ref=e479]: Noble Savage
+                        - generic [ref=e480] [cursor=pointer]:
+                          - checkbox "Nogara the Eagle" [ref=e481]
+                          - generic [ref=e482]: Nogara the Eagle
+                        - generic [ref=e483] [cursor=pointer]:
+                          - checkbox "Novice Shaaman" [ref=e484]
+                          - generic [ref=e485]: Novice Shaaman
+                        - generic [ref=e486] [cursor=pointer]:
+                          - checkbox "Nure-onna" [ref=e487]
+                          - generic [ref=e488]: Nure-onna
+                        - generic [ref=e489] [cursor=pointer]:
+                          - checkbox "OKex Jaay" [ref=e490]
+                          - generic [ref=e491]: OKex Jaay
+                        - generic [ref=e492] [cursor=pointer]:
+                          - checkbox "OKex Jaay Hao" [ref=e493]
+                          - generic [ref=e494]: OKex Jaay Hao
+                        - generic [ref=e495] [cursor=pointer]:
+                          - checkbox "Off Duty Hazmat" [ref=e496]
+                          - generic [ref=e497]: Off Duty Hazmat
+                        - generic [ref=e498] [cursor=pointer]:
+                          - checkbox "Off Duty Knight" [ref=e499]
+                          - generic [ref=e500]: Off Duty Knight
+                        - generic [ref=e501] [cursor=pointer]:
+                          - checkbox "On Duty Hazmat" [ref=e502]
+                          - generic [ref=e503]: On Duty Hazmat
+                        - generic [ref=e504] [cursor=pointer]:
+                          - checkbox "Pajamas" [ref=e505]
+                          - generic [ref=e506]: Pajamas
+                        - generic [ref=e507] [cursor=pointer]:
+                          - checkbox "Party Animal" [ref=e508]
+                          - generic [ref=e509]: Party Animal
+                        - generic [ref=e510] [cursor=pointer]:
+                          - checkbox "Piraate" [ref=e511]
+                          - generic [ref=e512]: Piraate
+                        - generic [ref=e513] [cursor=pointer]:
+                          - checkbox "Pixelcraftooor" [ref=e514]
+                          - generic [ref=e515]: Pixelcraftooor
+                        - generic [ref=e516] [cursor=pointer]:
+                          - checkbox "Pixelcraftor" [ref=e517]
+                          - generic [ref=e518]: Pixelcraftor
+                        - generic [ref=e519] [cursor=pointer]:
+                          - checkbox "PoW Miner" [ref=e520]
+                          - generic [ref=e521]: PoW Miner
+                        - generic [ref=e522] [cursor=pointer]:
+                          - checkbox "Polygonist" [ref=e523]
+                          - generic [ref=e524]: Polygonist
+                        - generic [ref=e525] [cursor=pointer]:
+                          - checkbox "Portal Mage" [ref=e526]
+                          - generic [ref=e527]: Portal Mage
+                        - generic [ref=e528] [cursor=pointer]:
+                          - checkbox "Psychonaut" [ref=e529]
+                          - generic [ref=e530]: Psychonaut
+                        - generic [ref=e531] [cursor=pointer]:
+                          - checkbox "Punk Rocker" [ref=e532]
+                          - generic [ref=e533]: Punk Rocker
+                        - generic [ref=e534] [cursor=pointer]:
+                          - checkbox "Quickswap Dragon" [ref=e535]
+                          - generic [ref=e536]: Quickswap Dragon
+                        - generic [ref=e537] [cursor=pointer]:
+                          - checkbox "REALM Tycoon" [ref=e538]
+                          - generic [ref=e539]: REALM Tycoon
+                        - generic [ref=e540] [cursor=pointer]:
+                          - checkbox "ROFL Tamer" [ref=e541]
+                          - generic [ref=e542]: ROFL Tamer
+                        - generic [ref=e543] [cursor=pointer]:
+                          - checkbox "Raanger" [ref=e544]
+                          - generic [ref=e545]: Raanger
+                        - generic [ref=e546] [cursor=pointer]:
+                          - checkbox "Radar" [ref=e547]
+                          - generic [ref=e548]: Radar
+                        - generic [ref=e549] [cursor=pointer]:
+                          - checkbox "Ranchero" [ref=e550]
+                          - generic [ref=e551]: Ranchero
+                        - generic [ref=e552] [cursor=pointer]:
+                          - checkbox "Rastafarian" [ref=e553]
+                          - generic [ref=e554]: Rastafarian
+                        - generic [ref=e555] [cursor=pointer]:
+                          - checkbox "Rave Gurl" [ref=e556]
+                          - generic [ref=e557]: Rave Gurl
+                        - generic [ref=e558] [cursor=pointer]:
+                          - checkbox "Red Vacationer" [ref=e559]
+                          - generic [ref=e560]: Red Vacationer
+                        - generic [ref=e561] [cursor=pointer]:
+                          - checkbox "Rektboi" [ref=e562]
+                          - generic [ref=e563]: Rektboi
+                        - generic [ref=e564] [cursor=pointer]:
+                          - checkbox "Robin Hood" [ref=e565]
+                          - generic [ref=e566]: Robin Hood
+                        - generic [ref=e567] [cursor=pointer]:
+                          - checkbox "Runner" [ref=e568]
+                          - generic [ref=e569]: Runner
+                        - generic [ref=e570] [cursor=pointer]:
+                          - checkbox "Sandbox Seb" [ref=e571]
+                          - generic [ref=e572]: Sandbox Seb
+                        - generic [ref=e573] [cursor=pointer]:
+                          - checkbox "Sergeant" [ref=e574]
+                          - generic [ref=e575]: Sergeant
+                        - generic [ref=e576] [cursor=pointer]:
+                          - checkbox "Shaaman Mystic" [ref=e577]
+                          - generic [ref=e578]: Shaaman Mystic
+                        - generic [ref=e579] [cursor=pointer]:
+                          - checkbox "Shaaman Priest" [ref=e580]
+                          - generic [ref=e581]: Shaaman Priest
+                        - generic [ref=e582] [cursor=pointer]:
+                          - checkbox "Shadowy Supercoder" [ref=e583]
+                          - generic [ref=e584]: Shadowy Supercoder
+                        - generic [ref=e585] [cursor=pointer]:
+                          - checkbox "Shogungotchi" [ref=e586]
+                          - generic [ref=e587]: Shogungotchi
+                        - generic [ref=e588] [cursor=pointer]:
+                          - checkbox "Skater" [ref=e589]
+                          - generic [ref=e590]: Skater
+                        - generic [ref=e591] [cursor=pointer]:
+                          - checkbox "Smithooor" [ref=e592]
+                          - generic [ref=e593]: Smithooor
+                        - generic [ref=e594] [cursor=pointer]:
+                          - checkbox "Smithor" [ref=e595]
+                          - generic [ref=e596]: Smithor
+                        - generic [ref=e597] [cursor=pointer]:
+                          - checkbox "Snapshot Voter" [ref=e598]
+                          - generic [ref=e599]: Snapshot Voter
+                        - generic [ref=e600] [cursor=pointer]:
+                          - checkbox "Socialite" [ref=e601]
+                          - generic [ref=e602]: Socialite
+                        - generic [ref=e603] [cursor=pointer]:
+                          - checkbox "Soundcloud Rapper" [ref=e604]
+                          - generic [ref=e605]: Soundcloud Rapper
+                        - generic [ref=e606] [cursor=pointer]:
+                          - checkbox "Starlet" [ref=e607]
+                          - generic [ref=e608]: Starlet
+                        - generic [ref=e609] [cursor=pointer]:
+                          - checkbox "Steampunk" [ref=e610]
+                          - generic [ref=e611]: Steampunk
+                        - generic [ref=e612] [cursor=pointer]:
+                          - checkbox "Steampunk Grenadier" [ref=e613]
+                          - generic [ref=e614]: Steampunk Grenadier
+                        - generic [ref=e615] [cursor=pointer]:
+                          - checkbox "Super Aagent" [ref=e616]
+                          - generic [ref=e617]: Super Aagent
+                        - generic [ref=e618] [cursor=pointer]:
+                          - checkbox "Super Geckogotchi" [ref=e619]
+                          - generic [ref=e620]: Super Geckogotchi
+                        - generic [ref=e621] [cursor=pointer]:
+                          - checkbox "Supreme Portal Mage" [ref=e622]
+                          - generic [ref=e623]: Supreme Portal Mage
+                        - generic [ref=e624] [cursor=pointer]:
+                          - checkbox "Sus Fairy" [ref=e625]
+                          - generic [ref=e626]: Sus Fairy
+                        - generic [ref=e627] [cursor=pointer]:
+                          - checkbox "Sushi Chef" [ref=e628]
+                          - generic [ref=e629]: Sushi Chef
+                        - generic [ref=e630] [cursor=pointer]:
+                          - checkbox "Swappy the Dragon" [ref=e631]
+                          - generic [ref=e632]: Swappy the Dragon
+                        - generic [ref=e633] [cursor=pointer]:
+                          - checkbox "Tech Bro" [ref=e634]
+                          - generic [ref=e635]: Tech Bro
+                        - generic [ref=e636] [cursor=pointer]:
+                          - checkbox "Thaave" [ref=e637]
+                          - generic [ref=e638]: Thaave
+                        - generic [ref=e639] [cursor=pointer]:
+                          - checkbox "Tinkerbell" [ref=e640]
+                          - generic [ref=e641]: Tinkerbell
+                        - generic [ref=e642] [cursor=pointer]:
+                          - checkbox "Toddler" [ref=e643]
+                          - generic [ref=e644]: Toddler
+                        - generic [ref=e645] [cursor=pointer]:
+                          - checkbox "Tooth Fairy" [ref=e646]
+                          - generic [ref=e647]: Tooth Fairy
+                        - generic [ref=e648] [cursor=pointer]:
+                          - checkbox "Trooper" [ref=e649]
+                          - generic [ref=e650]: Trooper
+                        - generic [ref=e651] [cursor=pointer]:
+                          - checkbox "VR Gamer" [ref=e652]
+                          - generic [ref=e653]: VR Gamer
+                        - generic [ref=e654] [cursor=pointer]:
+                          - checkbox "VRF Lord" [ref=e655]
+                          - generic [ref=e656]: VRF Lord
+                        - generic [ref=e657] [cursor=pointer]:
+                          - checkbox "Vacation Geisha" [ref=e658]
+                          - generic [ref=e659]: Vacation Geisha
+                        - generic [ref=e660] [cursor=pointer]:
+                          - checkbox "Vacation Santa" [ref=e661]
+                          - generic [ref=e662]: Vacation Santa
+                        - generic [ref=e663] [cursor=pointer]:
+                          - checkbox "Venly Biker" [ref=e664]
+                          - generic [ref=e665]: Venly Biker
+                        - generic [ref=e666] [cursor=pointer]:
+                          - checkbox "Vitalik Visionary" [ref=e667]
+                          - generic [ref=e668]: Vitalik Visionary
+                        - generic [ref=e669] [cursor=pointer]:
+                          - checkbox "WGMI Wagie" [ref=e670]
+                          - generic [ref=e671]: WGMI Wagie
+                        - generic [ref=e672] [cursor=pointer]:
+                          - checkbox "Wandering Sage" [ref=e673]
+                          - generic [ref=e674]: Wandering Sage
+                        - generic [ref=e675] [cursor=pointer]:
+                          - checkbox "We Are Legion" [ref=e676]
+                          - generic [ref=e677]: We Are Legion
+                        - generic [ref=e678] [cursor=pointer]:
+                          - checkbox "Witchy" [ref=e679]
+                          - generic [ref=e680]: Witchy
+                        - generic [ref=e681] [cursor=pointer]:
+                          - checkbox "Wizard" [ref=e682]
+                          - generic [ref=e683]: Wizard
+                        - generic [ref=e684] [cursor=pointer]:
+                          - checkbox "Wizard (Legendary)" [ref=e685]
+                          - generic [ref=e686]: Wizard (Legendary)
+                        - generic [ref=e687] [cursor=pointer]:
+                          - checkbox "Woodland Critter" [ref=e688]
+                          - generic [ref=e689]: Woodland Critter
+                        - generic [ref=e690] [cursor=pointer]:
+                          - checkbox "Wraangler" [ref=e691]
+                          - generic [ref=e692]: Wraangler
+                        - generic [ref=e693] [cursor=pointer]:
+                          - checkbox "YOLO Guy" [ref=e694]
+                          - generic [ref=e695]: YOLO Guy
+                        - generic [ref=e696] [cursor=pointer]:
+                          - checkbox "Yegres the Dragon" [ref=e697]
+                          - generic [ref=e698]: Yegres the Dragon
+                - generic [ref=e699]:
+                  - button "Eye Traits" [ref=e700] [cursor=pointer]:
+                    - generic [ref=e701]: Eye Traits
+                    - img [ref=e702]
+                  - generic [ref=e705]:
+                    - checkbox "Double Mythical Eyes" [ref=e706]
+                    - text: Double Mythical Eyes
+                - generic [ref=e707]:
+                  - button "Price (Baazaar)" [ref=e708] [cursor=pointer]:
+                    - generic [ref=e709]: Price (Baazaar)
+                    - img [ref=e710]
+                  - generic [ref=e713]:
+                    - generic [ref=e714]: GHST Price
+                    - generic [ref=e715]:
+                      - spinbutton [ref=e716]
+                      - generic [ref=e717]: to
+                      - spinbutton [ref=e718]
+              - button "Clear All" [ref=e720] [cursor=pointer]
+            - button "Collapse filters" [ref=e721] [cursor=pointer]:
+              - img [ref=e722]
+          - main [ref=e724]:
+            - generic [ref=e725]:
+              - generic [ref=e726]:
+                - generic [ref=e728]:
+                  - generic [ref=e729]:
+                    - img "Gotchi 3002" [ref=e731]
+                    - generic [ref=e732]:
+                      - generic [ref=e733]: 👁
+                      - generic [ref=e734]: 1/3
+                  - generic [ref=e735]:
+                    - generic [ref=e736]:
+                      - generic [ref=e737]: Blob Gotchi 2
+                      - generic [ref=e738]:
+                        - generic [ref=e739]: "#3002"
+                        - button "Show details" [ref=e740] [cursor=pointer]:
+                          - img [ref=e741]
+                    - generic [ref=e743]:
+                      - generic [ref=e744]: H1
+                      - generic [ref=e746]: 3X 👁
+                    - generic [ref=e747]:
+                      - generic [ref=e748]:
+                        - generic [ref=e749]: RAR
+                        - generic [ref=e750]: "362"
+                        - generic [ref=e751]: (300)
+                      - generic [ref=e752]:
+                        - generic [ref=e753]: KIN 50
+                        - generic [ref=e754]: LVL 1
+                        - 'generic "Soul: Stirring · 26/60 (on-chain read — open the companion for full depth)" [ref=e755]':
+                          - generic [ref=e758]: Stirring
+                    - generic [ref=e759]:
+                      - generic [ref=e760]:
+                        - generic [ref=e761]: NRG
+                        - generic [ref=e762]: "50"
+                      - generic [ref=e763]:
+                        - generic [ref=e764]: AGG
+                        - generic [ref=e765]: "50"
+                      - generic [ref=e766]:
+                        - generic [ref=e767]: SPK
+                        - generic [ref=e768]: "50"
+                      - generic [ref=e769]:
+                        - generic [ref=e770]: BRN
+                        - generic [ref=e771]: "50"
+                      - generic [ref=e772]:
+                        - generic [ref=e773]: EYS
+                        - generic [ref=e774]: "50"
+                      - generic [ref=e775]:
+                        - generic [ref=e776]: EYC
+                        - generic [ref=e777]: "50"
+                  - button "Details" [ref=e778] [cursor=pointer]
+                - generic [ref=e780]:
+                  - generic [ref=e781]:
+                    - img "Gotchi 3001" [ref=e783]
+                    - generic [ref=e784]:
+                      - generic [ref=e785]: 👁
+                      - generic [ref=e786]: 1/3
+                  - generic [ref=e787]:
+                    - generic [ref=e788]:
+                      - generic [ref=e789]: Blob Gotchi 1
+                      - generic [ref=e790]:
+                        - generic [ref=e791]: "#3001"
+                        - button "Show details" [ref=e792] [cursor=pointer]:
+                          - img [ref=e793]
+                    - generic [ref=e795]:
+                      - generic [ref=e796]: H1
+                      - generic [ref=e798]: 3X 👁
+                    - generic [ref=e799]:
+                      - generic [ref=e800]:
+                        - generic [ref=e801]: RAR
+                        - generic [ref=e802]: "361"
+                        - generic [ref=e803]: (300)
+                      - generic [ref=e804]:
+                        - generic [ref=e805]: KIN 50
+                        - generic [ref=e806]: LVL 1
+                        - 'generic "Soul: Stirring · 26/60 (on-chain read — open the companion for full depth)" [ref=e807]':
+                          - generic [ref=e810]: Stirring
+                    - generic [ref=e811]:
+                      - generic [ref=e812]:
+                        - generic [ref=e813]: NRG
+                        - generic [ref=e814]: "50"
+                      - generic [ref=e815]:
+                        - generic [ref=e816]: AGG
+                        - generic [ref=e817]: "50"
+                      - generic [ref=e818]:
+                        - generic [ref=e819]: SPK
+                        - generic [ref=e820]: "50"
+                      - generic [ref=e821]:
+                        - generic [ref=e822]: BRN
+                        - generic [ref=e823]: "50"
+                      - generic [ref=e824]:
+                        - generic [ref=e825]: EYS
+                        - generic [ref=e826]: "50"
+                      - generic [ref=e827]:
+                        - generic [ref=e828]: EYC
+                        - generic [ref=e829]: "50"
+                  - button "Details" [ref=e830] [cursor=pointer]
+                - generic [ref=e832]:
+                  - generic [ref=e833]:
+                    - img "Gotchi 3000" [ref=e835]
+                    - generic [ref=e836]:
+                      - generic [ref=e837]: 👁
+                      - generic [ref=e838]: 1/3
+                  - generic [ref=e839]:
+                    - generic [ref=e840]:
+                      - generic [ref=e841]: Blob Gotchi 0
+                      - generic [ref=e842]:
+                        - generic [ref=e843]: "#3000"
+                        - button "Show details" [ref=e844] [cursor=pointer]:
+                          - img [ref=e845]
+                    - generic [ref=e847]:
+                      - generic [ref=e848]: H1
+                      - generic [ref=e850]: 3X 👁
+                    - generic [ref=e851]:
+                      - generic [ref=e852]:
+                        - generic [ref=e853]: RAR
+                        - generic [ref=e854]: "360"
+                        - generic [ref=e855]: (300)
+                      - generic [ref=e856]:
+                        - generic [ref=e857]: KIN 50
+                        - generic [ref=e858]: LVL 1
+                        - 'generic "Soul: Stirring · 26/60 (on-chain read — open the companion for full depth)" [ref=e859]':
+                          - generic [ref=e862]: Stirring
+                    - generic [ref=e863]:
+                      - generic [ref=e864]:
+                        - generic [ref=e865]: NRG
+                        - generic [ref=e866]: "50"
+                      - generic [ref=e867]:
+                        - generic [ref=e868]: AGG
+                        - generic [ref=e869]: "50"
+                      - generic [ref=e870]:
+                        - generic [ref=e871]: SPK
+                        - generic [ref=e872]: "50"
+                      - generic [ref=e873]:
+                        - generic [ref=e874]: BRN
+                        - generic [ref=e875]: "50"
+                      - generic [ref=e876]:
+                        - generic [ref=e877]: EYS
+                        - generic [ref=e878]: "50"
+                      - generic [ref=e879]:
+                        - generic [ref=e880]: EYC
+                        - generic [ref=e881]: "50"
+                  - button "Details" [ref=e882] [cursor=pointer]
+              - generic [ref=e884]: Showing all 3 gotchis
+    - contentinfo [ref=e885]:
+      - generic [ref=e886]:
+        - text: Built by
+        - link "GrimLabs" [ref=e887] [cursor=pointer]:
+          - /url: https://grimlabs.xyz
+    - button "open gotchi companion" [ref=e888] [cursor=pointer]:
+      - generic [ref=e889]: 👻
+  - region "Notifications (F8)":
+    - list
+```

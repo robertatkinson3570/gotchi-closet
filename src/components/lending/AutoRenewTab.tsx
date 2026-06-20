@@ -19,6 +19,7 @@ import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { useToast } from "@/ui/use-toast";
 import { useAddressState } from "@/lib/addressState";
 import { env } from "@/lib/env";
+import { ghstToWei } from "@/lib/lending/transform";
 import { SUBSCRIPTION_TIERS } from "./ListLendingModal";
 
 export function AutoRenewTab() {
@@ -97,9 +98,7 @@ export function AutoRenewTab() {
     const tier = SUBSCRIPTION_TIERS.find((t) => t.months === months);
     if (!tier) return;
     setExtendFor({ tokenId, months });
-    const [whole, frac = ""] = String(tier.priceGhst).split(".");
-    const fracPad = (frac + "000000000000000000").slice(0, 18);
-    const wei = BigInt(whole) * (BigInt(10) ** BigInt(18)) + BigInt(fracPad);
+    const wei = ghstToWei(tier.priceGhst);
     subPay.send(env.autoRenewOperator as `0x${string}`, wei);
   };
 

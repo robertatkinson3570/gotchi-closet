@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Activity, Loader2, ArrowRightLeft, MapPin, X, Tag, Gavel, HandCoins, BarChart3 } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
-import { CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE } from "@/lib/lending/contracts";
+import { shortAddress as short } from "@/lib/format";
+import { CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE, WEARABLE_DIAMOND_BASE, FORGE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE } from "@/lib/lending/contracts";
 import { GBM_SUBGRAPH } from "@/lib/subgraph";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "@/components/explorer/AssetImage";
@@ -142,6 +143,9 @@ function auctionCat(contract: string, type: string): { kind: "erc721" | "erc1155
   if (c === INSTALLATION_DIAMOND_BASE.toLowerCase()) return { kind: "erc1155", category: BAAZAAR_CATEGORY.INSTALLATION };
   if (c === TILE_DIAMOND_BASE.toLowerCase()) return { kind: "erc1155", category: BAAZAAR_CATEGORY.TILE };
   if (c === AAVEGOTCHI_DIAMOND_BASE.toLowerCase()) return type === "erc1155" ? { kind: "erc1155", category: BAAZAAR_CATEGORY.CONSUMABLE } : { kind: "erc721", category: BAAZAAR_CATEGORY.AAVEGOTCHI };
+  if (c === WEARABLE_DIAMOND_BASE.toLowerCase()) return { kind: "erc1155", category: BAAZAAR_CATEGORY.WEARABLE };
+  if (c === FORGE_DIAMOND_BASE.toLowerCase()) return { kind: "erc1155", category: BAAZAAR_CATEGORY.CONSUMABLE };
+  if (c === FAKE_GOTCHIS_NFT_BASE.toLowerCase()) return { kind: "erc721", category: 5 };
   return { kind: type === "erc1155" ? "erc1155" : "erc721", category: -1 };
 }
 
@@ -160,7 +164,6 @@ async function fetchAuctions(): Promise<Row[]> {
   return enrichGotchiArt(rows);
 }
 
-const short = (a?: string) => (a && a !== "0x0000000000000000000000000000000000000000" ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—");
 // Show decimals for sub-1-GHST values so small offers (e.g. 0.019 GHST) don't
 // render as a misleading "0 GHST"; whole-GHST amounts stay clean (no decimals).
 const ghst = (wei: string) => {

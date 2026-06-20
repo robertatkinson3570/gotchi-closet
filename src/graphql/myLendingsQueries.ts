@@ -41,6 +41,7 @@ export const MY_LENDINGS_AS_LENDER = gql`
         collateral
         numericTraits
         modifiedNumericTraits
+        withSetsNumericTraits
         equippedWearables
       }
     }
@@ -88,6 +89,7 @@ export const MY_LENDINGS_AS_BORROWER = gql`
         collateral
         numericTraits
         modifiedNumericTraits
+        withSetsNumericTraits
         equippedWearables
       }
     }

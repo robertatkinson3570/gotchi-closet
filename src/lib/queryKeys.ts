@@ -38,4 +38,16 @@ export const qk = {
   parcelDetail: (parcelId?: string | null) => (parcelId ? (["parcel-detail", parcelId] as const) : (["parcel-detail"] as const)),
   parcelLastSale: (parcelId?: string | null) => ["parcel-last-sale", parcelId] as const,
   channelable: (...parts: unknown[]) => ["channelable", ...parts] as const,
+
+  // Lending + market data hooks (migrated off hand-rolled module caches).
+  lendings: () => ["lendings"] as const,
+  myLendings: (address?: string | null) =>
+    address ? (["my-lendings", address] as const) : (["my-lendings"] as const),
+  historicalLendings: (days: number) => ["historical-lendings", days] as const,
+  alchemicaPrices: () => ["alchemica-prices"] as const,
+  whitelists: (address?: string | null) =>
+    address ? (["whitelists", address] as const) : (["whitelists"] as const),
+  traitFrequency: (haunt?: number) =>
+    haunt === undefined ? (["trait-frequency"] as const) : (["trait-frequency", haunt] as const),
+  explorerListings: () => ["explorer-listings"] as const,
 };

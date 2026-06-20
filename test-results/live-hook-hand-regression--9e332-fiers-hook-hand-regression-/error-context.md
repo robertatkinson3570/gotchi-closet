@@ -1,0 +1,278 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "GotchiCloset GotchiCloset" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "GotchiCloset" [ref=e7]
+          - generic [ref=e8]: GotchiCloset
+        - generic [ref=e9]:
+          - link [ref=e10] [cursor=pointer]:
+            - /url: /explorer
+            - button "Explorer / Baazaar" [ref=e11]:
+              - img [ref=e12]
+          - link [ref=e15] [cursor=pointer]:
+            - /url: /dress
+            - button "Dress" [ref=e16]:
+              - img [ref=e17]
+          - link [ref=e19] [cursor=pointer]:
+            - /url: /activity
+            - button "Activity" [ref=e20]:
+              - img [ref=e21]
+          - link [ref=e23] [cursor=pointer]:
+            - /url: /forge
+            - button "Forge" [ref=e24]:
+              - img [ref=e25]
+          - link [ref=e27] [cursor=pointer]:
+            - /url: /lending
+            - button "Lending" [ref=e28]:
+              - img [ref=e29]
+          - link [ref=e34] [cursor=pointer]:
+            - /url: /lending/lands
+            - button "Land Management" [ref=e35]:
+              - img [ref=e36]
+          - link [ref=e39] [cursor=pointer]:
+            - /url: /dao
+            - button "DAO & Community" [ref=e40]:
+              - img [ref=e41]
+          - button "Connect Wallet" [ref=e44] [cursor=pointer]
+          - button "Guide — how GotchiCloset & Aavegotchi work" [ref=e45] [cursor=pointer]:
+            - img [ref=e46]
+          - button "Toggle theme" [ref=e49] [cursor=pointer]:
+            - img [ref=e50]
+    - main [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e55]:
+          - generic [ref=e57]:
+            - img [ref=e58]
+            - generic [ref=e62]:
+              - text: 0x0000...0000
+              - button "Remove wallet" [ref=e63] [cursor=pointer]:
+                - img [ref=e64]
+          - button "Connect Wallet" [ref=e68] [cursor=pointer]
+        - generic [ref=e69]:
+          - generic [ref=e70]: "0x0000000000000000000000000000000000000000"
+          - generic [ref=e71]:
+            - generic [ref=e73]:
+              - generic [ref=e74]:
+                - button "Collection" [ref=e75] [cursor=pointer]:
+                  - img [ref=e76]
+                  - generic [ref=e81]: Collection
+                - button "Baazaar" [ref=e82] [cursor=pointer]:
+                  - img [ref=e83]
+                  - generic [ref=e87]: Baazaar
+              - img [ref=e88]
+              - textbox "Search entire Aavegotchi collection by name or ID..." [ref=e91]
+              - button "Catwalk" [ref=e92] [cursor=pointer]:
+                - generic [ref=e93]:
+                  - img [ref=e94]
+                  - text: Catwalk
+            - generic [ref=e97]:
+              - button "Lock All" [ref=e98] [cursor=pointer]:
+                - img [ref=e99]
+              - button "Unlock All" [disabled] [ref=e102]:
+                - img [ref=e103]
+              - generic [ref=e106]: "|"
+              - button "BRS" [ref=e107] [cursor=pointer]:
+                - generic [ref=e108]: BRS
+                - img [ref=e109]
+            - generic [ref=e111]:
+              - button "Scroll left" [ref=e112] [cursor=pointer]:
+                - img [ref=e113]
+              - generic [ref=e116]:
+                - button "Unlock Set (allow equipped wearables)" [ref=e117] [cursor=pointer]:
+                  - img [ref=e118]
+                - generic [ref=e123] [cursor=pointer]:
+                  - generic [ref=e124]:
+                    - img [ref=e127]
+                    - generic [ref=e129]:
+                      - heading "Fixture Gotchi" [level=3] [ref=e130]
+                      - paragraph [ref=e131]: "ID: 21403"
+                  - generic [ref=e132]:
+                    - generic [ref=e133]: Rarity Score 742 (570)
+                    - generic [ref=e134]:
+                      - generic [ref=e135]: Trait BRS (base)
+                      - generic [ref=e136]: "570"
+                      - generic [ref=e137]: Total BRS
+                      - generic [ref=e138]: "742"
+                  - generic [ref=e139]: "Active sets: Jordan"
+                  - generic [ref=e140]:
+                    - generic [ref=e142]:
+                      - generic [ref=e143]: NRG
+                      - generic [ref=e146]: 12 (7)
+                    - generic [ref=e148]:
+                      - generic [ref=e149]: AGG
+                      - generic [ref=e152]: 15 (5)
+                    - generic [ref=e154]:
+                      - generic [ref=e155]: SPK
+                      - generic [ref=e158]: 107 (119)
+                    - generic [ref=e160]:
+                      - generic [ref=e161]: BRN
+                      - generic [ref=e164]: 109 (119)
+              - button "Scroll right" [ref=e165] [cursor=pointer]:
+                - img [ref=e166]
+        - generic [ref=e169]:
+          - generic [ref=e177]:
+            - generic "Remove from editor" [ref=e178] [cursor=pointer]:
+              - img [ref=e179]
+            - generic [ref=e183]:
+              - generic [ref=e184]:
+                - img [ref=e189]
+                - generic [ref=e191]:
+                  - button "Filter best wearables" [ref=e192] [cursor=pointer]:
+                    - img [ref=e193]
+                  - button "Nakey" [ref=e195] [cursor=pointer]:
+                    - img [ref=e196]
+                  - button "Restore original" [ref=e198] [cursor=pointer]:
+                    - img [ref=e199]
+                  - button "Lock & Set" [ref=e202] [cursor=pointer]:
+                    - img [ref=e203]
+                  - button "Mommy Dress Me™" [ref=e206] [cursor=pointer]:
+                    - generic [ref=e207]:
+                      - img [ref=e208]
+                      - text: Mommy
+                    - generic [ref=e211]: Dress Me™
+              - generic [ref=e212]:
+                - generic [ref=e216] [cursor=pointer]:
+                  - generic [ref=e218]:
+                    - heading "Fixture Gotchi" [level=3] [ref=e219]
+                    - paragraph [ref=e220]: "ID: 21403"
+                  - generic [ref=e221]:
+                    - generic [ref=e222]: Rarity Score 742 (570)
+                    - generic [ref=e223]:
+                      - generic [ref=e224]: Trait BRS (base)
+                      - generic [ref=e225]: "570"
+                      - generic [ref=e226]: Total BRS
+                      - generic [ref=e227]: "742"
+                  - button "Best Sets" [ref=e229]:
+                    - img [ref=e230]
+                    - generic [ref=e232]: Best Sets
+                    - img [ref=e233]
+                  - generic [ref=e235]: "Active sets: Jordan"
+                  - generic [ref=e236]:
+                    - generic [ref=e237]:
+                      - generic [ref=e238]: Traits
+                      - button "Respec" [ref=e240]
+                    - generic [ref=e242]:
+                      - generic [ref=e243]: NRG
+                      - generic [ref=e245]:
+                        - generic [ref=e247]: W:-5
+                        - generic [ref=e248]: 12 (7)
+                    - generic [ref=e250]:
+                      - generic [ref=e251]: AGG
+                      - generic [ref=e253]:
+                        - generic [ref=e255]: W:-10
+                        - generic [ref=e256]: 15 (5)
+                    - generic [ref=e258]:
+                      - generic [ref=e259]: SPK
+                      - generic [ref=e261]:
+                        - generic [ref=e262]:
+                          - generic [ref=e263]: W:+9
+                          - text: "|"
+                          - generic [ref=e264]: S:+3
+                        - generic [ref=e265]: 107 (119)
+                    - generic [ref=e267]:
+                      - generic [ref=e268]: BRN
+                      - generic [ref=e270]:
+                        - generic [ref=e272]: W:+10
+                        - generic [ref=e273]: 109 (119)
+                - generic [ref=e275]:
+                  - generic "Jordan Suit • NRG -3, SPK +1, BRN +1" [ref=e278] [cursor=pointer]:
+                    - generic [ref=e279]: Body
+                    - img "Jordan Suit" [ref=e281]
+                    - button [ref=e282]:
+                      - img [ref=e283]
+                    - generic [ref=e286]:
+                      - generic [ref=e287]: N-3
+                      - generic [ref=e288]: S+1
+                      - generic [ref=e289]: B+1
+                  - generic "Signal Headset • AGG -2, BRN +3" [ref=e292] [cursor=pointer]:
+                    - generic [ref=e293]: Face
+                    - img "Signal Headset" [ref=e295]
+                    - button [ref=e296]:
+                      - img [ref=e297]
+                    - generic [ref=e300]:
+                      - generic [ref=e301]: A-2
+                      - generic [ref=e302]: B+3
+                  - generic "Monocle • AGG -2, BRN +3" [ref=e305] [cursor=pointer]:
+                    - generic [ref=e306]: Eyes
+                    - img "Monocle" [ref=e308]
+                    - button [ref=e309]:
+                      - img [ref=e310]
+                    - generic [ref=e313]:
+                      - generic [ref=e314]: A-2
+                      - generic [ref=e315]: B+3
+                  - generic "Jordan Hair • AGG -2, SPK +3" [ref=e318] [cursor=pointer]:
+                    - generic [ref=e319]: Head
+                    - img "Jordan Hair" [ref=e321]
+                    - button [ref=e322]:
+                      - img [ref=e323]
+                    - generic [ref=e326]:
+                      - generic [ref=e327]: A-2
+                      - generic [ref=e328]: S+3
+                  - generic "1337 Laptop • NRG -2, BRN +3" [ref=e331] [cursor=pointer]:
+                    - generic [ref=e332]: Left Hand
+                    - img "1337 Laptop" [ref=e334]
+                    - button [ref=e335]:
+                      - img [ref=e336]
+                    - generic [ref=e339]:
+                      - generic [ref=e340]: N-2
+                      - generic [ref=e341]: B+3
+                  - generic "Aave Flag • AGG -2, SPK +3" [ref=e344] [cursor=pointer]:
+                    - generic [ref=e345]: Right Hand
+                    - img "Aave Flag" [ref=e347]
+                    - button [ref=e348]:
+                      - img [ref=e349]
+                    - generic [ref=e352]:
+                      - generic [ref=e353]: A-2
+                      - generic [ref=e354]: S+3
+                  - generic "Geo • AGG -2, SPK +2" [ref=e357] [cursor=pointer]:
+                    - generic [ref=e358]: Pet
+                    - img "Geo" [ref=e360]
+                    - button [ref=e361]:
+                      - img [ref=e362]
+                    - generic [ref=e365]:
+                      - generic [ref=e366]: A-2
+                      - generic [ref=e367]: S+2
+                  - generic "Background" [ref=e370] [cursor=pointer]:
+                    - generic [ref=e371]: Background
+                    - img [ref=e374]
+          - generic [ref=e377]:
+            - generic [ref=e378]:
+              - generic [ref=e379]:
+                - textbox "Search..." [active] [ref=e380]: 1337 Laptop
+                - generic [ref=e381]:
+                  - button "All" [ref=e382] [cursor=pointer]
+                  - button "Owned" [ref=e383] [cursor=pointer]
+                  - button "Baazaar" [ref=e384] [cursor=pointer]
+                - button "Clear all filters" [ref=e385] [cursor=pointer]:
+                  - img [ref=e386]
+              - generic [ref=e389]:
+                - combobox [ref=e390] [cursor=pointer]:
+                  - generic: Slots All
+                  - img [ref=e391]
+                - combobox [ref=e393] [cursor=pointer]:
+                  - generic: Rarity All
+                  - img [ref=e394]
+                - combobox [ref=e396] [cursor=pointer]:
+                  - generic: Sets All
+                  - img [ref=e397]
+            - generic "1337 Laptop • Rarity 20 • NRG -2, BRN +3" [ref=e403]:
+              - img "1337 Laptop" [ref=e406]
+              - generic [ref=e407]:
+                - generic [ref=e408]: NRG -2
+                - generic [ref=e409]: BRN +3
+      - status [ref=e410]
+    - contentinfo [ref=e411]:
+      - generic [ref=e412]:
+        - text: Built by
+        - link "GrimLabs" [ref=e413] [cursor=pointer]:
+          - /url: https://grimlabs.xyz
+    - button "open gotchi companion" [ref=e414] [cursor=pointer]:
+      - generic [ref=e415]: 👻
+  - region "Notifications (F8)":
+    - list
+```

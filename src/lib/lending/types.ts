@@ -115,11 +115,8 @@ export function brsBandOf(brs: number): string {
 }
 
 export function durationBucketOf(seconds: number): string {
-  let prev = 0;
   for (const b of DURATION_BUCKETS) {
     if (seconds <= b.maxSec) return b.label;
-    prev = b.maxSec;
   }
-  void prev;
   return ">31d";
 }

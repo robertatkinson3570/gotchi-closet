@@ -2,15 +2,25 @@ import { test, expect } from "@playwright/test";
 import fs from "fs";
 import path from "path";
 
+// Owner is seeded into the editor via localStorage['gc_multiWallet'] (the old
+// /dress?view=<addr> param no longer exists). Use a lowercase address: the
+// GotchisByOwner fetcher lowercases the owner before querying the subgraph.
 const OWNER_WITH_GOTCHIS = "0x1cf07f7c5853599dcaa5b3bb67ac0cf1ae7bdb82";
-const SUBGRAPH_URL =
-  "**/subgraphs/aavegotchi-core-base/prod/gn";
+
+// CORE subgraph (goldsky aavegotchi-core-base). The editor uses this for both
+// owned gotchis (GotchisByOwner), the wearables catalog (itemTypes), and Baazaar
+// listing prices (erc721Listings).
+const SUBGRAPH_URL = "**/subgraphs/aavegotchi-core-base/prod/gn";
 const PREVIEW_URL = "**/api/gotchis/preview";
 const SVG_URL = "**/api/gotchis/*/svg";
 const THUMBS_URL = "**/api/wearables/thumbs";
 
 const wearablesPath = path.join(process.cwd(), "data", "wearables.json");
 const wearablesData = JSON.parse(fs.readFileSync(wearablesPath, "utf8"));
+
+// A single owned gotchi. id -> tokenId "1" (finite), valid collateral, numeric
+// hauntId and a non-empty numericTraits array => GotchiSvg uses preview mode and
+// POSTs /api/gotchis/preview.
 const TEST_GOTCHI = {
   id: "1",
   name: "FixtureGotchi",
@@ -20,20 +30,38 @@ const TEST_GOTCHI = {
   withSetsNumericTraits: [48, 47, 58, 50, 10, 20],
   equippedWearables: [0, 0, 0, 0, 0, 0, 0, 0],
   baseRarityScore: "306",
+  modifiedRarityScore: "310",
+  withSetsRarityScore: "310",
   usedSkillPoints: "5",
   hauntId: "1",
   collateral: "0x0000000000000000000000000000000000000000",
   createdAt: "1",
+  lending: null,
+  kinship: "50",
 };
+
 const previewSvg =
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">` +
   `<rect width="64" height="64" fill="#eee"/>` +
   `<circle cx="32" cy="32" r="14" fill="#bbb"/></svg>`;
 
 test.beforeEach(async ({ page }) => {
+  // Seed the editor's owner list BEFORE any app code runs. DressPage reads
+  // localStorage['gc_multiWallet'] = { wallets: [...] } (max 3) on mount.
+  await page.addInitScript((owner) => {
+    localStorage.setItem(
+      "gc_multiWallet",
+      JSON.stringify({ wallets: [owner] })
+    );
+  }, OWNER_WITH_GOTCHIS);
+
+  // CORE subgraph: serve wearables (itemTypes), owned gotchis (GotchisByOwner),
+  // and empty Baazaar listings (erc721Listings) so listing-price hooks resolve
+  // cleanly with no prices.
   await page.route(SUBGRAPH_URL, async (route) => {
     const body = route.request().postDataJSON() as any;
     const query = body?.query || "";
+
     if (query.includes("itemTypes")) {
       const first = Number(body?.variables?.first ?? 1000);
       const skip = Number(body?.variables?.skip ?? 0);
@@ -57,6 +85,16 @@ test.beforeEach(async ({ page }) => {
       return;
     }
 
+    if (query.includes("erc721Listings")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: { erc721Listings: [] } }),
+      });
+      return;
+    }
+
+    // GotchisByOwner (and any other user query) -> our owned fixture.
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -65,6 +103,7 @@ test.beforeEach(async ({ page }) => {
           user: {
             id: OWNER_WITH_GOTCHIS,
             gotchisOwned: [TEST_GOTCHI],
+            gotchisLentOut: [],
           },
           _meta: { block: { number: 1 } },
         },
@@ -95,18 +134,26 @@ test.beforeEach(async ({ page }) => {
       body: JSON.stringify({ thumbs: {} }),
     });
   });
+
+  // Abort any stray non-localhost traffic (RPC, image CDNs, walletconnect) so
+  // the editor renders deterministically without third-party dependencies.
+  await page.route(/^https?:\/\/(?!localhost)/, (route) => {
+    const u = route.request().url();
+    if (u.includes("goldsky.com") || u.includes("/api/")) return route.fallback();
+    return route.abort();
+  });
 });
 
 test("gotchi svg renders after loading dress page", async ({ page }) => {
-  await page.goto(`/dress?view=${OWNER_WITH_GOTCHIS}`);
+  await page.goto("/dress");
 
-  // Wait for carousel to render
+  // Wait for the carousel card for the seeded owner's gotchi to render.
   await expect(
     page.locator("[data-testid^='gotchi-card-']").first()
   ).toBeVisible({ timeout: 20000 });
 
-  // Expect at least one SVG to render inside gotchi containers
+  // The editor pipeline POSTs /api/gotchis/preview and injects the returned SVG
+  // via dangerouslySetInnerHTML into [data-testid='gotchi-svg-content'].
   const svgLocator = page.locator("[data-testid='gotchi-svg-content'] svg");
   await expect(svgLocator.first()).toBeVisible({ timeout: 20000 });
 });
-

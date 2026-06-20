@@ -1,7 +1,12 @@
 import { useEffect } from "react";
 import { Loader2, ShoppingCart, CheckCircle2, XCircle } from "lucide-react";
+import { useAccount, useReadContract } from "wagmi";
 import { useMarketplaceBuy } from "@/hooks/useMarketplaceBuy";
 import { useToast } from "@/ui/use-toast";
+import { GHST_TOKEN_BASE } from "@/lib/lending/contracts";
+import { BASE_CHAIN_ID } from "@/lib/chains";
+
+const BALANCE_ABI = [{ name: "balanceOf", type: "function", stateMutability: "view", inputs: [{ name: "a", type: "address" }], outputs: [{ type: "uint256" }] }] as const;
 
 type Props = {
   listingId: string;
@@ -30,6 +35,9 @@ export function BuyButton({ listingId, tokenId, priceInWei, kind, contractAddres
   const { toast } = useToast();
   const mine = activeKey === listingId;
   const busy = mine && (step === "approving" || step === "submitting" || step === "confirming");
+  const { address } = useAccount();
+  const { data: ghstBal } = useReadContract({ address: GHST_TOKEN_BASE, abi: BALANCE_ABI, functionName: "balanceOf", args: address ? [address] : undefined, chainId: BASE_CHAIN_ID, query: { enabled: !!address } });
+  const insufficient = !!address && ghstBal != null && (ghstBal as bigint) < BigInt(priceInWei);
 
   useEffect(() => {
     if (!mine) return;
@@ -47,8 +55,8 @@ export function BuyButton({ listingId, tokenId, priceInWei, kind, contractAddres
   return (
     <button
       type="button"
-      disabled={busy || !isConnected}
-      title={isConnected ? `Buy for ${fmtGhst(priceInWei)} GHST` : "Connect wallet to buy"}
+      disabled={busy || !isConnected || insufficient}
+      title={!isConnected ? "Connect wallet to buy" : insufficient ? "Insufficient GHST balance" : `Buy for ${fmtGhst(priceInWei)} GHST`}
       onClick={(e) => {
         e.stopPropagation();
         buy({ listingId, tokenId, priceInWei: BigInt(priceInWei), kind, contractAddress, quantity });
@@ -71,6 +79,8 @@ export function BuyButton({ listingId, tokenId, priceInWei, kind, contractAddres
         <>
           <XCircle className="w-3.5 h-3.5" /> Retry
         </>
+      ) : insufficient ? (
+        <>Insufficient GHST</>
       ) : (
         <>
           <ShoppingCart className="w-3.5 h-3.5" /> Buy · {fmtGhst(priceInWei)} GHST

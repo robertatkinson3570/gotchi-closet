@@ -86,7 +86,8 @@ export function ExplorerTopBar({
   // Item/Parcel tabs are pure marketplace grids — the All/Owned/Baazaar scope
   // and the gotchi/wearable search+sort don't apply, so hide them there.
   const isMarket =
-    assetType === "item" || assetType === "parcel" || assetType === "installation" || assetType === "tile" || assetType === "portal" || assetType === "auction";
+    assetType === "item" || assetType === "parcel" || assetType === "installation" || assetType === "tile" || assetType === "portal" || assetType === "auction" ||
+    assetType === "fakegotchi" || assetType === "fakecard" || assetType === "forge" || assetType === "guardian";
   const currentKey = `${sort.field}:${sort.direction}`;
   const sortLabel = getSortLabel(sort);
   
@@ -102,9 +103,9 @@ export function ExplorerTopBar({
             <ExplorerAssetToggle value={assetType} onChange={onAssetTypeChange} />
           )}
 
-          {isMarket ? (
+          {assetType === "auction" ? (
             <span className="text-xs text-muted-foreground shrink-0 px-1">
-              {assetType === "auction" ? "Live GBM auctions · place a bid" : "Cheapest open listings · select to bulk-buy"}
+              Live GBM auctions · place a bid
             </span>
           ) : (
             <div className="flex border rounded-lg overflow-hidden shrink-0">

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="26.0.0">
+  <diagram name="gotchi-closet-architecture">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1180" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ===================== CLIENT LANE ===================== -->
+        <mxCell id="laneClient" value="CLIENT — Browser · React 18 + Vite SPA  (TypeScript · Tailwind · react-router · framer-motion)" style="swimlane;startSize=40;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=13;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="1800" height="230" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c_explorer" value="Explorer / Baazaar&#xa;browse · buy · listings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="laneClient">
+          <mxGeometry x="20" y="50" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c_dress" value="Dress Editor&#xa;drag-drop wearables" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="laneClient">
+          <mxGeometry x="200" y="50" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c_lend" value="Lending / Land&#xa;rentals · parcels" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="laneClient">
+          <mxGeometry x="380" y="50" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c_forge" value="Forge&#xa;smelt · craft" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="laneClient">
+          <mxGeometry x="560" y="50" width="110" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c_comp" value="Companion&#xa;AI chat · soul glow" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="laneClient">
+          <mxGeometry x="690" y="50" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c_soul" value="Soul&#xa;verify · cert" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="laneClient">
+          <mxGeometry x="870" y="50" width="110" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c_dao" value="DAO · Activity · Stats&#xa;Snapshot · feeds · rarity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="laneClient">
+          <mxGeometry x="1000" y="50" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="c_rest" value="REST client&#xa;lib/http.ts → /api" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eefc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="laneClient">
+          <mxGeometry x="20" y="140" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c_rq" value="React Query&#xa;server cache" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eefc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="laneClient">
+          <mxGeometry x="220" y="140" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c_zus" value="Zustand&#xa;app state" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eefc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="laneClient">
+          <mxGeometry x="390" y="140" width="130" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c_wallet" value="Wallet — wagmi / viem&#xa;WalletConnect · injected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="laneClient">
+          <mxGeometry x="1240" y="140" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c_urql" value="urql&#xa;GraphQL subgraph client" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="laneClient">
+          <mxGeometry x="1540" y="140" width="240" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== BACKEND LANE ===================== -->
+        <mxCell id="laneBackend" value="BACKEND — Express API · :8787   (EIP-191 signature auth · per-route rate limits · CORS)" style="swimlane;startSize=40;html=1;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=13;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="300" width="1800" height="250" as="geometry" />
+        </mxCell>
+
+        <mxCell id="b_gotchi" value="/gotchis&#xa;SVG render (RPC)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="20" y="50" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="b_wear" value="/wearables&#xa;thumbs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="200" y="50" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="b_comp" value="/companion&#xa;chat (free / premium)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="370" y="50" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="b_gchat" value="/global-chat&#xa;SSE stream" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="560" y="50" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="b_roast" value="/roast&#xa;battles · queue" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="730" y="50" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="b_soul" value="/soul&#xa;certificates" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="900" y="50" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="b_lend" value="/lending&#xa;auto-renew" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="1070" y="50" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="b_battler" value="/gotchibattler&#xa;tournaments" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="1250" y="50" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="b_arena" value="/arena&#xa;public (no auth)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="1420" y="50" width="150" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="b_auth" value="Auth&#xa;EIP-191 recover · rate limits" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="20" y="150" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="b_sqlite" value="SQLite (better-sqlite3, WAL)&#xa;companion.db · autorenew.db&#xa;soul · roast stores" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="270" y="140" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="b_cron" value="Auto-Renew Cron + Hot Wallet&#xa;relist signer · every 2 min" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="580" y="150" width="270" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="b_llm" value="LLM Provider Router&#xa;tier-based completions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="880" y="150" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="b_groq" value="Groq API  (external)&#xa;llama-3.3-70b · free tier" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="1110" y="140" width="200" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="b_openai" value="OpenAI  (external)&#xa;gpt-4o-mini · premium tier" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="laneBackend">
+          <mxGeometry x="1110" y="190" width="200" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== ON-CHAIN LANE ===================== -->
+        <mxCell id="laneChain" value="ON-CHAIN &amp; DATA SOURCES — Base  (chainId 8453)" style="swimlane;startSize=40;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=13;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="600" width="1800" height="430" as="geometry" />
+        </mxCell>
+
+        <mxCell id="o_diamonds" value="Core Diamonds (Base 8453)&#xa;Aavegotchi  0xA99c4B08201F2913Db8D28e71d020c4298F29dBF&#xa;Wearable      0x052e6c114a166B0e91C2340370d72D4C33752B4b&#xa;Forge          0x50aF2d63b839aA32b4166FD1Cb247129b715186C&#xa;Realm          0x4B0040c3646D3c44B8a28Ad7055cfCF536c05372&#xa;Installation  0xebba5b725A2889f7f089a6cAE0246A32cad4E26b&#xa;Tile             0x617fdB8093b309e4699107F48812b407A7c37938" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=10;fontFamily=Courier New;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="laneChain">
+          <mxGeometry x="20" y="50" width="450" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="o_collections" value="Marketplace / Collections Diamonds&#xa;GBM Auction       0x80320A0000C7A6a34086E2ACAD6915Ff57FfDA31&#xa;Fake Gotchis       0xAb59CA4A16925b0a4BaC5026C94bEB20A29Df479&#xa;Fake Cards          0xe46B8902dAD841476d9Fee081F1d62aE317206A9&#xa;Guardian Skins    0x898d0F54d8CF60698972a75be7Ea1B45aAb66e59&#xa;Guardian Profile  0xdc27a8BF85508387cB8c3B97BA77f3941eDFF45f&#xa;Gotchi Domain    0xF6c1b83977DE3dEffC476f5048A0a84d3375d498" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=10;fontFamily=Courier New;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="laneChain">
+          <mxGeometry x="490" y="50" width="470" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="o_tokens" value="Tokens (ERC-20, Base)&#xa;GHST    0xcD2F22236DD9Dfe2356D7C543161D4d260FD9BcB&#xa;GLTR    0x4D140CE792bEdc430498c2d219AfBC33e2992c9D&#xa;FUD     0x2028b4043e6722Ea164946c82fe806c4a43a0fF4&#xa;FOMO   0xA32137bfb57d2b6A9Fd2956Ba4B54741a6D54b58&#xa;ALPHA  0x15e7CaC885e3730ce6389447BC0f7AC032f31947&#xa;KEK     0xE52b9170fF4ece4C35E796Ffd74B57Dec68Ca0e5&#xa;USDC   0x833589fcd6edb6e08f4c7c32d4f71b54bda02913" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=10;fontFamily=Courier New;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="laneChain">
+          <mxGeometry x="980" y="50" width="450" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="o_subgraphs" value="Subgraphs — Goldsky&#xa;project_cmh3flagm0001r4p25foufjtt&#xa;base: api.goldsky.com/api/public/&lt;proj&gt;/subgraphs/&lt;name&gt;/prod/gn&#xa;• aavegotchi-core-base — gotchis, listings, FAKE&#xa;• aavegotchi-gbm-baazaar-base — GBM auctions&#xa;• gotchiverse-base — parcels, installs, tiles&#xa;• aavegotchi-svg-base — rendered SVGs" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=10;fontFamily=Courier New;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="laneChain">
+          <mxGeometry x="1440" y="50" width="340" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="o_soulseal" value="SoulSeal — attestation contract&#xa;EIP-712 seal / verify&#xa;addr via SOUL_SEAL_ADDRESS (env)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=10;fontFamily=Courier New;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="laneChain">
+          <mxGeometry x="20" y="240" width="450" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="o_rpc" value="Base RPC (public fallback list)&#xa;mainnet.base.org · base.llamarpc.com&#xa;base.drpc.org · base-mainnet.public.blastapi.io&#xa;1rpc.io/base · base.meowrpc.com" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=10;fontFamily=Courier New;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="laneChain">
+          <mxGeometry x="1440" y="250" width="340" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== EDGES ===================== -->
+        <mxCell id="e_rest" value="REST /api (signed)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontSize=10;" edge="1" parent="1" source="c_rest" target="b_auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_comp" value="chat + SSE" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontSize=10;" edge="1" parent="1" source="c_comp" target="b_comp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_urql" value="GraphQL (direct)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontSize=10;dashed=1;" edge="1" parent="1" source="c_urql" target="o_subgraphs">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1700" y="285" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_wallet" value="reads + tx · 8453" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;fontSize=10;dashed=1;" edge="1" parent="1" source="c_wallet" target="o_rpc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1360" y="285" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_llm" value="completions" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;" edge="1" parent="1" source="b_comp" target="b_llm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_groq" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;exitX=1;exitY=0.3;exitDx=0;exitDy=0;" edge="1" parent="1" source="b_llm" target="b_groq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_openai" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;exitX=1;exitY=0.7;exitDx=0;exitDy=0;" edge="1" parent="1" source="b_llm" target="b_openai">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_svg" value="JSON-RPC (SVG)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.1;entryY=0;entryDx=0;entryDy=0;fontSize=10;" edge="1" parent="1" source="b_gotchi" target="o_rpc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_comp_sg" value="gotchi state / ownership" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;" edge="1" parent="1" source="b_comp" target="o_subgraphs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_lend_sg" value="lending state" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;" edge="1" parent="1" source="b_lend" target="o_subgraphs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_cron_dia" value="relist tx" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontSize=10;" edge="1" parent="1" source="b_cron" target="o_diamonds">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_soul_seal" value="EIP-712 attest + read" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontSize=10;" edge="1" parent="1" source="b_soul" target="o_soulseal">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_index" value="Goldsky indexes Base" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;startArrow=none;endArrow=open;fontSize=10;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="o_tokens" target="o_subgraphs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

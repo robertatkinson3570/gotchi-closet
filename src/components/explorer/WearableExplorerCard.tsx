@@ -15,6 +15,8 @@ interface WearableExplorerCardProps {
   price?: string;
   /** Cheapest open listing for one-click buy (Baazaar mode). */
   listing?: { listingId: string; minPriceWei: bigint; quantity: number };
+  /** When false (owned/"mine" scope), hide the Make Offer button — you can't offer on your own items. */
+  canOffer?: boolean;
   onClick?: () => void;
 }
 
@@ -41,6 +43,7 @@ export function WearableExplorerCard({
   quantity,
   price,
   listing,
+  canOffer = true,
   onClick,
 }: WearableExplorerCardProps) {
   const imageUrls = getWearableIconUrlCandidates(wearable.id);
@@ -161,16 +164,18 @@ export function WearableExplorerCard({
         </div>
       )}
 
-      <div className="mt-1" onClick={(e) => e.stopPropagation()}>
-        <MakeOfferButton
-          kind="erc1155"
-          category={BAAZAAR_CATEGORY.WEARABLE}
-          tokenId={String(wearable.id)}
-          contractAddress={AAVEGOTCHI_DIAMOND_BASE}
-          label={wearable.name}
-          compact
-        />
-      </div>
+      {canOffer && (
+        <div className="mt-1" onClick={(e) => e.stopPropagation()}>
+          <MakeOfferButton
+            kind="erc1155"
+            category={BAAZAAR_CATEGORY.WEARABLE}
+            tokenId={String(wearable.id)}
+            contractAddress={AAVEGOTCHI_DIAMOND_BASE}
+            label={wearable.name}
+            compact
+          />
+        </div>
+      )}
 
       <div className="mt-0.5 text-center text-[8px] text-muted-foreground">
         #{wearable.id} • BRS +{wearable.rarityScoreModifier}

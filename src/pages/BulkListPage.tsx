@@ -22,6 +22,7 @@ import { ALCHEMICA_TOKEN_ADDRESSES_BASE } from "@/lib/lending/contracts";
 import { useHistoricalLendings } from "@/hooks/useHistoricalLendings";
 import { useAlchemicaPrices } from "@/hooks/useAlchemicaPrices";
 import { autoPriceBatch, type AutoPriceGoal } from "@/lib/lending/autoPrice";
+import { ghstToWei } from "@/lib/lending/transform";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
@@ -161,7 +162,6 @@ export default function BulkListPage() {
     } else {
       setSplitOwner(20);
     }
-    void modeBattler;
   };
 
   // Chunked-batch submit. With revenueTokens populated each addGotchiListing
@@ -422,13 +422,6 @@ export default function BulkListPage() {
       )}
     </div>
   );
-}
-
-function ghstToWei(n: number): bigint {
-  if (!n) return BigInt(0);
-  const [whole, frac = ""] = String(n).split(".");
-  const fracPad = (frac + "000000000000000000").slice(0, 18);
-  return BigInt(whole) * (BigInt(10) ** BigInt(18)) + BigInt(fracPad);
 }
 
 function Stepper({ step }: { step: Step }) {

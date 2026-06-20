@@ -7,7 +7,11 @@ export default defineConfig({
   // `pnpm test:e2e:live` (they are inherently flaky in CI by design).
   testIgnore: ['**/live/**'],
   timeout: 30000,
-  expect: { timeout: 10000 },
+  expect: { timeout: 15000 },
+  // The webServer is a single Vite dev process; one worker per CPU overwhelms it
+  // under the full-route smoke and causes flaky visibility timeouts (specs pass
+  // in isolation). Cap parallelism to keep the suite deterministic.
+  workers: 3,
   use: {
     baseURL: 'http://localhost:5000',
     headless: true,

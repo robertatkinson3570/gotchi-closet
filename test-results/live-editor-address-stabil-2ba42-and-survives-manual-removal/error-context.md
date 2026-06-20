@@ -1,0 +1,147 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "GotchiCloset GotchiCloset" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "GotchiCloset" [ref=e7]
+          - generic [ref=e8]: GotchiCloset
+        - generic [ref=e9]:
+          - link [ref=e10] [cursor=pointer]:
+            - /url: /explorer
+            - button "Explorer / Baazaar" [ref=e11]:
+              - img [ref=e12]
+          - link [ref=e15] [cursor=pointer]:
+            - /url: /dress
+            - button "Dress" [ref=e16]:
+              - img [ref=e17]
+          - link [ref=e19] [cursor=pointer]:
+            - /url: /activity
+            - button "Activity" [ref=e20]:
+              - img [ref=e21]
+          - link [ref=e23] [cursor=pointer]:
+            - /url: /forge
+            - button "Forge" [ref=e24]:
+              - img [ref=e25]
+          - link [ref=e27] [cursor=pointer]:
+            - /url: /lending
+            - button "Lending" [ref=e28]:
+              - img [ref=e29]
+          - link [ref=e34] [cursor=pointer]:
+            - /url: /lending/lands
+            - button "Land Management" [ref=e35]:
+              - img [ref=e36]
+          - link [ref=e39] [cursor=pointer]:
+            - /url: /dao
+            - button "DAO & Community" [ref=e40]:
+              - img [ref=e41]
+          - button "Connect Wallet" [ref=e44] [cursor=pointer]
+          - button "Guide — how GotchiCloset & Aavegotchi work" [ref=e45] [cursor=pointer]:
+            - img [ref=e46]
+          - button "Toggle theme" [ref=e49] [cursor=pointer]:
+            - img [ref=e50]
+    - main [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e55]:
+          - generic [ref=e57]:
+            - img [ref=e58]
+            - generic [ref=e62]:
+              - text: 0x2222...2222
+              - button "Remove wallet" [ref=e63] [cursor=pointer]:
+                - img [ref=e64]
+          - button "Connect Wallet" [ref=e68] [cursor=pointer]
+        - generic [ref=e69]:
+          - generic [ref=e70]: "0x2222222222222222222222222222222222222222"
+          - generic [ref=e71]:
+            - generic [ref=e73]:
+              - generic [ref=e74]:
+                - button "Collection" [ref=e75] [cursor=pointer]:
+                  - img [ref=e76]
+                  - generic [ref=e81]: Collection
+                - button "Baazaar" [ref=e82] [cursor=pointer]:
+                  - img [ref=e83]
+                  - generic [ref=e87]: Baazaar
+              - img [ref=e88]
+              - textbox "Search entire Aavegotchi collection by name or ID..." [ref=e91]
+              - button "Catwalk" [ref=e92] [cursor=pointer]:
+                - generic [ref=e93]:
+                  - img [ref=e94]
+                  - text: Catwalk
+            - generic [ref=e97]:
+              - button "Lock All" [ref=e98] [cursor=pointer]:
+                - img [ref=e99]
+              - button "Unlock All" [disabled] [ref=e102]:
+                - img [ref=e103]
+              - generic [ref=e106]: "|"
+              - button "BRS" [ref=e107] [cursor=pointer]:
+                - generic [ref=e108]: BRS
+                - img [ref=e109]
+            - generic [ref=e111]:
+              - button "Scroll left" [ref=e112] [cursor=pointer]:
+                - img [ref=e113]
+              - generic [ref=e116]:
+                - button "Unlock Set (allow equipped wearables)" [ref=e117] [cursor=pointer]:
+                  - img [ref=e118]
+                - generic [ref=e123] [cursor=pointer]:
+                  - generic [ref=e124]:
+                    - img [ref=e127]
+                    - generic [ref=e128]:
+                      - heading "ManualGotchi" [level=3] [ref=e129]
+                      - paragraph [ref=e130]: "ID: 2"
+                  - generic [ref=e131]:
+                    - generic [ref=e132]: Rarity Score 326 (326)
+                    - generic [ref=e133]:
+                      - generic [ref=e134]: Trait BRS (base)
+                      - generic [ref=e135]: "326"
+                      - generic [ref=e136]: Total BRS
+                      - generic [ref=e137]: "326"
+                  - generic [ref=e138]:
+                    - generic [ref=e140]:
+                      - generic [ref=e141]: NRG
+                      - generic [ref=e144]: "55"
+                    - generic [ref=e146]:
+                      - generic [ref=e147]: AGG
+                      - generic [ref=e150]: "55"
+                    - generic [ref=e152]:
+                      - generic [ref=e153]: SPK
+                      - generic [ref=e156]: "55"
+                    - generic [ref=e158]:
+                      - generic [ref=e159]: BRN
+                      - generic [ref=e162]: "55"
+              - button "Scroll right" [ref=e163] [cursor=pointer]:
+                - img [ref=e164]
+        - generic [ref=e167]:
+          - generic [ref=e171]: Click a gotchi to add it to the editor.
+          - generic [ref=e173]:
+            - generic [ref=e174]:
+              - generic [ref=e175]:
+                - textbox "Search..." [ref=e176]
+                - generic [ref=e177]:
+                  - button "All" [ref=e178] [cursor=pointer]
+                  - button "Owned" [ref=e179] [cursor=pointer]
+                  - button "Baazaar" [ref=e180] [cursor=pointer]
+              - generic [ref=e181]:
+                - combobox [ref=e182] [cursor=pointer]:
+                  - generic: Slots All
+                  - img [ref=e183]
+                - combobox [ref=e185] [cursor=pointer]:
+                  - generic: Rarity All
+                  - img [ref=e186]
+                - combobox [ref=e188] [cursor=pointer]:
+                  - generic: Sets All
+                  - img [ref=e189]
+            - generic [ref=e193]: No wearables found
+      - status [ref=e194]
+    - contentinfo [ref=e195]:
+      - generic [ref=e196]:
+        - text: Built by
+        - link "GrimLabs" [ref=e197] [cursor=pointer]:
+          - /url: https://grimlabs.xyz
+    - button "open gotchi companion" [ref=e198] [cursor=pointer]:
+      - generic [ref=e199]: 👻
+  - region "Notifications (F8)":
+    - list
+```

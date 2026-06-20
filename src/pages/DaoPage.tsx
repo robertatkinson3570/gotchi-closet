@@ -4,9 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { createPublicClient, http } from "viem";
 import { Landmark, ExternalLink, Vote, Wrench, BookOpen, Megaphone, Bot, BarChart3, Loader2, Zap, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { SnapshotVotePanel } from "@/components/dao/SnapshotVotePanel";
+import LazySnapshotVotePanel from "@/components/dao/LazySnapshotVotePanel";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
+import { shortAddress as short } from "@/lib/format";
 
 const SNAPSHOT_SPACE = "aavegotchi.eth";
 const DAO_TREASURY_BASE = "0x62DE034b1A69eF853c9d0D8a33D26DF5cF26682E" as const;
@@ -132,7 +133,6 @@ const COMMUNITY = [
 ];
 
 const num = (v: number | null | undefined) => (v == null ? "—" : v >= 1_000_000 ? `${(v / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 2 })}M` : v >= 1000 ? `${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}K` : v.toLocaleString(undefined, { maximumFractionDigits: 0 }));
-const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 // ---- Snapshot space stats ----
 function useSpaceStats() {
@@ -236,7 +236,7 @@ function ProposalsSection({ address }: { address?: string }) {
                   </div>
                 )}
                 {open && canVote && !voted && (
-                  <SnapshotVotePanel proposalId={p.id} type={p.type} choices={p.choices} onVoted={() => { setOpenId(null); refetchVotes(); refetch(); }} />
+                  <LazySnapshotVotePanel proposalId={p.id} type={p.type} choices={p.choices} onVoted={() => { setOpenId(null); refetchVotes(); refetch(); }} />
                 )}
               </div>
             );

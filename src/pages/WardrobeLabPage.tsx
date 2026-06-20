@@ -14,11 +14,10 @@ import { shortenAddress, normalizeAddress, isValidAddress } from "@/lib/address"
 import { computeBRSBreakdown, traitToBRS, detectActiveSets } from "@/lib/rarity";
 import { getRespecBaseTraits } from "@/lib/respec";
 import { useWearablesById } from "@/state/selectors";
-import { useAppStore } from "@/state/useAppStore";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
 import { placeholderSvg } from "@/lib/placeholderSvg";
-import type { Gotchi, Wearable } from "@/types";
+import type { Gotchi } from "@/types";
 
 const TRAIT_NAMES = ["NRG", "AGG", "SPK", "BRN"];
 
@@ -88,7 +87,6 @@ export default function WardrobeLabPage() {
   const [isRunning, setIsRunning] = useState(false);
 
   const { connectedAddress, isOnBase, isConnected } = useAddressState();
-  const wearables = useAppStore((state) => state.wearables);
   const wearablesById = useWearablesById();
   const [manualViewAddress, setManualViewAddress] = useState<string | null>(null);
 
@@ -126,16 +124,6 @@ export default function WardrobeLabPage() {
   const allGotchis = useMemo(() => {
     return Array.from(gotchisByOwner.values()).flat();
   }, [gotchisByOwner]);
-
-  const wearableInventory = useMemo(() => {
-    const inventory = new Map<number, { wearable: Wearable; available: number }>();
-    for (const w of wearables) {
-      if (w.id) {
-        inventory.set(w.id, { wearable: w, available: 1 });
-      }
-    }
-    return inventory;
-  }, [wearables]);
 
   const stepIndex = STEP_ORDER.indexOf(currentStep);
 
@@ -277,7 +265,6 @@ export default function WardrobeLabPage() {
     setIsRunning(true);
     const selectedGotchis = allGotchis.filter((g) => selectedGotchiIds.has(g.id));
     const optimizationResults: OptimizationResult[] = [];
-    void wearableInventory;
 
     for (const gotchi of selectedGotchis) {
       const currentTraits = gotchi.numericTraits || [0, 0, 0, 0, 0, 0];

@@ -2,15 +2,18 @@ import { test, expect } from "@playwright/test";
 import fs from "fs";
 import path from "path";
 
+// Owner is seeded into the editor via localStorage['gc_multiWallet'] (the old
+// /dress?view=<addr> param no longer exists).
 const OWNER_WITH_GOTCHIS = "0x1cf07f7c5853599dcaa5b3bb67ac0cf1ae7bdb82";
-const SUBGRAPH_URL =
-  "**/subgraphs/aavegotchi-core-base/prod/gn";
+
+const SUBGRAPH_URL = "**/subgraphs/aavegotchi-core-base/prod/gn";
 const PREVIEW_URL = "**/api/gotchis/preview";
 const SVG_URL = "**/api/gotchis/*/svg";
 const THUMBS_URL = "**/api/wearables/thumbs";
 
 const wearablesPath = path.join(process.cwd(), "data", "wearables.json");
 const wearablesData = JSON.parse(fs.readFileSync(wearablesPath, "utf8"));
+
 const TEST_GOTCHI = {
   id: "1",
   name: "FixtureGotchi",
@@ -20,20 +23,33 @@ const TEST_GOTCHI = {
   withSetsNumericTraits: [48, 47, 58, 50, 10, 20],
   equippedWearables: [0, 0, 0, 0, 0, 0, 0, 0],
   baseRarityScore: "306",
+  modifiedRarityScore: "310",
+  withSetsRarityScore: "310",
   usedSkillPoints: "5",
   hauntId: "1",
   collateral: "0x0000000000000000000000000000000000000000",
   createdAt: "1",
+  lending: null,
+  kinship: "50",
 };
+
 const previewSvg =
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">` +
   `<rect width="64" height="64" fill="#eee"/>` +
   `<circle cx="32" cy="32" r="14" fill="#bbb"/></svg>`;
 
 test.beforeEach(async ({ page }) => {
+  await page.addInitScript((owner) => {
+    localStorage.setItem(
+      "gc_multiWallet",
+      JSON.stringify({ wallets: [owner] })
+    );
+  }, OWNER_WITH_GOTCHIS);
+
   await page.route(SUBGRAPH_URL, async (route) => {
     const body = route.request().postDataJSON() as any;
     const query = body?.query || "";
+
     if (query.includes("itemTypes")) {
       const first = Number(body?.variables?.first ?? 1000);
       const skip = Number(body?.variables?.skip ?? 0);
@@ -57,6 +73,15 @@ test.beforeEach(async ({ page }) => {
       return;
     }
 
+    if (query.includes("erc721Listings")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: { erc721Listings: [] } }),
+      });
+      return;
+    }
+
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -65,6 +90,7 @@ test.beforeEach(async ({ page }) => {
           user: {
             id: OWNER_WITH_GOTCHIS,
             gotchisOwned: [TEST_GOTCHI],
+            gotchisLentOut: [],
           },
           _meta: { block: { number: 1 } },
         },
@@ -95,6 +121,14 @@ test.beforeEach(async ({ page }) => {
       body: JSON.stringify({ thumbs: {} }),
     });
   });
+
+  // Block stray non-localhost traffic so the only way a CORS/cross-origin error
+  // can reach the console is a genuine app-side cross-origin request.
+  await page.route(/^https?:\/\/(?!localhost)/, (route) => {
+    const u = route.request().url();
+    if (u.includes("goldsky.com") || u.includes("/api/")) return route.fallback();
+    return route.abort();
+  });
 });
 
 test("gotchi svg loads without RPC CORS errors", async ({ page }) => {
@@ -105,17 +139,27 @@ test("gotchi svg loads without RPC CORS errors", async ({ page }) => {
     }
   });
 
-  await page.goto(`/dress?view=${OWNER_WITH_GOTCHIS}`);
-  await expect(page.locator("[data-testid^='gotchi-card-']").first()).toBeVisible({
-    timeout: 20000,
-  });
+  await page.goto("/dress");
+
+  await expect(
+    page.locator("[data-testid^='gotchi-card-']").first()
+  ).toBeVisible({ timeout: 20000 });
 
   const svgLocator = page.locator("[data-testid='gotchi-svg-content'] svg");
   await expect(svgLocator.first()).toBeVisible({ timeout: 20000 });
 
-  const corsErrors = consoleErrors.filter((text) =>
-    text.toLowerCase().includes("cors")
-  );
-  expect(corsErrors, `CORS errors detected: ${corsErrors.join("\n")}`).toEqual([]);
+  // No cross-origin / CORS errors should have been logged while loading the
+  // gotchi art (the original RPC-CORS regression this spec guards).
+  const corsErrors = consoleErrors.filter((text) => {
+    const t = text.toLowerCase();
+    return (
+      t.includes("cors") ||
+      t.includes("cross-origin") ||
+      t.includes("access-control-allow-origin")
+    );
+  });
+  expect(
+    corsErrors,
+    `CORS errors detected: ${corsErrors.join("\n")}`
+  ).toEqual([]);
 });
-

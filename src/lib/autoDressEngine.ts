@@ -17,8 +17,6 @@ export type AutoDressOptions = {
   goal: AutoDressGoal;
   // Trait Shape options
   traitShapeType?: "oneDominant" | "twoEqual" | "balanced";
-  // Advanced
-  aggressiveRespectChanges?: boolean;
   // Rarity ceiling
   highestAllowedRarity?: "all" | "godlike" | "mythical" | "legendary" | "rare" | "uncommon" | "common";
 };
@@ -53,7 +51,6 @@ type AutoDressContext = {
   nakedBrs?: number; // Naked baseline BRS (gotchi with no wearables on unlocked slots)
   nakedEval?: Evaluation; // Naked baseline evaluation (for threshold comparison)
   ownedWearableIds: Set<number>; // Set of owned wearable IDs (for validation)
-  reservedWearableIds?: Set<number>; // Optional: reserved wearable IDs (DEV-only hook for locked gotchis)
 };
 
 type BuildState = {
@@ -1266,17 +1263,6 @@ function validateState(context: AutoDressContext, state: BuildState): void {
       throw new Error(
         `[autoDressEngine] Wearable ${wearableId} not in owned inventory (not available in Wearable Selector)`
       );
-    }
-  }
-
-  // DEV-only: Check reserved wearable IDs (hook for locked gotchis)
-  if (import.meta.env.DEV && context.reservedWearableIds) {
-    for (const wearableId of state.equipped) {
-      if (wearableId && wearableId !== 0 && context.reservedWearableIds.has(wearableId)) {
-        throw new Error(
-          `[autoDressEngine] Wearable ${wearableId} is reserved by locked gotchis and must not be used`
-        );
-      }
     }
   }
 

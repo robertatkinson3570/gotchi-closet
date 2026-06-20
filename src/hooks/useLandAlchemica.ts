@@ -8,7 +8,7 @@ import {
   usePublicClient,
 } from "wagmi";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BASE_CHAIN_ID } from "@/lib/chains";
+import { BASE_CHAIN_ID, switchToBaseChain } from "@/lib/chains";
 import {
   REALM_DIAMOND_BASE,
   REALM_FACET_ABI,
@@ -197,6 +197,17 @@ export function useLandAlchemica(claimerGotchiId?: number, channelGotchiIds: num
       setErrorMsg("No gotchi found in this wallet to claim with.");
       return;
     }
+    // Ensure the wallet is on Base before sending. useChainId() can report the
+    // app's configured chain even when the wallet is on another chain, so the
+    // UI gate alone isn't enough — switch here (a no-op if already on Base) to
+    // avoid wagmi's "chain (1) does not match target (8453)" error.
+    try {
+      await switchToBaseChain();
+    } catch {
+      setStep("error");
+      setErrorMsg("Switch your wallet to Base to empty reservoirs.");
+      return;
+    }
     const batches: bigint[][] = [];
     for (let i = 0; i < claimable.length; i += CLAIM_BATCH) {
       batches.push(claimable.slice(i, i + CLAIM_BATCH));
@@ -255,6 +266,16 @@ export function useLandAlchemica(claimerGotchiId?: number, channelGotchiIds: num
       .sort((a, b) => b.altar - a.altar)
       .map((p) => p.id);
     if (ready.length === 0) return;
+
+    // Ensure Base before channeling (see send() — guards against the UI gate's
+    // chain check being stale; no-op if already on Base).
+    try {
+      await switchToBaseChain();
+    } catch {
+      setChannelStep("error");
+      setErrorMsg("Switch your wallet to Base to channel.");
+      return;
+    }
 
     setErrorMsg(null);
     setChannelStep("submitting");

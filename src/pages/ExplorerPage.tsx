@@ -82,7 +82,6 @@ export default function ExplorerPage() {
     return "gotchi";
   });
   const [mode, setMode] = useState<DataMode>("all");
-  const [marketScope, setMarketScope] = useState<"buy" | "owned">("buy");
   const [manage, setManage] = useState<ManageGotchi | null>(null);
   const [sealGotchi, setSealGotchi] = useState<string | null>(null);
   const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
@@ -346,12 +345,15 @@ export default function ExplorerPage() {
   }, [setGotchiFilters]);
 
   const handleSearchChange = useCallback((value: string) => {
-    // Detect if this is a wallet address (0x followed by 40 hex chars)
-    const isAddress = /^0x[a-fA-F0-9]{40}$/.test(value.trim());
+    const v = value.trim();
+    const isAddress = /^0x[a-fA-F0-9]{40}$/.test(v);
+    const isTokenId = /^\d+$/.test(v); // pure number → look up by gotchi token id
     if (isAddress) {
-      setGotchiFilters({ ...gotchiFilters, nameContains: "", ownerAddress: value.trim() });
+      setGotchiFilters({ ...gotchiFilters, nameContains: "", tokenId: "", ownerAddress: v });
+    } else if (isTokenId) {
+      setGotchiFilters({ ...gotchiFilters, nameContains: "", ownerAddress: "", tokenId: v });
     } else {
-      setGotchiFilters({ ...gotchiFilters, nameContains: value, ownerAddress: "" });
+      setGotchiFilters({ ...gotchiFilters, nameContains: value, ownerAddress: "", tokenId: "" });
     }
   }, [gotchiFilters, setGotchiFilters]);
 
@@ -373,7 +375,7 @@ export default function ExplorerPage() {
       <ExplorerTopBar
         mode={mode}
         onModeChange={handleModeChange}
-        search={gotchiFilters.ownerAddress || gotchiFilters.nameContains}
+        search={gotchiFilters.ownerAddress || gotchiFilters.nameContains || gotchiFilters.tokenId || ""}
         onSearchChange={handleSearchChange}
         sort={gotchiSort}
         onSortChange={setGotchiSort}
@@ -469,23 +471,16 @@ export default function ExplorerPage() {
 
           {MARKET_TABS[assetType] ? (
             (() => {
-              const ownable = assetType === "item" || assetType === "installation" || assetType === "parcel";
-              return (
-                <div>
-                  {ownable && (
-                    <div className="flex items-center gap-1 px-2 pt-2">
-                      {(["buy", "owned"] as const).map((s) => (
-                        <button key={s} onClick={() => setMarketScope(s)} className={`h-7 px-3 rounded-md text-[11px] font-semibold border capitalize ${marketScope === s ? "bg-primary/15 text-primary border-primary/40" : "border-border/40 text-muted-foreground hover:bg-muted/40"}`}>
-                          {s === "owned" ? "Owned · bulk list" : "Buy"}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {ownable && marketScope === "owned"
-                    ? <OwnedMarketGrid itemKind={assetType as "item" | "installation" | "parcel"} />
-                    : <MarketGrid {...MARKET_TABS[assetType]} />}
-                </div>
-              );
+              // Owned enumeration verified on-chain for these market categories.
+              // The single top-bar All/Owned/Baazaar toggle (mode) drives the view;
+              // "mine" = Owned. FAKE Cards / Guardian expose no enumeration yet.
+              const ownable = assetType === "item" || assetType === "installation" || assetType === "parcel" || assetType === "tile" || assetType === "forge" || assetType === "fakegotchi" || assetType === "portal" || assetType === "fakecard" || assetType === "guardian";
+              if (mode === "mine") {
+                return ownable
+                  ? <OwnedMarketGrid itemKind={assetType as "item" | "installation" | "parcel" | "tile" | "forge" | "fakegotchi" | "portal" | "fakecard" | "guardian"} />
+                  : <div className="text-center py-12 text-muted-foreground text-sm">An owned view for this collection isn't available yet — it has no on-chain enumeration. Use the Baazaar tab to browse listings.</div>;
+              }
+              return <MarketGrid {...MARKET_TABS[assetType]} />;
             })()
           ) : assetType === "auction" ? (
             <AuctionGrid />
@@ -513,14 +508,24 @@ export default function ExplorerPage() {
                 hasMore={gotchiHasMore}
                 error={gotchiError}
                 onLoadMore={gotchiLoadMore}
-                onManage={mode === "mine" ? (g) => (selectMode ? toggleSel(g.tokenId) : setManage({ gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables, locked: rentalSets?.lentOut.has(g.tokenId) || rentalSets?.borrowed.has(g.tokenId), lockReason: rentalSets?.lentOut.has(g.tokenId) ? "Rented out" : rentalSets?.borrowed.has(g.tokenId) ? "Borrowed" : undefined, listed: !!g.listing?.id })) : undefined}
-                manageLabel={mode === "mine" && selectMode ? "Select" : undefined}
+                onManage={(g) => {
+                  if (mode === "mine") {
+                    if (selectMode) return toggleSel(g.tokenId);
+                    return setManage({ gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables, locked: rentalSets?.lentOut.has(g.tokenId) || rentalSets?.borrowed.has(g.tokenId), lockReason: rentalSets?.lentOut.has(g.tokenId) ? "Rented out" : rentalSets?.borrowed.has(g.tokenId) ? "Borrowed" : undefined, listed: !!g.listing?.id });
+                  }
+                  // Not owned → read-only Details view (with owner + listing for Buy).
+                  setManage({ gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables, readOnly: true, owner: g.owner, listingId: g.listing?.id, listingPriceWei: g.listing?.priceInWei });
+                }}
+                manageLabel={mode === "mine" ? (selectMode ? "Select" : undefined) : "Details"}
                 selectedFor={mode === "mine" && selectMode ? (g) => selected.has(g.tokenId) : undefined}
                 rentalBadgeFor={mode === "mine" ? (g) => (rentalSets?.lentOut.has(g.tokenId) ? "Rented out" : rentalSets?.borrowed.has(g.tokenId) ? "Borrowed" : null) : undefined}
                 sealStatusFor={sealStatusFor}
                 onSealFor={mode === "mine" ? (g) => (!rentalSets || rentalSets.borrowed.has(g.tokenId) ? undefined : () => setSealGotchi(g.tokenId)) : undefined}
               />
             )
+          ) : mode === "mine" ? (
+            // Owned wearables: selectable bulk-list grid (no Make Offer on your own items).
+            <OwnedMarketGrid itemKind="wearable" />
           ) : (
             <WearableExplorerGrid
               wearables={filteredWearablesBySearch}

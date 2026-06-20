@@ -46,8 +46,9 @@ type RawParcel = {
 export const PARCEL_SIZE_LABEL: Record<number, string> = {
   0: "Humble",
   1: "Reasonable",
-  2: "Spacious",
-  3: "Spacious",
+  2: "Spacious (V)",
+  3: "Spacious (H)",
+  4: "Paartner",
 };
 
 async function fetchParcels(owner: string): Promise<RawParcel[]> {

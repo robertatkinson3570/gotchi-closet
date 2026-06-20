@@ -24,6 +24,17 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       chunkSizeWarningLimit: 1500,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            "data-wearables": [
+              path.resolve(__dirname, "./data/wearables.json"),
+              path.resolve(__dirname, "./data/wearableSets.json"),
+              path.resolve(__dirname, "./data/setsByTraitDirection.json"),
+            ],
+          },
+        },
+      },
     },
     test: {
       // Unit tests only. Playwright E2E (*.spec.ts) are run by Playwright, not

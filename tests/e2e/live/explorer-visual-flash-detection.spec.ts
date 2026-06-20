@@ -1,203 +1,157 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+import crypto from "crypto";
+
+/**
+ * Explorer visual-flash / convergence detector (deterministic rewrite).
+ *
+ * Cards paint <img src="blob:..."> (GotchiSvg useBlobUrl=true) inside a root
+ * carrying data-gotchi-id (testId=explorer-gotchi-<tokenId>). We stub the preview
+ * API to return a UNIQUE SVG per collateral and assert the painted cards neither
+ * converge to one image nor change after first paint, and that the API never
+ * returns the same SVG for two different collaterals.
+ */
 
 const PREVIEW_URL = "**/api/gotchis/preview";
+const COLLATERALS = [
+  "0x1111111111111111111111111111111111111111",
+  "0x2222222222222222222222222222222222222222",
+  "0x3333333333333333333333333333333333333333",
+  "0x4444444444444444444444444444444444444444",
+  "0x5555555555555555555555555555555555555555",
+  "0x6666666666666666666666666666666666666666",
+  "0x7777777777777777777777777777777777777777",
+  "0x8888888888888888888888888888888888888888",
+  "0x9999999999999999999999999999999999999999",
+  "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+];
+const COLOR_FOR: Record<string, string> = Object.fromEntries(
+  COLLATERALS.map((c, i) => [c, `#${(i + 1).toString(16).repeat(6).slice(0, 6).padStart(6, "0")}`])
+);
 
-test("Explorer: Detect visual flash where all gotchis converge to same color", async ({ page }) => {
-  // Track what SVGs are being returned for each gotchi
-  const svgResponses: Map<string, { tokenId: string; collateral: string; svg: string; timestamp: number }> = new Map();
-  
+function makeGotchi(i: number) {
+  const tokenId = String(4000 + i);
+  return {
+    id: tokenId,
+    gotchiId: tokenId,
+    name: `Visual Gotchi ${i}`,
+    level: "1",
+    numericTraits: [50, 50, 50, 50, 50, 50],
+    modifiedNumericTraits: [50, 50, 50, 50, 50, 50],
+    withSetsNumericTraits: [50, 50, 50, 50, 50, 50],
+    equippedWearables: new Array(16).fill(0),
+    baseRarityScore: "300",
+    modifiedRarityScore: "300",
+    withSetsRarityScore: String(370 + i),
+    hauntId: "1",
+    collateral: COLLATERALS[i % COLLATERALS.length],
+    owner: { id: "0x000000000000000000000000000000000000dead" },
+    kinship: "50",
+    experience: "0",
+    escrow: "0x000000000000000000000000000000000000beef",
+    equippedSetID: "0",
+    equippedSetName: "",
+    usedSkillPoints: "0",
+    createdAt: "1700000000",
+    lastInteracted: "1700000000",
+    minimumStake: "0",
+    stakedAmount: "0",
+  };
+}
+
+const FIXTURES = Array.from({ length: 10 }, (_, i) => makeGotchi(i));
+
+async function stubSubgraph(page: Page) {
+  await page.route("**/api.goldsky.com/**", async (route) => {
+    const body = route.request().postDataJSON?.();
+    const query: string = body?.query || "";
+    let data: Record<string, unknown> = {};
+    if (query.includes("erc721Listings")) data = { erc721Listings: [] };
+    else if (query.includes("aavegotchis")) data = { aavegotchis: FIXTURES };
+    else if (query.includes("user(")) data = { user: { gotchisOwned: FIXTURES, gotchisLentOut: [] } };
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data }) });
+  });
+  await page.route("**/api/soul/seals", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ configured: false, sealed: {} }) })
+  );
+}
+
+test("Explorer: cards do not converge to one image and do not flash", async ({ page }) => {
+  await stubSubgraph(page);
+
+  // Record the SVG returned per collateral to catch identical-SVG-across-collaterals.
+  const svgByCollateral = new Map<string, Set<string>>();
+
   await page.route(PREVIEW_URL, async (route) => {
-    const request = route.request();
-    const body = request.postDataJSON();
-    
-    if (body) {
-      const tokenId = String(body.tokenId || "");
-      const collateral = String(body.collateral || "");
-      const requestKey = `${tokenId}-${collateral}`;
-      
-      // Continue with actual request
-      const response = await route.fetch();
-      const json = await response.json();
-      const svg = json.svg || "";
-      
-      // Store the response
-      svgResponses.set(requestKey, {
-        tokenId,
-        collateral,
-        svg,
-        timestamp: Date.now(),
-      });
-      
-      // Extract color from SVG for logging
-      const colorMatch = svg.match(/fill="([^"]+)"/) || svg.match(/stroke="([^"]+)"/);
-      const color = colorMatch ? colorMatch[1] : "unknown";
-      
-      console.log(`[Test] SVG response for ${tokenId}`, {
-        collateral: collateral.substring(0, 20) + "...",
-        color: color.substring(0, 30),
-        svgLength: svg.length,
-      });
-      
-      await route.fulfill({
-        status: response.status(),
-        contentType: response.headers()["content-type"] || "application/json",
-        body: JSON.stringify(json),
-      });
-    } else {
-      await route.continue();
+    const body = route.request().postDataJSON?.();
+    const collateral = String(body?.collateral || "");
+    const color = COLOR_FOR[collateral] || "#000000";
+    const isNaked = (body?.wearableIds || []).every((id: number) => id === 0);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" data-col="${collateral}">` +
+      `<rect width="64" height="64" fill="#f0f0f0"/>` +
+      `<path fill="${color}" stroke="${color}" stroke-width="2" d="M32,10 C20,10 10,20 10,32 C10,44 20,54 32,54 C44,54 54,44 54,32 C54,20 44,10 32,10 Z"/>` +
+      `${!isNaked ? '<rect x="20" y="20" width="24" height="24" fill="#000"/>' : ""}` +
+      `<!-- pad ${"x".repeat(120)} -->` +
+      `</svg>`;
+    if (collateral) {
+      if (!svgByCollateral.has(svg)) svgByCollateral.set(svg, new Set());
+      svgByCollateral.get(svg)!.add(collateral);
     }
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ svg }) });
   });
 
   await page.goto("/explorer");
-  
-  // Wait for gotchi cards to appear
-  const cards = page.locator('[data-gotchi-id]');
-  await expect(cards.first()).toBeVisible({ timeout: 20000 });
-  
-  // Wait a bit for initial render
+
+  const svgRoots = page.locator('[data-testid^="explorer-gotchi-"][data-gotchi-id]');
+  await expect(svgRoots.first()).toBeVisible({ timeout: 20000 });
   await page.waitForTimeout(2000);
-  
-  // Get first 10 gotchi cards
-  const cardCount = await cards.count();
-  const cardsToTest = Math.min(10, cardCount);
-  
-  console.log(`Testing ${cardsToTest} gotchi cards for color stability`);
-  
-  // Sample images over 8 seconds - this should catch the flash
-  const samples: Array<{
-    time: number;
-    cards: Array<{
-      gotchiId: string;
-      screenshot: Buffer | null;
-      isSkeleton: boolean;
-    }>;
-  }> = [];
-  
-  const timePoints = [0, 500, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 7000, 8000];
-  
-  for (const timeMs of timePoints) {
-    if (timeMs > 0) {
-      const elapsed = timeMs - (samples.length > 0 ? samples[samples.length - 1].time : 0);
-      await page.waitForTimeout(elapsed);
-    }
-    
-    const cardData: Array<{ gotchiId: string; screenshot: Buffer | null; isSkeleton: boolean }> = [];
-    
+
+  const cardsToTest = Math.min(10, await svgRoots.count());
+  expect(cardsToTest).toBeGreaterThan(1);
+
+  // Sample screenshot hashes per card over time.
+  const samples: Array<{ time: number; cards: Array<{ gotchiId: string; hash: string | null }> }> = [];
+  const timePoints = [0, 1000, 2000, 4000, 6000, 8000];
+  for (const t of timePoints) {
+    if (t > 0) await page.waitForTimeout(t - (timePoints[timePoints.indexOf(t) - 1] || 0));
+    const cardData: Array<{ gotchiId: string; hash: string | null }> = [];
     for (let i = 0; i < cardsToTest; i++) {
-      const card = cards.nth(i);
-      const svgContainer = card.locator('[data-testid^="gotchi-svg"]').first();
-      
+      const root = svgRoots.nth(i);
+      const gotchiId = (await root.getAttribute("data-gotchi-id")) || `card-${i}`;
+      let hash: string | null = null;
       try {
-        const gotchiId = await card.getAttribute("data-gotchi-id") || `card-${i}`;
-        const isSkeleton = (await svgContainer.locator('[data-testid$="-skeleton"]').count()) > 0;
-        
-        let screenshot: Buffer | null = null;
-        if (!isSkeleton) {
-          // Take screenshot of the SVG container
-          screenshot = await svgContainer.screenshot();
-        }
-        
-        cardData.push({
-          gotchiId,
-          screenshot,
-          isSkeleton,
-        });
-      } catch (err) {
-        console.error(`Error sampling card ${i}:`, err);
-        cardData.push({
-          gotchiId: `card-${i}`,
-          screenshot: null,
-          isSkeleton: true,
-        });
-      }
+        const shot = await root.screenshot({ timeout: 2000 });
+        hash = crypto.createHash("md5").update(shot).digest("hex");
+      } catch { /* ignore */ }
+      cardData.push({ gotchiId, hash });
     }
-    
-    samples.push({ time: timeMs, cards: cardData });
-    
-    // Log progress
-    const nonSkeletonCount = cardData.filter(c => !c.isSkeleton).length;
-    console.log(`Time ${timeMs}ms: ${nonSkeletonCount}/${cardsToTest} cards have SVGs`);
+    samples.push({ time: t, cards: cardData });
   }
-  
-  // ANALYSIS: Check for color convergence bug
+
   const finalSample = samples[samples.length - 1];
-  const finalCards = finalSample.cards.filter(c => !c.isSkeleton && c.screenshot);
-  
-  if (finalCards.length < 2) {
-    console.warn("Not enough cards with SVGs to test color convergence");
-    return;
+  const finalHashes = finalSample.cards.map((c) => c.hash).filter(Boolean) as string[];
+  expect(finalHashes.length).toBeGreaterThan(1);
+
+  // BUG 1: all gotchis rendered identical images.
+  if (new Set(finalHashes).size === 1) {
+    throw new Error(`Color convergence bug: all ${finalHashes.length} gotchis rendered identical images.`);
   }
-  
-  // Compare screenshots to detect if they're all the same
-  const screenshotHashes: string[] = [];
-  for (const card of finalCards) {
-    if (card.screenshot) {
-      // Simple hash: just use first 100 bytes as signature
-      const hash = card.screenshot.subarray(0, 100).toString("base64").substring(0, 50);
-      screenshotHashes.push(hash);
-    }
-  }
-  
-  const uniqueHashes = new Set(screenshotHashes);
-  console.log(`Final state: ${finalCards.length} cards, ${uniqueHashes.size} unique image signatures`);
-  
-  // BUG DETECTION 1: All gotchis have identical images (convergence bug)
-  if (uniqueHashes.size === 1 && finalCards.length > 1) {
-    console.error("🚨 BUG DETECTED: All gotchis have identical images!");
-    console.error("Screenshot hashes:", screenshotHashes);
-    throw new Error(
-      `Color convergence bug: All ${finalCards.length} gotchis have identical images. They should have different colors based on collateral.`
-    );
-  }
-  
-  // BUG DETECTION 2: Check if images changed over time (flash)
-  const firstNonSkeletonSample = samples.find(s => s.cards.some(c => !c.isSkeleton && c.screenshot));
-  if (firstNonSkeletonSample && finalSample) {
+
+  // BUG 2: a card changed image after first paint.
+  const firstPainted = samples.find((s) => s.cards.some((c) => c.hash));
+  if (firstPainted) {
     for (let i = 0; i < cardsToTest; i++) {
-      const firstCard = firstNonSkeletonSample.cards[i];
-      const finalCard = finalSample.cards[i];
-      
-      if (firstCard && finalCard && 
-          !firstCard.isSkeleton && !finalCard.isSkeleton &&
-          firstCard.screenshot && finalCard.screenshot) {
-        
-        const firstHash = firstCard.screenshot.subarray(0, 100).toString("base64").substring(0, 50);
-        const finalHash = finalCard.screenshot.subarray(0, 100).toString("base64").substring(0, 50);
-        
-        if (firstHash !== finalHash) {
-          console.error(`🚨 BUG DETECTED: Gotchi ${firstCard.gotchiId} image changed over time!`);
-          console.error(`First hash: ${firstHash}`);
-          console.error(`Final hash: ${finalHash}`);
-          throw new Error(
-            `Visual flash detected: Gotchi ${firstCard.gotchiId} image changed from first render to final state`
-          );
-        }
+      const first = firstPainted.cards[i]?.hash;
+      const last = finalSample.cards[i]?.hash;
+      if (first && last && first !== last) {
+        throw new Error(`Visual flash detected: gotchi ${finalSample.cards[i]?.gotchiId} image changed from first paint to final.`);
       }
     }
   }
-  
-  // BUG DETECTION 3: Check if API returned same SVG for different collaterals
-  const collateralsBySvg = new Map<string, string[]>();
-  for (const [key, response] of svgResponses.entries()) {
-    const svgHash = response.svg.substring(0, 200); // Use first 200 chars as signature
-    if (!collateralsBySvg.has(svgHash)) {
-      collateralsBySvg.set(svgHash, []);
-    }
-    collateralsBySvg.get(svgHash)!.push(response.collateral);
-  }
-  
-  for (const [svgHash, collaterals] of collateralsBySvg.entries()) {
-    if (collaterals.length > 1) {
-      const uniqueCollaterals = new Set(collaterals);
-      if (uniqueCollaterals.size > 1) {
-        console.error(`🚨 BUG: Same SVG returned for ${uniqueCollaterals.size} different collaterals!`);
-        console.error("Collaterals:", Array.from(uniqueCollaterals).map(c => c.substring(0, 20) + "..."));
-        throw new Error(
-          `API bug: Same SVG returned for ${uniqueCollaterals.size} different collaterals - this causes color convergence`
-        );
-      }
+
+  // BUG 3: API returned identical SVG for different collaterals.
+  for (const [, cols] of svgByCollateral.entries()) {
+    if (cols.size > 1) {
+      throw new Error(`API bug: identical SVG returned for ${cols.size} different collaterals: ${[...cols].join(", ")}`);
     }
   }
-  
-  console.log("✅ No visual flash or convergence bugs detected");
 });

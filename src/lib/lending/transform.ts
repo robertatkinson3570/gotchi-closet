@@ -1,4 +1,5 @@
 import type { Lending } from "./types";
+import { parseEther } from "viem";
 
 const NAKED_WEARABLES_LEN = 16;
 const NUMERIC_TRAITS_LEN = 6;
@@ -56,6 +57,27 @@ export function ghstFromWei(wei: string): number {
     return Number(BigInt(wei)) / 1e18;
   } catch {
     return 0;
+  }
+}
+
+/**
+ * Convert a GHST amount (decimal string or number) to wei (1e18) as a bigint.
+ * Never throws: empty / non-positive / malformed input -> 0n (matching the
+ * silent behaviour of the hand-rolled converters this replaces). Inputs with
+ * more than 18 decimal places are truncated, as parseEther would otherwise throw.
+ * Uses String(value) rather than toFixed so exact decimals (e.g. 0.1) are kept.
+ */
+export function ghstToWei(value: string | number): bigint {
+  const s = (typeof value === "number" ? String(value) : value ?? "").trim();
+  if (!s) return BigInt(0);
+  const n = Number(s);
+  if (!Number.isFinite(n) || n <= 0) return BigInt(0);
+  try {
+    const [whole, frac = ""] = s.split(".");
+    const clamped = frac.length > 18 ? `${whole}.${frac.slice(0, 18)}` : s;
+    return parseEther(clamped);
+  } catch {
+    return BigInt(0);
   }
 }
 
