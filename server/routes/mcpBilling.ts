@@ -3,8 +3,10 @@
 // on-chain and credited idempotently (mirrors the GHST premium-claim flow).
 
 import { Router } from "express";
-import { createAccount, getAccountByKey, activatePlan, effectivePlan } from "../mcp/accounts";
+import { recoverMessageAddress } from "viem";
+import { createAccount, getAccountByKey, getAccountByWallet, rotateKey, activatePlan, effectivePlan } from "../mcp/accounts";
 import { priceUsd, isValidPurchase, PERIODS } from "../../src/lib/wisp/pricing";
+import { wispManageMessage, isSignedAtFresh } from "../../src/lib/wisp/auth";
 import { usdToEthWei, usdToUsdcUnits } from "../payments/ethUsd";
 import { verifyEthPayment, verifyUsdcPayment } from "../payments/verifyEthPayment";
 
@@ -106,6 +108,59 @@ router.post("/buy", async (req, res) => {
       }
       throw err;
     }
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message ?? String(err) });
+  }
+});
+
+// --- Account management (sign-in-with-wallet) -------------------------------
+
+/** Verify a wallet owns its account by recovering the signer of the manage message. */
+async function verifyWalletSig(wallet: string, signedAt: number, signature: string): Promise<boolean> {
+  if (!wallet?.startsWith("0x") || !signature?.startsWith("0x")) return false;
+  if (!isSignedAtFresh(signedAt, Date.now())) return false;
+  try {
+    const recovered = await recoverMessageAddress({
+      message: wispManageMessage(wallet, signedAt),
+      signature: signature as `0x${string}`,
+    });
+    return recovered.toLowerCase() === wallet.toLowerCase();
+  } catch {
+    return false;
+  }
+}
+
+/** POST /api/mcp/manage  { wallet, signedAt, signature } -> the wallet's account (incl. key). */
+router.post("/manage", async (req, res) => {
+  try {
+    const { wallet, signedAt, signature } = req.body ?? {};
+    if (!(await verifyWalletSig(String(wallet ?? ""), Number(signedAt), String(signature ?? "")))) {
+      return res.status(401).json({ error: "signature invalid or expired" });
+    }
+    const acct = getAccountByWallet(String(wallet));
+    if (!acct) return res.status(404).json({ error: "no account for this wallet" });
+    res.json({
+      apiKey: acct.apiKey,
+      plan: effectivePlan(acct),
+      storedPlan: acct.plan,
+      expiresAt: acct.expiresAt,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message ?? String(err) });
+  }
+});
+
+/** POST /api/mcp/rotate  { wallet, signedAt, signature } -> rotate the wallet's API key. */
+router.post("/rotate", async (req, res) => {
+  try {
+    const { wallet, signedAt, signature } = req.body ?? {};
+    if (!(await verifyWalletSig(String(wallet ?? ""), Number(signedAt), String(signature ?? "")))) {
+      return res.status(401).json({ error: "signature invalid or expired" });
+    }
+    const acct = getAccountByWallet(String(wallet));
+    if (!acct) return res.status(404).json({ error: "no account for this wallet" });
+    const rotated = rotateKey(acct.apiKey);
+    res.json({ apiKey: rotated.apiKey });
   } catch (err: any) {
     res.status(500).json({ error: err?.message ?? String(err) });
   }

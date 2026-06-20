@@ -47,3 +47,40 @@ export async function buyWispPlan(args: {
   if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error || "purchase failed");
   return res.json();
 }
+
+export interface WispManaged {
+  apiKey: string;
+  plan: string;
+  storedPlan: string;
+  expiresAt: number;
+}
+
+/** Sign-in-with-wallet: returns the wallet's account (incl. key) after signature check. */
+export async function manageWispAccount(args: {
+  wallet: string;
+  signedAt: number;
+  signature: string;
+}): Promise<WispManaged> {
+  const res = await fetch(`${apiBase()}/api/mcp/manage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error || "could not load account");
+  return res.json();
+}
+
+/** Rotate (revoke + reissue) the wallet's API key, after signature check. */
+export async function rotateWispKey(args: {
+  wallet: string;
+  signedAt: number;
+  signature: string;
+}): Promise<{ apiKey: string }> {
+  const res = await fetch(`${apiBase()}/api/mcp/rotate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error || "rotate failed");
+  return res.json();
+}

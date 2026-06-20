@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAccount, useSendTransaction, useWriteContract, usePublicClient } from "wagmi";
+import { useAccount, useSendTransaction, useWriteContract, usePublicClient, useSignMessage } from "wagmi";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import {
   WISP_PLANS,
@@ -9,7 +9,8 @@ import {
   PER_SEAL_USD,
   priceUsd,
 } from "@/lib/wisp/pricing";
-import { createWispAccount, getWispQuote, buyWispPlan } from "@/lib/wisp/api";
+import { createWispAccount, getWispQuote, buyWispPlan, manageWispAccount, rotateWispKey } from "@/lib/wisp/api";
+import { wispManageMessage } from "@/lib/wisp/auth";
 
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
 const ERC20_TRANSFER = [
@@ -39,6 +40,7 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
   const { sendTransactionAsync } = useSendTransaction();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
+  const { signMessageAsync } = useSignMessage();
 
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [plan, setPlan] = useState<PaidPlan>("pro");
@@ -106,6 +108,51 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
     } catch (e: any) {
       const raw = e?.shortMessage || e?.message || "purchase failed";
       setStatus(/rejected|denied/i.test(raw) ? "You cancelled the payment." : raw);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function signManage(): Promise<{ wallet: string; signedAt: number; signature: string } | null> {
+    if (!isConnected || !address) {
+      setStatus("Connect your wallet first.");
+      return null;
+    }
+    const signedAt = Date.now();
+    const signature = await signMessageAsync({ message: wispManageMessage(address, signedAt) });
+    return { wallet: address, signedAt, signature };
+  }
+
+  async function doManage() {
+    setBusy(true);
+    setStatus("sign to prove you own this wallet…");
+    try {
+      const sig = await signManage();
+      if (!sig) return;
+      const acct = await manageWispAccount(sig);
+      setApiKey(acct.apiKey);
+      setActiveUntil(acct.expiresAt || null);
+      setStatus(`✓ ${acct.plan.toUpperCase()}${acct.expiresAt ? " · until " + new Date(acct.expiresAt).toLocaleDateString() : ""}`);
+    } catch (e: any) {
+      const raw = e?.shortMessage || e?.message || "could not load account";
+      setStatus(/rejected|denied/i.test(raw) ? "Signature cancelled." : raw);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function doRotate() {
+    setBusy(true);
+    setStatus("sign to rotate your key…");
+    try {
+      const sig = await signManage();
+      if (!sig) return;
+      const { apiKey: k } = await rotateWispKey(sig);
+      setApiKey(k);
+      setStatus("✓ key rotated — old key revoked, copy the new one below");
+    } catch (e: any) {
+      const raw = e?.shortMessage || e?.message || "rotate failed";
+      setStatus(/rejected|denied/i.test(raw) ? "Signature cancelled." : raw);
     } finally {
       setBusy(false);
     }
@@ -231,13 +278,22 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
               </button>
             </div>
 
-            <div className="mt-2 flex items-center gap-3">
+            <div className="mt-2 flex flex-wrap items-center gap-3">
               <button
                 onClick={getFreeKey}
                 disabled={busy}
                 className="text-[11px] text-white/50 underline underline-offset-2 hover:text-white/80 disabled:opacity-50"
               >
-                or get a free API key
+                get a free API key
+              </button>
+              <span className="text-white/15">·</span>
+              <button
+                onClick={doManage}
+                disabled={busy}
+                className="text-[11px] text-white/50 underline underline-offset-2 hover:text-white/80 disabled:opacity-50"
+                title="Sign with your wallet to view & manage your account"
+              >
+                manage my account
               </button>
               {status && <span className="text-[11px] text-white/60">{status}</span>}
             </div>
@@ -254,6 +310,14 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
                     className="shrink-0 rounded bg-white/10 px-2 py-1 text-[10px] text-white/70 hover:bg-white/20"
                   >
                     copy
+                  </button>
+                  <button
+                    onClick={doRotate}
+                    disabled={busy}
+                    className="shrink-0 rounded bg-white/10 px-2 py-1 text-[10px] text-white/70 hover:bg-white/20 disabled:opacity-50"
+                    title="Sign with your wallet to revoke this key and issue a new one"
+                  >
+                    rotate
                   </button>
                 </div>
                 <div className="mt-1 text-[10px] text-white/40">Save it now — it's shown once. Use it as the bearer token for the Wisp MCP.</div>

@@ -123,3 +123,27 @@ export function activatePlan(args: {
   run();
   return getAccountByKey(apiKey)!;
 }
+
+/** Most recent account owned by `wallet` — for wallet-sign-in management. */
+export function getAccountByWallet(wallet: string): WispAccount | null {
+  const d = ensure();
+  const w = wallet.toLowerCase();
+  const r = d
+    .prepare(`SELECT * FROM wisp_accounts WHERE owner_wallet = ? ORDER BY created_at DESC LIMIT 1`)
+    .get(w) as AccountRow | undefined;
+  return r ? toAccount(r) : null;
+}
+
+/** Rotate the API key (revokes the old one). Returns the updated account. */
+export function rotateKey(apiKey: string): WispAccount {
+  const d = ensure();
+  const acct = getAccountByKey(apiKey);
+  if (!acct) throw new Error("account not found");
+  const newKey = "wsp_" + randomBytes(24).toString("hex");
+  const run = d.transaction(() => {
+    d.prepare(`UPDATE wisp_accounts SET api_key = ? WHERE api_key = ?`).run(newKey, apiKey);
+    d.prepare(`UPDATE wisp_payments SET api_key = ? WHERE api_key = ?`).run(newKey, apiKey);
+  });
+  run();
+  return getAccountByKey(newKey)!;
+}
