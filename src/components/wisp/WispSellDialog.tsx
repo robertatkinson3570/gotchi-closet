@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAccount, useSendTransaction, useWriteContract, usePublicClient, useSignMessage } from "wagmi";
 import { BASE_CHAIN_ID } from "@/lib/chains";
@@ -11,6 +11,11 @@ import {
 } from "@/lib/wisp/pricing";
 import { createWispAccount, getWispQuote, buyWispPlan, manageWispAccount, rotateWispKey } from "@/lib/wisp/api";
 import { wispManageMessage } from "@/lib/wisp/auth";
+import { env } from "@/lib/env";
+
+// The keyed MCP protocol endpoint (server/mcp/http.ts), distinct from the /api/mcp
+// billing REST. Customers point their MCP client here with the API key as bearer.
+const MCP_ENDPOINT = `${env.companionApiUrl || "https://api.gotchicloset.com"}/mcp`;
 
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
 const ERC20_TRANSFER = [
@@ -42,7 +47,8 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
   const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
   const { signMessageAsync } = useSignMessage();
 
-  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [apiKey, setApiKey] = useState<string | null>(null); // the DISPLAYED key (only after an action completes)
+  const keyRef = useRef<string | null>(null); // the created key, reused for /buy; not shown until success
   const [plan, setPlan] = useState<PaidPlan>("pro");
   const [months, setMonths] = useState(1);
   const [asset, setAsset] = useState<"eth" | "usdc">("usdc");
@@ -51,9 +57,9 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
   const [activeUntil, setActiveUntil] = useState<number | null>(null);
 
   async function ensureKey(): Promise<string> {
-    if (apiKey) return apiKey;
+    if (keyRef.current) return keyRef.current;
     const { apiKey: k } = await createWispAccount(address);
-    setApiKey(k);
+    keyRef.current = k; // remember for /buy; do NOT display until an action succeeds
     return k;
   }
 
@@ -61,7 +67,8 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
     setBusy(true);
     setStatus(null);
     try {
-      await ensureKey();
+      const k = await ensureKey();
+      setApiKey(k); // explicit "get free key" action → safe to show
       setStatus("Free key created, copy it below 👇");
     } catch (e: any) {
       setStatus(e?.message || "could not create key");
@@ -103,6 +110,7 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
       }
       setStatus("activating plan…");
       const r = await buyWispPlan({ apiKey: key, plan, months, asset, txHash, wallet: address });
+      setApiKey(key); // only NOW reveal the key — payment verified + plan active
       setActiveUntil(r.expiresAt);
       setStatus(`✓ ${r.plan.toUpperCase()} active`);
     } catch (e: any) {
@@ -130,6 +138,7 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
       const sig = await signManage();
       if (!sig) return;
       const acct = await manageWispAccount(sig);
+      keyRef.current = acct.apiKey;
       setApiKey(acct.apiKey);
       setActiveUntil(acct.expiresAt || null);
       setStatus(`✓ ${acct.plan.toUpperCase()}${acct.expiresAt ? " · until " + new Date(acct.expiresAt).toLocaleDateString() : ""}`);
@@ -148,6 +157,7 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
       const sig = await signManage();
       if (!sig) return;
       const { apiKey: k } = await rotateWispKey(sig);
+      keyRef.current = k;
       setApiKey(k);
       setStatus("✓ key rotated, old key revoked, copy the new one below");
     } catch (e: any) {
@@ -371,6 +381,22 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
                   </button>
                 </div>
                 <div className="mt-1 text-[10px] text-white/40">Save it now, it's shown once. Use it as the bearer token for the Wisp MCP.</div>
+
+                <div className="mt-3 border-t border-emerald-500/15 pt-2">
+                  <div className="text-[10px] uppercase tracking-widest text-emerald-300/70">Connect your client</div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <code className="flex-1 break-all rounded bg-black/40 px-2 py-1 font-mono text-[11px] text-white/70">{MCP_ENDPOINT}</code>
+                    <button
+                      onClick={() => navigator.clipboard?.writeText(MCP_ENDPOINT)}
+                      className="shrink-0 rounded bg-white/10 px-2 py-1 text-[10px] text-white/70 hover:bg-white/20"
+                    >
+                      copy
+                    </button>
+                  </div>
+                  <div className="mt-1 text-[10px] text-white/40">
+                    POST JSON-RPC with <span className="font-mono text-white/60">Authorization: Bearer {"<your key>"}</span>. Each tool call counts against your plan; over the limit returns HTTP 429.
+                  </div>
+                </div>
               </div>
             )}
           </div>

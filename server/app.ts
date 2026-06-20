@@ -10,6 +10,7 @@ import roastRoutes from "./routes/roast";
 import soulRoutes from "./routes/soul";
 import arenaRoutes from "./routes/arena";
 import mcpBillingRoutes from "./routes/mcpBilling";
+import { wispMcpHttpHandler } from "./mcp/http";
 import { getDebugStats } from "./aavegotchi/serverSvgService";
 import { startAutoRenewCron } from "./lending/cron";
 
@@ -85,6 +86,9 @@ export function createApp() {
   app.use("/api/arena", arenaRoutes);
   // Wisp MCP billing — external developer accounts + ETH/USDC plan purchases. Additive.
   app.use("/api/mcp", mcpBillingRoutes);
+  // Keyed, rate-limited MCP protocol endpoint for external customers (POST only).
+  // Distinct from /api/mcp (billing REST). Plan limits enforced in mcp/http.ts.
+  app.post("/mcp", wispMcpHttpHandler);
 
   // Boot auto-renew cron (no-op if AUTORENEW_HOT_WALLET_KEY not set)
   startAutoRenewCron();

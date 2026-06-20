@@ -78,3 +78,19 @@ export function priceUsd(plan: Exclude<WispPlan, "free">, months: number): numbe
 export function isValidPurchase(plan: string, months: number): plan is Exclude<WispPlan, "free"> {
   return (plan === "pro" || plan === "studio") && PERIODS.some((p) => p.months === months);
 }
+
+/** Enforced per-plan limits (must match the marketing copy above). */
+export interface PlanLimits {
+  requestsPerDay: number;
+  requestsPerMonth: number;
+  collections: number;
+  /** Stateful tools (persistent memory writes, seals) require a paid plan. */
+  stateful: boolean;
+}
+
+export const PLAN_LIMITS: Record<WispPlan, PlanLimits> = {
+  // Free is day-bound (~1k/day); paid tiers are month-bound (day cap == month cap).
+  free: { requestsPerDay: 1000, requestsPerMonth: 31000, collections: 1, stateful: false },
+  pro: { requestsPerDay: 25000, requestsPerMonth: 25000, collections: 3, stateful: true },
+  studio: { requestsPerDay: 250000, requestsPerMonth: 250000, collections: 9999, stateful: true },
+};

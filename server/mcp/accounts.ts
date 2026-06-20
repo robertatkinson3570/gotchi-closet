@@ -5,7 +5,7 @@
 
 import { randomBytes } from "node:crypto";
 import { getDb } from "../companion/db";
-import type { WispPlan } from "../../src/lib/wisp/pricing";
+import { PLAN_LIMITS, type WispPlan } from "../../src/lib/wisp/pricing";
 
 let ensured: object | null = null;
 function ensure() {
@@ -27,6 +27,13 @@ function ensure() {
       asset      TEXT NOT NULL,
       amount_wei TEXT NOT NULL,
       paid_at    INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS wisp_usage (
+      api_key TEXT NOT NULL,
+      kind    TEXT NOT NULL,   -- 'd' = day, 'm' = month
+      window  TEXT NOT NULL,   -- 'YYYY-MM-DD' or 'YYYY-MM'
+      count   INTEGER NOT NULL,
+      PRIMARY KEY (api_key, kind, window)
     );
   `);
   ensured = d;
@@ -146,4 +153,73 @@ export function rotateKey(apiKey: string): WispAccount {
   });
   run();
   return getAccountByKey(newKey)!;
+}
+
+// --- Rate limiting / plan enforcement --------------------------------------
+
+export interface ConsumeResult {
+  allowed: boolean;
+  plan: WispPlan;
+  reason?: string;
+  usedToday: number;
+  usedMonth: number;
+  limitPerDay: number;
+  limitPerMonth: number;
+}
+
+/** Atomically increment a usage counter and return the new count. */
+function bumpUsage(apiKey: string, kind: "d" | "m", window: string): number {
+  const d = ensure();
+  const row = d
+    .prepare(
+      `INSERT INTO wisp_usage (api_key, kind, window, count) VALUES (?,?,?,1)
+       ON CONFLICT(api_key, kind, window) DO UPDATE SET count = count + 1
+       RETURNING count`
+    )
+    .get(apiKey, kind, window) as { count: number };
+  return row.count;
+}
+
+/**
+ * Resolve the api key's effective plan and count this request against its day +
+ * month rate limits. Returns allowed=false (with a reason) when over the limit
+ * or the key is invalid. An expired paid plan falls back to the free limits.
+ */
+export function consumeRequest(apiKey: string, now: number = Date.now()): ConsumeResult {
+  const account = getAccountByKey(apiKey);
+  if (!account) {
+    return {
+      allowed: false,
+      plan: "free",
+      reason: "invalid api key",
+      usedToday: 0,
+      usedMonth: 0,
+      limitPerDay: 0,
+      limitPerMonth: 0,
+    };
+  }
+  const plan = effectivePlan(account, now);
+  const limits = PLAN_LIMITS[plan];
+  const iso = new Date(now).toISOString();
+  const usedToday = bumpUsage(apiKey, "d", iso.slice(0, 10)); // YYYY-MM-DD
+  const usedMonth = bumpUsage(apiKey, "m", iso.slice(0, 7)); // YYYY-MM
+
+  let allowed = true;
+  let reason: string | undefined;
+  if (usedToday > limits.requestsPerDay) {
+    allowed = false;
+    reason = "daily rate limit reached";
+  } else if (usedMonth > limits.requestsPerMonth) {
+    allowed = false;
+    reason = "monthly rate limit reached";
+  }
+  return {
+    allowed,
+    plan,
+    reason,
+    usedToday,
+    usedMonth,
+    limitPerDay: limits.requestsPerDay,
+    limitPerMonth: limits.requestsPerMonth,
+  };
 }
