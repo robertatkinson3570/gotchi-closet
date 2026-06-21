@@ -15,14 +15,13 @@ local PC first**, promoted to an always-on **VPS** only when chosen.
 ## STATUS — resume here
 - **Phase 0 DONE** — archive at `robertatkinson3570/gv2` (`aavegotchi-core-subgraph` + `MANIFEST.md`).
   Forge art (0.2) deferred (unverified CDN scheme).
-- **Phase 1.5 DONE (client)** — failover wired into GotchiCloset: `src/graphql/subgraphFailover.ts`
-  (+`subgraphFailover.test.ts`, 8 passing tests), `client.ts` routes through `failoverFetch` +
-  `startHealthPolling`, env `VITE_GOTCHI_SUBGRAPH_URL_BACKUP` (empty = no-op today). **Uncommitted
-  (working tree, on `main`)** — commit on a branch when ready. Server-side failover
-  (`server/lending/relist.ts`, `server/companion/gotchiState.ts` use `SUBGRAPH_URL`) is a small
-  remaining follow-up.
+- **Phase 1.5 DONE (client + server)** — failover live in both layers, **committed on branch
+  `feat/subgraph-failover` (not pushed)**. Client: `src/graphql/subgraphFailover.ts` + `client.ts`.
+  Server: `server/aavegotchi/subgraphFetch.ts`, used by `lending/relist.ts` + `companion/gotchiState.ts`.
+  Env: `VITE_GOTCHI_SUBGRAPH_URL_BACKUP` + `SUBGRAPH_URL_BACKUP` (empty = no-op today). 12 unit tests pass.
 - **Next action:** EITHER Phase 1 local validation slice (install Docker Desktop + WSL2, step 1.0a),
-  OR — once a mirror endpoint exists — set `VITE_GOTCHI_SUBGRAPH_URL_BACKUP` to activate failover.
+  OR — once a mirror endpoint exists — set the `*_BACKUP` env vars to activate failover. (Also: push
+  the branch / open a PR when ready.)
 - **Blockers:** Docker Desktop + WSL2 not installed (needed for the Phase 1 local slice).
 - _Update this block as work proceeds: set current phase, next action, and any blocker._
 
@@ -148,8 +147,8 @@ Goal: make the app mirror-ready before a mirror exists.
   fallback (`failoverFetch`) **+** ~45s background `_meta` poll (`startHealthPolling`) →
   `chooseUrl` routes to the freshest healthy endpoint (lag > 25 blocks or `hasIndexingErrors`
   = stale).
-- [ ] **TODO (server):** apply the same failover to `server/lending/relist.ts` +
-  `server/companion/gotchiState.ts` (they read `SUBGRAPH_URL` with inline fetch).
+- [x] **Server:** `server/aavegotchi/subgraphFetch.ts` (shared failover, +4 tests);
+  `lending/relist.ts` + `companion/gotchiState.ts` refactored onto it.
 - **Acceptance:** ✅ BACKUP empty → behaviour unchanged; ✅ `subgraphFailover.test.ts` (8 tests)
   proves failover when PRIMARY returns a stale `_meta` block / errors / has indexing errors.
 - **Cost: $0.**
