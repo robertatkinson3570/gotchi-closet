@@ -8,15 +8,15 @@ import { env } from "@/lib/env";
  *   1. Per-request hard fallback (`failoverFetch`) — on a network/HTTP error,
  *      retry the alternate endpoint once.
  *   2. Background freshness poll (`startHealthPolling`) — every ~45s, probe both
- *      endpoints' `_meta` block and pick the freshest healthy one as active. This
- *      catches the *silent stall* case (a subgraph that stops advancing without
- *      erroring).
+ *      endpoints' `_meta` block and route to the freshest healthy one. Because the
+ *      two endpoints mirror the same chain, a *silent stall* is detected by
+ *      comparing their block heights to each other (no chain-head lookup needed).
  *
  * With no backup configured (`VITE_GOTCHI_SUBGRAPH_URL_BACKUP` empty), this is a
  * complete no-op: the active URL is always the primary and behaviour is unchanged.
  */
 
-/** A subgraph is "stale" if its indexed block lags the chain head by more than this. */
+/** Fail over if the backup leads a reachable primary by more than this many blocks. */
 export const STALE_BLOCK_THRESHOLD = 25;
 
 export interface Health {
@@ -26,49 +26,37 @@ export interface Health {
   block: number | null;
 }
 
+const reachable = (h: Health) => h.ok && !h.hasErrors && h.block != null;
+
 /**
- * Pure routing decision — which endpoint to use given each one's health.
- * Exported for unit testing.
- *
- * - No backup  -> always primary.
- * - Primary fresh -> primary.
- * - Primary unfresh but backup fresh -> backup (the failover case).
- * - Both unfresh -> the least-stale (higher block), preferring primary on a tie.
- *
- * "Fresh" = reachable, no indexing errors, has a block, and (if `chainHead` is
- * known) within STALE_BLOCK_THRESHOLD of the head.
+ * Pure routing decision (exported for unit testing). The endpoints mirror the same
+ * chain, so a silently-stalled primary is caught by comparing block heights:
+ *   - no backup           -> primary
+ *   - both reachable      -> backup only if it leads primary by > STALE_BLOCK_THRESHOLD
+ *   - one reachable       -> the reachable one
+ *   - neither reachable   -> the higher block (least stale), primary on a tie
  */
-export function chooseUrl(
-  primary: Health,
-  backup: Health | null,
-  chainHead?: number | null
-): string {
+export function chooseUrl(primary: Health, backup: Health | null): string {
   if (!backup) return primary.url;
 
-  const fresh = (h: Health) =>
-    h.ok &&
-    !h.hasErrors &&
-    h.block != null &&
-    (chainHead == null || chainHead - h.block <= STALE_BLOCK_THRESHOLD);
+  const pOk = reachable(primary);
+  const bOk = reachable(backup);
 
-  if (fresh(primary)) return primary.url;
-  if (fresh(backup)) return backup.url;
+  if (pOk && bOk) {
+    return backup.block! - primary.block! > STALE_BLOCK_THRESHOLD
+      ? backup.url
+      : primary.url;
+  }
+  if (pOk) return primary.url;
+  if (bOk) return backup.url;
 
-  // Both unfresh: serve whoever is least behind; prefer primary on tie/unknown.
-  const pb = primary.block ?? -1;
-  const bb = backup.block ?? -1;
-  return bb > pb ? backup.url : primary.url;
+  return (backup.block ?? -1) > (primary.block ?? -1) ? backup.url : primary.url;
 }
 
 const PRIMARY = env.gotchiSubgraphUrl;
 const BACKUP = env.gotchiSubgraphUrlBackup; // "" when unconfigured
 
 let activeUrl = PRIMARY;
-
-/** The endpoint the client should currently hit. */
-export function getActiveSubgraphUrl(): string {
-  return activeUrl;
-}
 
 const META_QUERY = `{ _meta { block { number } hasIndexingErrors } }`;
 
@@ -92,13 +80,13 @@ export async function probeHealth(url: string): Promise<Health> {
 }
 
 /** Re-probe both endpoints and update the active URL. Returns the new active URL. */
-export async function refreshActiveUrl(chainHead?: number | null): Promise<string> {
+export async function refreshActiveUrl(): Promise<string> {
   if (!BACKUP) {
     activeUrl = PRIMARY;
     return activeUrl;
   }
   const [p, b] = await Promise.all([probeHealth(PRIMARY), probeHealth(BACKUP)]);
-  activeUrl = chooseUrl(p, b, chainHead);
+  activeUrl = chooseUrl(p, b);
   return activeUrl;
 }
 
@@ -111,23 +99,15 @@ export function startHealthPolling(intervalMs = 45_000): void {
   timer = setInterval(() => void refreshActiveUrl(), intervalMs);
 }
 
-export function stopHealthPolling(): void {
-  if (timer) {
-    clearInterval(timer);
-    timer = null;
-  }
-}
-
 /**
  * urql-compatible fetch: hit the active endpoint; on a network/HTTP error, retry
  * the alternate once. `input` (urql's configured url) is ignored in favour of the
  * health-selected active URL.
  */
 export const failoverFetch: typeof fetch = async (_input, init) => {
-  const active = getActiveSubgraphUrl();
-  const other = active === PRIMARY ? BACKUP : PRIMARY;
+  const other = activeUrl === PRIMARY ? BACKUP : PRIMARY;
   try {
-    const res = await fetch(active, init);
+    const res = await fetch(activeUrl, init);
     if (res.ok || !other) return res;
     return await fetch(other, init); // hard HTTP error + alternate exists
   } catch (err) {
