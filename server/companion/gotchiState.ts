@@ -1,6 +1,9 @@
 import type { PersonalityInput } from "../../src/lib/companion/types";
+import { subgraphFetch } from "../aavegotchi/subgraphFetch";
 
-// Base core subgraph (same endpoint used by server/lending/relist.ts).
+// Base core subgraph (same endpoint used by server/lending/relist.ts). A
+// COMPANION_CORE_SUBGRAPH override is still honoured as the primary; failover to
+// SUBGRAPH_URL_BACKUP is handled by subgraphFetch.
 const CORE_SUBGRAPH =
   process.env.COMPANION_CORE_SUBGRAPH ||
   "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn";
@@ -24,11 +27,10 @@ export interface GotchiState extends PersonalityInput {
 
 export async function fetchGotchiState(tokenId: string): Promise<GotchiState | null> {
   try {
-    const res = await fetch(CORE_SUBGRAPH, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: QUERY, variables: { id: String(tokenId) } }),
-    });
+    const res = await subgraphFetch(
+      { query: QUERY, variables: { id: String(tokenId) } },
+      { primary: CORE_SUBGRAPH }
+    );
     if (!res.ok) return null;
     const json: any = await res.json();
     const g = json?.data?.aavegotchi;

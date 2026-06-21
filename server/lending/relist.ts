@@ -3,10 +3,8 @@ import { privateKeyToAccount } from "viem/accounts";
 import { base } from "viem/chains";
 import { LENDING_FACET_ABI, AAVEGOTCHI_DIAMOND_BASE } from "./abi";
 import type { Template } from "./db";
+import { subgraphFetch } from "../aavegotchi/subgraphFetch";
 
-const SUBGRAPH_URL =
-  process.env.SUBGRAPH_URL ||
-  "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn";
 const RPC_URL = process.env.BASE_RPC_URL || "https://mainnet.base.org";
 
 let walletClient: WalletClient | null = null;
@@ -44,11 +42,7 @@ async function getActiveLendingState(tokenId: number): Promise<ActiveLendingStat
       where: { gotchiTokenId: $t, cancelled: false, completed: false }
     ) { id borrower timeAgreed period }
   }`;
-  const res = await fetch(SUBGRAPH_URL, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ query, variables: { t: String(tokenId) } }),
-  });
+  const res = await subgraphFetch({ query, variables: { t: String(tokenId) } });
   if (!res.ok) throw new Error(`Subgraph HTTP ${res.status}`);
   const json = await res.json();
   if (json.errors) throw new Error(JSON.stringify(json.errors));

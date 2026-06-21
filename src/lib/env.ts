@@ -38,6 +38,10 @@ export const env = {
     "VITE_GOTCHI_SUBGRAPH_URL",
     "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn"
   ),
+  // Optional backup subgraph endpoint (your self-hosted mirror). Empty = no failover
+  // (behaviour unchanged). When set, the client auto-routes to whichever endpoint is
+  // fresh/healthy — see src/graphql/subgraphFailover.ts.
+  gotchiSubgraphUrlBackup: resolveEnv("VITE_GOTCHI_SUBGRAPH_URL_BACKUP", ""),
   walletConnectProjectId: resolveEnv("VITE_WALLETCONNECT_PROJECT_ID", "", {
     required: true,
   }),
