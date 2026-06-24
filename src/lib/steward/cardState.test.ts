@@ -15,7 +15,7 @@ describe("deriveCardState", () => {
     expect(deriveCardState({ id: 7, hasSoul: false }, [])).toBe("no-soul");
   });
   it("ignores revoked enrollments", () => {
-    expect(deriveCardState({ id: 7, hasSoul: true }, [{ gotchiId: 7, status: "revoked", chores: {} }])).toBe("soul-idle");
+    expect(deriveCardState({ id: 7, hasSoul: true }, [{ gotchiId: 7, status: "revoked", chores: { pet: false, channel: false, claim: false } }])).toBe("soul-idle");
   });
 });
 
