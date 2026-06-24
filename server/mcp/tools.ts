@@ -17,6 +17,10 @@ import { quickSoulDepth } from "../../src/lib/soul/quickDepth";
 import { archetypeFor, roastSystemPrompt } from "../../src/lib/roast/prompts";
 import { soulDepthSnapshot } from "../soul/snapshot";
 import { readOnChainSeal, sealConfigured } from "../soul/seal";
+import { listEnrollments, getLog } from "../steward/db";
+import { previewOwner } from "../steward/service";
+import { snapshotFor } from "../steward/chain";
+import { runAllDue } from "../steward/cron";
 
 export type SealStatus = "unconfigured" | "unsealed" | "sealed";
 
@@ -125,4 +129,32 @@ export async function verifySoul(tokenId: string): Promise<{
   onChain: Awaited<ReturnType<typeof readOnChainSeal>>;
 }> {
   return { configured: sealConfigured(), onChain: await readOnChainSeal(tokenId) };
+}
+
+// --- Steward dogfood handlers ---
+// Expose the estate-automation surface (pet/channel/claim) to MCP clients, so an external
+// Base agent can read/preview/trigger an owner's stewards. Same logic the web app uses.
+// status/log are pure DB reads; preview/run perform on-chain reads (and run submits via the
+// session key), so they are network-bound by design.
+
+/** Active/paused/revoked steward enrollments for an owner. */
+export function stewardStatus(owner: string) {
+  return listEnrollments(owner);
+}
+
+/** Recent steward action log (runs + errors) for an owner. */
+export function stewardLog(owner: string) {
+  return getLog(owner);
+}
+
+/** Preview what each active steward WOULD do right now — no transaction is submitted. */
+export async function stewardPreview(owner: string) {
+  const now = Math.floor(Date.now() / 1000);
+  return previewOwner(owner, { snapshotFor }, now);
+}
+
+/** Force a run cycle for this owner's due stewards (runEnrollment still enforces intervals). */
+export async function stewardRunNow(owner: string) {
+  await runAllDue();
+  return getLog(owner).slice(0, 5);
 }

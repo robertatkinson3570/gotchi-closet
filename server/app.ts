@@ -10,9 +10,11 @@ import roastRoutes from "./routes/roast";
 import soulRoutes from "./routes/soul";
 import arenaRoutes from "./routes/arena";
 import mcpBillingRoutes from "./routes/mcpBilling";
+import { stewardRouter } from "./routes/steward";
 import { wispMcpHttpHandler } from "./mcp/http";
 import { getDebugStats } from "./aavegotchi/serverSvgService";
 import { startAutoRenewCron } from "./lending/cron";
+import { startStewardCron } from "./steward/cron";
 
 export function createApp() {
   const app = express();
@@ -86,12 +88,16 @@ export function createApp() {
   app.use("/api/arena", arenaRoutes);
   // Wisp MCP billing — external developer accounts + ETH/USDC plan purchases. Additive.
   app.use("/api/mcp", mcpBillingRoutes);
+  // Steward — non-custodial estate automation (pet/channel/claim) enroll + manage.
+  app.use("/api/steward", stewardRouter);
   // Keyed, rate-limited MCP protocol endpoint for external customers (POST only).
   // Distinct from /api/mcp (billing REST). Plan limits enforced in mcp/http.ts.
   app.post("/mcp", wispMcpHttpHandler);
 
   // Boot auto-renew cron (no-op if AUTORENEW_HOT_WALLET_KEY not set)
   startAutoRenewCron();
+  // Boot steward cron (no-op if STEWARD_BUNDLER_URL not set)
+  startStewardCron();
 
   return app;
 }

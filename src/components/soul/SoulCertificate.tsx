@@ -7,8 +7,9 @@ import { GotchiSvgById } from "@/components/explorer/GotchiSvgById";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { env } from "@/lib/env";
 import { useSealedTokens } from "@/state/useSealedTokens";
+import { CORE_SUBGRAPH } from "@/lib/subgraph";
 
-// ABI for SoulSeal.seal(...) — the owner submits this from their own wallet to
+// ABI for SoulSeal.seal(...), the owner submits this from their own wallet to
 // anchor the soul on Base. The contract verifies the attestor signature AND that
 // msg.sender == ownerOf(tokenId), so only the real owner can complete a seal.
 const SEAL_ABI = [
@@ -224,7 +225,7 @@ function CertCard({
           </ul>
         ) : (
           <p className="mt-2 text-[11px] italic text-white/30">
-            No past lives yet — this soul has only known one keeper.
+            No past lives yet, this soul has only known one keeper.
           </p>
         )}
       </div>
@@ -268,6 +269,7 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
   const [sealPhase, setSealPhase] = useState<SealPhase>("idle");
   const [sealTxHash, setSealTxHash] = useState<string | null>(null);
   const [sealError, setSealError] = useState<string | null>(null);
+  const [borrowedByViewer, setBorrowedByViewer] = useState(false);
   const cardElRef = useRef<HTMLDivElement | null>(null);
   const cardRef = (el: HTMLDivElement | null) => { cardElRef.current = el; };
 
@@ -308,6 +310,26 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
       .finally(() => setLoading(false));
   }, [tokenId]);
 
+  // Is the connected wallet BORROWING this gotchi? Only the owner/lender can seal a soul
+  // (the contract rejects anyone else), so a borrower is steered to "contact the owner".
+  useEffect(() => {
+    if (!address) { setBorrowedByViewer(false); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(CORE_SUBGRAPH, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: `{ user(id:"${address.toLowerCase()}"){ gotchisBorrowed } }` }),
+        });
+        const j = await r.json();
+        const borrowed = new Set<string>((j.data?.user?.gotchisBorrowed ?? []).map(String));
+        if (!cancelled) setBorrowedByViewer(borrowed.has(String(tokenId)));
+      } catch { if (!cancelled) setBorrowedByViewer(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [address, tokenId]);
+
   async function handleExport() {
     if (!cardElRef.current) return;
     setExporting(true);
@@ -325,7 +347,7 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
   }
 
   async function handleSeal() {
-    // Allow both first-seal ("unsealed") and re-seal ("sealed") — the contract
+    // Allow both first-seal ("unsealed") and re-seal ("sealed"), the contract
     // and server both permit overwriting latest[tokenId] with a fresh snapshot.
     if (!data || (data.sealStatus !== "unsealed" && data.sealStatus !== "sealed")) return;
     if (!isConnected || !address) {
@@ -388,7 +410,7 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
       setSealPhase("done");
       markSealed(tokenId); // flip the Explorer badge instantly, no refresh needed
       setData((d) => (d ? { ...d, sealStatus: "sealed" } : d));
-      // We just sealed — force "sealed" even if the server read still lags.
+      // We just sealed, force "sealed" even if the server read still lags.
       getSoulDepth(tokenId)
         .then((d) => { if (d) setData({ ...d, sealStatus: "sealed" }); })
         .catch(() => { /* optimistic state already applied */ });
@@ -403,7 +425,7 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
                  (lc.includes("chain") && lc.includes("switch")) || lc.includes("unsupported chain")) {
         msg = "Switch your wallet to the Base network, then try again.";
       } else {
-        msg = raw || "Sealing failed — please try again.";
+        msg = raw || "Sealing failed, please try again.";
       }
       setSealError(msg);
       setSealPhase("idle");
@@ -477,24 +499,47 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
           {/* Action buttons */}
           {!loading && data && (
             <div className="flex flex-col gap-2">
-              <div className="flex gap-2">
-                <button
-                  onClick={handleExport}
-                  disabled={exporting}
-                  className="flex-1 rounded-xl bg-violet-600 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
-                >
-                  {exporting ? "Exporting…" : "Export PNG"}
-                </button>
-                <button
-                  onClick={handleCopyVerifyUrl}
-                  className="flex-1 rounded-xl border border-white/15 bg-white/8 py-2 text-[12px] font-semibold text-white/70 transition-colors hover:bg-white/15 hover:text-white"
-                >
-                  {copied ? "Copied!" : "Copy Verify Link"}
-                </button>
-              </div>
+              {(() => {
+                // No certificate until the soul is sealed on-chain, so don't let anyone export
+                // or share a "certificate" that doesn't exist yet.
+                const sealedNow = data.sealStatus === "sealed" || sealPhase === "done";
+                return (
+                  <>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleExport}
+                        disabled={exporting || !sealedNow}
+                        title={sealedNow ? "" : "Seal this soul on Base first"}
+                        className="flex-1 rounded-xl bg-violet-600 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {exporting ? "Exporting…" : "Export PNG"}
+                      </button>
+                      <button
+                        onClick={handleCopyVerifyUrl}
+                        disabled={!sealedNow}
+                        title={sealedNow ? "" : "Seal this soul on Base first"}
+                        className="flex-1 rounded-xl border border-white/15 bg-white/8 py-2 text-[12px] font-semibold text-white/70 transition-colors hover:bg-white/15 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {copied ? "Copied!" : "Copy Verify Link"}
+                      </button>
+                    </div>
+                    {!sealedNow && (
+                      <p className="text-center text-[10px] text-white/40">Seal this soul on Base to export or share its certificate.</p>
+                    )}
+                  </>
+                );
+              })()}
 
               {/* ── Seal on Base ──────────────────────────────────────────── */}
-              {data.sealStatus === "unconfigured" && (
+              {borrowedByViewer && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 text-center">
+                  <p className="text-[11px] font-semibold text-amber-300">You&rsquo;re borrowing this gotchi</p>
+                  <p className="mt-1 text-[10px] leading-relaxed text-white/55">
+                    Only the owner can seal a soul. Ask the owner to mint the certificate, it stays theirs after the rental.
+                  </p>
+                </div>
+              )}
+              {!borrowedByViewer && data.sealStatus === "unconfigured" && (
                 <button
                   disabled
                   className="w-full rounded-xl border border-white/10 bg-white/4 py-2 text-[12px] font-semibold text-white/30 cursor-not-allowed"
@@ -503,7 +548,7 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
                 </button>
               )}
 
-              {data.sealStatus !== "unconfigured" &&
+              {!borrowedByViewer && data.sealStatus !== "unconfigured" &&
                 (() => {
                   const inFlight =
                     sealPhase === "attesting" ||
@@ -559,7 +604,7 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
                         ) : (
                           <>
                             Stamps a snapshot of this soul&rsquo;s depth &amp; fingerprint onto the Base
-                            blockchain as on-chain proof of your bond &mdash;{" "}
+                            blockchain as on-chain proof of your bond, {" "}
                             <span className="text-white/80">owner-only and permanent</span>. You approve
                             it in your wallet on Base and pay a small gas fee (usually a few cents). Your
                             soul keeps growing afterward; the seal records today&rsquo;s depth, so you can
@@ -575,7 +620,7 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
                       )}
                       {isConnected && !isOnBase && sealPhase === "idle" && (
                         <p className="text-[10px] text-white/45">
-                          You&rsquo;re not on Base — your wallet will switch when you confirm.
+                          You&rsquo;re not on Base, your wallet will switch when you confirm.
                         </p>
                       )}
 

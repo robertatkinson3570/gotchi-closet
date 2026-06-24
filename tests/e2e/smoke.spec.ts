@@ -14,7 +14,7 @@ test("app shell + global nav load", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("img", { name: "GotchiCloset" }).first()).toBeVisible();
   // Global nav links present on every page (current nav set).
-  for (const title of ["Explorer / Baazaar", "Activity", "Forge", "Lending", "DAO & Community"]) {
+  for (const title of ["Explorer / Baazaar", "Activity", "Forge", "Lending", "Steward — put your gotchis to work", "DAO & Community"]) {
     await expect(page.getByTitle(title, { exact: true })).toBeVisible();
   }
   expect(errors, errors.join("\n")).toHaveLength(0);
@@ -74,6 +74,7 @@ const ROUTES = [
   "/dao",
   "/get-tokens",
   "/forge",
+  "/steward",
   "/soul/verify/4895",
   "/g/4895",
   "/arena/4895/vs/4896",
