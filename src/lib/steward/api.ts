@@ -1,0 +1,31 @@
+// src/lib/steward/api.ts
+import type { Chores } from "./cardState";
+
+export interface Enrollment {
+  id: number; owner: string; gotchiId: number; chores: Chores; intervalSec: number;
+  smartAccount: string | null; sessionKey: string | null; status: "active" | "paused" | "revoked";
+  createdAt: number; lastRunAt: number | null;
+}
+export interface LogEntry { action: string; detail: string; txHash: string | null; ts: number; }
+
+async function post(path: string, body: unknown) {
+  const r = await fetch(`/api/steward/${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!r.ok) throw Object.assign(new Error((await r.json().catch(() => ({}))).error || r.statusText), { status: r.status });
+  return r.json();
+}
+async function get(path: string) {
+  const r = await fetch(`/api/steward/${path}`);
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+export const stewardApi = {
+  status: (owner: string) => get(`status?owner=${owner}`).then((d) => d.enrollments as Enrollment[]),
+  log: (owner: string) => get(`log?owner=${owner}`).then((d) => d.log as LogEntry[]),
+  enroll: (body: { owner: string; gotchiId: number; chores: Chores; intervalSec: number; smartAccount?: string; sessionKey?: string }) =>
+    post("enroll", body) as Promise<Enrollment>,
+  pause: (id: number) => post("pause", { id }),
+  resume: (id: number) => post("resume", { id }),
+  revoke: (id: number) => post("revoke", { id }),
+  editChores: (id: number, chores: Chores) => post("edit-chores", { id, chores }),
+};
