@@ -21,6 +21,7 @@ interface Props {
   issueSessionKey: (owner: string, gotchiId: number, chores: Chores) => Promise<{ smartAccount: string; sessionKey: string; ownerSig?: string; signedAt?: number }>;
   fundGasFloat: (smartAccount: string) => Promise<void>;
   // Ledger-friendly pet-only path (one setPetOperatorForAll approval, no 7702). Optional.
+  // Currently HIDDEN (operator mode would make us pay others' gas) — gated off below.
   approveGaslessPetting?: (owner: string, gotchiId: number, chores: Chores) => Promise<{ smartAccount: string; ownerSig?: string; signedAt?: number; authMode: "operator" }>;
 }
 
@@ -177,7 +178,7 @@ export function RecruitWizard({ owner, gotchi, available, onDone, issueSessionKe
               <button className="mt-4 w-full rounded-lg bg-fuchsia-600 py-2 font-semibold disabled:opacity-50" disabled={busy} onClick={authorize}>
                 {busy ? "Waiting for signature…" : "Sign & authorize (you pay gas, needs a 7702 wallet)"}
               </button>
-              {petOnly && approveGaslessPetting && (
+              {import.meta.env.VITE_STEWARD_GASLESS === "1" && petOnly && approveGaslessPetting && (
                 <>
                   <div className="my-2 text-center text-[11px] text-zinc-500">or, works with any wallet incl. Ledger</div>
                   <button className="w-full rounded-lg border border-emerald-500/40 bg-emerald-500/10 py-2 text-sm font-semibold text-emerald-200 disabled:opacity-50" disabled={busy} onClick={authorizeOperator}>
