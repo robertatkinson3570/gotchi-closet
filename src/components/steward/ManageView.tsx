@@ -1,17 +1,17 @@
 // src/components/steward/ManageView.tsx
-import { useStewardLog, useStewardMutations } from "@/hooks/useSteward";
+import { useStewardLog, useStewardMutations, useSoulStats } from "@/hooks/useSteward";
 import type { Enrollment } from "@/lib/steward/api";
 
 interface Props {
   owner: string;
   enrollment: Enrollment;
   gotchi: { id: number; name: string; image: string };
-  soul?: { level: number; xpPct: number; memories: number }; // SAME object the companion chat shows (wired in Plan 4)
   onBack: () => void;
 }
 
-export function ManageView({ owner, enrollment, gotchi, soul, onBack }: Props) {
+export function ManageView({ owner, enrollment, gotchi, onBack }: Props) {
   const { data: log = [] } = useStewardLog(owner);
+  const { data: soul } = useSoulStats(owner, gotchi.id); // SAME single-source stats the companion chat shows
   const { pause, resume, revoke } = useStewardMutations(owner);
   const active = enrollment.status === "active";
 
@@ -28,7 +28,7 @@ export function ManageView({ owner, enrollment, gotchi, soul, onBack }: Props) {
 
       {soul && (
         <div className="mt-3">
-          <div className="text-xs uppercase text-zinc-400">Soul · Lv{soul.level} · {soul.memories} memories</div>
+          <div className="text-xs uppercase text-zinc-400">Soul · {soul.level} · {soul.memories} memories</div>
           <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-white/10">
             <div className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-emerald-400" style={{ width: `${soul.xpPct}%` }} />
           </div>

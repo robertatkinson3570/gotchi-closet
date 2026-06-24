@@ -2,6 +2,7 @@
 import { Router } from "express";
 import { enroll, listEnrollments, getEnrollment, setStatus, editChores, getLog, ChoreConflictError } from "../steward/db";
 import { parseEnrollBody } from "../steward/validate";
+import { soulStatsFor } from "../steward/soulStats";
 
 export const stewardRouter = Router();
 
@@ -25,6 +26,14 @@ stewardRouter.get("/log", (req, res) => {
   const owner = String(req.query.owner || "");
   if (!owner) return res.status(400).json({ error: "owner required" });
   res.json({ log: getLog(owner) });
+});
+
+// Single-source soul stats — the SAME level/xp/memories the companion chat shows.
+stewardRouter.get("/soul", (req, res) => {
+  const owner = String(req.query.owner || "");
+  const gotchiId = Number(req.query.gotchiId);
+  if (!owner || !Number.isFinite(gotchiId)) return res.status(400).json({ error: "owner + gotchiId required" });
+  res.json(soulStatsFor(owner, gotchiId));
 });
 
 function mutateStatus(req: any, res: any, status: "active" | "paused" | "revoked") {

@@ -8,6 +8,17 @@ export function useStewardStatus(owner?: string) {
 export function useStewardLog(owner?: string) {
   return useQuery({ queryKey: ["steward", "log", owner], queryFn: () => stewardApi.log(owner!), enabled: !!owner });
 }
+export function useSoulStats(owner?: string, gotchiId?: number) {
+  return useQuery({
+    queryKey: ["steward", "soul", owner, gotchiId],
+    queryFn: async () => {
+      const r = await fetch(`/api/steward/soul?owner=${owner}&gotchiId=${gotchiId}`);
+      if (!r.ok) throw new Error("soul stats failed");
+      return r.json() as Promise<{ level: string; xpPct: number; memories: number }>;
+    },
+    enabled: !!owner && gotchiId !== undefined,
+  });
+}
 export function useStewardMutations(owner?: string) {
   const qc = useQueryClient();
   const invalidate = () => qc.invalidateQueries({ queryKey: ["steward", "status", owner] });
