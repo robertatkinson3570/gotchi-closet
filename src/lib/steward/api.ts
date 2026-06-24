@@ -22,7 +22,7 @@ async function get(path: string) {
 export const stewardApi = {
   status: (owner: string) => get(`status?owner=${owner}`).then((d) => d.enrollments as Enrollment[]),
   log: (owner: string) => get(`log?owner=${owner}`).then((d) => d.log as LogEntry[]),
-  enroll: (body: { owner: string; gotchiId: number; chores: Chores; intervalSec: number; smartAccount?: string; sessionKey?: string }) =>
+  enroll: (body: { owner: string; gotchiId: number; chores: Chores; intervalSec: number; smartAccount?: string; sessionKey?: string; ownerSig?: string; signedAt?: number; authMode?: "session" | "operator" }) =>
     post("enroll", body) as Promise<Enrollment>,
   pause: (id: number) => post("pause", { id }),
   resume: (id: number) => post("resume", { id }),

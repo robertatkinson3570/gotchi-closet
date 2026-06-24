@@ -14,13 +14,16 @@ export const SITE_OVERVIEW =
   "Activity (recent on-chain activity); " +
   "Forge (craft and smelt wearables from alchemica + GHST); " +
   "Lending (rent your gotchis out, manage rentals and auto-renew, set channelling rights for renters); " +
-  "Land Management (channel & claim alchemica from your land parcels). " +
+  "Land Management (channel & claim alchemica from your land parcels); " +
+  "Steward (put a soul-bearing gotchi 'to work' running your whole estate hands-off: it auto-pets all your gotchis, channels your parcels, and empties reservoirs on a schedule, non-custodial, you pay only your own gas and can revoke anytime). " +
   "Pet your gotchi about every 12 hours to grow kinship.";
 
 interface LoreSnippet { tags: string[]; text: string; }
 
 // Site-specific how-to first (these take priority in retrieval), then general lore.
 const LORE: LoreSnippet[] = [
+  { tags: ["steward", "stewards", "automate", "automation", "auto", "autopilot", "hands-off", "hands off", "on duty", "recruit", "hire", "set and forget", "session key", "estate"],
+    text: "Steward (top nav) lets you put a soul-bearing gotchi 'to work' maintaining your whole estate automatically: it pets all your gotchis, channels your parcels (pairing your highest-kinship gotchis with your highest-level altars, like Land Management), and empties your reservoirs on a schedule. It's non-custodial via an EIP-7702 scoped session key that can ONLY pet/channel/claim, never transfer or spend; you pay your own gas and can pause or revoke anytime. A gotchi needs a minted soul cert to be hired, and lent-out gotchis still get petted." },
   { tags: ["channel", "channelling", "channeling", "alchemica", "claim", "harvest", "fud", "fomo", "alpha", "kek", "parcel", "land", "altar"],
     text: "To channel/claim alchemica on GotchiCloset, go to the Land Management section (top nav) and channel & claim from your parcels. If a gotchi is rented out, only petting works until the rental ends. When you list a gotchi under Lending you can grant the renter channelling rights." },
   { tags: ["equip", "wearable", "dress", "outfit", "slot"],

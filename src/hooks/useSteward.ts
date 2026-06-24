@@ -8,6 +8,21 @@ export function useStewardStatus(owner?: string) {
 export function useStewardLog(owner?: string) {
   return useQuery({ queryKey: ["steward", "log", owner], queryFn: () => stewardApi.log(owner!), enabled: !!owner });
 }
+// Which of the owner's gotchis hold a minted soul cert (on-chain SoulSeal). One batched call.
+export function useGotchiSouls(owner?: string, ids?: number[]) {
+  const key = (ids ?? []).slice().sort((a, b) => a - b).join(",");
+  return useQuery({
+    queryKey: ["steward", "souls", owner, key],
+    queryFn: async () => {
+      const r = await fetch(`/api/steward/souls?owner=${owner}&ids=${key}`);
+      if (!r.ok) throw new Error("soul certs failed");
+      const d = (await r.json()) as { sealed: number[]; configured: boolean };
+      return { sealed: new Set<number>(d.sealed), configured: d.configured };
+    },
+    enabled: !!owner && !!key,
+    staleTime: 60_000,
+  });
+}
 export function useSoulStats(owner?: string, gotchiId?: number) {
   return useQuery({
     queryKey: ["steward", "soul", owner, gotchiId],

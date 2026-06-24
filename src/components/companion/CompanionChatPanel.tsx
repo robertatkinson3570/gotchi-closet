@@ -19,7 +19,7 @@ export function CompanionChatPanel() {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const gotchis = useCompanionGotchis();
-  const { selectedTokenId, setOpen, setRoastOpen } = useCompanion();
+  const { selectedTokenId, setOpen, setRoastOpen, script, clearScript } = useCompanion();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -38,7 +38,15 @@ export function CompanionChatPanel() {
   const gotchi = useMemo(() => gotchis.find((g) => g.id === selectedTokenId) ?? null, [gotchis, selectedTokenId]);
   const profile = useMemo(() => (gotchi ? buildPersonality(gotchi) : null), [gotchi]);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, busy]);
+  // Keep the latest message/script line in view — including the moment the panel opens. The
+  // persona + soul panels above load async and grow the column AFTER first paint, which would
+  // push a programmatic opener back below the fold, so we re-scroll a few times as it settles.
+  useEffect(() => {
+    const toBottom = () => endRef.current?.scrollIntoView({ block: "end" });
+    toBottom();
+    const timers = [80, 250, 600, 1000].map((ms) => setTimeout(toBottom, ms));
+    return () => timers.forEach(clearTimeout);
+  }, [messages, busy, script.length, selectedTokenId, picking, tab]);
 
   // Escape always closes, regardless of layout. (Clicking the mascot also toggles it.)
   useEffect(() => {
@@ -66,6 +74,7 @@ export function CompanionChatPanel() {
   async function send() {
     const text = draft.trim();
     if (!text || !selectedTokenId || !address || busy) return;
+    clearScript();
     setDraft("");
     setMessages((m) => [...m, { role: "user", content: text }]);
     setBusy(true);
@@ -119,7 +128,7 @@ export function CompanionChatPanel() {
       {tab === "global" ? (
         <GlobalChatTab active={tab === "global"} />
       ) : picking ? (
-        <div className="overflow-y-auto p-3"><CompanionGotchiPicker onPicked={() => setPicking(false)} /></div>
+        <div className="overflow-y-auto p-3"><CompanionGotchiPicker onPicked={() => { setPicking(false); clearScript(); }} /></div>
       ) : (
         <>
           <div className="flex-1 space-y-2 overflow-y-auto p-3">
@@ -127,7 +136,10 @@ export function CompanionChatPanel() {
             {selectedTokenId && <SoulDepthMeter tokenId={selectedTokenId} />}
             {credits > 0 && <div className="px-3 pt-1 text-[10px] text-fuchsia-200/60">⚡ {credits.toLocaleString()} premium credits</div>}
             {env.companionPremiumEnabled && profile && (!premium || credits < 200) && <GoPremium onActivated={() => getPremium(address!).then((s) => { setPremium(s.active); setCredits(s.credits); }).catch(() => {})} />}
-            {messages.length === 0 && (
+            {script.map((line, i) => (
+              <div key={`script-${i}`} className="max-w-[85%] whitespace-pre-wrap rounded-2xl bg-white/10 px-3 py-1.5 text-sm text-white/90">{line}</div>
+            ))}
+            {messages.length === 0 && script.length === 0 && (
               <div className="pt-6 text-center text-sm text-white/40">
                 say hi to your gotchi 👻
                 <div className="mt-1 text-xs text-white/30">ask about its traits, kinship, or how to use the site</div>
