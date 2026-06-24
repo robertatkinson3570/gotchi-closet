@@ -39,6 +39,7 @@ jobs:
           SOUL_SEAL_ADDRESS: ${{ secrets.SOUL_SEAL_ADDRESS }}
           SOUL_ATTESTOR_KEY: ${{ secrets.SOUL_ATTESTOR_KEY }}
           SOUL_ENCRYPTION_KEY: ${{ secrets.SOUL_ENCRYPTION_KEY }}
+          STEWARD_PET_RELAYER_KEY: ${{ secrets.STEWARD_PET_RELAYER_KEY }}
         run: |
           set -euo pipefail
           cd /root/gotchicloset
@@ -56,6 +57,9 @@ jobs:
           if [ -n "${SOUL_SEAL_ADDRESS:-}" ]; then set_var SOUL_SEAL_ADDRESS "$SOUL_SEAL_ADDRESS"; echo "SOUL_SEAL_ADDRESS synced ($SOUL_SEAL_ADDRESS)"; else echo "no SOUL_SEAL_ADDRESS secret"; fi
           if [ -n "${SOUL_ATTESTOR_KEY:-}" ]; then set_var SOUL_ATTESTOR_KEY "$SOUL_ATTESTOR_KEY"; echo "SOUL_ATTESTOR_KEY synced (len=${#SOUL_ATTESTOR_KEY})"; else echo "no SOUL_ATTESTOR_KEY secret"; fi
           if [ -n "${SOUL_ENCRYPTION_KEY:-}" ]; then set_var SOUL_ENCRYPTION_KEY "$SOUL_ENCRYPTION_KEY"; echo "SOUL_ENCRYPTION_KEY synced (len=${#SOUL_ENCRYPTION_KEY})"; else echo "no SOUL_ENCRYPTION_KEY secret"; fi
+          # Steward gasless-petting relayer (operator mode). Setting this starts the steward
+          # cron; with zero operator-mode enrollments it simply no-ops until an owner approves.
+          if [ -n "${STEWARD_PET_RELAYER_KEY:-}" ]; then set_var STEWARD_PET_RELAYER_KEY "$STEWARD_PET_RELAYER_KEY"; echo "STEWARD_PET_RELAYER_KEY synced (len=${#STEWARD_PET_RELAYER_KEY})"; else echo "no STEWARD_PET_RELAYER_KEY secret"; fi
 
       - name: Build + start
         # Isolation guarantee: -p gotchicloset namespaces every container, volume,
