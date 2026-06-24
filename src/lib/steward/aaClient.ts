@@ -18,6 +18,7 @@ import type { WalletClient } from "viem";
 import { sessionActions, type ChoresLike } from "./sessionSpec";
 import { enrollMessage } from "./enrollAuth";
 import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
+import { env } from "@/lib/env";
 
 // One fragment for the Ledger-friendly operator approval.
 const SET_PET_OPERATOR_ABI = [{
@@ -107,7 +108,7 @@ export async function approveGaslessPetting(
   gotchiId: number,
   chores: ChoresLike
 ): Promise<{ smartAccount: string; ownerSig: string; signedAt: number; authMode: "operator" }> {
-  const r = await fetch("/api/steward/pet-operator");
+  const r = await fetch(`${env.companionApiUrl}/api/steward/pet-operator`);
   const { operator, configured } = (await r.json()) as { operator: string | null; configured: boolean };
   if (!configured || !operator) throw new Error("Gasless petting isn't available right now.");
 

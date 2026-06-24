@@ -1,5 +1,10 @@
 // src/lib/steward/api.ts
 import type { Chores } from "./cardState";
+import { env } from "@/lib/env";
+
+// Steward routes live on the Express server (VPS in prod, not Vercel). Empty in local
+// dev so the Vite /api proxy handles it; in prod this is the public API origin.
+const BASE = env.companionApiUrl;
 
 export interface Enrollment {
   id: number; owner: string; gotchiId: number; chores: Chores; intervalSec: number;
@@ -9,12 +14,12 @@ export interface Enrollment {
 export interface LogEntry { action: string; detail: string; txHash: string | null; ts: number; }
 
 async function post(path: string, body: unknown) {
-  const r = await fetch(`/api/steward/${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const r = await fetch(`${BASE}/api/steward/${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   if (!r.ok) throw Object.assign(new Error((await r.json().catch(() => ({}))).error || r.statusText), { status: r.status });
   return r.json();
 }
 async function get(path: string) {
-  const r = await fetch(`/api/steward/${path}`);
+  const r = await fetch(`${BASE}/api/steward/${path}`);
   if (!r.ok) throw new Error(r.statusText);
   return r.json();
 }
