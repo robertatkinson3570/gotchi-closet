@@ -9,9 +9,14 @@ import {
   buildChatContext,
   getRoastSetup,
   verifySoul,
+  stewardStatus,
+  stewardLog,
+  stewardPreview,
+  stewardRunNow,
 } from "./tools.js";
 
 const tokenId = z.string().regex(/^\d+$/, "tokenId must be a numeric string");
+const ownerAddr = z.string().regex(/^0x[0-9a-fA-F]+$/, "owner must be a 0x wallet address");
 
 const ok = (v: unknown) => ({
   content: [{ type: "text" as const, text: JSON.stringify(v, null, 2) }],
@@ -79,6 +84,50 @@ export function createWispMcpServer(): McpServer {
     },
     async ({ tokenId }) => {
       try { return ok(await verifySoul(tokenId)); } catch (e) { return fail(e); }
+    }
+  );
+
+  server.registerTool(
+    "steward_status",
+    {
+      description: "Steward enrollments for a wallet (active/paused/revoked + chores + interval).",
+      inputSchema: { owner: ownerAddr },
+    },
+    async ({ owner }) => {
+      try { return ok(stewardStatus(owner)); } catch (e) { return fail(e); }
+    }
+  );
+
+  server.registerTool(
+    "steward_log",
+    {
+      description: "Recent steward action log for a wallet (automated runs + errors, with tx hashes).",
+      inputSchema: { owner: ownerAddr },
+    },
+    async ({ owner }) => {
+      try { return ok(stewardLog(owner)); } catch (e) { return fail(e); }
+    }
+  );
+
+  server.registerTool(
+    "steward_preview",
+    {
+      description: "Preview what each active steward WOULD pet/channel/claim right now. No transaction is sent.",
+      inputSchema: { owner: ownerAddr },
+    },
+    async ({ owner }) => {
+      try { return ok(await stewardPreview(owner)); } catch (e) { return fail(e); }
+    }
+  );
+
+  server.registerTool(
+    "steward_run_now",
+    {
+      description: "Force a run cycle for this wallet's due stewards (per-enrollment intervals still enforced).",
+      inputSchema: { owner: ownerAddr },
+    },
+    async ({ owner }) => {
+      try { return ok(await stewardRunNow(owner)); } catch (e) { return fail(e); }
     }
   );
 
