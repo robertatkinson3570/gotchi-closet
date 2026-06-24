@@ -30,6 +30,7 @@ const DaoPage = lazy(() => import("@/pages/DaoPage"));
 const GetTokensPage = lazy(() => import("@/pages/GetTokensPage"));
 const ForgePage = lazy(() => import("@/pages/ForgePage"));
 const SoulVerifyPage = lazy(() => import("@/pages/SoulVerifyPage"));
+const StewardPage = lazy(() => import("@/pages/StewardPage"));
 const PublicGotchiPage = lazy(() => import("@/pages/PublicGotchiPage"));
 const PublicBattlePage = lazy(() => import("@/pages/PublicBattlePage"));
 
@@ -61,6 +62,7 @@ export const router = createBrowserRouter([
       { path: "dao", element: <DaoPage /> },
       { path: "get-tokens", element: <GetTokensPage /> },
       { path: "forge", element: <ForgePage /> },
+      { path: "steward", element: <StewardPage /> },
       { path: "soul/verify/:tokenId", element: <SoulVerifyPage /> },
       // Public arena — no wallet required
       { path: "g/:tokenId", element: <PublicGotchiPage /> },
