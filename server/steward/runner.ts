@@ -12,6 +12,9 @@ export interface RunnerDeps {
   submit: (enrollment: Enrollment, calls: Call[]) => Promise<string>; // returns tx/userOp hash
   log: (owner: string, gotchiId: number, action: string, detail: string, txHash: string | null) => void;
   recordRun: (id: number, ts: number) => void;
+  // Optional: drop calls that would revert (stale cooldown, Not Altar, lent gotchi, etc.) so we
+  // never submit — and pay gas for — a reverting userOp. Returns the calls that pass simulation.
+  simulate?: (enrollment: Enrollment, calls: Call[]) => Promise<Call[]>;
 }
 
 export interface RunResult { ran: boolean; reason?: "not-due" | "no-work" | "inactive"; txHash?: string; }
@@ -28,7 +31,11 @@ export async function runEnrollment(e: Enrollment, deps: RunnerDeps, now: number
     return { ran: false, reason: "no-work" };
   }
 
-  const calls = workPlanToCalls(plan, { claimerGotchiId: e.gotchiId });
+  let calls = workPlanToCalls(plan, { claimerGotchiId: e.gotchiId });
+  if (deps.simulate) {
+    calls = await deps.simulate(e, calls);
+    if (!calls.length) { deps.recordRun(e.id, now); return { ran: false, reason: "no-work" }; }
+  }
   const txHash = await deps.submit(e, calls);
 
   const detail = `pet:${plan.pet.length} channel:${plan.channel.length} claim:${plan.claim.length}`;

@@ -21,4 +21,15 @@ describe("parseEnrollBody", () => {
     expect(parseEnrollBody({ gotchiId: 1, chores: { pet: true, channel: false, claim: false }, intervalSec: 28800 }).ok).toBe(false);
     expect(parseEnrollBody({ owner: "0x1", gotchiId: "x", chores: { pet: true, channel: false, claim: false }, intervalSec: 28800 }).ok).toBe(false);
   });
+
+  it("operator mode allows pet-only but rejects channel/claim", () => {
+    const petOnly = parseEnrollBody({ owner: "0x1", gotchiId: 1, chores: { pet: true, channel: false, claim: false }, intervalSec: 28800, authMode: "operator" });
+    expect(petOnly.ok).toBe(true);
+    if (petOnly.ok) expect(petOnly.value.authMode).toBe("operator");
+    expect(parseEnrollBody({ owner: "0x1", gotchiId: 1, chores: { pet: true, channel: true, claim: false }, intervalSec: 28800, authMode: "operator" }).ok).toBe(false);
+    // default mode stays "session"
+    const def = parseEnrollBody({ owner: "0x1", gotchiId: 1, chores: { pet: true, channel: true, claim: false }, intervalSec: 28800 });
+    expect(def.ok).toBe(true);
+    if (def.ok) expect(def.value.authMode).toBe("session");
+  });
 });

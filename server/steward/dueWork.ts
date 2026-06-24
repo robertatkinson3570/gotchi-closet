@@ -14,7 +14,10 @@ export const CHANNEL_COOLDOWN_SEC_BY_ALTAR: Record<number, number> = {
   6: 4 * 3600, 7: 3 * 3600, 8: 2 * 3600, 9: 1 * 3600,
 };
 
-export interface GotchiState { id: number; lastInteracted: number; lastChanneled: number; }
+// lentOut: the owner rented this gotchi out. It can still be PETTED (interact is fine), but
+// it CANNOT channel — channelAlchemica reverts "Gotchi CANNOT have active listing for lending"
+// — so it's excluded from channeler selection below.
+export interface GotchiState { id: number; lastInteracted: number; lastChanneled: number; lentOut?: boolean; kinship?: number; }
 export interface ParcelState {
   id: number; altarLevel: number; lastChanneled: number; lastClaimed: number; claimable: bigint[];
 }
@@ -38,12 +41,15 @@ export function computeWork(chores: Chores, snap: ChainSnapshot, now: number): W
 
   const channel: ChannelAssignment[] = [];
   if (chores.channel) {
+    // Same rotation as Land Management's channel-all: pair the highest-kinship gotchi with the
+    // highest-level altar, then the next, until we run out of ready gotchis or parcels.
     const altared = snap.parcels.filter((p) => p.altarLevel > 0).sort((a, b) => b.altarLevel - a.altarLevel);
+    const byKinship = [...snap.gotchis].sort((a, b) => (b.kinship ?? 0) - (a.kinship ?? 0));
     const used = new Set<number>();
     for (const p of altared) {
       const cd = CHANNEL_COOLDOWN_SEC_BY_ALTAR[p.altarLevel] ?? RESERVOIR_COOLDOWN_SEC;
-      const g = snap.gotchis.find((g) => !used.has(g.id) && now - g.lastChanneled >= cd);
-      if (!g) continue; // no free, off-cooldown gotchi left for this parcel
+      const g = byKinship.find((g) => !used.has(g.id) && !g.lentOut && now - g.lastChanneled >= cd);
+      if (!g) continue; // no free, off-cooldown, non-lent gotchi left for this parcel
       used.add(g.id);
       channel.push({ parcelId: p.id, gotchiId: g.id, lastChanneled: g.lastChanneled });
     }

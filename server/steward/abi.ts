@@ -14,6 +14,23 @@ export const PET_ABI = [
     inputs: [{ name: "_tokenIds", type: "uint256[]" }],
     outputs: [],
   },
+  // Operator-pattern fallback (Ledger-friendly, no EIP-7702): the owner approves a relayer
+  // once, and the relayer may ONLY interact() on their behalf. Selectors verified on Base
+  // (see plans/006-gasless-petting.md): setPetOperatorForAll 0xcd675d57, isPetOperatorForAll 0xd7358fea.
+  {
+    name: "setPetOperatorForAll",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_operator", type: "address" }, { name: "_approved", type: "bool" }],
+    outputs: [],
+  },
+  {
+    name: "isPetOperatorForAll",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_owner", type: "address" }, { name: "_operator", type: "address" }],
+    outputs: [{ name: "", type: "bool" }],
+  },
 ] as const;
 
 export const REALM_ABI = [

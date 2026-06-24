@@ -6,13 +6,17 @@ import Database from "better-sqlite3";
 import path from "node:path";
 import fs from "node:fs";
 import { CHORES, type Chore } from "./abi";
+import { encryptSoul, decryptSoul } from "../soul/crypto";
 
 export type Status = "active" | "paused" | "revoked";
+// "session" = EIP-7702 scoped session key (player pays gas; can pet/channel/claim).
+// "operator" = pet-only via setPetOperatorForAll (Ledger-friendly, relayer pets gaslessly).
+export type AuthMode = "session" | "operator";
 export interface Chores { pet: boolean; channel: boolean; claim: boolean; }
 export interface Enrollment {
   id: number; owner: string; gotchiId: number; chores: Chores; intervalSec: number;
   smartAccount: string | null; sessionKey: string | null; status: Status;
-  createdAt: number; lastRunAt: number | null;
+  authMode: AuthMode; createdAt: number; lastRunAt: number | null;
 }
 
 export const MIN_INTERVAL_SEC = 8 * 60 * 60;
@@ -43,7 +47,8 @@ export function getStewardDb(): Database.Database {
       owner TEXT NOT NULL, gotchi_id INTEGER NOT NULL,
       chores TEXT NOT NULL, interval_sec INTEGER NOT NULL,
       smart_account TEXT, session_key TEXT,
-      status TEXT NOT NULL, created_at INTEGER NOT NULL, last_run_at INTEGER
+      status TEXT NOT NULL, created_at INTEGER NOT NULL, last_run_at INTEGER,
+      auth_mode TEXT NOT NULL DEFAULT 'session'
     );
     CREATE INDEX IF NOT EXISTS idx_steward_owner ON steward_enrollments(owner, status);
     CREATE TABLE IF NOT EXISTS steward_log (
@@ -53,19 +58,30 @@ export function getStewardDb(): Database.Database {
     );
     CREATE INDEX IF NOT EXISTS idx_steward_log_owner ON steward_log(owner, id);
   `);
+  // Idempotent migration for DBs created before auth_mode existed.
+  const cols = db.prepare(`PRAGMA table_info(steward_enrollments)`).all() as { name: string }[];
+  if (!cols.some((c) => c.name === "auth_mode")) {
+    db.exec(`ALTER TABLE steward_enrollments ADD COLUMN auth_mode TEXT NOT NULL DEFAULT 'session'`);
+  }
   return db;
 }
 
 interface Row {
   id: number; owner: string; gotchi_id: number; chores: string; interval_sec: number;
   smart_account: string | null; session_key: string | null; status: Status;
-  created_at: number; last_run_at: number | null;
+  auth_mode: AuthMode; created_at: number; last_run_at: number | null;
 }
-function toEnrollment(r: Row): Enrollment {
+// The session key is stored ENCRYPTED at rest (it can sign scoped userOps). Public reads
+// redact it entirely; only the cron's run path decrypts it (withSecret=true).
+function toEnrollment(r: Row, withSecret = false): Enrollment {
+  let sessionKey: string | null = null;
+  if (withSecret && r.session_key) {
+    try { sessionKey = decryptSoul(r.session_key); } catch { sessionKey = null; }
+  }
   return {
     id: r.id, owner: r.owner, gotchiId: r.gotchi_id, chores: JSON.parse(r.chores),
-    intervalSec: r.interval_sec, smartAccount: r.smart_account, sessionKey: r.session_key,
-    status: r.status, createdAt: r.created_at, lastRunAt: r.last_run_at,
+    intervalSec: r.interval_sec, smartAccount: r.smart_account, sessionKey,
+    status: r.status, authMode: r.auth_mode ?? "session", createdAt: r.created_at, lastRunAt: r.last_run_at,
   };
 }
 
@@ -89,7 +105,7 @@ function conflictsAgainst(owner: string, want: Chores, excludeId?: number): Chor
 
 export function enroll(input: {
   owner: string; gotchiId: number; chores: Chores; intervalSec: number;
-  smartAccount?: string; sessionKey?: string;
+  smartAccount?: string; sessionKey?: string; authMode?: AuthMode;
 }): Enrollment {
   const owner = input.owner.toLowerCase();
   const interval = Math.max(MIN_INTERVAL_SEC, Math.floor(input.intervalSec));
@@ -98,11 +114,12 @@ export function enroll(input: {
   const info = getStewardDb()
     .prepare(
       `INSERT INTO steward_enrollments
-       (owner, gotchi_id, chores, interval_sec, smart_account, session_key, status, created_at, last_run_at)
-       VALUES (?,?,?,?,?,?, 'active', ?, NULL)`
+       (owner, gotchi_id, chores, interval_sec, smart_account, session_key, status, created_at, last_run_at, auth_mode)
+       VALUES (?,?,?,?,?,?, 'active', ?, NULL, ?)`
     )
     .run(owner, input.gotchiId, JSON.stringify(input.chores), interval,
-      input.smartAccount ?? null, input.sessionKey ?? null, Date.now());
+      input.smartAccount ?? null, input.sessionKey ? encryptSoul(input.sessionKey) : null, Date.now(),
+      input.authMode ?? "session");
   return getEnrollment(Number(info.lastInsertRowid))!;
 }
 
@@ -114,11 +131,26 @@ export function getEnrollment(id: number): Enrollment | null {
 export function listEnrollments(owner: string): Enrollment[] {
   return (getStewardDb()
     .prepare(`SELECT * FROM steward_enrollments WHERE owner=? ORDER BY id`)
-    .all(owner.toLowerCase()) as Row[]).map(toEnrollment);
+    .all(owner.toLowerCase()) as Row[]).map((r) => toEnrollment(r));
+}
+
+// Run path only: enrollments WITH the decrypted session key, for the cron to submit userOps.
+// Never expose these over the API.
+export function listEnrollmentsForRun(owner: string): Enrollment[] {
+  return (getStewardDb()
+    .prepare(`SELECT * FROM steward_enrollments WHERE owner=? ORDER BY id`)
+    .all(owner.toLowerCase()) as Row[]).map((r) => toEnrollment(r, true));
 }
 
 export function setStatus(id: number, status: Status): void {
-  getStewardDb().prepare(`UPDATE steward_enrollments SET status=? WHERE id=?`).run(status, id);
+  if (status === "revoked") {
+    // Destroy the session key on revoke so it can NEVER sign again. The on-chain smart session
+    // is left enabled but keyless (effectively dead — we held the only copy, encrypted); the
+    // owner can fully remove it from their wallet afterwards for cleanliness.
+    getStewardDb().prepare(`UPDATE steward_enrollments SET status=?, session_key=NULL WHERE id=?`).run(status, id);
+  } else {
+    getStewardDb().prepare(`UPDATE steward_enrollments SET status=? WHERE id=?`).run(status, id);
+  }
 }
 
 export function editChores(id: number, chores: Chores): Enrollment {

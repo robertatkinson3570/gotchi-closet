@@ -61,4 +61,21 @@ describe("runEnrollment", () => {
     expect((await runEnrollment({ ...base, status: "paused" }, d, NOW)).ran).toBe(false);
     expect(d.submit).not.toHaveBeenCalled();
   });
+
+  it("never submits when simulation drops every call", async () => {
+    const d = deps({ simulate: vi.fn(async () => []) });
+    const r = await runEnrollment(base, d, NOW);
+    expect(r).toEqual({ ran: false, reason: "no-work" });
+    expect(d.submit).not.toHaveBeenCalled();
+    expect(d.recordRun).toHaveBeenCalledWith(1, NOW);
+  });
+
+  it("submits only the calls that pass simulation", async () => {
+    const sim = vi.fn(async (_e: any, calls: any[]) => calls.slice(0, 1));
+    const d = deps({ simulate: sim });
+    const r = await runEnrollment(base, d, NOW);
+    expect(r.ran).toBe(true);
+    expect(sim).toHaveBeenCalled();
+    expect((d.submit as any).mock.calls[0][1]).toHaveLength(1);
+  });
 });

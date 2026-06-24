@@ -53,4 +53,32 @@ describe("computeWork", () => {
   it("isEmpty is false when any work exists", () => {
     expect(isEmpty(computeWork({ pet: true, channel: false, claim: false }, snap(), NOW))).toBe(false);
   });
+
+  it("pets a lent-out gotchi but never uses it to channel", () => {
+    const s = {
+      gotchis: [{ id: 5, lastInteracted: NOW - PET_COOLDOWN_SEC - 1, lastChanneled: 0, lentOut: true }],
+      parcels: [{ id: 10, altarLevel: 9, lastChanneled: 0, lastClaimed: 0, claimable: [0n, 0n, 0n, 0n] }],
+    };
+    const w = computeWork({ pet: true, channel: true, claim: false }, s, NOW);
+    expect(w.pet).toEqual([5]);    // a rented-out gotchi still gets petted (interact is fine)
+    expect(w.channel).toEqual([]); // but it can't channel (would revert) -> no assignment
+  });
+
+  it("pairs the highest-kinship gotchi with the highest-level altar (Land Management rotation)", () => {
+    const s = {
+      gotchis: [
+        { id: 1, lastInteracted: 0, lastChanneled: 0, kinship: 100 },
+        { id: 2, lastInteracted: 0, lastChanneled: 0, kinship: 900 },
+      ],
+      parcels: [
+        { id: 10, altarLevel: 3, lastChanneled: 0, lastClaimed: 0, claimable: [0n, 0n, 0n, 0n] },
+        { id: 11, altarLevel: 9, lastChanneled: 0, lastClaimed: 0, claimable: [0n, 0n, 0n, 0n] },
+      ],
+    };
+    const w = computeWork({ pet: false, channel: true, claim: false }, s, NOW);
+    expect(w.channel).toEqual([
+      { parcelId: 11, gotchiId: 2, lastChanneled: 0 }, // top altar -> top-kinship gotchi
+      { parcelId: 10, gotchiId: 1, lastChanneled: 0 }, // next altar -> next gotchi
+    ]);
+  });
 });
