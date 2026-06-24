@@ -268,3 +268,35 @@ Steward only links to it as the gate).
 2. Gas float currency: prefer prepaid **ETH** for lowest overhead; ERC-20 paymaster only if needed.
 3. Petting via permissionless `interact` or the `setPetOperatorForAll` operator (pending kinship state-diff check).
 4. Soul-as-memory: does the Steward's log feed back into soul depth now, or phase 2?
+
+---
+
+## As-built (2026-06-24) — resolves the open decisions
+
+Implemented on `feat/steward`. Full file map, env, and verification status: **[HANDOFF.md](./HANDOFF.md)**.
+
+1. **AA stack → EIP-7702 + ERC-7579 smart sessions via `@rhinestone/sdk@1.9.2`** (Nexus account). The EOA is
+   7702-upgraded (same address, assets never move); the session key is scoped to EXACTLY the three selectors.
+   No separate 4337 wallet deploy. *Status: written from current docs, **unverified on testnet**.*
+2. **Gas → the player's own EOA ETH.** Because the 7702 account *is* the EOA, userOps pay from its balance —
+   no paymaster, no float deposit. (`fundGasFloat` is a no-op hook.) Operator pays nothing in session mode.
+3. **Petting → BOTH paths, selectable per enrollment (`auth_mode`):** `session` (7702 key, owner pays gas) and a
+   `operator` fallback (`setPetOperatorForAll`, Ledger-friendly, **pet-only**, relayer pays the pennies). Channel
+   uses the highest-kinship gotchi on the highest-level altar (Land Management rotation).
+4. **Soul-as-memory → deferred** (phase 2). The Steward's log stays informational; the dashboard shows real
+   soul depth via the shared companion `SoulDepthMeter` (one number across chat + dashboard).
+
+### Added during review (beyond the original spec)
+- **Enroll auth:** `/enroll` verifies an owner signature (binds owner/gotchi/chores/account/time) + the soul-cert
+  read; bypass `STEWARD_DEV_OPEN_ENROLL=1` for local/e2e only.
+- **Session key:** encrypted at rest, redacted from API reads, **destroyed on revoke** (keyless = dead).
+- **Pre-submit simulation:** `eth_call` every action; never submit a reverting userOp.
+- **Cron hardening:** overlap lock + per-enrollment exponential backoff.
+- **Lent gotchis:** lender can steward them (petted; excluded from channeling; "Rented out" badge). Borrowers
+  can't seal (SoulCertificate shows "contact owner"; Export/Verify gated until sealed).
+- **Companion:** auto-opens on recruit and narrates each wizard step; chat knowledge now includes Steward.
+- **Dashboard:** On-duty-since, "this week" totals, next-run, edit-chores.
+
+### Still pending (cannot be done without external resources)
+- Base Sepolia verification of the on-chain AA path (session enable + scoped submit + operator relayer + Ledger
+  7702 support). Move the Rhinestone key to server-minted JWT before prod. See HANDOFF.md → "Next steps".

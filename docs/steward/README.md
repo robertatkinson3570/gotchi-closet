@@ -1,5 +1,9 @@
 # Steward — feature docs
 
+> **Picking this up?** Start with **[HANDOFF.md](./HANDOFF.md)** — the as-built status (what shipped on
+> `feat/steward`, file map, env, what's verified vs testnet-pending). The spec below is the original design;
+> its "As-built (2026-06-24)" section records where it diverged.
+
 **Steward** = put a soul-bearing gotchi "to work" maintaining your whole Aavegotchi estate, hands-off:
 auto-**pet** all gotchis, auto-**channel** all parcels, auto-**empty reservoirs**. Non-custodial, the player
 pays all gas (EIP-7702 session key + paymaster), runs on the VPS. See the spec for the full rationale.
