@@ -22,7 +22,11 @@ const NAV: { to: string; title: string; icon: LucideIcon }[] = [
   { to: "/forge", title: "Forge", icon: Flame },
   { to: "/lending", title: "Lending", icon: Coins },
   { to: "/lending/lands", title: "Land Management", icon: MapPin },
-  { to: "/steward", title: "Steward — put your gotchis to work", icon: Bot },
+  // Steward is hidden from the nav while we vet it (no one stumbles into it). The /steward
+  // route still works by direct URL; set VITE_STEWARD_NAV=1 to reveal the menu option again.
+  ...(import.meta.env.VITE_STEWARD_NAV === "1"
+    ? [{ to: "/steward", title: "Steward — put your gotchis to work", icon: Bot }]
+    : []),
   { to: "/dao", title: "DAO & Community", icon: Landmark },
 ];
 

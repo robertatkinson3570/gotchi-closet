@@ -14,7 +14,8 @@ test("app shell + global nav load", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("img", { name: "GotchiCloset" }).first()).toBeVisible();
   // Global nav links present on every page (current nav set).
-  for (const title of ["Explorer / Baazaar", "Activity", "Forge", "Lending", "Steward — put your gotchis to work", "DAO & Community"]) {
+  // Steward is intentionally hidden from the nav while it's vetted (VITE_STEWARD_NAV gate).
+  for (const title of ["Explorer / Baazaar", "Activity", "Forge", "Lending", "DAO & Community"]) {
     await expect(page.getByTitle(title, { exact: true })).toBeVisible();
   }
   expect(errors, errors.join("\n")).toHaveLength(0);
