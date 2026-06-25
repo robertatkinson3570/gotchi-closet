@@ -33,7 +33,6 @@
     "@radix-ui/react-tabs": "^1.0.0",
     "@radix-ui/react-toast": "^1.1.5",
     "@rhinestone/module-sdk": "0.4.0",
-    "@rhinestone/sdk": "1.9.2",
     "@snapshot-labs/snapshot.js": "^0.14.22",
     "@tanstack/react-query": "^5.90.20",
     "@tanstack/react-virtual": "^3.13.24",
