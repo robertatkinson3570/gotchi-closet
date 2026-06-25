@@ -3,6 +3,8 @@ import { Router } from "express";
 import { recoverMessageAddress } from "viem";
 import { enroll, listEnrollments, getEnrollment, getEnrollmentForRun, setStatus, editChores, getLog, ChoreConflictError } from "../steward/db";
 import { runOne } from "../steward/cron";
+import { upkeepFor } from "../steward/service";
+import { snapshotFor } from "../steward/chain";
 import { parseEnrollBody } from "../steward/validate";
 import { soulStatsFor } from "../steward/soulStats";
 import { readOnChainSeal, readOnChainSealsBatch } from "../soul/seal";
@@ -50,6 +52,19 @@ stewardRouter.get("/log", (req, res) => {
   const owner = String(req.query.owner || "");
   if (!owner) return res.status(400).json({ error: "owner required" });
   res.json({ log: getLog(owner) });
+});
+
+// Path 2 ("prepare + one-click"): what's due across the whole wallet, plus the encoded calls
+// the owner's OWN wallet executes (their gas, no AA). Returns {summary, calls:[{to,data}]}.
+stewardRouter.get("/upkeep", async (req, res) => {
+  const owner = String(req.query.owner || "");
+  if (!owner) return res.status(400).json({ error: "owner required" });
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    res.json(await upkeepFor(owner, { snapshotFor }, now));
+  } catch (err) {
+    res.status(502).json({ error: String((err as Error).message).slice(0, 200) });
+  }
 });
 
 // The relayer address owners approve via setPetOperatorForAll for the Ledger-friendly,

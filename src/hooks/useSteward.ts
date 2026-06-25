@@ -12,6 +12,11 @@ export function useStewardStatus(owner?: string) {
 export function useStewardLog(owner?: string) {
   return useQuery({ queryKey: ["steward", "log", owner], queryFn: () => stewardApi.log(owner!), enabled: !!owner });
 }
+// Path 2: what's due across the connected wallet + the calls to self-execute. Short staleTime
+// since it reflects live cooldowns; refetched after a run.
+export function useUpkeep(owner?: string) {
+  return useQuery({ queryKey: ["steward", "upkeep", owner], queryFn: () => stewardApi.upkeep(owner!), enabled: !!owner, staleTime: 30_000 });
+}
 // Which of the owner's gotchis hold a minted soul cert (on-chain SoulSeal). One batched call.
 export function useGotchiSouls(owner?: string, ids?: number[]) {
   const key = (ids ?? []).slice().sort((a, b) => a - b).join(",");

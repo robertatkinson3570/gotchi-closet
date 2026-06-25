@@ -14,6 +14,7 @@ import { deriveCardState, freeChores } from "@/lib/steward/cardState";
 import { StewardCard } from "@/components/steward/StewardCard";
 import { RecruitWizard } from "@/components/steward/RecruitWizard";
 import { ManageView } from "@/components/steward/ManageView";
+import { EstateUpkeep } from "@/components/steward/EstateUpkeep";
 import { SoulCertificate } from "@/components/soul/SoulCertificate";
 import { issueSessionKey as aaIssueSessionKey, fundGasFloat as aaFundGasFloat, approveGaslessPetting as aaApproveGaslessPetting } from "@/lib/steward/aaClient";
 import type { Enrollment } from "@/lib/steward/api";
@@ -29,6 +30,11 @@ const RECRUIT_GREETINGS = [
   "hire me as your steward 🙇 I handle the daily upkeep across all your gotchis + parcels so you don't have to",
 ];
 const pickGreeting = () => RECRUIT_GREETINGS[Math.floor(Math.random() * RECRUIT_GREETINGS.length)];
+
+// Path 1 (EIP-7702 session-key automation) is built but not yet verified on-chain, so it's gated
+// OFF in prod. Path 2 (EstateUpkeep — run from your own wallet) is the shipped path. Flip
+// VITE_STEWARD_AUTOMATION=1 to re-enable the recruit wizard once session mode is verified.
+const AUTOMATION_ENABLED = import.meta.env.VITE_STEWARD_AUTOMATION === "1";
 
 export default function StewardPage() {
   const { address } = useAccount();
@@ -73,21 +79,32 @@ export default function StewardPage() {
     return (
       <div className="min-h-screen bg-zinc-950 p-6 text-white">
         <button onClick={() => setSelected(null)} className="mb-3 text-sm text-zinc-400 hover:text-zinc-200">← back</button>
-        <RecruitWizard
-          owner={owner}
-          gotchi={{ ...selRaw, id: sid, name: selRaw.name }}
-          available={available}
-          onDone={() => setSelected(null)}
-          issueSessionKey={async (o, id, chores) => {
-            if (!walletClient) throw new Error("Connect your wallet first.");
-            return aaIssueSessionKey(walletClient, o, id, chores);
-          }}
-          fundGasFloat={aaFundGasFloat}
-          approveGaslessPetting={async (o, id, chores) => {
-            if (!walletClient) throw new Error("Connect your wallet first.");
-            return aaApproveGaslessPetting(walletClient, o, id, chores);
-          }}
-        />
+        {AUTOMATION_ENABLED ? (
+          <RecruitWizard
+            owner={owner}
+            gotchi={{ ...selRaw, id: sid, name: selRaw.name }}
+            available={available}
+            onDone={() => setSelected(null)}
+            issueSessionKey={async (o, id, chores) => {
+              if (!walletClient) throw new Error("Connect your wallet first.");
+              return aaIssueSessionKey(walletClient, o, id, chores);
+            }}
+            fundGasFloat={aaFundGasFloat}
+            approveGaslessPetting={async (o, id, chores) => {
+              if (!walletClient) throw new Error("Connect your wallet first.");
+              return aaApproveGaslessPetting(walletClient, o, id, chores);
+            }}
+          />
+        ) : (
+          <div className="mx-auto max-w-md rounded-2xl border border-white/10 bg-zinc-900 p-6 text-center">
+            <h2 className="text-lg font-bold">Hands-off automation is coming soon</h2>
+            <p className="mt-2 text-sm text-zinc-400">
+              For now, use <b className="text-emerald-300">Run upkeep</b> on the main page to pet, channel, and claim
+              across your whole estate in one click, from your own wallet, your gas.
+            </p>
+            <button onClick={() => setSelected(null)} className="mt-4 rounded-lg bg-fuchsia-600 px-4 py-2 font-semibold">Back</button>
+          </div>
+        )}
       </div>
     );
   }
@@ -97,12 +114,11 @@ export default function StewardPage() {
     <div className="min-h-screen bg-zinc-950 p-6 text-white">
       <header className="mb-5 max-w-3xl">
         <h1 className="text-2xl font-black tracking-tight">STEWARD</h1>
-        <p className="mt-1 text-zinc-300">Put a soul-bearing gotchi to work running your whole estate.</p>
+        <p className="mt-1 text-zinc-300">Keep your whole estate maintained in one click.</p>
         <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-          A steward automatically <b className="text-zinc-200">pets every gotchi</b>, <b className="text-zinc-200">channels every parcel</b>, and
-          <b className="text-zinc-200"> empties every reservoir</b> on a schedule. It's <b className="text-zinc-200">non-custodial</b>, your assets
-          never move, it can only pet/channel/claim, you pay only your own gas, and you can revoke anytime. A gotchi needs a
-          minted <b className="text-fuchsia-300">soul cert</b> to be hired.
+          Steward finds everything that's due across your wallet, <b className="text-zinc-200">pet every gotchi</b>, <b className="text-zinc-200">channel every parcel</b>, and
+          <b className="text-zinc-200"> empty every reservoir</b>, then runs it from <b className="text-zinc-200">your own wallet</b> when you hit
+          <b className="text-emerald-300"> Run upkeep</b>. Fully <b className="text-zinc-200">non-custodial</b>, you pay only your own gas, nothing moves but the chores.
         </p>
         <div className="mt-3 flex gap-4 text-xs text-zinc-500">
           <span><b className="text-emerald-300">{onDuty}</b> on duty</span>
@@ -111,6 +127,10 @@ export default function StewardPage() {
           <span className="text-zinc-600">sorted: soul cert → BRS</span>
         </div>
       </header>
+
+      <div className="mb-5 max-w-3xl">
+        <EstateUpkeep owner={owner} />
+      </div>
 
       {isLoading && <div className="text-sm text-zinc-500">Loading your gotchis…</div>}
       {!isLoading && rawGotchis.length === 0 && <div className="text-sm text-zinc-500">No gotchis in this wallet.</div>}

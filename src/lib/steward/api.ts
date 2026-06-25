@@ -24,9 +24,15 @@ async function get(path: string) {
   return r.json();
 }
 
+export interface UpkeepPlan {
+  summary: { pet: number; channel: number; claim: number };
+  calls: { to: `0x${string}`; data: `0x${string}` }[];
+}
+
 export const stewardApi = {
   status: (owner: string) => get(`status?owner=${owner}`).then((d) => d.enrollments as Enrollment[]),
   log: (owner: string) => get(`log?owner=${owner}`).then((d) => d.log as LogEntry[]),
+  upkeep: (owner: string) => get(`upkeep?owner=${owner}`) as Promise<UpkeepPlan>,
   enroll: (body: { owner: string; gotchiId: number; chores: Chores; intervalSec: number; smartAccount?: string; sessionKey?: string; ownerSig?: string; signedAt?: number; authMode?: "session" | "operator" }) =>
     post("enroll", body) as Promise<Enrollment>,
   pause: (id: number) => post("pause", { id }),
