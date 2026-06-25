@@ -1,0 +1,28 @@
+# Self-hosted ERC-4337 bundler (Alto) for Steward Phase 1 userOps — $0 vendor cost.
+# It just relays userOps; the player's 7702 account pays its own gas (no paymaster), and the
+# bundler's executor is reimbursed in-protocol (keep a small ETH float in it).
+#
+# Testnet proof:  BUNDLER_EXECUTOR_KEY=<funded sepolia key>  BUNDLER_RPC_URL=https://sepolia.base.org \
+#                 docker compose -p steward-bundler -f deploy/bundler/docker-compose.yml up
+# Mainnet:        BUNDLER_RPC_URL=https://mainnet.base.org + a funded executor key.
+# EntryPoint v0.7 = 0x0000000071727De22E5E9d8BAf0edAc6f37da032. Bundler RPC at http://localhost:${BUNDLER_PORT:-4337}
+services:
+  alto:
+    image: ghcr.io/pimlicolabs/alto:latest
+    container_name: steward-bundler
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${BUNDLER_PORT:-4337}:3000"
+    command:
+      - "--entrypoints"
+      - "0x0000000071727De22E5E9d8BAf0edAc6f37da032"
+      - "--executor-private-keys"
+      - "${BUNDLER_EXECUTOR_KEY}"
+      - "--utility-private-key"
+      - "${BUNDLER_EXECUTOR_KEY}"
+      - "--rpc-url"
+      - "${BUNDLER_RPC_URL}"
+      - "--safe-mode"
+      - "false"
+      - "--port"
+      - "3000"
