@@ -1,6 +1,10 @@
 // src/hooks/useSteward.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { stewardApi } from "@/lib/steward/api";
+import { env } from "@/lib/env";
+
+// Steward routes live on the VPS in prod (not Vercel); empty in dev so the Vite proxy handles it.
+const API = env.companionApiUrl;
 
 export function useStewardStatus(owner?: string) {
   return useQuery({ queryKey: ["steward", "status", owner], queryFn: () => stewardApi.status(owner!), enabled: !!owner });
@@ -14,7 +18,7 @@ export function useGotchiSouls(owner?: string, ids?: number[]) {
   return useQuery({
     queryKey: ["steward", "souls", owner, key],
     queryFn: async () => {
-      const r = await fetch(`/api/steward/souls?owner=${owner}&ids=${key}`);
+      const r = await fetch(`${API}/api/steward/souls?owner=${owner}&ids=${key}`);
       if (!r.ok) throw new Error("soul certs failed");
       const d = (await r.json()) as { sealed: number[]; configured: boolean };
       return { sealed: new Set<number>(d.sealed), configured: d.configured };
@@ -27,7 +31,7 @@ export function useSoulStats(owner?: string, gotchiId?: number) {
   return useQuery({
     queryKey: ["steward", "soul", owner, gotchiId],
     queryFn: async () => {
-      const r = await fetch(`/api/steward/soul?owner=${owner}&gotchiId=${gotchiId}`);
+      const r = await fetch(`${API}/api/steward/soul?owner=${owner}&gotchiId=${gotchiId}`);
       if (!r.ok) throw new Error("soul stats failed");
       return r.json() as Promise<{ level: string; xpPct: number; memories: number }>;
     },
@@ -43,5 +47,6 @@ export function useStewardMutations(owner?: string) {
     resume: useMutation({ mutationFn: stewardApi.resume, onSuccess: invalidate }),
     revoke: useMutation({ mutationFn: stewardApi.revoke, onSuccess: invalidate }),
     editChores: useMutation({ mutationFn: (v: { id: number; chores: any }) => stewardApi.editChores(v.id, v.chores), onSuccess: invalidate }),
+    runNow: useMutation({ mutationFn: stewardApi.runNow, onSuccess: () => { invalidate(); qc.invalidateQueries({ queryKey: ["steward", "log", owner] }); } }),
   };
 }

@@ -1,7 +1,7 @@
 // server/steward/cron.ts
 import cron from "node-cron";
 import { getStewardDb, listEnrollmentsForRun, recordRun, appendLog, type Enrollment } from "./db";
-import { runEnrollment, type RunnerDeps } from "./runner";
+import { runEnrollment, type RunnerDeps, type RunResult } from "./runner";
 import { snapshotFor, simulateCalls } from "./chain";
 import { computeWork } from "./dueWork";
 import { makeSubmitter } from "./aa";
@@ -20,14 +20,23 @@ function deps(): RunnerDeps {
 }
 
 // Operator-mode (Ledger fallback): pet-only, executed by the relayer via setPetOperatorForAll.
-async function runOperatorPet(e: Enrollment, now: number): Promise<void> {
-  if (e.lastRunAt !== null && now - e.lastRunAt < e.intervalSec) return; // not due
+async function runOperatorPet(e: Enrollment, now: number, force = false): Promise<RunResult> {
+  if (!force && e.lastRunAt !== null && now - e.lastRunAt < e.intervalSec) return { ran: false, reason: "not-due" };
   const snap = await snapshotFor(e.owner);
   const plan = computeWork({ pet: true, channel: false, claim: false }, snap, now);
-  if (!plan.pet.length) { recordRun(e.id, now); return; }
+  if (!plan.pet.length) { recordRun(e.id, now); return { ran: false, reason: "no-work" }; }
   const hash = await petAsOperator(e.owner, plan.pet);
   appendLog(e.owner, e.gotchiId, "run", `pet:${plan.pet.length} (operator)`, hash);
   recordRun(e.id, now);
+  return { ran: true, txHash: hash };
+}
+
+// Run ONE enrollment immediately — used by manual "run now" and by each cron iteration. `force`
+// skips the per-enrollment interval gate (on-chain cooldowns still apply). `d` is passed in by
+// the cron so a tick reuses one submitter; manual calls let it default.
+export async function runOne(e: Enrollment, now = Math.floor(Date.now() / 1000), opts: { force?: boolean } = {}, d?: RunnerDeps): Promise<RunResult> {
+  if (e.authMode === "operator") return runOperatorPet(e, now, opts.force);
+  return runEnrollment(e, d ?? deps(), now, opts);
 }
 
 // In-memory guards: never let a slow run overlap the next tick, and back a persistently-failing
@@ -49,8 +58,7 @@ export async function runAllDue(now = Math.floor(Date.now() / 1000)): Promise<vo
         const fail = failures.get(e.id);
         if (fail && nowMs < fail.nextAttempt) continue; // backing off after repeated failures
         try {
-          if (e.authMode === "operator") await runOperatorPet(e, now);
-          else await runEnrollment(e, d, now);
+          await runOne(e, now, {}, d);
           failures.delete(e.id); // recovered
         } catch (err) {
           const count = (fail?.count ?? 0) + 1;

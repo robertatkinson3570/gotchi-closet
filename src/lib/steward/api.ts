@@ -33,4 +33,5 @@ export const stewardApi = {
   resume: (id: number) => post("resume", { id }),
   revoke: (id: number) => post("revoke", { id }),
   editChores: (id: number, chores: Chores) => post("edit-chores", { id, chores }),
+  runNow: (id: number) => post("run-now", { id }) as Promise<{ ran: boolean; reason?: string; txHash?: string }>,
 };

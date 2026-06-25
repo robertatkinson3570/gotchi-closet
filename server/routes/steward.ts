@@ -1,7 +1,8 @@
 // server/routes/steward.ts
 import { Router } from "express";
 import { recoverMessageAddress } from "viem";
-import { enroll, listEnrollments, getEnrollment, setStatus, editChores, getLog, ChoreConflictError } from "../steward/db";
+import { enroll, listEnrollments, getEnrollment, getEnrollmentForRun, setStatus, editChores, getLog, ChoreConflictError } from "../steward/db";
+import { runOne } from "../steward/cron";
 import { parseEnrollBody } from "../steward/validate";
 import { soulStatsFor } from "../steward/soulStats";
 import { readOnChainSeal, readOnChainSealsBatch } from "../soul/seal";
@@ -86,6 +87,28 @@ function mutateStatus(req: any, res: any, status: "active" | "paused" | "revoked
 stewardRouter.post("/pause", (req, res) => mutateStatus(req, res, "paused"));
 stewardRouter.post("/resume", (req, res) => mutateStatus(req, res, "active"));
 stewardRouter.post("/revoke", (req, res) => mutateStatus(req, res, "revoked"));
+
+// Manual "run now": run a single enrollment immediately. Skips the per-enrollment interval gate,
+// but on-chain cooldowns still apply (computeWork only returns due work; simulate drops reverts),
+// so this can't pet a gotchi early or be used to drain gas. Rate-limited per enrollment.
+const lastManualRun = new Map<number, number>();
+const MANUAL_RUN_COOLDOWN_MS = 60_000;
+stewardRouter.post("/run-now", async (req, res) => {
+  const id = Number(req.body?.id);
+  const e = getEnrollmentForRun(id);
+  if (!e) return res.status(404).json({ error: "not found" });
+  if (e.status !== "active") return res.status(400).json({ error: "enrollment is not active" });
+  const now = Date.now();
+  if (now - (lastManualRun.get(id) ?? 0) < MANUAL_RUN_COOLDOWN_MS) {
+    return res.status(429).json({ error: "just ran — give it a minute" });
+  }
+  lastManualRun.set(id, now);
+  try {
+    res.json(await runOne(e, Math.floor(now / 1000), { force: true }));
+  } catch (err) {
+    res.status(502).json({ error: String((err as Error).message).slice(0, 200) });
+  }
+});
 
 stewardRouter.post("/edit-chores", (req, res) => {
   const id = Number(req.body?.id);

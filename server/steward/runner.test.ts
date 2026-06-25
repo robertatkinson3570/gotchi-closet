@@ -31,6 +31,13 @@ describe("runEnrollment", () => {
     expect(d.submit).not.toHaveBeenCalled();
   });
 
+  it("force (manual run-now) bypasses the not-due gate but still does the work", async () => {
+    const d = deps();
+    const r = await runEnrollment({ ...base, lastRunAt: NOW - 100 }, d, NOW, { force: true });
+    expect(r.ran).toBe(true);
+    expect(d.submit).toHaveBeenCalledTimes(1);
+  });
+
   it("skips and records the run when there is no work to do", async () => {
     const d = deps({
       snapshotFor: vi.fn(async () => ({

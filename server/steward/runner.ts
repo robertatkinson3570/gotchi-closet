@@ -19,9 +19,11 @@ export interface RunnerDeps {
 
 export interface RunResult { ran: boolean; reason?: "not-due" | "no-work" | "inactive"; txHash?: string; }
 
-export async function runEnrollment(e: Enrollment, deps: RunnerDeps, now: number): Promise<RunResult> {
+export async function runEnrollment(e: Enrollment, deps: RunnerDeps, now: number, opts: { force?: boolean } = {}): Promise<RunResult> {
   if (e.status !== "active") return { ran: false, reason: "inactive" };
-  if (e.lastRunAt !== null && now - e.lastRunAt < e.intervalSec) return { ran: false, reason: "not-due" };
+  // `force` (manual "run now") skips the per-enrollment interval gate, but on-chain cooldowns
+  // still apply: computeWork only includes due work, and simulate drops anything that'd revert.
+  if (!opts.force && e.lastRunAt !== null && now - e.lastRunAt < e.intervalSec) return { ran: false, reason: "not-due" };
 
   const snap = await deps.snapshotFor(e.owner);
   const plan = computeWork(e.chores, snap, now);

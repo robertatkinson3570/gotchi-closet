@@ -31,7 +31,7 @@ function nextRunLabel(e: Enrollment, nowSec: number): string {
 
 export function ManageView({ owner, enrollment, gotchi, onBack }: Props) {
   const { data: log = [] } = useStewardLog(owner);
-  const { pause, resume, revoke, editChores } = useStewardMutations(owner);
+  const { pause, resume, revoke, editChores, runNow } = useStewardMutations(owner);
   const active = enrollment.status === "active";
   const intervalH = Math.round(enrollment.intervalSec / 3600);
 
@@ -89,7 +89,27 @@ export function ManageView({ owner, enrollment, gotchi, onBack }: Props) {
       </div>
       {editChores.isError && <p className="mt-1 text-xs text-red-400">Another steward already covers that chore.</p>}
 
-      <h3 className="mt-5 text-sm font-semibold uppercase text-zinc-400">Steward's log</h3>
+      <div className="mt-5 flex items-center justify-between">
+        <h3 className="text-sm font-semibold uppercase text-zinc-400">Steward's log</h3>
+        {active && (
+          <button
+            onClick={() => runNow.mutate(enrollment.id)}
+            disabled={runNow.isPending}
+            className="rounded-lg bg-white/10 px-2.5 py-1 text-xs font-semibold text-zinc-200 hover:bg-white/15 disabled:opacity-50"
+            title="Run this steward right now. On-chain cooldowns still apply, so it only acts on work that's actually due."
+          >
+            {runNow.isPending ? "Running…" : "▶ Run now"}
+          </button>
+        )}
+      </div>
+      {runNow.isError && <p className="mt-1 text-xs text-red-400">{(runNow.error as Error)?.message || "Run failed"}</p>}
+      {runNow.isSuccess && (
+        <p className="mt-1 text-xs text-zinc-400">
+          {runNow.data?.ran
+            ? <>Ran ✓ {runNow.data.txHash && <a className="text-emerald-400" href={`https://basescan.org/tx/${runNow.data.txHash}`} target="_blank" rel="noreferrer">tx</a>}</>
+            : "Nothing due right now, everything's on cooldown. Check back when work is ready."}
+        </p>
+      )}
       {log.length === 0 && <p className="mt-1 text-xs text-zinc-500">No runs yet, work appears here with a tx link each time {gotchi.name} acts.</p>}
       <ul className="mt-2 space-y-1 font-mono text-xs">
         {log.slice(0, 20).map((l, i) => (

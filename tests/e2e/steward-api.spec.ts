@@ -103,6 +103,13 @@ test.describe("steward api e2e", () => {
     expect((await enroll(request, { gotchiId: 1, chores: PET, intervalSec: 28800 })).status()).toBe(400);
   });
 
+  test("run-now 404s on an unknown enrollment", async ({ request }) => {
+    // A real run hits the chain snapshot, so the deterministic suite only asserts wiring here;
+    // the force/no-work path is covered in server/steward/runner.test.ts.
+    const r = await request.post("/api/steward/run-now", { data: { id: 999999999 } });
+    expect(r.status()).toBe(404);
+  });
+
   test("souls returns {sealed, configured} shape", async ({ request }) => {
     const r = await (await request.get("/api/steward/souls?owner=0x1&ids=1589,4895")).json();
     expect(Array.isArray(r.sealed)).toBe(true);

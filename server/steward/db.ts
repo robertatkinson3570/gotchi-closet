@@ -142,6 +142,13 @@ export function listEnrollmentsForRun(owner: string): Enrollment[] {
     .all(owner.toLowerCase()) as Row[]).map((r) => toEnrollment(r, true));
 }
 
+// Run path only: a SINGLE enrollment with its decrypted session key, for manual "run now".
+// Never expose the result over the API (it carries the secret).
+export function getEnrollmentForRun(id: number): Enrollment | null {
+  const r = getStewardDb().prepare(`SELECT * FROM steward_enrollments WHERE id=?`).get(id) as Row | undefined;
+  return r ? toEnrollment(r, true) : null;
+}
+
 export function setStatus(id: number, status: Status): void {
   if (status === "revoked") {
     // Destroy the session key on revoke so it can NEVER sign again. The on-chain smart session
