@@ -202,6 +202,38 @@ function countdown(sec: number): string {
   return `${m}m`;
 }
 
+// Coarse asset-type grouping for the filter chips (mirrors the dapp's
+// itemType filter on /auction).
+function auctionGroup(a: Auction): string {
+  const c = a.contract;
+  if (c === AAVEGOTCHI_DIAMOND_BASE.toLowerCase()) return a.type === "erc721" ? "gotchi" : "wearable";
+  if (c === WEARABLE_DIAMOND_BASE.toLowerCase() || c === FORGE_DIAMOND_BASE.toLowerCase()) return "wearable";
+  if (c === REALM_DIAMOND_BASE.toLowerCase()) return "parcel";
+  if (c === INSTALLATION_DIAMOND_BASE.toLowerCase()) return "installation";
+  if (c === TILE_DIAMOND_BASE.toLowerCase()) return "tile";
+  return "other";
+}
+
+const AUCTION_GROUPS: { key: string; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "gotchi", label: "Gotchis" },
+  { key: "wearable", label: "Wearables" },
+  { key: "parcel", label: "Parcels" },
+  { key: "installation", label: "Installations" },
+  { key: "tile", label: "Tiles" },
+  { key: "other", label: "Other" },
+];
+
+// Watchlist parity with the dapp's auction star — local-only, per browser.
+const WATCH_KEY = "gc-auction-watchlist";
+function loadWatchlist(): Set<string> {
+  try {
+    return new Set<string>(JSON.parse(localStorage.getItem(WATCH_KEY) ?? "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
 // Name / rarity / slot / modifier line for 1155 item auction cards & modals.
 function ItemMetaLine({ meta }: { meta?: ItemMeta }) {
   if (!meta) return null;
@@ -267,18 +299,32 @@ function AuctionGridInner() {
   const [detail, setDetail] = useState<Auction | null>(null);
   const [bidValue, setBidValue] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("ends-asc");
+  const [search, setSearch] = useState("");
+  const [watchOnly, setWatchOnly] = useState(false);
+  const [watchlist, setWatchlist] = useState<Set<string>>(loadWatchlist);
+  const toggleWatch = (id: string) =>
+    setWatchlist((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try { localStorage.setItem(WATCH_KEY, JSON.stringify([...next])); } catch { /* private mode */ }
+      return next;
+    });
 
   const { data, isLoading, error, refetch } = useQuery({ queryKey: qk.gbmAuctions(), queryFn: fetchAuctions, staleTime: 30_000 });
-  const rows = useMemo(() => (data ?? []).filter((a) => a.startsAt <= nowSec), [data, nowSec]);
+  const liveRows = useMemo(() => (data ?? []).filter((a) => a.startsAt <= nowSec), [data, nowSec]);
   // Scheduled-but-not-started auctions were silently hidden before; the dapp
   // shows them under an "Upcoming" status, so surface them the same way.
   const upcoming = useMemo(() => (data ?? []).filter((a) => a.startsAt > nowSec), [data, nowSec]);
 
   // Batch-fetch stats for all gotchi auctions so cards are scannable without
-  // opening each one.
+  // opening each one. Derived from the unfiltered set so search/filter don't
+  // rekey the query.
   const gotchiIds = useMemo(
-    () => rows.filter((a) => a.contract === AAVEGOTCHI_DIAMOND_BASE.toLowerCase() && a.type === "erc721").map((a) => a.tokenId),
-    [rows]
+    () => liveRows.filter((a) => a.contract === AAVEGOTCHI_DIAMOND_BASE.toLowerCase() && a.type === "erc721").map((a) => a.tokenId),
+    [liveRows]
   );
   const { data: gotchiInfo } = useQuery({
     queryKey: ["auction-gotchi-batch", gotchiIds.join(",")],
@@ -291,6 +337,45 @@ function AuctionGridInner() {
   // wearables db merged with subgraph itemTypes (adds consumables), one cached
   // fetch for the whole session.
   const { data: itemMetaMap } = useQuery({ queryKey: ["item-meta-map"], queryFn: fetchItemMetaMap, staleTime: Infinity });
+
+  const groupCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: liveRows.length };
+    for (const a of liveRows) {
+      const g = auctionGroup(a);
+      counts[g] = (counts[g] ?? 0) + 1;
+    }
+    return counts;
+  }, [liveRows]);
+
+  // Filter → search → sort, mirroring the dapp's auction toolbar.
+  const rows = useMemo(() => {
+    let out = liveRows;
+    if (typeFilter !== "all") out = out.filter((a) => auctionGroup(a) === typeFilter);
+    if (watchOnly) out = out.filter((a) => watchlist.has(a.id));
+    const q = search.trim().toLowerCase();
+    if (q) {
+      const idQ = q.replace(/^#/, "");
+      out = out.filter((a) => {
+        if (a.tokenId.includes(idQ)) return true;
+        if (isItemAuction(a)) {
+          const name = (itemMetaMap?.get(Number(a.tokenId)) ?? itemMetaSync(a.tokenId))?.name.toLowerCase();
+          if (name?.includes(q)) return true;
+        }
+        const gname = gotchiInfo?.[a.tokenId]?.name?.toLowerCase();
+        return !!gname && gname.includes(q);
+      });
+    }
+    const sorted = [...out];
+    switch (sortBy) {
+      case "ends-desc": sorted.sort((x, y) => y.endsAt - x.endsAt); break;
+      case "bid-desc": sorted.sort((x, y) => Number(y.highestBid) - Number(x.highestBid)); break;
+      case "bid-asc": sorted.sort((x, y) => Number(x.highestBid) - Number(y.highestBid)); break;
+      case "newest": sorted.sort((x, y) => y.startsAt - x.startsAt); break;
+      default: sorted.sort((x, y) => x.endsAt - y.endsAt);
+    }
+    return sorted;
+  }, [liveRows, typeFilter, watchOnly, watchlist, search, sortBy, itemMetaMap, gotchiInfo]);
+  const filtersActive = typeFilter !== "all" || watchOnly || search.trim() !== "";
 
   const { data: claimable, refetch: refetchClaim } = useQuery({
     queryKey: ["gbm-claimable", address?.toLowerCase()],
@@ -370,11 +455,55 @@ function AuctionGridInner() {
   const live = detail ? rows.find((r) => r.id === detail.id) ?? detail : null;
   const claimRows = claimable ?? [];
 
-  if (rows.length === 0 && claimRows.length === 0 && upcoming.length === 0)
+  if (liveRows.length === 0 && claimRows.length === 0 && upcoming.length === 0)
     return <div className="text-center py-12 text-muted-foreground text-sm">No live auctions right now.</div>;
 
   return (
     <>
+      <div className="px-2 pt-2 flex flex-wrap items-center gap-1.5">
+        {AUCTION_GROUPS.map((g) => {
+          const count = groupCounts[g.key] ?? 0;
+          if (count === 0 && g.key !== "all") return null;
+          return (
+            <button
+              key={g.key}
+              type="button"
+              onClick={() => setTypeFilter(g.key)}
+              className={`h-7 px-2.5 rounded-md text-[11px] font-medium border ${typeFilter === g.key ? "bg-primary/15 text-primary border-primary/40" : "border-border/40 text-muted-foreground hover:bg-muted/40"}`}
+            >
+              {g.label} <span className="opacity-60">{count}</span>
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setWatchOnly((v) => !v)}
+          title="Only show watched auctions"
+          className={`h-7 px-2.5 rounded-md text-[11px] font-medium border ${watchOnly ? "bg-amber-500/15 text-amber-500 border-amber-500/40" : "border-border/40 text-muted-foreground hover:bg-muted/40"}`}
+        >
+          ★ Watchlist{watchlist.size > 0 ? ` ${watchlist.size}` : ""}
+        </button>
+        <div className="ml-auto flex items-center gap-1.5">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search name or #id"
+            className="h-7 w-40 rounded-md border border-border/40 bg-background px-2 text-[11px]"
+          />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="h-7 rounded-md border border-border/40 bg-background px-1.5 text-[11px] text-muted-foreground"
+            title="Sort auctions"
+          >
+            <option value="ends-asc">Ends soonest</option>
+            <option value="ends-desc">Ends latest</option>
+            <option value="bid-desc">Top bid: high → low</option>
+            <option value="bid-asc">Top bid: low → high</option>
+            <option value="newest">Newest</option>
+          </select>
+        </div>
+      </div>
       {claimRows.length > 0 && (
         <div className="p-2">
           <div className="flex items-center gap-1.5 px-1 pb-1.5 text-sm font-semibold text-amber-500"><Gavel className="w-4 h-4" /> Ready to claim ({claimRows.length})</div>
@@ -394,7 +523,9 @@ function AuctionGridInner() {
         </div>
       )}
       {rows.length === 0 ? (
-        <div className="text-center py-10 text-muted-foreground text-sm">No live auctions right now.</div>
+        <div className="text-center py-10 text-muted-foreground text-sm">
+          {filtersActive ? "No auctions match the current filters." : "No live auctions right now."}
+        </div>
       ) : (
       <div className="p-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {rows.map((a) => {
@@ -413,6 +544,16 @@ function AuctionGridInner() {
                     <span title="GBM bid-to-earn — outbid bidders earn GHST incentives" className="text-[9px] px-1 rounded bg-fuchsia-500/15 text-fuchsia-400">🎁</span>
                   )}
                   <span className="uppercase text-[9px] bg-muted/50 px-1 rounded">{assetLabel(a)}</span>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); toggleWatch(a.id); }}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); toggleWatch(a.id); } }}
+                    title={watchlist.has(a.id) ? "Remove from watchlist" : "Add to watchlist"}
+                    className={`cursor-pointer text-[12px] leading-none ${watchlist.has(a.id) ? "text-amber-400" : "text-muted-foreground/50 hover:text-amber-400"}`}
+                  >
+                    {watchlist.has(a.id) ? "★" : "☆"}
+                  </span>
                 </span>
               </div>
               <div className="h-24 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
