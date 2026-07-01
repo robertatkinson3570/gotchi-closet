@@ -16,6 +16,9 @@ import {
   REALM_DIAMOND_BASE,
   INSTALLATION_DIAMOND_BASE,
   TILE_DIAMOND_BASE,
+  WEARABLE_DIAMOND_BASE,
+  FORGE_DIAMOND_BASE,
+  FAKE_GOTCHIS_NFT_BASE,
 } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
@@ -26,7 +29,7 @@ import { CORE_SUBGRAPH } from "@/lib/subgraph";
 import { GotchiExplorerCard } from "./GotchiExplorerCard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
-import { fetchWearableMetadata, getRarityColor, getRarityLabel, describeSlots, type WearableMetadata } from "@/lib/wearable-metadata";
+import { fetchItemMetaMap, itemMetaSync, RARITY_COLORS, type ItemMeta } from "@/lib/explorer/itemMeta";
 
 // The GBM diamond on Base exposes commitBid with selector 0xd2f699fc:
 // commitBid(auctionId, bidAmount, lastHighestBid, tokenContract, tokenId, amount, signature).
@@ -75,11 +78,12 @@ type Auction = {
   startBidPrice: string;
   hammerTimeDuration: number;
   endsAtOriginal: number;
+  dueIncentives: string;
 };
 
 async function fetchAuctions(): Promise<Auction[]> {
   const now = Math.floor(Date.now() / 1000);
-  const query = `query Live($now: BigInt!){ auctions(first: 200, where: { cancelled: false, claimed: false, endsAt_gt: $now }, orderBy: endsAt, orderDirection: asc){ id type tokenId contractAddress highestBid highestBidder seller totalBids quantity startsAt endsAt buyNowPrice stepMin bidDecimals startBidPrice hammerTimeDuration endsAtOriginal } }`;
+  const query = `query Live($now: BigInt!){ auctions(first: 200, where: { cancelled: false, claimed: false, endsAt_gt: $now }, orderBy: endsAt, orderDirection: asc){ id type tokenId contractAddress highestBid highestBidder seller totalBids quantity startsAt endsAt buyNowPrice stepMin bidDecimals startBidPrice hammerTimeDuration endsAtOriginal dueIncentives } }`;
   const res = await fetch(GBM_BAAZAAR_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -105,6 +109,7 @@ async function fetchAuctions(): Promise<Auction[]> {
     startBidPrice: a.startBidPrice ?? "0",
     hammerTimeDuration: Number(a.hammerTimeDuration) || 0,
     endsAtOriginal: Number(a.endsAtOriginal) || Number(a.endsAt),
+    dueIncentives: a.dueIncentives ?? "0",
   }));
 }
 
@@ -131,7 +136,7 @@ async function fetchClaimable(address: string): Promise<Auction[]> {
   const res = await fetch(GBM_BAAZAAR_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q, variables: { now: String(now), a } }) });
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");
-  const map = (x: any): Auction => ({ id: x.id, type: x.type, tokenId: x.tokenId, contract: (x.contractAddress ?? "").toLowerCase(), highestBid: x.highestBid ?? "0", highestBidder: (x.highestBidder ?? "").toLowerCase(), seller: (x.seller ?? "").toLowerCase(), totalBids: Number(x.totalBids) || 0, quantity: x.quantity ?? "1", startsAt: Number(x.startsAt), endsAt: Number(x.endsAt), buyNowPrice: x.buyNowPrice ?? "0", stepMin: "0", bidDecimals: "0", startBidPrice: "0", hammerTimeDuration: 0, endsAtOriginal: Number(x.endsAt) });
+  const map = (x: any): Auction => ({ id: x.id, type: x.type, tokenId: x.tokenId, contract: (x.contractAddress ?? "").toLowerCase(), highestBid: x.highestBid ?? "0", highestBidder: (x.highestBidder ?? "").toLowerCase(), seller: (x.seller ?? "").toLowerCase(), totalBids: Number(x.totalBids) || 0, quantity: x.quantity ?? "1", startsAt: Number(x.startsAt), endsAt: Number(x.endsAt), buyNowPrice: x.buyNowPrice ?? "0", stepMin: "0", bidDecimals: "0", startBidPrice: "0", hammerTimeDuration: 0, endsAtOriginal: Number(x.endsAt), dueIncentives: "0" });
   const seen = new Set<string>();
   const out: Auction[] = [];
   for (const x of [...(json.data?.asSeller ?? []), ...(json.data?.asBidder ?? [])]) {
@@ -148,8 +153,23 @@ function assetLabel(a: Auction): string {
   if (c === REALM_DIAMOND_BASE.toLowerCase()) return "Parcel";
   if (c === INSTALLATION_DIAMOND_BASE.toLowerCase()) return "Installation";
   if (c === TILE_DIAMOND_BASE.toLowerCase()) return "Tile";
-  if (c === AAVEGOTCHI_DIAMOND_BASE.toLowerCase()) return a.type === "erc1155" ? "Wearable / Item" : "Aavegotchi";
+  if (c === WEARABLE_DIAMOND_BASE.toLowerCase()) return "Wearable";
+  if (c === FORGE_DIAMOND_BASE.toLowerCase()) return "Forge Item";
+  if (c === FAKE_GOTCHIS_NFT_BASE.toLowerCase()) return "FAKE Gotchi";
+  if (c === AAVEGOTCHI_DIAMOND_BASE.toLowerCase()) return a.type === "erc1155" ? "Consumable" : "Aavegotchi";
   return "NFT";
+}
+
+// True when the auctioned token id is an ERC1155 item type we can resolve
+// names/rarity for (wearables live on the wearable diamond; consumables on the
+// aavegotchi diamond; forge schematics share wearable ids on the forge diamond).
+function isItemAuction(a: Auction): boolean {
+  const c = a.contract;
+  return (
+    c === WEARABLE_DIAMOND_BASE.toLowerCase() ||
+    c === FORGE_DIAMOND_BASE.toLowerCase() ||
+    (c === AAVEGOTCHI_DIAMOND_BASE.toLowerCase() && a.type === "erc1155")
+  );
 }
 
 // Auction items span many contracts; render the known ones, fall back for the
@@ -160,6 +180,9 @@ function AuctionItemImage({ a }: { a: Auction }) {
   if (c === REALM_DIAMOND_BASE.toLowerCase()) return <AssetImage candidates={parcelImageCandidates(a.tokenId)} alt={`#${a.tokenId}`} className="max-h-full max-w-full object-contain rounded" />;
   if (c === INSTALLATION_DIAMOND_BASE.toLowerCase()) return <AssetImage candidates={installationImageCandidates(a.tokenId)} alt={`#${a.tokenId}`} className={cls} />;
   if (c === TILE_DIAMOND_BASE.toLowerCase()) return <AssetImage candidates={tileImageCandidates(a.tokenId)} alt={`#${a.tokenId}`} className={cls} />;
+  if (c === WEARABLE_DIAMOND_BASE.toLowerCase() || c === FORGE_DIAMOND_BASE.toLowerCase()) {
+    return <AssetImage candidates={itemImageCandidates(a.tokenId)} alt={`#${a.tokenId}`} className={cls} />;
+  }
   if (c === AAVEGOTCHI_DIAMOND_BASE.toLowerCase()) {
     return a.type === "erc1155"
       ? <AssetImage candidates={itemImageCandidates(a.tokenId)} alt={`#${a.tokenId}`} className={cls} />
@@ -177,6 +200,21 @@ function countdown(sec: number): string {
   if (d > 0) return `${d}d ${h}h`;
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
+}
+
+// Name / rarity / slot / modifier line for 1155 item auction cards & modals.
+function ItemMetaLine({ meta }: { meta?: ItemMeta }) {
+  if (!meta) return null;
+  return (
+    <div className="space-y-0.5">
+      <div className="text-[10px] font-semibold truncate" title={meta.name}>{meta.name}</div>
+      <div className="text-[9px] text-muted-foreground flex items-center gap-1 flex-wrap">
+        {meta.rarity && <span className={`font-semibold ${RARITY_COLORS[meta.rarity] ?? ""}`}>{meta.rarity}</span>}
+        {meta.slot && <span>· {meta.slot}</span>}
+        {meta.modifiers.length > 0 && <span>· {meta.modifiers.join(" ")}</span>}
+      </div>
+    </div>
+  );
 }
 
 const AUCTION_TRAITS = ["NRG", "AGG", "SPK", "BRN", "EYS", "EYC"];
@@ -232,6 +270,9 @@ function AuctionGridInner() {
 
   const { data, isLoading, error, refetch } = useQuery({ queryKey: qk.gbmAuctions(), queryFn: fetchAuctions, staleTime: 30_000 });
   const rows = useMemo(() => (data ?? []).filter((a) => a.startsAt <= nowSec), [data, nowSec]);
+  // Scheduled-but-not-started auctions were silently hidden before; the dapp
+  // shows them under an "Upcoming" status, so surface them the same way.
+  const upcoming = useMemo(() => (data ?? []).filter((a) => a.startsAt > nowSec), [data, nowSec]);
 
   // Batch-fetch stats for all gotchi auctions so cards are scannable without
   // opening each one.
@@ -246,17 +287,10 @@ function AuctionGridInner() {
     queryFn: () => fetchGotchiBatch(gotchiIds),
   });
 
-  // Batch-fetch metadata for all wearable auctions (erc1155) so cards show rarity/slot
-  const wearableIds = useMemo(
-    () => rows.filter((a) => a.contract === AAVEGOTCHI_DIAMOND_BASE.toLowerCase() && a.type === "erc1155").map((a) => a.tokenId),
-    [rows]
-  );
-  const { data: wearableInfo } = useQuery({
-    queryKey: ["auction-wearable-batch", wearableIds.join(",")],
-    enabled: wearableIds.length > 0,
-    staleTime: 5 * 60_000,
-    queryFn: () => fetchWearableMetadata(wearableIds),
-  });
+  // Item-type metadata (names/slots/rarity) for 1155 auction cards — bundled
+  // wearables db merged with subgraph itemTypes (adds consumables), one cached
+  // fetch for the whole session.
+  const { data: itemMetaMap } = useQuery({ queryKey: ["item-meta-map"], queryFn: fetchItemMetaMap, staleTime: Infinity });
 
   const { data: claimable, refetch: refetchClaim } = useQuery({
     queryKey: ["gbm-claimable", address?.toLowerCase()],
@@ -336,7 +370,7 @@ function AuctionGridInner() {
   const live = detail ? rows.find((r) => r.id === detail.id) ?? detail : null;
   const claimRows = claimable ?? [];
 
-  if (rows.length === 0 && claimRows.length === 0)
+  if (rows.length === 0 && claimRows.length === 0 && upcoming.length === 0)
     return <div className="text-center py-12 text-muted-foreground text-sm">No live auctions right now.</div>;
 
   return (
@@ -372,9 +406,14 @@ function AuctionGridInner() {
               onClick={() => { setDetail(a); setBidValue(""); }}
               className="text-left rounded-lg border border-border/40 bg-background/60 p-3 space-y-1.5 hover:-translate-y-0.5 hover:ring-1 hover:ring-primary/40 transition-all"
             >
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-mono text-muted-foreground">#{a.tokenId}</span>
-                <span className="uppercase text-[9px] bg-muted/50 px-1 rounded">{a.type}</span>
+              <div className="flex items-center justify-between gap-1 text-xs">
+                <span className="font-mono text-muted-foreground truncate">#{a.tokenId}{Number(a.quantity) > 1 ? ` ×${a.quantity}` : ""}</span>
+                <span className="flex items-center gap-1 shrink-0">
+                  {BigInt(a.dueIncentives || "0") > 0n && (
+                    <span title="GBM bid-to-earn — outbid bidders earn GHST incentives" className="text-[9px] px-1 rounded bg-fuchsia-500/15 text-fuchsia-400">🎁</span>
+                  )}
+                  <span className="uppercase text-[9px] bg-muted/50 px-1 rounded">{assetLabel(a)}</span>
+                </span>
               </div>
               <div className="h-24 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
                 <AuctionItemImage a={a} />
@@ -382,20 +421,8 @@ function AuctionGridInner() {
               {(() => {
                 const g = gotchiInfo?.[a.tokenId];
                 if (!g) {
-                  // Show wearable details if available
-                  const w = wearableInfo?.[a.tokenId];
-                  if (!w) return null;
-                  return (
-                    <div className="space-y-0.5">
-                      <div className="text-[10px] font-semibold truncate" title={w.name}>{w.name}</div>
-                      <div className={`text-[9px] px-1 rounded inline-block ${getRarityColor(w.baseRarity)}`}>
-                        {getRarityLabel(w.baseRarity)}
-                      </div>
-                      <div className="text-[9px] text-muted-foreground truncate" title={describeSlots(w.slotPositionsIndex)}>
-                        {describeSlots(w.slotPositionsIndex)}
-                      </div>
-                    </div>
-                  );
+                  if (!isItemAuction(a)) return null;
+                  return <ItemMetaLine meta={itemMetaMap?.get(Number(a.tokenId)) ?? itemMetaSync(a.tokenId)} />;
                 }
                 return (
                   <div className="space-y-0.5">
@@ -422,6 +449,25 @@ function AuctionGridInner() {
       </div>
       )}
 
+      {upcoming.length > 0 && (
+        <div className="p-2">
+          <div className="flex items-center gap-1.5 px-1 pb-1.5 text-sm font-semibold text-sky-400"><Gavel className="w-4 h-4" /> Upcoming ({upcoming.length})</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {upcoming.map((a) => (
+              <div key={a.id} className="rounded-lg border border-border/40 bg-background/40 p-3 space-y-1.5 opacity-80">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-mono text-muted-foreground">#{a.tokenId}{Number(a.quantity) > 1 ? ` ×${a.quantity}` : ""}</span>
+                  <span className="uppercase text-[9px] bg-muted/50 px-1 rounded">{assetLabel(a)}</span>
+                </div>
+                <div className="h-24 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40"><AuctionItemImage a={a} /></div>
+                {isItemAuction(a) && <ItemMetaLine meta={itemMetaMap?.get(Number(a.tokenId)) ?? itemMetaSync(a.tokenId)} />}
+                <div className="text-[11px] text-sky-400">Starts in {countdown(a.startsAt - nowSec)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {live && (
         <AuctionDetailModal
           a={live}
@@ -432,7 +478,7 @@ function AuctionGridInner() {
           onBid={() => placeBid(live)}
           onBuyNow={() => buyItNow(live)}
           onClose={() => setDetail(null)}
-          wearableInfo={wearableInfo}
+          meta={isItemAuction(live) ? itemMetaMap?.get(Number(live.tokenId)) ?? itemMetaSync(live.tokenId) : undefined}
         />
       )}
     </>
@@ -440,11 +486,11 @@ function AuctionGridInner() {
 }
 
 function AuctionDetailModal({
-  a, nowSec, busy, bidValue, setBidValue, onBid, onBuyNow, onClose, wearableInfo,
+  a, nowSec, busy, bidValue, setBidValue, onBid, onBuyNow, onClose, meta,
 }: {
   a: Auction; nowSec: number; busy: boolean; bidValue: string;
   setBidValue: (v: string) => void; onBid: () => void; onBuyNow: () => void; onClose: () => void;
-  wearableInfo?: Record<string, WearableMetadata>;
+  meta?: ItemMeta;
 }) {
   const left = a.endsAt - nowSec;
   // GBM minimum next bid: ceil(highestBid * (bidDecimals + stepMin) / bidDecimals);
@@ -481,7 +527,7 @@ function AuctionDetailModal({
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-3" onClick={onClose}>
       <div className="w-[min(560px,96vw)] max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 sticky top-0 bg-background z-10">
-          <div className="text-base font-bold">{assetLabel(a)} #{a.tokenId} · Auction</div>
+          <div className="text-base font-bold truncate pr-2">{meta?.name ?? assetLabel(a)} #{a.tokenId} · Auction</div>
           <button onClick={onClose} className="p-1.5 rounded hover:bg-muted/50"><X className="w-5 h-5" /></button>
         </div>
 
@@ -493,20 +539,17 @@ function AuctionDetailModal({
               <div className="w-40 h-40 mx-auto flex items-center justify-center rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
                 <AuctionItemImage a={a} />
               </div>
-              {wearableInfo?.[a.tokenId] && (
-                <div className="rounded-lg border border-border/60 p-3 space-y-2">
-                  <div className="text-sm font-semibold">{wearableInfo[a.tokenId].name}</div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs px-2 py-1 rounded ${getRarityColor(wearableInfo[a.tokenId].baseRarity)}`}>
-                      {getRarityLabel(wearableInfo[a.tokenId].baseRarity)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{describeSlots(wearableInfo[a.tokenId].slotPositionsIndex)}</span>
+              {meta && (
+                <div className="rounded-lg border border-border/60 p-3 space-y-1.5">
+                  <div className="text-sm font-semibold">{meta.name}</div>
+                  <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                    {meta.rarity && <span className={`px-2 py-0.5 rounded bg-muted/40 font-semibold ${RARITY_COLORS[meta.rarity] ?? ""}`}>{meta.rarity}</span>}
+                    {meta.slot && <span className="text-muted-foreground">{meta.slot}</span>}
+                    {meta.modifiers.map((m) => (
+                      <span key={m} className="px-1.5 py-0.5 rounded bg-muted/40 text-muted-foreground">{m}</span>
+                    ))}
                   </div>
-                  {wearableInfo[a.tokenId].rarityScoreModifier !== 0 && (
-                    <div className="text-xs text-muted-foreground">
-                      Rarity Score Modifier: {wearableInfo[a.tokenId].rarityScoreModifier > 0 ? '+' : ''}{wearableInfo[a.tokenId].rarityScoreModifier}
-                    </div>
-                  )}
+                  {Number(a.quantity) > 1 && <div className="text-xs text-muted-foreground">Quantity ×{a.quantity}</div>}
                 </div>
               )}
             </>
