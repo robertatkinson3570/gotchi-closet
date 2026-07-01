@@ -9,6 +9,8 @@ import { CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIA
 import { GBM_SUBGRAPH } from "@/lib/subgraph";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "@/components/explorer/AssetImage";
+import { fetchItemMetaMap, itemMetaSync, RARITY_COLORS, type ItemMeta } from "@/lib/explorer/itemMeta";
+import { toSlug } from "@/lib/slug";
 
 type GotchiArt = { numericTraits: number[]; equippedWearables: number[]; hauntId?: number; collateral?: string };
 type Feed = "sale" | "offer" | "auction";
@@ -25,14 +27,22 @@ type Row = {
   time: number;
   status?: string;
   gotchi?: GotchiArt;
+  gotchiName?: string;
 };
 
-const CATEGORY_FILTERS: { key: string; label: string; cats: number[] | null }[] = [
-  { key: "all", label: "All", cats: null },
-  { key: "gotchi", label: "Gotchis", cats: [BAAZAAR_CATEGORY.AAVEGOTCHI] },
-  { key: "wearable", label: "Wearables", cats: [BAAZAAR_CATEGORY.WEARABLE] },
-  { key: "item", label: "Items", cats: [BAAZAAR_CATEGORY.CONSUMABLE] },
-  { key: "parcel", label: "Parcels", cats: [BAAZAAR_CATEGORY.REALM] },
+// Category filters must match on (kind, category) pairs — the numeric
+// category space collides across ERC721/ERC1155 (e.g. REALM=4 vs INSTALLATION=4).
+const CATEGORY_FILTERS: { key: string; label: string; match: ((s: Row) => boolean) | null }[] = [
+  { key: "all", label: "All", match: null },
+  { key: "gotchi", label: "Gotchis", match: (s) => s.kind === "erc721" && s.category === BAAZAAR_CATEGORY.AAVEGOTCHI },
+  { key: "portal", label: "Portals", match: (s) => s.kind === "erc721" && (s.category === 0 || s.category === 2) },
+  { key: "wearable", label: "Wearables", match: (s) => s.kind === "erc1155" && s.category === BAAZAAR_CATEGORY.WEARABLE },
+  { key: "consumable", label: "Consumables", match: (s) => s.kind === "erc1155" && s.category === BAAZAAR_CATEGORY.CONSUMABLE },
+  { key: "parcel", label: "Parcels", match: (s) => s.kind === "erc721" && s.category === BAAZAAR_CATEGORY.REALM },
+  { key: "installation", label: "Installations", match: (s) => s.kind === "erc1155" && s.category === BAAZAAR_CATEGORY.INSTALLATION },
+  { key: "tile", label: "Tiles", match: (s) => s.kind === "erc1155" && s.category === BAAZAAR_CATEGORY.TILE },
+  { key: "forge", label: "Forge", match: (s) => s.kind === "erc1155" && [7, 8, 9, 10, 11].includes(s.category) },
+  { key: "fake", label: "FAKE", match: (s) => (s.kind === "erc721" && s.category === 5) || (s.kind === "erc1155" && s.category === 6) },
 ];
 const FEEDS: { key: Feed; label: string; icon: typeof Tag }[] = [
   { key: "sale", label: "Sales", icon: Tag },
@@ -61,11 +71,34 @@ function statusClass(status?: string): string {
 
 // BAAZAAR_CATEGORY collides REALM/INSTALLATION at 4, so labels are kind-aware.
 function catLabel(s: Row): string {
-  if (s.kind === "erc721") return s.category === BAAZAAR_CATEGORY.AAVEGOTCHI ? "Gotchi" : s.category === BAAZAAR_CATEGORY.REALM ? "Parcel" : "Item";
+  if (s.kind === "erc721") {
+    if (s.category === BAAZAAR_CATEGORY.AAVEGOTCHI) return "Gotchi";
+    if (s.category === BAAZAAR_CATEGORY.REALM) return "Parcel";
+    if (s.category === 0) return "Closed Portal";
+    if (s.category === 2) return "Open Portal";
+    if (s.category === 5) return "FAKE Gotchi";
+    return "Item";
+  }
   if (s.category === BAAZAAR_CATEGORY.WEARABLE) return "Wearable";
+  if (s.category === BAAZAAR_CATEGORY.CONSUMABLE) return "Consumable";
   if (s.category === BAAZAAR_CATEGORY.INSTALLATION) return "Installation";
   if (s.category === BAAZAAR_CATEGORY.TILE) return "Tile";
+  if (s.category === 6) return "FAKE Card";
+  // Forge categories verified from live Base purchases: 8 = schematic
+  // (wearable-id token), 10 = essence, 11 = core (1e9+ token ids).
+  if (s.category === 7) return "Alloy";
+  if (s.category === 8) return "Schematic";
+  if (s.category === 9) return "Geode";
+  if (s.category === 10) return "Essence";
+  if (s.category === 11) return "Core";
+  if (s.category === 12) return "Guardian Skin";
   return "Item";
+}
+
+// Forge schematics reuse their wearable's type id; suffix the name like the dapp.
+function metaName(s: Row, meta?: ItemMeta): string | undefined {
+  if (!meta) return undefined;
+  return s.kind === "erc1155" && s.category === 8 ? `${meta.name} Schematic` : meta.name;
 }
 
 async function gql(url: string, query: string) {
@@ -78,32 +111,39 @@ async function gql(url: string, query: string) {
 // Offers/auctions carry only a token id, so batch-fetch gotchi traits to render
 // art client-side (matching Sales) instead of hitting the server SVG endpoint.
 async function enrichGotchiArt(rows: Row[]): Promise<Row[]> {
-  const ids = [...new Set(rows.filter((r) => r.kind === "erc721" && r.category === BAAZAAR_CATEGORY.AAVEGOTCHI && !r.gotchi).map((r) => r.tokenId))];
+  const ids = [...new Set(rows.filter((r) => r.kind === "erc721" && r.category === BAAZAAR_CATEGORY.AAVEGOTCHI && (!r.gotchi || !r.gotchiName)).map((r) => r.tokenId))];
   if (!ids.length) return rows;
-  const d = await gql(CORE_SUBGRAPH_URL, `query { aavegotchis(first: 1000, where: { id_in: [${ids.map((i) => `"${i}"`).join(",")}] }) { id numericTraits withSetsNumericTraits equippedWearables hauntId collateral } }`);
-  const map = new Map<string, GotchiArt>();
-  for (const g of d?.aavegotchis ?? []) map.set(g.id, { numericTraits: (g.withSetsNumericTraits ?? g.numericTraits ?? []).map((n: any) => Number(n)), equippedWearables: (g.equippedWearables ?? []).map((n: any) => Number(n)), hauntId: g.hauntId != null ? Number(g.hauntId) : undefined, collateral: g.collateral });
-  return rows.map((r) => (r.gotchi || !map.has(r.tokenId) ? r : { ...r, gotchi: map.get(r.tokenId) }));
+  const d = await gql(CORE_SUBGRAPH_URL, `query { aavegotchis(first: 1000, where: { id_in: [${ids.map((i) => `"${i}"`).join(",")}] }) { id name numericTraits withSetsNumericTraits equippedWearables hauntId collateral } }`);
+  const map = new Map<string, { art: GotchiArt; name?: string }>();
+  for (const g of d?.aavegotchis ?? []) map.set(g.id, { art: { numericTraits: (g.withSetsNumericTraits ?? g.numericTraits ?? []).map((n: any) => Number(n)), equippedWearables: (g.equippedWearables ?? []).map((n: any) => Number(n)), hauntId: g.hauntId != null ? Number(g.hauntId) : undefined, collateral: g.collateral }, name: g.name || undefined });
+  return rows.map((r) => {
+    const hit = map.get(r.tokenId);
+    if (!hit) return r;
+    return { ...r, gotchi: r.gotchi ?? hit.art, gotchiName: r.gotchiName ?? hit.name };
+  });
 }
 
 async function fetchSales(): Promise<Row[]> {
   const d = await gql(CORE_SUBGRAPH_URL, `query {
     erc721Listings(first: 100, where: { timePurchased_gt: "0" }, orderBy: timePurchased, orderDirection: desc) {
       id category tokenId priceInWei seller buyer recipient timePurchased
-      gotchi { numericTraits withSetsNumericTraits equippedWearables hauntId collateral }
+      gotchi { name numericTraits withSetsNumericTraits equippedWearables hauntId collateral }
     }
-    erc1155Listings(first: 100, where: { sold: true }, orderBy: timeLastPurchased, orderDirection: desc) {
-      id category erc1155TypeId quantity priceInWei seller timeLastPurchased
+    erc1155Purchases(first: 100, orderBy: timeLastPurchased, orderDirection: desc) {
+      id category erc1155TypeId quantity priceInWei seller buyer recipient timeLastPurchased
     }
   }`);
   const e721: Row[] = (d?.erc721Listings ?? []).map((l: any) => ({
     id: `s721-${l.id}`, feed: "sale" as const, kind: "erc721" as const, category: Number(l.category), tokenId: l.tokenId, quantity: 1,
     priceWei: l.priceInWei, from: l.seller, to: l.recipient || l.buyer, time: Number(l.timePurchased),
     gotchi: l.gotchi ? { numericTraits: (l.gotchi.withSetsNumericTraits ?? l.gotchi.numericTraits ?? []).map((n: any) => Number(n)), equippedWearables: (l.gotchi.equippedWearables ?? []).map((n: any) => Number(n)), hauntId: l.gotchi.hauntId != null ? Number(l.gotchi.hauntId) : undefined, collateral: l.gotchi.collateral } : undefined,
+    gotchiName: l.gotchi?.name || undefined,
   }));
-  const e1155: Row[] = (d?.erc1155Listings ?? []).map((l: any) => ({
+  // erc1155Purchases (one row per fill) carries the buyer, which
+  // erc1155Listings lacks — the dapp's activity feed shows both sides.
+  const e1155: Row[] = (d?.erc1155Purchases ?? []).map((l: any) => ({
     id: `s1155-${l.id}`, feed: "sale" as const, kind: "erc1155" as const, category: Number(l.category), tokenId: l.erc1155TypeId, quantity: Number(l.quantity) || 1,
-    priceWei: l.priceInWei, from: l.seller, to: "", time: Number(l.timeLastPurchased),
+    priceWei: l.priceInWei, from: l.seller, to: l.recipient || l.buyer || "", time: Number(l.timeLastPurchased),
   }));
   return [...e721, ...e1155].sort((a, b) => b.time - a.time);
 }
@@ -209,15 +249,34 @@ export default function ActivityPage() {
   const [cat, setCat] = useState("all");
   const [offerStatusF, setOfferStatusF] = useState<string>("Open");
   const [detail, setDetail] = useState<Row | null>(null);
+  const [search, setSearch] = useState("");
   const { data, isLoading, error } = useQuery({ queryKey: ["activity", feed], queryFn: FETCHERS[feed], staleTime: 30_000 });
+  // Item names/slots/rarity for 1155 rows (wearables, consumables, …) — one
+  // cached fetch (bundled db + subgraph itemTypes) for the session.
+  const { data: metaMap } = useQuery({ queryKey: ["item-meta-map"], queryFn: fetchItemMetaMap, staleTime: Infinity });
+
+  const rowMeta = (s: Row): ItemMeta | undefined =>
+    s.kind === "erc1155" && s.category !== 6 && s.category !== 12 ? metaMap?.get(Number(s.tokenId)) ?? itemMetaSync(s.tokenId) : undefined;
 
   const rows = useMemo(() => {
-    const cats = CATEGORY_FILTERS.find((f) => f.key === cat)?.cats;
+    const match = CATEGORY_FILTERS.find((f) => f.key === cat)?.match;
     let all = data ?? [];
-    if (cats) all = all.filter((s) => cats.includes(s.category));
+    if (match) all = all.filter(match);
     if (feed === "offer" && offerStatusF !== "All") all = all.filter((s) => s.status === offerStatusF);
+    const q = search.trim().toLowerCase();
+    if (q) {
+      const idQ = q.replace(/^#/, "");
+      all = all.filter((s) => {
+        if (s.tokenId.includes(idQ)) return true;
+        if (s.gotchiName?.toLowerCase().includes(q)) return true;
+        const name = rowMeta(s)?.name.toLowerCase();
+        if (name?.includes(q)) return true;
+        return [s.from, s.to].some((a) => a?.toLowerCase().startsWith(q));
+      });
+    }
     return all;
-  }, [data, cat, feed, offerStatusF]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, cat, feed, offerStatusF, search, metaMap]);
 
   return (
     <div className="container mx-auto max-w-[1200px] px-4 py-6">
@@ -282,6 +341,14 @@ export default function ActivityPage() {
             )}
           </div>
 
+          <div className="mb-3">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search name, #id or 0xaddress"
+              className="h-8 w-full sm:w-72 rounded-lg border border-border/40 bg-background px-3 text-xs"
+            />
+          </div>
           {error && <div className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm mb-3">{(error as Error).message}</div>}
           {isLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
@@ -306,7 +373,7 @@ export default function ActivityPage() {
                     <tr key={s.id} onClick={() => setDetail(s)} className="border-t border-border/20 hover:bg-muted/20 cursor-pointer">
                       <td className="px-3 py-1.5"><ItemImage s={s} /></td>
                       <td className="px-3 py-1.5">{catLabel(s)}</td>
-                      <td className="px-3 py-1.5 font-mono">#{s.tokenId}{s.quantity > 1 ? ` ×${s.quantity}` : ""}</td>
+                      <td className="px-3 py-1.5"><ItemNameCell s={s} meta={rowMeta(s)} /></td>
                       <td className="px-3 py-1.5 text-right text-emerald-500 font-semibold">{ghst(s.priceWei)} GHST</td>
                       <td className="px-3 py-1.5 text-muted-foreground">
                         {feed === "offer" ? short(s.to) : (
@@ -324,12 +391,44 @@ export default function ActivityPage() {
         </div>
       </div>
 
-      {detail && <DetailModal s={detail} onClose={() => setDetail(null)} />}
+      {detail && <DetailModal s={detail} meta={rowMeta(detail)} onClose={() => setDetail(null)} />}
     </div>
   );
 }
 
-function DetailModal({ s, onClose }: { s: Row; onClose: () => void }) {
+// Dapp-style item cell: name (rarity-tinted for items), id/qty/slot/modifier
+// sub-line; falls back to the bare #id for asset types without metadata.
+function ItemNameCell({ s, meta }: { s: Row; meta?: ItemMeta }) {
+  if (s.kind === "erc1155" && meta) {
+    const sub = [
+      `#${s.tokenId}${s.quantity > 1 ? ` ×${s.quantity}` : ""}`,
+      meta.slot ?? undefined,
+      meta.modifiers.length ? meta.modifiers.join(" ") : undefined,
+    ].filter(Boolean).join(" · ");
+    return (
+      <div className="leading-tight">
+        <div className={`font-medium ${meta.rarity ? RARITY_COLORS[meta.rarity] ?? "" : ""}`}>{metaName(s, meta)}</div>
+        <div className="font-mono text-[10px] text-muted-foreground">{sub}</div>
+      </div>
+    );
+  }
+  if (s.kind === "erc721" && s.category === BAAZAAR_CATEGORY.AAVEGOTCHI && (s.gotchiName || s.gotchi)) {
+    return (
+      <div className="leading-tight">
+        <div className="font-medium">
+          {s.gotchiName ?? "Unnamed"}
+          {s.gotchi?.hauntId ? <span className="ml-1 text-[9px] px-1 py-px rounded bg-muted/50 text-muted-foreground align-middle">H{s.gotchi.hauntId}</span> : null}
+        </div>
+        <div className="font-mono text-[10px] text-muted-foreground">#{s.tokenId}</div>
+      </div>
+    );
+  }
+  return <span className="font-mono">#{s.tokenId}{s.quantity > 1 ? ` ×${s.quantity}` : ""}</span>;
+}
+
+function DetailModal({ s, meta, onClose }: { s: Row; meta?: ItemMeta; onClose: () => void }) {
+  const isGotchi = s.kind === "erc721" && s.category === BAAZAAR_CATEGORY.AAVEGOTCHI;
+  const displayName = metaName(s, meta) ?? (isGotchi ? s.gotchiName : undefined);
   const ownerLink = (addr?: string) =>
     addr && /^0x[a-fA-F0-9]{40}$/.test(addr) && addr !== "0x0000000000000000000000000000000000000000" ? (
       <Link to={`/explorer?owner=${addr}`} onClick={onClose} className="font-mono text-primary hover:underline" title="View this owner's gotchis">{short(addr)}</Link>
@@ -345,7 +444,7 @@ function DetailModal({ s, onClose }: { s: Row; onClose: () => void }) {
       <div className="w-[min(460px,96vw)] max-h-[92vh] overflow-y-auto rounded-2xl border border-white/10 bg-background shadow-2xl ring-1 ring-primary/10" onClick={(e) => e.stopPropagation()}>
         <div className="relative flex items-center justify-between px-4 py-3 border-b border-border/60 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent pointer-events-none" />
-          <div className="relative text-base font-bold capitalize">{s.feed} · {catLabel(s)} #{s.tokenId}</div>
+          <div className="relative text-base font-bold capitalize truncate pr-2">{s.feed} · {displayName ?? catLabel(s)} <span className="font-mono text-sm text-muted-foreground">#{s.tokenId}</span></div>
           <button onClick={onClose} className="relative p-1.5 rounded-lg bg-black/20 hover:bg-black/40"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-4 space-y-3">
@@ -356,11 +455,20 @@ function DetailModal({ s, onClose }: { s: Row; onClose: () => void }) {
             <Row2 label={priceLabel}><span className="text-emerald-500 font-bold">{ghst(s.priceWei)} GHST</span></Row2>
             {s.quantity > 1 && <Row2 label="Quantity">×{s.quantity}</Row2>}
             <Row2 label="Token ID">#{s.tokenId}</Row2>
+            <Row2 label="Type">{catLabel(s)}</Row2>
+            {meta?.rarity && <Row2 label="Rarity"><span className={RARITY_COLORS[meta.rarity] ?? ""}>{meta.rarity}</span></Row2>}
+            {meta?.slot && <Row2 label="Slot">{meta.slot}</Row2>}
+            {meta && meta.modifiers.length > 0 && <Row2 label="Traits">{meta.modifiers.join(" · ")}</Row2>}
+            {isGotchi && s.gotchi?.hauntId != null && <Row2 label="Haunt">H{s.gotchi.hauntId}</Row2>}
             {s.from && <Row2 label="Seller">{ownerLink(s.from)}</Row2>}
             {s.to && <Row2 label={s.feed === "sale" ? "Buyer" : s.feed === "offer" ? "Offerer" : "Top bidder"}>{ownerLink(s.to)}</Row2>}
             {s.status && <Row2 label="Status">{s.status}</Row2>}
             <Row2 label={s.feed === "auction" ? "Ends" : "When"}>{ago(s.time)}</Row2>
           </div>
+          {isGotchi && <Link to={`/gotchi/${s.tokenId}`} onClick={onClose} className="block text-center text-[11px] text-primary hover:underline">View gotchi →</Link>}
+          {meta && s.kind === "erc1155" && s.category === BAAZAAR_CATEGORY.WEARABLE && (
+            <Link to={`/wearable/${toSlug(meta.name)}`} onClick={onClose} className="block text-center text-[11px] text-primary hover:underline">View wearable →</Link>
+          )}
           {s.feed === "auction" && <Link to="/explorer" onClick={onClose} className="block text-center text-[11px] text-primary hover:underline">Go to the Auctions tab to bid →</Link>}
         </div>
       </div>
