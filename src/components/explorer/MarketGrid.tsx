@@ -15,6 +15,7 @@ import { AssetImage, itemImageCandidates, installationImageCandidates, tileImage
 import { PortalImage } from "./PortalImage";
 import { FakeGotchiImage } from "./GotchiSvgById";
 import { Palette } from "lucide-react";
+import { itemMetaSync } from "@/lib/explorer/itemMeta";
 
 type Listing = { listingId: string; tokenId: string; priceWei: string; quantity: number; created: number; category?: number };
 
@@ -25,18 +26,20 @@ const PARCEL_SIZES: Record<string, string> = { "0": "Humble", "1": "Reasonable",
 // When `tokenAddress` is given (collections that span several categories, e.g.
 // Forge), filter by contract instead of a single category and keep each row's
 // category so per-item art/labels can be derived.
-async function fetchListings(kind: "erc721" | "erc1155", category: number, tokenAddress?: string): Promise<Listing[]> {
+async function fetchListings(kind: "erc721" | "erc1155", category: number, tokenAddress?: string, extraCategories?: number[]): Promise<Listing[]> {
   const byAddr = !!tokenAddress;
-  const where721 = byAddr ? `erc721TokenAddress: "${tokenAddress!.toLowerCase()}", cancelled: false, timePurchased: "0"` : `category: $c, cancelled: false, timePurchased: "0"`;
-  const where1155 = byAddr ? `erc1155TokenAddress: "${tokenAddress!.toLowerCase()}", cancelled: false, sold: false, quantity_gt: 0` : `category: $c, cancelled: false, sold: false, quantity_gt: 0`;
+  const cats = [category, ...(extraCategories ?? [])];
+  const catFilter = cats.length > 1 ? `category_in: [${cats.join(", ")}]` : `category: ${category}`;
+  const where721 = byAddr ? `erc721TokenAddress: "${tokenAddress!.toLowerCase()}", cancelled: false, timePurchased: "0"` : `${catFilter}, cancelled: false, timePurchased: "0"`;
+  const where1155 = byAddr ? `erc1155TokenAddress: "${tokenAddress!.toLowerCase()}", cancelled: false, sold: false, quantity_gt: 0` : `${catFilter}, cancelled: false, sold: false, quantity_gt: 0`;
   const query =
     kind === "erc721"
-      ? `query($c: Int!){ erc721Listings(first: 1000, where: { ${where721} }, orderBy: timeCreated, orderDirection: desc){ id tokenId priceInWei timeCreated category } }`
-      : `query($c: Int!){ erc1155Listings(first: 1000, where: { ${where1155} }, orderBy: timeCreated, orderDirection: desc){ id erc1155TypeId priceInWei quantity timeCreated category } }`;
+      ? `{ erc721Listings(first: 1000, where: { ${where721} }, orderBy: timeCreated, orderDirection: desc){ id tokenId priceInWei timeCreated category } }`
+      : `{ erc1155Listings(first: 1000, where: { ${where1155} }, orderBy: timeCreated, orderDirection: desc){ id erc1155TypeId priceInWei quantity timeCreated category } }`;
   const res = await fetch(CORE_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, variables: { c: category } }),
+    body: JSON.stringify({ query }),
   });
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");
@@ -46,14 +49,17 @@ async function fetchListings(kind: "erc721" | "erc1155", category: number, token
   return (json.data?.erc1155Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.erc1155TypeId, priceWei: l.priceInWei, quantity: Number(l.quantity) || 1, created: Number(l.timeCreated) || 0, category: Number(l.category) }));
 }
 
-// Forge items span categories 7/8/9/11; each maps to a type icon on the dapp CDN.
+// Forge items span categories 7-11; each maps to a type icon on the dapp CDN.
+// Category values verified against live Base listings/purchases 2026-07-01:
+// 7 alloy, 8 SCHEMATIC (wearable-id token → wearable art), 9 geode,
+// 10 ESSENCE, 11 core. (8/10 were swapped here before.)
 const FORGE_TYPE_IMG: Record<number, string> = {
   7: "https://dapp.aavegotchi.com/brand/icons/forge/alloy.svg",
-  8: "https://dapp.aavegotchi.com/brand/icons/forge/essence.svg",
   9: "https://dapp.aavegotchi.com/brand/icons/forge/geodes.svg",
+  10: "https://dapp.aavegotchi.com/brand/icons/forge/essence.svg",
   11: "https://dapp.aavegotchi.com/brand/icons/forge/cores.svg",
 };
-const FORGE_TYPE_NAME: Record<number, string> = { 7: "Alloy", 8: "Essence", 9: "Geode", 11: "Core", 10: "Schematic" };
+const FORGE_TYPE_NAME: Record<number, string> = { 7: "Alloy", 8: "Schematic", 9: "Geode", 10: "Essence", 11: "Core" };
 
 // Installation functional categories (installationType enum on the diamond).
 const INSTALLATION_TYPE_LABELS: Record<string, string> = {
@@ -101,6 +107,76 @@ async function fetchParcelMeta(tokenIds: string[]): Promise<Record<string, Parce
   return out;
 }
 
+type PortalMeta = { hauntId: string; status: string; topRarity?: number };
+
+// Haunt + open/closed status + best summon option for listed portals — the
+// dapp shows "H1/H2" and "TOP RARITY: n" (opened portals) on every card.
+async function fetchPortalMeta(tokenIds: string[]): Promise<Record<string, PortalMeta>> {
+  if (tokenIds.length === 0) return {};
+  const query = `query($ids: [ID!]){ portals(first: 1000, where: { id_in: $ids }){ id hauntId status options { baseRarityScore } } }`;
+  const res = await fetch(CORE_SUBGRAPH_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables: { ids: tokenIds } }),
+  });
+  const json = await res.json();
+  const out: Record<string, PortalMeta> = {};
+  for (const p of json.data?.portals ?? []) {
+    const scores = (p.options ?? []).map((o: any) => Number(o.baseRarityScore) || 0);
+    out[p.id] = { hauntId: String(p.hauntId ?? ""), status: String(p.status ?? ""), topRarity: scores.length ? Math.max(...scores) : undefined };
+  }
+  return out;
+}
+
+type FakeMeta = { name: string; artist: string; editions?: number };
+
+// Artwork title + artist for listed FAKE Gotchis (dapp: "name / BY: artist").
+async function fetchFakeMeta(tokenIds: string[]): Promise<Record<string, FakeMeta>> {
+  if (tokenIds.length === 0) return {};
+  const query = `query($ids: [BigInt!]){ fakeGotchiNFTTokens(first: 1000, where: { identifier_in: $ids }){ identifier name artistName editions } }`;
+  const res = await fetch(CORE_SUBGRAPH_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables: { ids: tokenIds } }),
+  });
+  const json = await res.json();
+  const out: Record<string, FakeMeta> = {};
+  for (const t of json.data?.fakeGotchiNFTTokens ?? []) {
+    out[String(t.identifier)] = { name: t.name || "", artist: t.artistName || "", editions: t.editions != null ? Number(t.editions) : undefined };
+  }
+  return out;
+}
+
+type LastSold = { priceWei: string; time: number };
+
+// Newest settled sale per token (dapp cards show "SOLD (x ago) · price" /
+// "SOLD NEVER"). One batched query per grid load.
+async function fetchLastSold(tokenIds: string[], categories: number[]): Promise<Record<string, LastSold>> {
+  if (tokenIds.length === 0) return {};
+  const query = `query($ids: [String!]){ erc721Listings(first: 1000, where: { tokenId_in: $ids, category_in: [${categories.join(", ")}], timePurchased_gt: "0" }, orderBy: timePurchased, orderDirection: desc){ tokenId priceInWei timePurchased } }`;
+  const res = await fetch(CORE_SUBGRAPH_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables: { ids: tokenIds } }),
+  });
+  const json = await res.json();
+  const out: Record<string, LastSold> = {};
+  for (const l of json.data?.erc721Listings ?? []) {
+    if (!out[l.tokenId]) out[l.tokenId] = { priceWei: l.priceInWei, time: Number(l.timePurchased) };
+  }
+  return out;
+}
+
+function agoShort(unix: number): string {
+  const s = Math.floor(Date.now() / 1000) - unix;
+  const d = Math.floor(s / 86400);
+  if (d >= 365) return `${Math.floor(d / 365)}y ago`;
+  if (d >= 30) return `${Math.floor(d / 30)}mo ago`;
+  if (d >= 1) return `${d}d ago`;
+  const h = Math.floor(s / 3600);
+  return h >= 1 ? `${h}h ago` : "just now";
+}
+
 const ghst = (wei: string) => {
   const v = Number(wei) / 1e18;
   if (v > 0 && v < 1) return v.toLocaleString(undefined, { maximumFractionDigits: 3 });
@@ -117,6 +193,7 @@ export function MarketGrid({
   contract,
   itemKind,
   tokenAddress,
+  extraCategories,
 }: {
   kind: "erc721" | "erc1155";
   category: number;
@@ -124,6 +201,8 @@ export function MarketGrid({
   itemKind: "item" | "parcel" | "installation" | "tile" | "portal" | "fakegotchi" | "fakecard" | "forge" | "guardian";
   /** When set, fetch by contract across all categories (collections like Forge). */
   tokenAddress?: string;
+  /** Additional listing categories on the same contract (e.g. open portals, cat 2, next to closed, cat 0). */
+  extraCategories?: number[];
 }) {
   const [cart, setCart] = useState<Record<string, Listing>>({});
   const { bulkBuy, bulkStep, bulkProgress, resetBulk, isConnected } = useMarketplaceBuy();
@@ -147,12 +226,41 @@ export function MarketGrid({
   useEffect(() => { setSlotEl(document.getElementById("market-filter-slot")); });
 
   const { data, isLoading, error } = useQuery({
-    queryKey: [...qk.baazaarMarket(kind, category), tokenAddress ?? ""],
-    queryFn: () => fetchListings(kind, category, tokenAddress),
+    queryKey: [...qk.baazaarMarket(kind, category), tokenAddress ?? "", (extraCategories ?? []).join(",")],
+    queryFn: () => fetchListings(kind, category, tokenAddress, extraCategories),
     staleTime: 30_000,
   });
 
   const all = useMemo(() => data ?? [], [data]);
+
+  // Portal haunt/status/top-rarity badges (dapp card parity).
+  const portalIds = useMemo(() => (itemKind === "portal" ? all.map((l) => l.tokenId) : []), [itemKind, all]);
+  const { data: portalMeta } = useQuery({
+    queryKey: ["baazaar", "portal-meta", portalIds],
+    queryFn: () => fetchPortalMeta(portalIds),
+    enabled: itemKind === "portal" && portalIds.length > 0,
+    staleTime: 5 * 60_000,
+  });
+
+  // FAKE Gotchi artwork name + artist (dapp card parity).
+  const fakeIds = useMemo(() => (itemKind === "fakegotchi" ? all.map((l) => l.tokenId) : []), [itemKind, all]);
+  const { data: fakeMeta } = useQuery({
+    queryKey: ["baazaar", "fake-meta", fakeIds],
+    queryFn: () => fetchFakeMeta(fakeIds),
+    enabled: itemKind === "fakegotchi" && fakeIds.length > 0,
+    staleTime: 5 * 60_000,
+  });
+
+  // Last settled sale per listed token ("SOLD (x ago)" like the dapp) —
+  // portal + FAKE grids only, one batched query each.
+  const soldCats = itemKind === "portal" ? [category, ...(extraCategories ?? [])] : itemKind === "fakegotchi" ? [category] : [];
+  const soldIds = useMemo(() => (soldCats.length ? all.map((l) => l.tokenId) : []), [soldCats.length, all]);
+  const { data: lastSold } = useQuery({
+    queryKey: ["baazaar", "last-sold", itemKind, soldIds],
+    queryFn: () => fetchLastSold(soldIds, soldCats),
+    enabled: soldIds.length > 0,
+    staleTime: 5 * 60_000,
+  });
 
   // Parcel metadata for size/district filtering, loaded once listings arrive.
   const parcelIds = useMemo(() => (itemKind === "parcel" ? all.map((l) => l.tokenId) : []), [itemKind, all]);
@@ -199,7 +307,7 @@ export function MarketGrid({
     let r = all;
     const q = idQuery.trim().toLowerCase();
     // For typed assets the search box also matches the item name.
-    if (q) r = r.filter((l) => l.tokenId.includes(q) || (typeMeta?.[l.tokenId]?.name ?? "").toLowerCase().includes(q));
+    if (q) r = r.filter((l) => l.tokenId.includes(q) || (typeMeta?.[l.tokenId]?.name ?? "").toLowerCase().includes(q) || (fakeMeta?.[l.tokenId]?.name ?? "").toLowerCase().includes(q));
     const lo = Number(minP), hi = Number(maxP);
     if (minP && lo > 0) r = r.filter((l) => Number(l.priceWei) / 1e18 >= lo);
     if (maxP && hi > 0) r = r.filter((l) => Number(l.priceWei) / 1e18 <= hi);
@@ -354,7 +462,11 @@ export function MarketGrid({
                 ) : itemKind === "fakegotchi" || itemKind === "fakecard" ? (
                   <FakeGotchiImage id={l.tokenId} className="max-h-16 max-w-16 object-contain rounded" fallback={<Palette className="w-6 h-6 text-fuchsia-400/70" />} />
                 ) : itemKind === "forge" ? (
-                  <AssetImage candidates={[FORGE_TYPE_IMG[l.category ?? -1]].filter(Boolean)} alt={FORGE_TYPE_NAME[l.category ?? -1] ?? `#${l.tokenId}`} className="max-h-14 max-w-14 object-contain" />
+                  l.category === 8 ? (
+                    <AssetImage candidates={itemImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-16 max-w-16 object-contain" />
+                  ) : (
+                    <AssetImage candidates={[FORGE_TYPE_IMG[l.category ?? -1]].filter(Boolean)} alt={FORGE_TYPE_NAME[l.category ?? -1] ?? `#${l.tokenId}`} className="max-h-14 max-w-14 object-contain" />
+                  )
                 ) : itemKind === "guardian" ? (
                   <AssetImage candidates={["https://dapp.aavegotchi.com/brand/iconsv2/categories/guardian-skins.png"]} alt={`Guardian skin #${l.tokenId}`} className="max-h-14 max-w-14 object-contain" />
                 ) : (
@@ -365,7 +477,31 @@ export function MarketGrid({
                 <div className="text-[9px] text-muted-foreground text-center truncate" title={typeMeta[l.tokenId].name}>{typeMeta[l.tokenId].name}</div>
               )}
               {itemKind === "forge" && l.category != null && (
-                <div className="text-[9px] text-muted-foreground text-center truncate">{FORGE_TYPE_NAME[l.category] ?? "Forge"}</div>
+                <div className="text-[9px] text-muted-foreground text-center truncate" title={l.category === 8 ? itemMetaSync(l.tokenId)?.name : undefined}>
+                  {l.category === 8 && itemMetaSync(l.tokenId) ? `${itemMetaSync(l.tokenId)!.name} Schematic` : FORGE_TYPE_NAME[l.category] ?? "Forge"}
+                </div>
+              )}
+              {itemKind === "portal" && (
+                <div className="text-center leading-tight">
+                  <div className="text-[9px] font-semibold">
+                    {l.category === 2 ? "Open Portal" : "Closed Portal"}
+                    {portalMeta?.[l.tokenId]?.hauntId && <span className="ml-1 px-1 rounded bg-muted/50 text-muted-foreground font-normal">H{portalMeta[l.tokenId].hauntId}</span>}
+                  </div>
+                  {l.category === 2 && portalMeta?.[l.tokenId]?.topRarity != null && (
+                    <div className="text-[8px] text-fuchsia-400">Top rarity: {portalMeta[l.tokenId].topRarity}</div>
+                  )}
+                </div>
+              )}
+              {itemKind === "fakegotchi" && fakeMeta?.[l.tokenId]?.name && (
+                <div className="text-center leading-tight">
+                  <div className="text-[9px] font-semibold truncate" title={fakeMeta[l.tokenId].name}>{fakeMeta[l.tokenId].name}</div>
+                  {fakeMeta[l.tokenId].artist && <div className="text-[8px] text-muted-foreground truncate">by {fakeMeta[l.tokenId].artist}</div>}
+                </div>
+              )}
+              {soldIds.length > 0 && lastSold && (
+                <div className="text-[8px] text-muted-foreground text-center">
+                  {lastSold[l.tokenId] ? `Sold ${agoShort(lastSold[l.tokenId].time)} · ${ghst(lastSold[l.tokenId].priceWei)} GHST` : "Never sold"}
+                </div>
               )}
               {itemKind === "parcel" && parcelMeta?.[l.tokenId] && (
                 <div className="text-center leading-tight">
@@ -375,9 +511,9 @@ export function MarketGrid({
               )}
               <div className="text-[11px] text-emerald-500 font-semibold text-center">{ghst(l.priceWei)} GHST</div>
               <BuyButton listingId={l.listingId} tokenId={l.tokenId} priceInWei={l.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`#${l.tokenId}`} />
-              {/* Buy orders work across categories incl. closed portals (erc721
-                  cat 0) and forge items (erc1155, per-item category). */}
-              <MakeOfferButton kind={kind} category={itemKind === "forge" && l.category != null ? Number(l.category) : category} tokenId={l.tokenId} contractAddress={contract} label={`#${l.tokenId}`} compact />
+              {/* Buy orders work across categories incl. portals (erc721 cat
+                  0 closed / 2 open) and forge items (erc1155, per-item category). */}
+              <MakeOfferButton kind={kind} category={(itemKind === "forge" || itemKind === "portal") && l.category != null ? Number(l.category) : category} tokenId={l.tokenId} contractAddress={contract} label={`#${l.tokenId}`} compact />
             </div>
           );
         })}
@@ -424,13 +560,17 @@ export function MarketGrid({
         />
       )}
       {detail && itemKind !== "parcel" && (() => {
-        const label = ({ item: "Item", parcel: "Parcel", installation: "Installation", tile: "Tile", portal: "Closed Portal", fakegotchi: "FAKE Gotchi", fakecard: "FAKE Card", forge: "Forge", guardian: "Guardian Skin" } as Record<string, string>)[itemKind] ?? "Item";
+        const baseLabel = ({ item: "Item", parcel: "Parcel", installation: "Installation", tile: "Tile", portal: "Closed Portal", fakegotchi: "FAKE Gotchi", fakecard: "FAKE Card", forge: "Forge", guardian: "Guardian Skin" } as Record<string, string>)[itemKind] ?? "Item";
+        const label = itemKind === "portal" && detail.category === 2 ? "Open Portal" : baseLabel;
         const tm = isTyped ? typeMeta?.[detail.tokenId] : undefined;
+        const fm = itemKind === "fakegotchi" ? fakeMeta?.[detail.tokenId] : undefined;
+        const pm = itemKind === "portal" ? portalMeta?.[detail.tokenId] : undefined;
+        const schematicName = itemKind === "forge" && detail.category === 8 ? itemMetaSync(detail.tokenId)?.name : undefined;
         return (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-3" onClick={() => setDetail(null)}>
           <div className="w-[min(480px,96vw)] max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 sticky top-0 bg-background z-10">
-              <div className="text-base font-bold truncate">{tm?.name || label} <span className="text-muted-foreground font-mono text-sm">#{detail.tokenId}</span></div>
+              <div className="text-base font-bold truncate">{fm?.name || tm?.name || (schematicName ? `${schematicName} Schematic` : label)} <span className="text-muted-foreground font-mono text-sm">#{detail.tokenId}</span></div>
               <button onClick={() => setDetail(null)} className="p-1.5 rounded hover:bg-muted/50 shrink-0"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-4 space-y-3">
@@ -438,13 +578,26 @@ export function MarketGrid({
                 {itemKind === "portal" ? <PortalImage tokenId={detail.tokenId} />
                   : itemKind === "installation" ? <AssetImage candidates={installationImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} />
                   : itemKind === "tile" ? <AssetImage candidates={tileImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} />
-                  : itemKind === "forge" ? <AssetImage candidates={[FORGE_TYPE_IMG[detail.category ?? -1]].filter(Boolean)} alt={`#${detail.tokenId}`} />
+                  : itemKind === "forge" ? <AssetImage candidates={detail.category === 8 ? itemImageCandidates(detail.tokenId) : [FORGE_TYPE_IMG[detail.category ?? -1]].filter(Boolean)} alt={`#${detail.tokenId}`} />
                   : itemKind === "fakegotchi" || itemKind === "fakecard" ? <FakeGotchiImage id={detail.tokenId} className="max-h-36 max-w-36 object-contain rounded" fallback={<Palette className="w-10 h-10 text-fuchsia-400/70" />} />
                   : itemKind === "guardian" ? <AssetImage candidates={["https://dapp.aavegotchi.com/brand/iconsv2/categories/guardian-skins.png"]} alt={`#${detail.tokenId}`} />
                   : <AssetImage candidates={itemImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} />}
               </div>
 
               {tm?.name && <div className="text-center text-sm font-semibold">{tm.name}{tm.level ? ` · Level ${tm.level}` : ""}</div>}
+              {fm && (fm.artist || fm.editions != null) && (
+                <div className="text-center text-xs text-muted-foreground">{fm.artist ? `by ${fm.artist}` : ""}{fm.editions != null ? `${fm.artist ? " · " : ""}${fm.editions} edition${fm.editions === 1 ? "" : "s"}` : ""}</div>
+              )}
+              {pm && (
+                <div className="text-center text-xs text-muted-foreground">
+                  {label} · Haunt {pm.hauntId}{detail.category === 2 && pm.topRarity != null ? ` · Top rarity ${pm.topRarity}` : ""}
+                </div>
+              )}
+              {soldIds.length > 0 && lastSold && (
+                <div className="text-center text-[11px] text-muted-foreground">
+                  {lastSold[detail.tokenId] ? `Last sold ${agoShort(lastSold[detail.tokenId].time)} · ${ghst(lastSold[detail.tokenId].priceWei)} GHST` : "Never sold"}
+                </div>
+              )}
 
               <div className="text-center">
                 <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Listed price</div>
@@ -452,8 +605,9 @@ export function MarketGrid({
               </div>
 
               <BuyButton listingId={detail.listingId} tokenId={detail.tokenId} priceInWei={detail.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`#${detail.tokenId}`} />
-              <MakeOfferButton kind={kind} category={itemKind === "forge" && detail.category != null ? Number(detail.category) : category} tokenId={detail.tokenId} contractAddress={contract} label={`#${detail.tokenId}`} />
-              {itemKind === "portal" && <p className="text-[11px] text-muted-foreground text-center">A closed portal contains 10 random Aavegotchis. Buy it, then open it to summon and claim one.</p>}
+              <MakeOfferButton kind={kind} category={(itemKind === "forge" || itemKind === "portal") && detail.category != null ? Number(detail.category) : category} tokenId={detail.tokenId} contractAddress={contract} label={`#${detail.tokenId}`} />
+              {itemKind === "portal" && detail.category !== 2 && <p className="text-[11px] text-muted-foreground text-center">A closed portal contains 10 random Aavegotchis. Buy it, then open it to summon and claim one.</p>}
+              {itemKind === "portal" && detail.category === 2 && <p className="text-[11px] text-muted-foreground text-center">An open portal shows its 10 summonable Aavegotchis — buy it, then pick and claim one.</p>}
 
               <RecentSales kind={kind} tokenId={detail.tokenId} />
             </div>
