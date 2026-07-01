@@ -8,6 +8,7 @@ import { BuyButton } from "./BuyButton";
 import { MakeOfferButton } from "./MakeOfferButton";
 import { InlineSvg } from "./InlineSvg";
 import { AAVEGOTCHI_DIAMOND_BASE, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
+import { RARITY_COLORS, RARITY_BG } from "@/lib/explorer/itemMeta";
 
 interface WearableExplorerCardProps {
   wearable: ExplorerWearable;
@@ -19,24 +20,6 @@ interface WearableExplorerCardProps {
   canOffer?: boolean;
   onClick?: () => void;
 }
-
-const RARITY_COLORS: Record<string, string> = {
-  Godlike: "text-cyan-400",
-  Mythical: "text-pink-400",
-  Legendary: "text-yellow-400",
-  Rare: "text-blue-400",
-  Uncommon: "text-green-400",
-  Common: "text-gray-400",
-};
-
-const RARITY_BG: Record<string, string> = {
-  Godlike: "bg-cyan-500/20 border-cyan-500/40",
-  Mythical: "bg-pink-500/20 border-pink-500/40",
-  Legendary: "bg-yellow-500/20 border-yellow-500/40",
-  Rare: "bg-blue-500/20 border-blue-500/40",
-  Uncommon: "bg-green-500/20 border-green-500/40",
-  Common: "bg-gray-500/20 border-gray-500/40",
-};
 
 export function WearableExplorerCard({
   wearable,
