@@ -22,9 +22,10 @@ const EXPORT_DIRS = [
   path.join(ROOT, 'exports/aavegotchi'),
   path.join(ROOT, 'exports/gotchi-battler'),
   path.join(ROOT, 'exports/aavegotchi-forum-dao'),
+  path.join(ROOT, 'exports/aavegotchi-web'), // blog, gotchiverse docs, main YouTube transcripts (ingest-web.mjs / ingest-youtube.py)
   INC,
 ];
-// channels refreshed by `refresh` (the 8 core Aavegotchi message channels)
+// channels refreshed by `refresh` (8 core message channels + 4 ANNOUNCEMENTS channels)
 const REFRESH_CHANNELS = [
   '732491344970383373', // general-chat
   '769205560222285844', // ghst-talk
@@ -34,6 +35,10 @@ const REFRESH_CHANNELS = [
   '734081492967489576', // dao-discussion
   '1300820268704596008',// ai
   '796945547860377610', // devs-chat
+  '784303575593517087', // aannouncements (ANNOUNCEMENTS)
+  '1301529782567047249',// smol-aannouncements (ANNOUNCEMENTS)
+  '1236091626439315506',// events (ANNOUNCEMENTS)
+  '852381649177804861', // dao (ANNOUNCEMENTS)
 ];
 const STOP = new Set('the a an and or of to in on for is are was be it this that with as at by my me you i do does can how what why when who where which our their his her its'.split(' '));
 

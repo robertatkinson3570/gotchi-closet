@@ -26,6 +26,7 @@ import { CORE_SUBGRAPH } from "@/lib/subgraph";
 import { GotchiExplorerCard } from "./GotchiExplorerCard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
+import { fetchWearableMetadata, getRarityColor, getRarityLabel, describeSlots, type WearableMetadata } from "@/lib/wearable-metadata";
 
 // The GBM diamond on Base exposes commitBid with selector 0xd2f699fc:
 // commitBid(auctionId, bidAmount, lastHighestBid, tokenContract, tokenId, amount, signature).
@@ -245,6 +246,18 @@ function AuctionGridInner() {
     queryFn: () => fetchGotchiBatch(gotchiIds),
   });
 
+  // Batch-fetch metadata for all wearable auctions (erc1155) so cards show rarity/slot
+  const wearableIds = useMemo(
+    () => rows.filter((a) => a.contract === AAVEGOTCHI_DIAMOND_BASE.toLowerCase() && a.type === "erc1155").map((a) => a.tokenId),
+    [rows]
+  );
+  const { data: wearableInfo } = useQuery({
+    queryKey: ["auction-wearable-batch", wearableIds.join(",")],
+    enabled: wearableIds.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: () => fetchWearableMetadata(wearableIds),
+  });
+
   const { data: claimable, refetch: refetchClaim } = useQuery({
     queryKey: ["gbm-claimable", address?.toLowerCase()],
     enabled: isConnected && !!address,
@@ -368,7 +381,22 @@ function AuctionGridInner() {
               </div>
               {(() => {
                 const g = gotchiInfo?.[a.tokenId];
-                if (!g) return null;
+                if (!g) {
+                  // Show wearable details if available
+                  const w = wearableInfo?.[a.tokenId];
+                  if (!w) return null;
+                  return (
+                    <div className="space-y-0.5">
+                      <div className="text-[10px] font-semibold truncate" title={w.name}>{w.name}</div>
+                      <div className={`text-[9px] px-1 rounded inline-block ${getRarityColor(w.baseRarity)}`}>
+                        {getRarityLabel(w.baseRarity)}
+                      </div>
+                      <div className="text-[9px] text-muted-foreground truncate" title={describeSlots(w.slotPositionsIndex)}>
+                        {describeSlots(w.slotPositionsIndex)}
+                      </div>
+                    </div>
+                  );
+                }
                 return (
                   <div className="space-y-0.5">
                     <div className="text-[10px] font-semibold truncate" title={g.name}>{g.name}</div>
@@ -404,6 +432,7 @@ function AuctionGridInner() {
           onBid={() => placeBid(live)}
           onBuyNow={() => buyItNow(live)}
           onClose={() => setDetail(null)}
+          wearableInfo={wearableInfo}
         />
       )}
     </>
@@ -411,10 +440,11 @@ function AuctionGridInner() {
 }
 
 function AuctionDetailModal({
-  a, nowSec, busy, bidValue, setBidValue, onBid, onBuyNow, onClose,
+  a, nowSec, busy, bidValue, setBidValue, onBid, onBuyNow, onClose, wearableInfo,
 }: {
   a: Auction; nowSec: number; busy: boolean; bidValue: string;
   setBidValue: (v: string) => void; onBid: () => void; onBuyNow: () => void; onClose: () => void;
+  wearableInfo?: Record<string, WearableMetadata>;
 }) {
   const left = a.endsAt - nowSec;
   // GBM minimum next bid: ceil(highestBid * (bidDecimals + stepMin) / bidDecimals);
@@ -459,9 +489,27 @@ function AuctionDetailModal({
           {isGotchi ? (
             <div className="max-w-[260px] mx-auto"><GotchiAuctionCard tokenId={a.tokenId} /></div>
           ) : (
-            <div className="w-40 h-40 mx-auto flex items-center justify-center rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
-              <AuctionItemImage a={a} />
-            </div>
+            <>
+              <div className="w-40 h-40 mx-auto flex items-center justify-center rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
+                <AuctionItemImage a={a} />
+              </div>
+              {wearableInfo?.[a.tokenId] && (
+                <div className="rounded-lg border border-border/60 p-3 space-y-2">
+                  <div className="text-sm font-semibold">{wearableInfo[a.tokenId].name}</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-xs px-2 py-1 rounded ${getRarityColor(wearableInfo[a.tokenId].baseRarity)}`}>
+                      {getRarityLabel(wearableInfo[a.tokenId].baseRarity)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{describeSlots(wearableInfo[a.tokenId].slotPositionsIndex)}</span>
+                  </div>
+                  {wearableInfo[a.tokenId].rarityScoreModifier !== 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      Rarity Score Modifier: {wearableInfo[a.tokenId].rarityScoreModifier > 0 ? '+' : ''}{wearableInfo[a.tokenId].rarityScoreModifier}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
 
           <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-2.5 flex items-center justify-between gap-3">
