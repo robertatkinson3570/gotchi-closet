@@ -15,7 +15,7 @@ import { AssetImage, itemImageCandidates, installationImageCandidates, tileImage
 import { PortalImage } from "./PortalImage";
 import { FakeGotchiImage } from "./GotchiSvgById";
 import { Palette } from "lucide-react";
-import { itemMetaSync } from "@/lib/explorer/itemMeta";
+import { itemMetaSync, GUARDIAN_SKIN_NAMES } from "@/lib/explorer/itemMeta";
 
 type Listing = { listingId: string; tokenId: string; priceWei: string; quantity: number; created: number; category?: number };
 
@@ -492,6 +492,9 @@ export function MarketGrid({
                   )}
                 </div>
               )}
+              {itemKind === "guardian" && (
+                <div className="text-[9px] text-muted-foreground text-center truncate">{GUARDIAN_SKIN_NAMES[Number(l.tokenId)] ?? "Guardian Skin"}</div>
+              )}
               {itemKind === "fakegotchi" && fakeMeta?.[l.tokenId]?.name && (
                 <div className="text-center leading-tight">
                   <div className="text-[9px] font-semibold truncate" title={fakeMeta[l.tokenId].name}>{fakeMeta[l.tokenId].name}</div>
@@ -570,7 +573,7 @@ export function MarketGrid({
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-3" onClick={() => setDetail(null)}>
           <div className="w-[min(480px,96vw)] max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 sticky top-0 bg-background z-10">
-              <div className="text-base font-bold truncate">{fm?.name || tm?.name || (schematicName ? `${schematicName} Schematic` : label)} <span className="text-muted-foreground font-mono text-sm">#{detail.tokenId}</span></div>
+              <div className="text-base font-bold truncate">{fm?.name || tm?.name || (itemKind === "guardian" ? GUARDIAN_SKIN_NAMES[Number(detail.tokenId)] ?? label : undefined) || (schematicName ? `${schematicName} Schematic` : label)} <span className="text-muted-foreground font-mono text-sm">#{detail.tokenId}</span></div>
               <button onClick={() => setDetail(null)} className="p-1.5 rounded hover:bg-muted/50 shrink-0"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-4 space-y-3">

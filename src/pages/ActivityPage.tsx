@@ -12,7 +12,7 @@ import { CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIA
 import { GBM_SUBGRAPH } from "@/lib/subgraph";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "@/components/explorer/AssetImage";
-import { fetchItemMetaMap, itemMetaSync, RARITY_COLORS, type ItemMeta } from "@/lib/explorer/itemMeta";
+import { fetchItemMetaMap, itemMetaSync, GUARDIAN_SKIN_NAMES, RARITY_COLORS, type ItemMeta } from "@/lib/explorer/itemMeta";
 import { toSlug } from "@/lib/slug";
 
 type GotchiArt = { numericTraits: number[]; equippedWearables: number[]; hauntId?: number; collateral?: string };
@@ -428,6 +428,14 @@ export default function ActivityPage() {
 // Dapp-style item cell: name (rarity-tinted for items), id/qty/slot/modifier
 // sub-line; falls back to the bare #id for asset types without metadata.
 function ItemNameCell({ s, meta }: { s: Row; meta?: ItemMeta }) {
+  if (s.kind === "erc1155" && s.category === 12) {
+    return (
+      <div className="leading-tight">
+        <div className="font-medium">{GUARDIAN_SKIN_NAMES[Number(s.tokenId)] ?? "Guardian Skin"}</div>
+        <div className="font-mono text-[10px] text-muted-foreground">#{s.tokenId}{s.quantity > 1 ? ` ×${s.quantity}` : ""}</div>
+      </div>
+    );
+  }
   if (s.kind === "erc1155" && meta) {
     const sub = [
       `#${s.tokenId}${s.quantity > 1 ? ` ×${s.quantity}` : ""}`,

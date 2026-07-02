@@ -75,6 +75,18 @@ export function itemMetaSync(id: number | string): ItemMeta | undefined {
   return localMeta.get(Number(id));
 }
 
+// Guardian skin names by ERC1155 type id. No on-chain/subgraph name source
+// exists; mapping verified 2026-07-02 by aligning our category-12 listing
+// order (typeId + price + qty) 1:1 against the names the dapp renders for
+// the same listings. Unknown ids fall back to a generic label.
+export const GUARDIAN_SKIN_NAMES: Record<number, string> = {
+  3: "Ghost Pirate",
+  4: "Snowman Brute Force Skin",
+  5: "Winter Prong Meadow Skin",
+  6: "Winter Rofl Skin",
+  7: "Cupid Aarcher",
+};
+
 let remote: Promise<Map<number, ItemMeta>> | null = null;
 
 /** Bundled db merged with subgraph itemTypes (adds consumables); cached for the session. */
