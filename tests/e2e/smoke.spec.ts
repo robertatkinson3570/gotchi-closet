@@ -72,6 +72,7 @@ const ROUTES = [
   `/u/${SAMPLE_ADDR}/activity`,
   "/activity",
   "/stats",
+  "/leaderboard",
   "/dao",
   "/get-tokens",
   "/forge",
