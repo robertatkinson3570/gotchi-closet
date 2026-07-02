@@ -314,6 +314,18 @@ function AuctionGridInner() {
       if (next.has(id)) next.delete(id);
       else next.add(id);
       try { localStorage.setItem(WATCH_KEY, JSON.stringify([...next])); } catch { /* private mode */ }
+      if (next.has(id)) {
+        // First star: explain the alerts and ask for notification permission
+        // (must happen inside a user gesture).
+        if (next.size === 1 && prev.size === 0) {
+          toast({ title: "Watching auction", description: "You'll get outbid and ending-soon alerts while GotchiCloset is open." });
+        }
+        try {
+          if (typeof Notification !== "undefined" && Notification.permission === "default") {
+            Notification.requestPermission().catch(() => {});
+          }
+        } catch { /* unsupported */ }
+      }
       return next;
     });
 

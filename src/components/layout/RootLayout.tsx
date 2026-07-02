@@ -10,6 +10,7 @@ import { GHST_TOKEN_BASE, ERC20_ABI } from "@/lib/lending/contracts";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { resolveGotchiDomains } from "@/lib/gotchiDomains";
 import { useToast } from "@/ui/use-toast";
+import { useAuctionAlerts } from "@/hooks/useAuctionAlerts";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Gv2Banner } from "@/components/layout/Gv2Banner";
@@ -136,6 +137,8 @@ function WalletChip() {
 export function RootLayout() {
   const location = useLocation();
   const { address, isConnected } = useAccount();
+  // Watched-auction outbid / ending-soon alerts run app-wide.
+  useAuctionAlerts();
 
   return (
     <div className="min-h-screen flex flex-col">
