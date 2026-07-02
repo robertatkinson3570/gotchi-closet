@@ -50,4 +50,10 @@ export const qk = {
   traitFrequency: (haunt?: number) =>
     haunt === undefined ? (["trait-frequency"] as const) : (["trait-frequency", haunt] as const),
   explorerListings: () => ["explorer-listings"] as const,
+  // Leaderboard + portfolio (kinship/XP boards, owned floor value).
+  leaderboard: (sort?: string, page?: number) =>
+    sort === undefined ? (["leaderboard"] as const) : (["leaderboard", sort, page ?? 0] as const),
+  gotchiFloor: () => ["gotchi-floor"] as const,
+  ownedGotchiCount: (address?: string) =>
+    address ? (["owned-gotchi-count", address] as const) : (["owned-gotchi-count"] as const),
 };
