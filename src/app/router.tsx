@@ -26,6 +26,7 @@ const BulkListPage = lazy(() => import("@/pages/BulkListPage"));
 const ActivityPage = lazy(() => import("@/pages/ActivityPage"));
 const UserActivityPage = lazy(() => import("@/pages/UserActivityPage"));
 const StatsPage = lazy(() => import("@/pages/StatsPage"));
+const LeaderboardPage = lazy(() => import("@/pages/LeaderboardPage"));
 const DaoPage = lazy(() => import("@/pages/DaoPage"));
 const GetTokensPage = lazy(() => import("@/pages/GetTokensPage"));
 const ForgePage = lazy(() => import("@/pages/ForgePage"));
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
       { path: "u/:address/activity", element: <UserActivityPage /> },
       { path: "activity", element: <ActivityPage /> },
       { path: "stats", element: <StatsPage /> },
+      { path: "leaderboard", element: <LeaderboardPage /> },
       { path: "dao", element: <DaoPage /> },
       { path: "get-tokens", element: <GetTokensPage /> },
       { path: "forge", element: <ForgePage /> },
