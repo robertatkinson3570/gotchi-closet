@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Loader2, ArrowRightLeft, MapPin, X, Tag, Gavel, HandCoins, BarChart3 } from "lucide-react";
+import { Activity, Loader2, ArrowRightLeft, MapPin, X, Tag, Gavel, HandCoins, BarChart3, TrendingUp } from "lucide-react";
+import { usePublicClient } from "wagmi";
+import { BASE_CHAIN_ID } from "@/lib/chains";
+import { resolveGotchiDomains } from "@/lib/gotchiDomains";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { shortAddress as short } from "@/lib/format";
@@ -13,7 +16,7 @@ import { fetchItemMetaMap, itemMetaSync, RARITY_COLORS, type ItemMeta } from "@/
 import { toSlug } from "@/lib/slug";
 
 type GotchiArt = { numericTraits: number[]; equippedWearables: number[]; hauntId?: number; collateral?: string };
-type Feed = "sale" | "offer" | "auction";
+type Feed = "sale" | "offer" | "auction" | "bid";
 type Row = {
   id: string;
   feed: Feed;
@@ -22,14 +25,12 @@ type Row = {
   tokenId: string;
   quantity: number;
   priceWei: string;
-  from?: string;
-  to?: string;
+  from?: string; // seller
+  to?: string; // buyer / offerer / bidder
   time: number;
   status?: string;
   gotchi?: GotchiArt;
   gotchiName?: string;
-  itemName?: string;
-  itemRarity?: number;
 };
 
 // Category filters must match on (kind, category) pairs — the numeric
@@ -50,6 +51,7 @@ const FEEDS: { key: Feed; label: string; icon: typeof Tag }[] = [
   { key: "sale", label: "Sales", icon: Tag },
   { key: "offer", label: "Offers", icon: HandCoins },
   { key: "auction", label: "Auctions", icon: Gavel },
+  { key: "bid", label: "Bids", icon: TrendingUp },
 ];
 
 // Offer status sub-filter (Open is the actionable default, like the dapp).
@@ -59,6 +61,7 @@ function statusClass(status?: string): string {
   switch (status) {
     case "Open":
     case "Live":
+    case "Leading":
       return "bg-emerald-500/15 text-emerald-500";
     case "Filled":
       return "bg-blue-500/15 text-blue-400";
@@ -123,23 +126,6 @@ async function enrichGotchiArt(rows: Row[]): Promise<Row[]> {
   });
 }
 
-async function enrichWearableMetadata(rows: Row[]): Promise<Row[]> {
-  const ids = [...new Set(rows.filter((r) => r.kind === "erc1155" && r.category === BAAZAAR_CATEGORY.WEARABLE && !r.itemName).map((r) => r.tokenId))];
-  if (!ids.length) return rows;
-  try {
-    const d = await gql(CORE_SUBGRAPH_URL, `query { wearables(first: 1000, where: { id_in: [${ids.map((i) => `"${i}"`).join(",")}] }) { id name baseRarity } }`);
-    const map = new Map<string, { name: string; rarity: number }>();
-    for (const w of d?.wearables ?? []) map.set(w.id, { name: w.name || `Wearable #${w.id}`, rarity: Number(w.baseRarity) || 0 });
-    return rows.map((r) => {
-      const hit = map.get(r.tokenId);
-      if (!hit) return r;
-      return { ...r, itemName: hit.name, itemRarity: hit.rarity };
-    });
-  } catch {
-    return rows;
-  }
-}
-
 async function fetchSales(): Promise<Row[]> {
   const d = await gql(CORE_SUBGRAPH_URL, `query {
     erc721Listings(first: 100, where: { timePurchased_gt: "0" }, orderBy: timePurchased, orderDirection: desc) {
@@ -156,12 +142,13 @@ async function fetchSales(): Promise<Row[]> {
     gotchi: l.gotchi ? { numericTraits: (l.gotchi.withSetsNumericTraits ?? l.gotchi.numericTraits ?? []).map((n: any) => Number(n)), equippedWearables: (l.gotchi.equippedWearables ?? []).map((n: any) => Number(n)), hauntId: l.gotchi.hauntId != null ? Number(l.gotchi.hauntId) : undefined, collateral: l.gotchi.collateral } : undefined,
     gotchiName: l.gotchi?.name || undefined,
   }));
+  // erc1155Purchases (one row per fill) carries the buyer, which
+  // erc1155Listings lacks — the dapp's activity feed shows both sides.
   const e1155: Row[] = (d?.erc1155Purchases ?? []).map((l: any) => ({
     id: `s1155-${l.id}`, feed: "sale" as const, kind: "erc1155" as const, category: Number(l.category), tokenId: l.erc1155TypeId, quantity: Number(l.quantity) || 1,
     priceWei: l.priceInWei, from: l.seller, to: l.recipient || l.buyer || "", time: Number(l.timeLastPurchased),
   }));
-  const rows = [...e721, ...e1155].sort((a, b) => b.time - a.time);
-  return enrichWearableMetadata(rows);
+  return [...e721, ...e1155].sort((a, b) => b.time - a.time);
 }
 
 // Derive a buy order's lifecycle status (matches the dapp's Status column).
@@ -189,9 +176,7 @@ async function fetchOffers(): Promise<Row[]> {
     priceWei: o.priceInWei, to: o.buyer, time: Number(o.createdAt),
     status: offerStatus({ canceled: o.canceled, executed: o.completedAt != null, partial: Number(o.executedQuantity) > 0, createdAt: Number(o.createdAt), duration: Number(o.duration) || 0 }, now),
   }));
-  const rows = [...o721, ...o1155].sort((a, b) => b.time - a.time);
-  const withGotchi = await enrichGotchiArt(rows);
-  return enrichWearableMetadata(withGotchi);
+  return enrichGotchiArt([...o721, ...o1155].sort((a, b) => b.time - a.time));
 }
 
 // Map an auction's token contract to the (kind, category) used for imagery.
@@ -217,6 +202,20 @@ async function fetchAuctions(): Promise<Row[]> {
       id: `a-${a.id}`, feed: "auction" as const, kind, category, tokenId: a.tokenId, quantity: 1,
       priceWei: a.highestBid ?? "0", from: a.seller, to: a.highestBidder, time: endsAt,
       status: endsAt > now ? "Live" : "Ended",
+    } as Row;
+  });
+  return enrichGotchiArt(rows);
+}
+
+// Individual GBM bids stream (the dapp's BIDS activity tab).
+async function fetchBidsFeed(): Promise<Row[]> {
+  const d = await gql(GBM_SUBGRAPH, `query { bids(first: 100, orderBy: bidTime, orderDirection: desc){ id bidder amount bidTime outbid tokenId contractAddress type } }`);
+  const rows: Row[] = (d?.bids ?? []).map((b: any) => {
+    const { kind, category } = auctionCat(b.contractAddress, b.type);
+    return {
+      id: `b-${b.id}`, feed: "bid" as const, kind, category, tokenId: b.tokenId, quantity: 1,
+      priceWei: b.amount ?? "0", to: (b.bidder ?? "").toLowerCase(), time: Number(b.bidTime),
+      status: b.outbid ? "Outbid" : "Leading",
     } as Row;
   });
   return enrichGotchiArt(rows);
@@ -260,7 +259,7 @@ function ItemImage({ s }: { s: Row }) {
   return <span className="inline-flex w-9 h-9 rounded bg-emerald-500/10 items-center justify-center align-middle"><MapPin className="w-4 h-4 text-emerald-500/70" /></span>;
 }
 
-const FETCHERS: Record<Feed, () => Promise<Row[]>> = { sale: fetchSales, offer: fetchOffers, auction: fetchAuctions };
+const FETCHERS: Record<Feed, () => Promise<Row[]>> = { sale: fetchSales, offer: fetchOffers, auction: fetchAuctions, bid: fetchBidsFeed };
 
 export default function ActivityPage() {
   const [feed, setFeed] = useState<Feed>("sale");
@@ -275,6 +274,18 @@ export default function ActivityPage() {
 
   const rowMeta = (s: Row): ItemMeta | undefined =>
     s.kind === "erc1155" && s.category !== 6 && s.category !== 12 ? metaMap?.get(Number(s.tokenId)) ?? itemMetaSync(s.tokenId) : undefined;
+
+  // .gotchi names for every address in the current feed (one multicall,
+  // session-cached) — the dapp shows "ztef.gotchi" instead of 0x… everywhere.
+  const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
+  const feedAddrs = useMemo(() => (data ?? []).flatMap((r) => [r.from, r.to]), [data]);
+  const { data: domains } = useQuery({
+    queryKey: ["gotchi-domains", feed, feedAddrs.length, feedAddrs[0] ?? ""],
+    enabled: !!publicClient && feedAddrs.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: () => resolveGotchiDomains(publicClient!, feedAddrs),
+  });
+  const nameOf = (a?: string): string => (a ? domains?.get(a.toLowerCase()) : undefined) ?? short(a);
 
   const rows = useMemo(() => {
     const match = CATEGORY_FILTERS.find((f) => f.key === cat)?.match;
@@ -371,7 +382,7 @@ export default function ActivityPage() {
           {isLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
           ) : rows.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">No recent {feed === "sale" ? "sales" : feed === "offer" ? "offers" : "auctions"}.</div>
+            <div className="text-center py-12 text-muted-foreground text-sm">No recent {feed === "sale" ? "sales" : feed === "offer" ? "offers" : feed === "bid" ? "bids" : "auctions"}.</div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border/40">
               <table className="w-full text-xs whitespace-nowrap">
@@ -380,8 +391,8 @@ export default function ActivityPage() {
                     <th className="text-left font-medium px-3 py-2"></th>
                     <th className="text-left font-medium px-3 py-2">Type</th>
                     <th className="text-left font-medium px-3 py-2">Item</th>
-                    <th className="text-right font-medium px-3 py-2">{feed === "auction" ? "Top bid" : feed === "offer" ? "Offer" : "Price"}</th>
-                    <th className="text-left font-medium px-3 py-2">{feed === "sale" ? "Seller → Buyer" : feed === "offer" ? "Offerer" : "Seller / Top bidder"}</th>
+                    <th className="text-right font-medium px-3 py-2">{feed === "auction" ? "Top bid" : feed === "offer" ? "Offer" : feed === "bid" ? "Bid" : "Price"}</th>
+                    <th className="text-left font-medium px-3 py-2">{feed === "sale" ? "Seller → Buyer" : feed === "offer" ? "Offerer" : feed === "bid" ? "Bidder" : "Seller / Top bidder"}</th>
                     {feed !== "sale" && <th className="text-left font-medium px-3 py-2">Status</th>}
                     <th className="text-right font-medium px-3 py-2">{feed === "auction" ? "Ends" : "When"}</th>
                   </tr>
@@ -394,8 +405,8 @@ export default function ActivityPage() {
                       <td className="px-3 py-1.5"><ItemNameCell s={s} meta={rowMeta(s)} /></td>
                       <td className="px-3 py-1.5 text-right text-emerald-500 font-semibold">{ghst(s.priceWei)} GHST</td>
                       <td className="px-3 py-1.5 text-muted-foreground">
-                        {feed === "offer" ? short(s.to) : (
-                          <span className="inline-flex items-center gap-1">{short(s.from)} <ArrowRightLeft className="w-3 h-3" /> {short(s.to)}</span>
+                        {feed === "offer" || feed === "bid" ? nameOf(s.to) : (
+                          <span className="inline-flex items-center gap-1">{nameOf(s.from)} <ArrowRightLeft className="w-3 h-3" /> {nameOf(s.to)}</span>
                         )}
                       </td>
                       {feed !== "sale" && <td className="px-3 py-1.5"><span className={`text-[10px] px-1.5 py-0.5 rounded ${statusClass(s.status)}`}>{s.status}</span></td>}
@@ -409,7 +420,7 @@ export default function ActivityPage() {
         </div>
       </div>
 
-      {detail && <DetailModal s={detail} meta={rowMeta(detail)} onClose={() => setDetail(null)} />}
+      {detail && <DetailModal s={detail} meta={rowMeta(detail)} metaMap={metaMap} nameOf={nameOf} onClose={() => setDetail(null)} />}
     </div>
   );
 }
@@ -444,19 +455,25 @@ function ItemNameCell({ s, meta }: { s: Row; meta?: ItemMeta }) {
   return <span className="font-mono">#{s.tokenId}{s.quantity > 1 ? ` ×${s.quantity}` : ""}</span>;
 }
 
-function DetailModal({ s, meta, onClose }: { s: Row; meta?: ItemMeta; onClose: () => void }) {
+function DetailModal({ s, meta, metaMap, nameOf, onClose }: { s: Row; meta?: ItemMeta; metaMap?: Map<number, ItemMeta>; nameOf?: (a?: string) => string; onClose: () => void }) {
   const isGotchi = s.kind === "erc721" && s.category === BAAZAAR_CATEGORY.AAVEGOTCHI;
   const displayName = metaName(s, meta) ?? (isGotchi ? s.gotchiName : undefined);
+  const display = nameOf ?? short;
   const ownerLink = (addr?: string) =>
     addr && /^0x[a-fA-F0-9]{40}$/.test(addr) && addr !== "0x0000000000000000000000000000000000000000" ? (
-      <Link to={`/explorer?owner=${addr}`} onClick={onClose} className="font-mono text-primary hover:underline" title="View this owner's gotchis">{short(addr)}</Link>
+      <Link to={`/explorer?owner=${addr}`} onClick={onClose} className="font-mono text-primary hover:underline" title="View this owner's gotchis">{display(addr)}</Link>
     ) : (
-      <span className="font-mono">{short(addr)}</span>
+      <span className="font-mono">{display(addr)}</span>
     );
   const Row2 = ({ label, children }: { label: string; children: React.ReactNode }) => (
     <div className="flex items-center justify-between py-1.5 border-b border-border/30 text-sm last:border-0"><span className="text-muted-foreground">{label}</span><span className="font-medium">{children}</span></div>
   );
-  const priceLabel = s.feed === "auction" ? "Top bid" : s.feed === "offer" ? "Offer price" : "Sale price";
+  const priceLabel = s.feed === "auction" ? "Top bid" : s.feed === "offer" ? "Offer price" : s.feed === "bid" ? "Bid" : "Sale price";
+  // Dapp parity: sales of dressed gotchis expand into the full equipped-
+  // wearables list ("7 Wearables"). We already have the ids from enrichment.
+  const equipped = isGotchi
+    ? (s.gotchi?.equippedWearables ?? []).filter((id) => id > 0).map((id) => ({ id, m: metaMap?.get(id) ?? itemMetaSync(id) }))
+    : [];
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-3" onClick={onClose}>
       <div className="w-[min(460px,96vw)] max-h-[92vh] overflow-y-auto rounded-2xl border border-white/10 bg-background shadow-2xl ring-1 ring-primary/10" onClick={(e) => e.stopPropagation()}>
@@ -479,10 +496,23 @@ function DetailModal({ s, meta, onClose }: { s: Row; meta?: ItemMeta; onClose: (
             {meta && meta.modifiers.length > 0 && <Row2 label="Traits">{meta.modifiers.join(" · ")}</Row2>}
             {isGotchi && s.gotchi?.hauntId != null && <Row2 label="Haunt">H{s.gotchi.hauntId}</Row2>}
             {s.from && <Row2 label="Seller">{ownerLink(s.from)}</Row2>}
-            {s.to && <Row2 label={s.feed === "sale" ? "Buyer" : s.feed === "offer" ? "Offerer" : "Top bidder"}>{ownerLink(s.to)}</Row2>}
+            {s.to && <Row2 label={s.feed === "sale" ? "Buyer" : s.feed === "offer" ? "Offerer" : s.feed === "bid" ? "Bidder" : "Top bidder"}>{ownerLink(s.to)}</Row2>}
             {s.status && <Row2 label="Status">{s.status}</Row2>}
             <Row2 label={s.feed === "auction" ? "Ends" : "When"}>{ago(s.time)}</Row2>
           </div>
+          {equipped.length > 0 && (
+            <div className="rounded-lg border border-border/40 p-2.5">
+              <div className="text-[11px] font-semibold mb-1.5">{equipped.length} equipped wearable{equipped.length === 1 ? "" : "s"}</div>
+              <div className="space-y-1">
+                {equipped.map(({ id, m }, i) => (
+                  <div key={`${id}-${i}`} className="flex items-center justify-between text-xs">
+                    <span className={m?.rarity ? RARITY_COLORS[m.rarity] ?? "" : ""}>{m?.name ?? `#${id}`}</span>
+                    <span className="text-muted-foreground text-[10px]">{m?.slot ?? ""}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {isGotchi && <Link to={`/gotchi/${s.tokenId}`} onClick={onClose} className="block text-center text-[11px] text-primary hover:underline">View gotchi →</Link>}
           {meta && s.kind === "erc1155" && s.category === BAAZAAR_CATEGORY.WEARABLE && (
             <Link to={`/wearable/${toSlug(meta.name)}`} onClick={onClose} className="block text-center text-[11px] text-primary hover:underline">View wearable →</Link>

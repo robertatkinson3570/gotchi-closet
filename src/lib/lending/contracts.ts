@@ -16,6 +16,10 @@ export const GLTR_TOKEN_BASE = "0x4D140CE792bEdc430498c2d219AfBC33e2992c9D" as c
 // Address from the dapp's 8453 chain config; verified live (has code, 91 facets).
 export const FORGE_DIAMOND_BASE = "0x50aF2d63b839aA32b4166FD1Cb247129b715186C" as const;
 
+// Gotchi Name Service diamond — reverseNameOf(address) -> "name.gotchi"
+// (verified on-chain 2026-07-02: returns "ztef.gotchi" for a known holder).
+export const GOTCHI_DOMAIN_DIAMOND_BASE = "0xF6c1b83977DE3dEffC476f5048A0a84d3375d498" as const;
+
 // Canonical ForgeFacet signatures (from aavegotchi-contracts). Smelt/forge/claim
 // all operate per-gotchi: each wearable is smelted/forged BY a gotchi, and items
 // are claimed by the forging gotchi's id (not a queue id).

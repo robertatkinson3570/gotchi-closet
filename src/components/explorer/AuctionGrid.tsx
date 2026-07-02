@@ -79,11 +79,13 @@ type Auction = {
   hammerTimeDuration: number;
   endsAtOriginal: number;
   dueIncentives: string;
+  incMin: number;
+  incMax: number;
 };
 
 async function fetchAuctions(): Promise<Auction[]> {
   const now = Math.floor(Date.now() / 1000);
-  const query = `query Live($now: BigInt!){ auctions(first: 200, where: { cancelled: false, claimed: false, endsAt_gt: $now }, orderBy: endsAt, orderDirection: asc){ id type tokenId contractAddress highestBid highestBidder seller totalBids quantity startsAt endsAt buyNowPrice stepMin bidDecimals startBidPrice hammerTimeDuration endsAtOriginal dueIncentives } }`;
+  const query = `query Live($now: BigInt!){ auctions(first: 200, where: { cancelled: false, claimed: false, endsAt_gt: $now }, orderBy: endsAt, orderDirection: asc){ id type tokenId contractAddress highestBid highestBidder seller totalBids quantity startsAt endsAt buyNowPrice stepMin bidDecimals startBidPrice hammerTimeDuration endsAtOriginal dueIncentives incMin incMax } }`;
   const res = await fetch(GBM_BAAZAAR_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -110,6 +112,8 @@ async function fetchAuctions(): Promise<Auction[]> {
     hammerTimeDuration: Number(a.hammerTimeDuration) || 0,
     endsAtOriginal: Number(a.endsAtOriginal) || Number(a.endsAt),
     dueIncentives: a.dueIncentives ?? "0",
+    incMin: Number(a.incMin) || 0,
+    incMax: Number(a.incMax) || 0,
   }));
 }
 
@@ -136,7 +140,7 @@ async function fetchClaimable(address: string): Promise<Auction[]> {
   const res = await fetch(GBM_BAAZAAR_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q, variables: { now: String(now), a } }) });
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");
-  const map = (x: any): Auction => ({ id: x.id, type: x.type, tokenId: x.tokenId, contract: (x.contractAddress ?? "").toLowerCase(), highestBid: x.highestBid ?? "0", highestBidder: (x.highestBidder ?? "").toLowerCase(), seller: (x.seller ?? "").toLowerCase(), totalBids: Number(x.totalBids) || 0, quantity: x.quantity ?? "1", startsAt: Number(x.startsAt), endsAt: Number(x.endsAt), buyNowPrice: x.buyNowPrice ?? "0", stepMin: "0", bidDecimals: "0", startBidPrice: "0", hammerTimeDuration: 0, endsAtOriginal: Number(x.endsAt), dueIncentives: "0" });
+  const map = (x: any): Auction => ({ id: x.id, type: x.type, tokenId: x.tokenId, contract: (x.contractAddress ?? "").toLowerCase(), highestBid: x.highestBid ?? "0", highestBidder: (x.highestBidder ?? "").toLowerCase(), seller: (x.seller ?? "").toLowerCase(), totalBids: Number(x.totalBids) || 0, quantity: x.quantity ?? "1", startsAt: Number(x.startsAt), endsAt: Number(x.endsAt), buyNowPrice: x.buyNowPrice ?? "0", stepMin: "0", bidDecimals: "0", startBidPrice: "0", hammerTimeDuration: 0, endsAtOriginal: Number(x.endsAt), dueIncentives: "0", incMin: 0, incMax: 0 });
   const seen = new Set<string>();
   const out: Auction[] = [];
   for (const x of [...(json.data?.asSeller ?? []), ...(json.data?.asBidder ?? [])]) {
@@ -540,8 +544,13 @@ function AuctionGridInner() {
               <div className="flex items-center justify-between gap-1 text-xs">
                 <span className="font-mono text-muted-foreground truncate">#{a.tokenId}{Number(a.quantity) > 1 ? ` ×${a.quantity}` : ""}</span>
                 <span className="flex items-center gap-1 shrink-0">
-                  {BigInt(a.dueIncentives || "0") > 0n && (
-                    <span title="GBM bid-to-earn — outbid bidders earn GHST incentives" className="text-[9px] px-1 rounded bg-fuchsia-500/15 text-fuchsia-400">🎁</span>
+                  {a.incMax > 0 && (
+                    <span
+                      title={`GBM bid-to-earn: get outbid, earn ${(a.incMin / 100).toLocaleString()}–${(a.incMax / 100).toLocaleString()}% of your bid back`}
+                      className="text-[9px] px-1 rounded bg-fuchsia-500/15 text-fuchsia-400"
+                    >
+                      🎁 {(a.incMin / 100).toLocaleString(undefined, { maximumFractionDigits: 1 })}–{(a.incMax / 100).toLocaleString(undefined, { maximumFractionDigits: 1 })}%
+                    </span>
                   )}
                   <span className="uppercase text-[9px] bg-muted/50 px-1 rounded">{assetLabel(a)}</span>
                   <span
