@@ -11,11 +11,22 @@ async function gql(query: string) {
   return (await res.json()).data;
 }
 
-async function openTab(page: import("@playwright/test").Page, label: string) {
+// Click the asset-type tab, re-clicking if the first click lands before React
+// hydration attaches handlers (the tab button renders before it's interactive).
+async function openTab(page: import("@playwright/test").Page, label: string, marker: RegExp) {
   await page.goto("/explorer");
-  await page.getByRole("button", { name: label, exact: true }).click();
+  const tab = page.getByRole("button", { name: label, exact: true });
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await tab.click();
+    try {
+      await page.locator("main").first().filter({ hasText: marker }).waitFor({ timeout: 8000 });
+      break;
+    } catch {
+      /* click lost pre-hydration — retry */
+    }
+  }
   await page.waitForLoadState("networkidle").catch(() => {});
-  await page.waitForTimeout(2500);
+  await page.waitForTimeout(1500);
 }
 
 test("portals tab shows closed + open portal listings with haunt badges", async ({ page }) => {
@@ -24,7 +35,7 @@ test("portals tab shows closed + open portal listings with haunt badges", async 
   test.skip(listings.length === 0, "no live portal listings");
   const openCount = listings.filter((l) => Number(l.category) === 2).length;
 
-  await openTab(page, "Portals");
+  await openTab(page, "Portals", /Closed Portal|Open Portal|No open listings/);
   const text = await page.locator("main").first().innerText();
 
   expect(text, `expected all ${listings.length} portal listings`).toContain(`${listings.length} of ${listings.length}`);
@@ -46,7 +57,7 @@ test("FAKE Gotchi cards show artwork name and artist", async ({ page }) => {
   const tokens: { identifier: string; name: string; artistName: string }[] = meta?.fakeGotchiNFTTokens ?? [];
   test.skip(tokens.length === 0, "no FAKE metadata resolvable");
 
-  await openTab(page, "FAKE Gotchis");
+  await openTab(page, "FAKE Gotchis", /by |No open listings/);
   // Metadata arrives in a second query after the listings — wait for the
   // first known title to paint before snapshotting the grid.
   const first = tokens.find((t) => t.name);

@@ -25,9 +25,20 @@ async function liveWearableAuctions(): Promise<{ tokenId: string }[]> {
   return (j.data?.auctions ?? []).filter((a: { startsAt: string }) => Number(a.startsAt) <= now);
 }
 
+// Click the Auctions tab, re-clicking if the first click lands before React
+// hydration attaches handlers (the tab button renders before it's interactive).
 async function openAuctionsTab(page: import("@playwright/test").Page) {
   await page.goto("/explorer");
-  await page.getByRole("button", { name: "Auctions", exact: true }).click();
+  const tab = page.getByRole("button", { name: "Auctions", exact: true });
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await tab.click();
+    try {
+      await page.locator("main").first().filter({ hasText: /Live GBM auctions|No live auctions/ }).waitFor({ timeout: 8000 });
+      break;
+    } catch {
+      /* click lost pre-hydration — retry */
+    }
+  }
   await page.waitForLoadState("networkidle").catch(() => {});
   await page.waitForTimeout(2000);
 }
