@@ -10,6 +10,14 @@
 
 ---
 
+## STATUS — resume here (updated 2026-07-01)
+
+- **Task 1 DONE** — lazy backup probing implemented + spec/quality reviewed; commit `f835533` on `main`. 12/12 focused tests, full suite 456 green.
+- **Task 2 DONE** — subgraph built at `C:\tmp\aavegotchi-core-subgraph` (upstream `aavegotchi/aavegotchi-core-subgraph` @ `419026d`, graph-cli 0.59.0, manifest verified: network base, all 5 data sources). NOTE: no global yarn — use `npx yarn ...` / `npx graph ...` there. Source is 2025-09-05 vintage; Task 5 parity check is the schema-drift guard.
+- **Task 7 code half DONE** — workflow secret-sync + env-example docs; commit `e54c354` on `main`. Inert until the GH secret exists. Remaining Task 7: `gh secret set SUBGRAPH_URL_BACKUP ...`, Vercel env, deploy (needs Task 6 values).
+- **NEXT: Task 3 (USER ACTION)** — user must do Studio setup and return DEPLOY_KEY, SLUG, STUDIO_QUERY_URL. Then Task 4 (deploy from `C:\tmp\aavegotchi-core-subgraph`), 5, 6 (USER ACTION), rest of 7, 8.
+- Branch note: work is committed directly on `main` (repo convention; a concurrent agent session also commits here — always `git add` specific paths only).
+
 ## CONTEXT — read this first (assume zero prior session knowledge)
 
 ### Why
