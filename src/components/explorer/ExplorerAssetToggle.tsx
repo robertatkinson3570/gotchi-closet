@@ -23,8 +23,11 @@ const TABS: { key: AssetType; label: string; icon: LucideIcon }[] = [
 ];
 
 export function ExplorerAssetToggle({ value, onChange }: Props) {
+  // flex-wrap + max-w-full: on narrow screens the strip wraps to a second row
+  // instead of being flex-shrunk and clipped by overflow-hidden (which made
+  // the trailing tabs — Guardian Skins, Auctions — unreachable on mobile).
   return (
-    <div className="flex rounded-lg border border-border overflow-hidden bg-muted/30">
+    <div className="flex flex-wrap max-w-full shrink-0 rounded-lg border border-border overflow-hidden bg-muted/30">
       {TABS.map(({ key, label, icon: Icon }) => (
         <button
           key={key}
