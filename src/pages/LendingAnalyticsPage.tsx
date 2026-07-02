@@ -262,7 +262,9 @@ export default function LendingAnalyticsPage() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 mb-4">
-        <div className="lg:col-span-2 rounded-xl glass p-4">
+        {/* min-w-0: grid items default to min-width:auto, letting the heatmap
+            table's intrinsic width blow the page out past 375px viewports. */}
+        <div className="lg:col-span-2 rounded-xl glass p-4 min-w-0">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold">Price heatmap</h2>
             <span className="text-[10px] text-muted-foreground">

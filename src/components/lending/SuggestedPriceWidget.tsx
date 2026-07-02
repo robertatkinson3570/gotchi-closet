@@ -36,7 +36,7 @@ export function SuggestedPriceWidget({ lendings }: Props) {
   const tier = result ? TIER_LABELS[result.matchTier] : null;
 
   return (
-    <div className="rounded-xl glass p-4">
+    <div className="rounded-xl glass p-4 min-w-0">
       <div className="flex items-center gap-2 mb-3">
         <Calculator className="w-4 h-4 text-primary" />
         <h3 className="font-semibold">Suggested price</h3>
@@ -51,7 +51,7 @@ export function SuggestedPriceWidget({ lendings }: Props) {
             type="number"
             value={brs}
             onChange={(e) => setBrs(e.target.value)}
-            className="w-full h-9 mt-0.5 px-2 rounded border border-border/40 bg-background/70 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="w-full min-w-0 h-9 mt-0.5 px-2 rounded border border-border/40 bg-background/70 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           />
         </div>
         <div>
@@ -62,7 +62,7 @@ export function SuggestedPriceWidget({ lendings }: Props) {
             type="number"
             value={days}
             onChange={(e) => setDays(e.target.value)}
-            className="w-full h-9 mt-0.5 px-2 rounded border border-border/40 bg-background/70 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="w-full min-w-0 h-9 mt-0.5 px-2 rounded border border-border/40 bg-background/70 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           />
         </div>
       </div>

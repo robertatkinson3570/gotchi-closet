@@ -5,7 +5,6 @@ import { useAddressState } from "@/lib/addressState";
 import { shortenAddress } from "@/lib/address";
 import { switchToBaseChain } from "@/lib/chains";
 import { useToast } from "@/ui/use-toast";
-import { ConnectButton } from "./ConnectButton";
 import { NetworkBanner } from "./NetworkBanner";
 import { X, Wallet } from "lucide-react";
 
@@ -74,9 +73,10 @@ export function WalletHeader({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          {!isConnected ? (
-            <ConnectButton />
-          ) : (
+          {/* Disconnected: no button here — the global header's wallet chip
+              already offers Connect, and doubling the CTA stacked two
+              "Connect Wallet" buttons on mobile. */}
+          {!isConnected ? null : (
             <Menu as="div" className="relative">
               <Menu.Button as={Button} variant="secondary" size="sm" className="h-8">
                 {connectedAddress ? shortenAddress(connectedAddress) : "Connected"}
