@@ -6,8 +6,7 @@ import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { CORE_SUBGRAPH_URL } from "@/lib/lending/contracts";
 import { GBM_SUBGRAPH } from "@/lib/subgraph";
-
-const GHST_BASE = "0xcd2f22236dd9dfe2356d7c543161d4d260fd9bcb";
+import { useGhstUsd } from "@/hooks/useGhstUsd";
 
 type Win = { key: string; label: string; seconds: number };
 const WINDOWS: Win[] = [
@@ -96,22 +95,6 @@ async function fetchStats(start: number): Promise<Stats> {
       erc1155: st ? Number(st.erc1155TotalVolume) / 1e18 : 0,
     },
   };
-}
-
-function useGhstUsd() {
-  return useQuery({
-    queryKey: ["ghst-usd"],
-    staleTime: 5 * 60_000,
-    queryFn: async () => {
-      try {
-        const r = await fetch(`https://coins.llama.fi/prices/current/base:${GHST_BASE}?searchWidth=4h`);
-        const j = await r.json();
-        return Number(j?.coins?.[`base:${GHST_BASE}`]?.price ?? 0);
-      } catch {
-        return 0;
-      }
-    },
-  });
 }
 
 const fmtGhst = (v: number) => (v >= 1000 ? `${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}K` : v.toLocaleString(undefined, { maximumFractionDigits: 0 }));
