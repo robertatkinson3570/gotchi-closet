@@ -4,6 +4,7 @@ import { useReadContracts } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { REALM_DIAMOND_BASE, REALM_FACET_ABI, altarLevelFromId } from "@/lib/lending/contracts";
+import { onchainFirstSeconds } from "@/lib/lending/onchainFirst";
 
 import { GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
 
@@ -113,6 +114,16 @@ export function useLandParcels(owner?: string) {
         args: [id],
         chainId: BASE_CHAIN_ID,
       });
+      // On-chain last-claimed too: the subgraph can lag hours behind, which
+      // made just-emptied reservoirs still show "Ready" and every re-claim
+      // revert with "AlchemicaFacet: 8 hours claim cooldown".
+      out.push({
+        address: REALM_DIAMOND_BASE,
+        abi: REALM_FACET_ABI,
+        functionName: "lastClaimedAlchemica",
+        args: [id],
+        chainId: BASE_CHAIN_ID,
+      });
     }
     return out;
   }, [ids]);
@@ -146,19 +157,19 @@ export function useLandParcels(owner?: string) {
 
   const rows = useMemo<ParcelRow[]>(() => {
     return raw.map((p, i) => {
-      const avail = chain?.[i * 3];
-      const altar = chain?.[i * 3 + 1];
-      const channeled = chain?.[i * 3 + 2];
+      const avail = chain?.[i * 4];
+      const altar = chain?.[i * 4 + 1];
+      const channeled = chain?.[i * 4 + 2];
+      const claimed = chain?.[i * 4 + 3];
       const info = names?.[i];
       const available =
         avail?.status === "success"
           ? (avail.result as readonly bigint[]).slice()
           : [0n, 0n, 0n, 0n];
-      // Prefer the on-chain value (fresh after a channel); fall back to subgraph.
-      const lastChanneled =
-        channeled?.status === "success"
-          ? Number(channeled.result as bigint)
-          : Number(p.lastChanneledAlchemica) || 0;
+      // Prefer the on-chain values (fresh after a channel/claim); the subgraph
+      // fallback can lag hours behind chain head.
+      const lastChanneled = onchainFirstSeconds(channeled, p.lastChanneledAlchemica);
+      const lastClaimed = onchainFirstSeconds(claimed, p.lastClaimedAlchemica);
       const name =
         info?.status === "success"
           ? ((info.result as { parcelAddress?: string }).parcelAddress ?? "")
@@ -169,7 +180,7 @@ export function useLandParcels(owner?: string) {
         name,
         channelAccess: 0,
         reservoirAccess: 0,
-        lastClaimed: Number(p.lastClaimedAlchemica) || 0,
+        lastClaimed,
         altarLevel: altar?.status === "success" ? altarLevelFromId(Number(altar.result as bigint)) : 0,
         district: p.district,
         size: Number(p.size),
