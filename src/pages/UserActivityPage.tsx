@@ -13,6 +13,7 @@ import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "@/components/explorer/AssetImage";
 import { GotchiSvgById } from "@/components/explorer/GotchiSvgById";
+import { GbmEarningsPanel } from "@/components/explorer/GbmEarningsPanel";
 
 // Marketplace cancel calls live on the Aavegotchi diamond; auction claim/cancel
 // on the GBM diamond. Exact signatures verified from the live dapp bundle.
@@ -68,7 +69,7 @@ async function gql(url: string, query: string, variables?: any) {
   return json.data;
 }
 
-type TabKey = "listings" | "offers" | "received" | "auctions" | "bids" | "purchases" | "sales";
+type TabKey = "listings" | "offers" | "received" | "auctions" | "bids" | "purchases" | "sales" | "earnings";
 type Item = {
   id: string;
   refId: string;
@@ -204,7 +205,9 @@ async function fetchOffersReceived(addr: string): Promise<Item[]> {
     .sort((x, y) => Number(y.priceWei) - Number(x.priceWei));
 }
 
-const FETCHERS: Record<TabKey, (a: string) => Promise<Item[]>> = {
+// "earnings" has no generic Item[] fetcher — it renders its own panel with
+// its own types (GBM incentives/scorecard/seller P&L), not the Item list.
+const FETCHERS: Record<Exclude<TabKey, "earnings">, (a: string) => Promise<Item[]>> = {
   listings: fetchListings, offers: fetchOffersMade, received: fetchOffersReceived, auctions: fetchAuctionsCreated, bids: fetchBids, purchases: fetchPurchases, sales: fetchSales,
 };
 const TABS: { key: TabKey; label: string; icon: typeof Tag }[] = [
@@ -215,6 +218,7 @@ const TABS: { key: TabKey; label: string; icon: typeof Tag }[] = [
   { key: "bids", label: "Bids", icon: Gavel },
   { key: "purchases", label: "Purchases", icon: ShoppingCart },
   { key: "sales", label: "Sales", icon: Receipt },
+  { key: "earnings", label: "Earnings", icon: Coins },
 ];
 
 function catLabel(it: Item): string {
@@ -261,9 +265,9 @@ export default function UserActivityPage() {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["user-activity", tab, routeAddr],
-    enabled: !!routeAddr,
+    enabled: !!routeAddr && tab !== "earnings",
     staleTime: 30_000,
-    queryFn: () => FETCHERS[tab](routeAddr!),
+    queryFn: () => FETCHERS[tab as Exclude<TabKey, "earnings">](routeAddr!),
   });
 
   const rows = useMemo(() => {
@@ -348,6 +352,10 @@ export default function UserActivityPage() {
               </button>
             ))}
           </div>
+          {tab === "earnings" ? (
+            routeAddr && <GbmEarningsPanel address={routeAddr} />
+          ) : (
+            <>
           <div className="flex items-center gap-1 flex-wrap mb-4">
             <span className="text-[11px] uppercase tracking-wide text-muted-foreground mr-1">Category</span>
             {CAT_FILTERS.map((c) => (
@@ -413,6 +421,8 @@ export default function UserActivityPage() {
             </div>
           )}
           <p className="mt-3 text-[11px] text-muted-foreground">Cancelling an offer refunds your escrowed GHST. Auction claim settles an ended auction (seller gets proceeds, winner gets the asset).</p>
+            </>
+          )}
         </>
       )}
     </div>
