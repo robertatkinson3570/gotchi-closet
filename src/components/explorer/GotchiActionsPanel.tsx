@@ -14,6 +14,8 @@ import { CreateAuctionButton } from "@/components/explorer/CreateAuctionButton";
 import { RecentSales } from "@/components/explorer/RecentSales";
 import { PriceHistory } from "@/components/explorer/PriceHistory";
 import { XpDrops } from "@/components/explorer/XpDrops";
+import { OnchainOutfits } from "@/components/explorer/OnchainOutfits";
+import { WardrobeHistory } from "@/components/explorer/WardrobeHistory";
 import { MakeOfferButton } from "@/components/explorer/MakeOfferButton";
 import { BuyButton } from "@/components/explorer/BuyButton";
 import { Link } from "react-router-dom";
@@ -304,6 +306,10 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
           <RecentSales kind="erc721" tokenId={gotchiId} />
 
           <XpDrops gotchiId={gotchiId} />
+
+          {address && !readOnly && <OnchainOutfits gotchiId={gotchiId} ownerAddress={address} locked={locked} />}
+
+          <WardrobeHistory gotchiId={gotchiId} />
 
           {readOnly && (
             <div className="space-y-2">
