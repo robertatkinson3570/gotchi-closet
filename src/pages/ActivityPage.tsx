@@ -22,12 +22,14 @@ type Row = {
   tokenId: string;
   quantity: number;
   priceWei: string;
-  from?: string; // seller
-  to?: string; // buyer / offerer / highest bidder
+  from?: string;
+  to?: string;
   time: number;
   status?: string;
   gotchi?: GotchiArt;
   gotchiName?: string;
+  itemName?: string;
+  itemRarity?: number;
 };
 
 // Category filters must match on (kind, category) pairs — the numeric
@@ -108,8 +110,6 @@ async function gql(url: string, query: string) {
   return json.data;
 }
 
-// Offers/auctions carry only a token id, so batch-fetch gotchi traits to render
-// art client-side (matching Sales) instead of hitting the server SVG endpoint.
 async function enrichGotchiArt(rows: Row[]): Promise<Row[]> {
   const ids = [...new Set(rows.filter((r) => r.kind === "erc721" && r.category === BAAZAAR_CATEGORY.AAVEGOTCHI && (!r.gotchi || !r.gotchiName)).map((r) => r.tokenId))];
   if (!ids.length) return rows;
@@ -121,6 +121,23 @@ async function enrichGotchiArt(rows: Row[]): Promise<Row[]> {
     if (!hit) return r;
     return { ...r, gotchi: r.gotchi ?? hit.art, gotchiName: r.gotchiName ?? hit.name };
   });
+}
+
+async function enrichWearableMetadata(rows: Row[]): Promise<Row[]> {
+  const ids = [...new Set(rows.filter((r) => r.kind === "erc1155" && r.category === BAAZAAR_CATEGORY.WEARABLE && !r.itemName).map((r) => r.tokenId))];
+  if (!ids.length) return rows;
+  try {
+    const d = await gql(CORE_SUBGRAPH_URL, `query { wearables(first: 1000, where: { id_in: [${ids.map((i) => `"${i}"`).join(",")}] }) { id name baseRarity } }`);
+    const map = new Map<string, { name: string; rarity: number }>();
+    for (const w of d?.wearables ?? []) map.set(w.id, { name: w.name || `Wearable #${w.id}`, rarity: Number(w.baseRarity) || 0 });
+    return rows.map((r) => {
+      const hit = map.get(r.tokenId);
+      if (!hit) return r;
+      return { ...r, itemName: hit.name, itemRarity: hit.rarity };
+    });
+  } catch {
+    return rows;
+  }
 }
 
 async function fetchSales(): Promise<Row[]> {
@@ -139,13 +156,12 @@ async function fetchSales(): Promise<Row[]> {
     gotchi: l.gotchi ? { numericTraits: (l.gotchi.withSetsNumericTraits ?? l.gotchi.numericTraits ?? []).map((n: any) => Number(n)), equippedWearables: (l.gotchi.equippedWearables ?? []).map((n: any) => Number(n)), hauntId: l.gotchi.hauntId != null ? Number(l.gotchi.hauntId) : undefined, collateral: l.gotchi.collateral } : undefined,
     gotchiName: l.gotchi?.name || undefined,
   }));
-  // erc1155Purchases (one row per fill) carries the buyer, which
-  // erc1155Listings lacks — the dapp's activity feed shows both sides.
   const e1155: Row[] = (d?.erc1155Purchases ?? []).map((l: any) => ({
     id: `s1155-${l.id}`, feed: "sale" as const, kind: "erc1155" as const, category: Number(l.category), tokenId: l.erc1155TypeId, quantity: Number(l.quantity) || 1,
     priceWei: l.priceInWei, from: l.seller, to: l.recipient || l.buyer || "", time: Number(l.timeLastPurchased),
   }));
-  return [...e721, ...e1155].sort((a, b) => b.time - a.time);
+  const rows = [...e721, ...e1155].sort((a, b) => b.time - a.time);
+  return enrichWearableMetadata(rows);
 }
 
 // Derive a buy order's lifecycle status (matches the dapp's Status column).
@@ -173,7 +189,9 @@ async function fetchOffers(): Promise<Row[]> {
     priceWei: o.priceInWei, to: o.buyer, time: Number(o.createdAt),
     status: offerStatus({ canceled: o.canceled, executed: o.completedAt != null, partial: Number(o.executedQuantity) > 0, createdAt: Number(o.createdAt), duration: Number(o.duration) || 0 }, now),
   }));
-  return enrichGotchiArt([...o721, ...o1155].sort((a, b) => b.time - a.time));
+  const rows = [...o721, ...o1155].sort((a, b) => b.time - a.time);
+  const withGotchi = await enrichGotchiArt(rows);
+  return enrichWearableMetadata(withGotchi);
 }
 
 // Map an auction's token contract to the (kind, category) used for imagery.

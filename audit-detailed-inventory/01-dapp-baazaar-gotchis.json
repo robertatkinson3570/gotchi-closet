@@ -1,0 +1,158 @@
+{
+  "url": "https://dapp.aavegotchi.com/baazaar/aavegotchis",
+  "title": "Dapp Baazaar - Aavegotchis Listing",
+  "sections": [
+    {
+      "name": "Top Navigation Bar",
+      "visible": true,
+      "fields": [
+        "Baazaar Logo/Title",
+        "Tab: All Gotchis",
+        "Tab: Wearables",
+        "Tab: Items",
+        "Tab: Parcels",
+        "Tab: Portals",
+        "Tab: Installations",
+        "Search Box",
+        "Filter Button",
+        "Sort Dropdown",
+        "View Toggle (Grid/List)"
+      ]
+    },
+    {
+      "name": "Gotchi Card - Core Information",
+      "visible": true,
+      "fields": [
+        "Gotchi Image (SVG rendered)",
+        "Gotchi Name",
+        "Gotchi ID (#12345)",
+        "Base Rarity Score",
+        "Modified Rarity Score (with sets)",
+        "Kinship Level",
+        "Experience Points",
+        "Level",
+        "Haunt ID"
+      ]
+    },
+    {
+      "name": "Gotchi Card - Market Data",
+      "visible": true,
+      "fields": [
+        "Price (GHST)",
+        "Price in USD (if applicable)",
+        "Currency Badge (GHST)",
+        "Seller Address (clickable link)",
+        "Listed Timestamp",
+        "Status Badge (For Sale / Auctioning)"
+      ]
+    },
+    {
+      "name": "Gotchi Card - Traits Display",
+      "visible": true,
+      "fields": [
+        "Energy (NRG) Value",
+        "Aggression (AGG) Value",
+        "Spookiness (SPK) Value",
+        "Brown Cheese (BRN) Value",
+        "Eyes (EYS) Value",
+        "Eye Color (EYC) Value",
+        "Trait Grid (6 traits in boxes)"
+      ]
+    },
+    {
+      "name": "Filter Panel",
+      "visible": true,
+      "fields": [
+        "Rarity Range Slider (min-max)",
+        "Level Range Slider (min-max)",
+        "Kinship Range Slider (min-max)",
+        "Haunt Dropdown (multi-select)",
+        "Status Radio (All/For Sale/Auctioning)",
+        "Price Range Slider",
+        "Trait Checkboxes (NRG, AGG, SPK, BRN, EYS, EYC)",
+        "Trait Range for each (min-max)",
+        "Clear All Filters Button"
+      ]
+    },
+    {
+      "name": "Sort & Display Options",
+      "visible": true,
+      "fields": [
+        "Sort: Recently Listed",
+        "Sort: Oldest Listed",
+        "Sort: Price Low→High",
+        "Sort: Price High→Low",
+        "Sort: Rarity High→Low",
+        "Sort: Ending Soon (auctions)",
+        "View: Grid (default)",
+        "View: List",
+        "Grid Columns: Responsive (2-6 cols)"
+      ]
+    },
+    {
+      "name": "Pagination & Loader",
+      "visible": true,
+      "fields": [
+        "Results Counter (\"Showing X of Y\")",
+        "Infinite Scroll / Load More",
+        "Loading Spinner",
+        "Page Size Selector (25/50/100)"
+      ]
+    }
+  ],
+  "dataFields": [
+    "gotchi_id (uint256)",
+    "gotchi_name (string)",
+    "base_rarity_score (uint)",
+    "modified_rarity_score (uint)",
+    "with_sets_rarity_score (uint)",
+    "kinship (uint)",
+    "level (uint)",
+    "experience (uint)",
+    "haunt_id (uint)",
+    "price_wei (BigInt)",
+    "price_ghst (decimal)",
+    "seller_address (0x...)",
+    "listed_timestamp (unix)",
+    "status (enum: for_sale | auctioning)",
+    "traits[6] (numeric array)",
+    "equipped_wearables[16] (id array)"
+  ],
+  "uiComponents": [
+    "filter-slider-component",
+    "checkbox-group",
+    "radio-button-group",
+    "dropdown-select",
+    "card-grid (responsive)",
+    "price-badge",
+    "status-badge",
+    "rarity-color-indicator",
+    "address-link-component",
+    "timestamp-formatter",
+    "trait-value-display",
+    "loading-spinner",
+    "pagination-infinite-scroll"
+  ],
+  "interactionPatterns": [
+    "click-card-to-open-detail-modal",
+    "click-address-to-filter-by-seller",
+    "adjust-filter-sliders",
+    "apply-multiple-filters-simultaneously",
+    "clear-all-filters-at-once",
+    "search-by-name-or-id",
+    "toggle-view-mode",
+    "sort-by-column-header-click",
+    "infinite-scroll-load-more",
+    "export-filtered-results"
+  ],
+  "visualElements": [
+    "svg-rendered-gotchi-with-accessories",
+    "gradient-background-card",
+    "rarity-color-coded-border",
+    "haunt-badge-with-color",
+    "animated-price-ticker",
+    "hover-card-elevation",
+    "status-badge-green-orange-red",
+    "trait-mini-grid"
+  ]
+}

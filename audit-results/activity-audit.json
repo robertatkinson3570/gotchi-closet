@@ -1,0 +1,59 @@
+{
+  "page": "Activity",
+  "timestamp": "2026-07-01T23:57:55.542Z",
+  "dapp": {
+    "features": [
+      "Activity history timeline",
+      "Transaction filtering",
+      "Item details on hover/click",
+      "Price history"
+    ],
+    "dataFields": [
+      "Transaction type (Listed, Sold, Delisted)",
+      "Item name/ID",
+      "Price",
+      "From address",
+      "To address",
+      "Timestamp",
+      "Item image",
+      "Rarity/Stats"
+    ],
+    "uiElements": [],
+    "screenshots": [
+      "audit-results\\dapp-activity.png"
+    ]
+  },
+  "gotchiCloset": {
+    "features": [
+      "Activity feed",
+      "List view"
+    ],
+    "dataFields": [],
+    "uiElements": [
+      "Activity table/list",
+      "Columns"
+    ],
+    "screenshots": [
+      "audit-results\\closet-activity.png"
+    ]
+  },
+  "gaps": {
+    "missingFeatures": [
+      "Activity history timeline",
+      "Transaction filtering",
+      "Item details on hover/click",
+      "Price history"
+    ],
+    "missingDataFields": [
+      "Transaction type (Listed, Sold, Delisted)",
+      "Item name/ID",
+      "Price",
+      "From address",
+      "To address",
+      "Timestamp",
+      "Item image",
+      "Rarity/Stats"
+    ],
+    "missingUiElements": []
+  }
+}

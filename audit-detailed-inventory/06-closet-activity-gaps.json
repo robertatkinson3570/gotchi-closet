@@ -1,0 +1,27 @@
+{
+  "url": "https://www.gotchicloset.com/activity",
+  "title": "Gotchi Closet - Activity (Current)",
+  "sections": [],
+  "dataFields": [],
+  "uiComponents": [],
+  "interactionPatterns": [],
+  "visualElements": [],
+  "gaps": [
+    "CRITICAL: Item Name/Title NOT Displayed",
+    "CRITICAL: Item Image NOT Shown",
+    "CRITICAL: Item Rarity Badge NOT Displayed",
+    "HIGH: Seller Address NOT Labeled (\"From\")",
+    "HIGH: Buyer Address NOT Labeled (\"To\")",
+    "HIGH: Transaction Type Badge (Listed/Sold/Offer) Missing",
+    "HIGH: Transaction Status Indicator Missing",
+    "MEDIUM: Transaction Hash NOT Linked to Explorer",
+    "MEDIUM: Block Number NOT Shown",
+    "MEDIUM: Timestamp Format (Relative/Absolute) Incomplete",
+    "MEDIUM: Gotchi Traits NOT Displayed",
+    "LOW: No Item ID Display",
+    "LOW: No Price Format Consistency",
+    "LOW: No Transaction Filters",
+    "LOW: No Search Functionality",
+    "LOW: No Export Option"
+  ]
+}

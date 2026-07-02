@@ -1,0 +1,29 @@
+{
+  "url": "https://www.gotchicloset.com/explorer",
+  "title": "Gotchi Closet - Explorer (Current)",
+  "sections": [],
+  "dataFields": [],
+  "uiComponents": [],
+  "interactionPatterns": [],
+  "visualElements": [],
+  "gaps": [
+    "MISSING: Rarity Score Display (Base/Modified/WithSets)",
+    "MISSING: Rarity Color Badge",
+    "MISSING: Kinship Value",
+    "MISSING: Level Display",
+    "MISSING: Haunt ID Badge",
+    "MISSING: 6-Trait Grid Display",
+    "MISSING: Seller Address Link",
+    "MISSING: Listed Timestamp",
+    "MISSING: Advanced Rarity Filters",
+    "MISSING: Level Range Filter",
+    "MISSING: Kinship Range Filter",
+    "MISSING: Trait Min/Max Sliders",
+    "MISSING: Sort Controls",
+    "MISSING: View Mode Toggle (Grid/List)",
+    "MISSING: Price USD Display",
+    "MISSING: Infinite Scroll or Pagination Controls",
+    "MISSING: Clear Filters Button",
+    "MISSING: Export/Bulk Actions"
+  ]
+}
