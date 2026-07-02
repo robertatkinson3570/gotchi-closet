@@ -29,6 +29,10 @@ async function openTab(page: import("@playwright/test").Page, label: string, mar
   await page.waitForTimeout(1500);
 }
 
+// These tests chain live subgraph fetches + tab-click retry waits; the suite's
+// default 30s test budget is too tight under parallel load.
+test.setTimeout(120_000);
+
 test("portals tab shows closed + open portal listings with haunt badges", async ({ page }) => {
   const d = await gql(`{ erc721Listings(first: 1000, where: { category_in: [0, 2], cancelled: false, timePurchased: "0" }) { category } }`);
   const listings: { category: string }[] = d?.erc721Listings ?? [];

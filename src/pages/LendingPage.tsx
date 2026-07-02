@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, X, Filter } from "lucide-react";
 import { LendingTopBar } from "@/components/lending/LendingTopBar";
@@ -223,8 +224,11 @@ export default function LendingPage() {
 
       {detailId && <LendingDetailModal lendingId={detailId} onClose={closeDetail} />}
 
-      {/* Mobile filters drawer */}
-      {mobileDrawerOpen && (
+      {/* Mobile filters drawer — portaled to <body>: RootLayout's <main> is a
+          `relative z-[1]` stacking context, so anything rendered inside it
+          paints UNDER the z-30 sticky header regardless of its own z-index
+          (the drawer's close button was untappable beneath the theme toggle). */}
+      {mobileDrawerOpen && createPortal(
         <div
           className="fixed inset-0 z-40 lg:hidden bg-black/60 backdrop-blur-sm"
           onClick={() => setMobileDrawerOpen(false)}
@@ -281,7 +285,8 @@ export default function LendingPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

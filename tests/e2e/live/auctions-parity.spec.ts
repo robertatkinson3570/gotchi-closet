@@ -43,6 +43,10 @@ async function openAuctionsTab(page: import("@playwright/test").Page) {
   await page.waitForTimeout(2000);
 }
 
+// Live subgraph fetches + a dapp page load + tab-click retries can exceed the
+// suite's default 30s test budget under parallel load.
+test.setTimeout(120_000);
+
 test("every live wearable auction shows its wearable name", async ({ page }) => {
   const live = await liveWearableAuctions();
   test.skip(live.length === 0, "no live wearable auctions right now");
