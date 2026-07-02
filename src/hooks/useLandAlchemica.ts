@@ -18,6 +18,7 @@ import {
   altarLevelFromId,
 } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
+import { onchainFirstSeconds } from "@/lib/lending/onchainFirst";
 
 // Gotchiverse (land) subgraph on Base. The app's urql client points at the
 // core subgraph, which doesn't index parcels — so query this one directly.
@@ -101,6 +102,29 @@ export function useLandAlchemica(claimerGotchiId?: number, channelGotchiIds: num
     query: { enabled: availContracts.length > 0 },
   });
 
+  // On-chain last-claimed per parcel. The subgraph's lastClaimedAlchemica can
+  // lag hours behind chain head, which made just-emptied reservoirs still count
+  // as claimable and every re-claim revert with "8 hours claim cooldown".
+  const claimedContracts = useMemo(
+    () =>
+      parcelIds.map((id) => ({
+        address: REALM_DIAMOND_BASE,
+        abi: REALM_FACET_ABI,
+        functionName: "lastClaimedAlchemica" as const,
+        args: [id] as const,
+        chainId: BASE_CHAIN_ID,
+      })),
+    [parcelIds]
+  );
+  const { data: claimedData } = useReadContracts({
+    contracts: claimedContracts,
+    query: { enabled: claimedContracts.length > 0 },
+  });
+  const lastClaimedTimes = useMemo<number[]>(
+    () => parcelInfo.map((p, i) => onchainFirstSeconds(claimedData?.[i], p.lastClaimed)),
+    [parcelInfo, claimedData]
+  );
+
   // Per-parcel channeling cooldown: read each parcel's last-channeled
   // timestamp (Multicall3) and derive when it can next be channeled.
   const channeledContracts = useMemo(
@@ -158,8 +182,8 @@ export function useLandAlchemica(claimerGotchiId?: number, channelGotchiIds: num
   // (lastClaimed + cooldown). 0 / never-claimed parcels are ready now. Lets the
   // UI show "next reservoir ready in Xh" once everything's been claimed.
   const nextReservoirTimes = useMemo<number[]>(
-    () => parcelInfo.map((p) => (p.lastClaimed > 0 ? p.lastClaimed + RESERVOIR_COOLDOWN_SEC : 0)),
-    [parcelInfo]
+    () => lastClaimedTimes.map((lc) => (lc > 0 ? lc + RESERVOIR_COOLDOWN_SEC : 0)),
+    [lastClaimedTimes]
   );
 
   const { claimable, totalsBySymbol } = useMemo(() => {
@@ -175,7 +199,7 @@ export function useLandAlchemica(claimerGotchiId?: number, channelGotchiIds: num
         // re-accumulates the instant you claim — so gate on the cooldown
         // (lastClaimed + cooldown), NOT on the balance, or every parcel looks
         // "ready" forever and claim-all mostly reverts.
-        const lc = parcelInfo[i]?.lastClaimed ?? 0;
+        const lc = lastClaimedTimes[i] ?? 0;
         const cooldownReady = lc === 0 || lc + RESERVOIR_COOLDOWN_SEC <= nowSec;
         if (!cooldownReady) return;
         if (!amounts.some((v) => v > 0n)) return;
@@ -188,7 +212,7 @@ export function useLandAlchemica(claimerGotchiId?: number, channelGotchiIds: num
       });
     }
     return { claimable, totalsBySymbol: totals };
-  }, [availData, parcelIds, parcelInfo]);
+  }, [availData, parcelIds, lastClaimedTimes]);
 
   const send = useCallback(async () => {
     if (!isConnected || !address || claimable.length === 0) return;
