@@ -301,7 +301,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
 
           <RecentSales kind="erc721" tokenId={gotchiId} />
 
-          {address && <OnchainOutfits gotchiId={gotchiId} ownerAddress={address} locked={locked} />}
+          {address && !readOnly && <OnchainOutfits gotchiId={gotchiId} ownerAddress={address} locked={locked} />}
 
           <WardrobeHistory gotchiId={gotchiId} />
 
