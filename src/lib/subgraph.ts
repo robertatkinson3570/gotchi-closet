@@ -13,3 +13,5 @@ export const GOTCHIVERSE_SUBGRAPH = `${GOLDSKY_PROJECT}/gotchiverse-base/prod/gn
 export const GBM_SUBGRAPH = `${GOLDSKY_PROJECT}/aavegotchi-gbm-baazaar-base/prod/gn`;
 /** Per-gotchi rendered SVGs. */
 export const SVG_SUBGRAPH = `${GOLDSKY_PROJECT}/aavegotchi-svg-base/prod/gn`;
+/** XP merkle drops + per-gotchi claims. */
+export const XP_SUBGRAPH = `${GOLDSKY_PROJECT}/aavegotchi-xp-base/prod/gn`;
