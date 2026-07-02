@@ -8,6 +8,7 @@ import { AssetImage } from "./AssetImage";
 import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
 import { RecentSales } from "./RecentSales";
 import { WornBy } from "./WornBy";
+import { WearableHolders } from "./WearableHolders";
 import { BuyButton } from "./BuyButton";
 import { MakeOfferButton } from "./MakeOfferButton";
 
@@ -72,6 +73,8 @@ export function WearableDetailModal({
               className="inline-flex items-center justify-center gap-1.5 h-10 w-full px-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-600/90 disabled:opacity-50 text-sm font-semibold" />
           )}
           <MakeOfferButton kind="erc1155" category={BAAZAAR_CATEGORY.WEARABLE} tokenId={String(wearable.id)} contractAddress={AAVEGOTCHI_DIAMOND_BASE} label={wearable.name} />
+
+          <WearableHolders wearableId={wearable.id} />
 
           <WornBy wearableId={wearable.id} />
 
