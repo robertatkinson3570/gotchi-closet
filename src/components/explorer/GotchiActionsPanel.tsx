@@ -12,6 +12,7 @@ import { useBatchTransferEscrow, type EscrowBalance } from "@/hooks/useEscrowWit
 import { SoulCertificate } from "@/components/soul/SoulCertificate";
 import { CreateAuctionButton } from "@/components/explorer/CreateAuctionButton";
 import { RecentSales } from "@/components/explorer/RecentSales";
+import { XpDrops } from "@/components/explorer/XpDrops";
 import { MakeOfferButton } from "@/components/explorer/MakeOfferButton";
 import { BuyButton } from "@/components/explorer/BuyButton";
 import { Link } from "react-router-dom";
@@ -298,6 +299,8 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
           })()}
 
           <RecentSales kind="erc721" tokenId={gotchiId} />
+
+          <XpDrops gotchiId={gotchiId} />
 
           {readOnly && (
             <div className="space-y-2">
