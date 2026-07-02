@@ -60,3 +60,54 @@ Two parts:
 2. **Sell + meter (now fully specced in `004-storefront-sell-mcp.md`):** remote **HTTP/SSE transport** + **API-key auth**; paid in **ETH/USDC on Base, USD-denominated** (NOT GHST — GHST stays the *consumer* companion-premium rail; the MCP product is for outside devs who don't hold GHST). Free **stateless** tier (persona/lore/roast-setup) vs paid **stateful** tier (persistent memory, evolving soul, history, XP, seals, multi-collection). The MCP ledger mirrors the existing idempotent `addCredits`/`burnCredit` pattern (`server/companion/db.ts`) keyed by API key. Meter *value* (active souls, writes, seals, volume), not compute — there is no LLM bill on the base product. Optional **hosted-generation** upsell (Phase F) is the one place LLM cost re-enters and is gated behind the paid, burn-on-success path.
 
 **Revenue shape (honest):** free open read MCP = distribution/funnel (near-zero cost). Paid = a handful of projects/builders integrating multi-collection souls, metered in ETH/USDC. A profitable side-product path (a few B2B integrations + the in-app GHST sinks), not a moonshot — but its value does **not** depend on Aavegotchi surviving, which is the entire point.
+
+---
+
+# Subgraph data-gap plans (2026-07-02)
+
+Advisor plans (improve skill) from the subgraph feature-gap audit: all 8 live
+Goldsky subgraphs were introspected and compared against every query in
+`src/` + `server/`. **Written against commit `60fd7c3`.** Each plan is
+self-contained for a zero-context executor. Note: this directory carries two
+older numbering series (Wisp 000–004 above, and an earlier advisor set
+001–006); numbering continues monotonically from 006.
+
+## Execution order & status
+
+| Plan | Title | Priority | Effort | Depends on | Status |
+|------|-------|----------|--------|------------|--------|
+| 007  | On-chain outfits (WearablesConfig) + wardrobe history (EquippedWearableOwner) | P1 | M | — | DONE — reviewed & approved 2026-07-02; branch `advisor/007-onchain-outfits` (`36f66ee`), unmerged |
+| 008  | Price history & provenance sparkline (historicalPrices / timesTraded) | P1 | S | — | DONE — reviewed & approved 2026-07-02; branch `advisor/008-price-history` (`9d23389`), unmerged |
+| 009  | GBM earnings dashboard (Incentive / User scorecard / seller P&L) | P2 | M | — | DONE — reviewed & approved 2026-07-02; branch `advisor/009-gbm-earnings` (`9d80f18`), unmerged |
+| 010  | Wearable holder distribution + wearables in portfolio floor value (ItemTypeOwnership) | P2 | M | — | DONE — reviewed & approved 2026-07-02; branch `advisor/010-wearable-intel` (`0deb0e3`), unmerged |
+| 011  | XP drop tracker (aavegotchi-xp-base) | P3 | S | — | DONE — reviewed & approved 2026-07-02; branch `advisor/011-xp-drops` (`753bfe6`), unmerged |
+
+Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
+
+## Dependency notes
+
+- All five are independent; recommended order is by number (value ÷ effort).
+- 007, 010, and 011 all insert sections into `GotchiActionsPanel.tsx` /
+  `WearableDetailModal.tsx` — content doesn't overlap, but whichever lands
+  later must re-locate the `RecentSales` insertion point (each plan's STOP
+  conditions cover this).
+
+## Findings considered and rejected (2026-07-02 audit — don't re-audit)
+
+- **ERC-7589 wearable-rental UI** (`roleAssignments`): entity is empty on
+  Base — no market to serve yet. Revisit if usage appears (`tokenCommitments`
+  do exist).
+- **Socket bridge feed** (`socket-bridge-base`): belongs inside the already
+  spec'd get-tokens page (`docs/superpowers/specs/…get-tokens-design.md`),
+  not a standalone feature.
+- **GBM raw event log** (`events`/`Transaction` interface): the Activity
+  page already covers this via `auctions`/`bids`.
+- **Alchemica subgraph** (`aavegotchi-alchemica-base`): balances-only
+  (OpenZeppelin ERC20 schema); RPC already serves this need.
+- **SwapAction analytics** (buy-with-any-token volume): a stats-page
+  footnote at best; buy-with-any-token itself is in the baazaar-collections
+  spec.
+- **Lending income statements** (`GotchiLending.claimed` + gotchiverse
+  `Stat`): deferred, not rejected — the live sample showed zero-amount
+  claims; verify Base channeling/claim volume is non-trivial before planning
+  (finding #6 of the audit, MED confidence).
