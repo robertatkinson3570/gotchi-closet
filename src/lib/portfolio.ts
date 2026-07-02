@@ -18,10 +18,16 @@ export type PortfolioInputs = {
   gotchiFloorWei: string | null;
   /** Wallet GHST balance in wei. */
   ghstWei: bigint;
+  /** Sum of (owned balance × cheapest listing) across wearables, in GHST. Optional. */
+  wearablesFloorGhst?: number;
 };
 
 /** Total rough floor value in GHST units. */
 export function portfolioFloorGhst(p: PortfolioInputs): number {
   const count = Number.isFinite(p.gotchiCount) && p.gotchiCount > 0 ? p.gotchiCount : 0;
-  return count * weiToGhst(p.gotchiFloorWei) + weiToGhst(p.ghstWei);
+  const wearables =
+    Number.isFinite(p.wearablesFloorGhst) && (p.wearablesFloorGhst as number) > 0
+      ? (p.wearablesFloorGhst as number)
+      : 0;
+  return count * weiToGhst(p.gotchiFloorWei) + weiToGhst(p.ghstWei) + wearables;
 }

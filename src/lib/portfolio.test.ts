@@ -40,4 +40,44 @@ describe("portfolioFloorGhst", () => {
       portfolioFloorGhst({ gotchiCount: -2, gotchiFloorWei: "1000000000000000000", ghstWei: 0n })
     ).toBe(0);
   });
+
+  it("is unchanged when wearablesFloorGhst is omitted", () => {
+    expect(
+      portfolioFloorGhst({
+        gotchiCount: 3,
+        gotchiFloorWei: "100000000000000000000",
+        ghstWei: 50n * 10n ** 18n,
+      })
+    ).toBe(350);
+  });
+
+  it("adds wearablesFloorGhst when present", () => {
+    expect(
+      portfolioFloorGhst({
+        gotchiCount: 3,
+        gotchiFloorWei: "100000000000000000000",
+        ghstWei: 50n * 10n ** 18n,
+        wearablesFloorGhst: 25,
+      })
+    ).toBe(375);
+  });
+
+  it("coerces NaN/negative wearablesFloorGhst to 0", () => {
+    expect(
+      portfolioFloorGhst({
+        gotchiCount: 0,
+        gotchiFloorWei: null,
+        ghstWei: 0n,
+        wearablesFloorGhst: NaN,
+      })
+    ).toBe(0);
+    expect(
+      portfolioFloorGhst({
+        gotchiCount: 0,
+        gotchiFloorWei: null,
+        ghstWei: 0n,
+        wearablesFloorGhst: -10,
+      })
+    ).toBe(0);
+  });
 });

@@ -8,6 +8,8 @@ import { GHST_TOKEN_BASE, ALCHEMICA_TOKENS_BASE, ERC20_ABI } from "@/lib/lending
 import { CORE_SUBGRAPH } from "@/lib/subgraph";
 import { qk } from "@/lib/queryKeys";
 import { portfolioFloorGhst, weiToGhst } from "@/lib/portfolio";
+import { fetchOwnedWearableBalances } from "@/lib/explorer/wearableHolders";
+import { fetchBaazaarPrices } from "@/lib/baazaar";
 import { useGhstUsd } from "@/hooks/useGhstUsd";
 import { PortalsPanel } from "./PortalsPanel";
 import { PetOperatorControl } from "./PetOperatorControl";
@@ -64,9 +66,27 @@ export function OwnedOverview() {
     },
   });
 
+  // Owned wearables valued at their cheapest open Baazaar listing (0 if unlisted).
+  const { data: wearablesFloorGhst = 0 } = useQuery({
+    queryKey: ["owned-wearables-value", address?.toLowerCase()],
+    enabled: !!address,
+    staleTime: 300_000,
+    queryFn: async (): Promise<number> => {
+      const [balances, priceMap] = await Promise.all([
+        fetchOwnedWearableBalances(address!),
+        fetchBaazaarPrices(),
+      ]);
+      let sum = 0;
+      for (const [wearableId, balance] of balances) {
+        sum += balance * weiToGhst(priceMap[wearableId]?.minPriceWei ?? 0n);
+      }
+      return sum;
+    },
+  });
+
   const { data: ghstUsd = 0 } = useGhstUsd();
   const ghstWei = balances[0]?.bal ?? 0n;
-  const totalGhst = portfolioFloorGhst({ gotchiCount, gotchiFloorWei: floorWei, ghstWei });
+  const totalGhst = portfolioFloorGhst({ gotchiCount, gotchiFloorWei: floorWei, ghstWei, wearablesFloorGhst });
 
   if (!isConnected) return null;
 
@@ -87,6 +107,7 @@ export function OwnedOverview() {
         </div>
         <div className="text-[11px] text-muted-foreground">
           {gotchiCount} gotchi{gotchiCount === 1 ? "" : "s"} × {fmtGhst(weiToGhst(floorWei))} GHST floor + wallet GHST
+          {wearablesFloorGhst > 0 && <> + wearables {fmtGhst(wearablesFloorGhst)} GHST</>}
         </div>
       </div>
       <div>
