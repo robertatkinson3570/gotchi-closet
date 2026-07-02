@@ -7,10 +7,12 @@ import { env } from "@/lib/env";
  * silently stalling, by routing to a backup endpoint. Two mechanisms:
  *   1. Per-request hard fallback (`failoverFetch`) — on a network/HTTP error,
  *      retry the alternate endpoint once.
- *   2. Background freshness poll (`startHealthPolling`) — every ~45s, probe both
- *      endpoints' `_meta` block and route to the freshest healthy one. Because the
- *      two endpoints mirror the same chain, a *silent stall* is detected by
- *      comparing their block heights to each other (no chain-head lookup needed).
+ *   2. Background freshness poll (`startHealthPolling`) — every ~45s, probe the
+ *      primary's `_meta` block, and the backup's only when the primary looks
+ *      unhealthy or stalled (the backup is a metered gateway), then route to the
+ *      freshest healthy one. Because the two endpoints mirror the same chain, a
+ *      *silent stall* is detected by comparing their block heights to each other
+ *      (no chain-head lookup needed).
  *
  * With no backup configured (`VITE_GOTCHI_SUBGRAPH_URL_BACKUP` empty), this is a
  * complete no-op: the active URL is always the primary and behaviour is unchanged.
@@ -53,6 +55,26 @@ export function chooseUrl(primary: Health, backup: Health | null): string {
   return (backup.block ?? -1) > (primary.block ?? -1) ? backup.url : primary.url;
 }
 
+/**
+ * Decide whether the metered backup endpoint needs probing this cycle (exported
+ * for unit testing). The backup (The Graph gateway) counts every request against
+ * the monthly query quota, so it is only touched when the primary can't be
+ * trusted on its own:
+ *   - the active URL is already the backup (need the comparison to detect recovery)
+ *   - the primary is unreachable / erroring / blockless
+ *   - the primary's block number did not advance since the previous poll (silent
+ *     stall — Base produces a block every ~2s, so a healthy poll window must advance)
+ */
+export function shouldProbeBackup(
+  primary: Health,
+  prevPrimaryBlock: number | null,
+  activeIsPrimary: boolean
+): boolean {
+  if (!activeIsPrimary) return true;
+  if (!reachable(primary)) return true;
+  return prevPrimaryBlock != null && primary.block! <= prevPrimaryBlock;
+}
+
 const PRIMARY = env.gotchiSubgraphUrl;
 const BACKUP = env.gotchiSubgraphUrlBackup; // "" when unconfigured
 
@@ -79,13 +101,22 @@ export async function probeHealth(url: string): Promise<Health> {
   }
 }
 
-/** Re-probe both endpoints and update the active URL. Returns the new active URL. */
+let lastPrimaryBlock: number | null = null;
+
+/** Re-probe endpoints (backup only when needed) and update the active URL. */
 export async function refreshActiveUrl(): Promise<string> {
   if (!BACKUP) {
     activeUrl = PRIMARY;
     return activeUrl;
   }
-  const [p, b] = await Promise.all([probeHealth(PRIMARY), probeHealth(BACKUP)]);
+  const p = await probeHealth(PRIMARY);
+  const prevBlock = lastPrimaryBlock;
+  if (p.block != null) lastPrimaryBlock = p.block;
+  if (!shouldProbeBackup(p, prevBlock, activeUrl === PRIMARY)) {
+    activeUrl = PRIMARY;
+    return activeUrl;
+  }
+  const b = await probeHealth(BACKUP);
   activeUrl = chooseUrl(p, b);
   return activeUrl;
 }

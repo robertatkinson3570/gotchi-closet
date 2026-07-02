@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { chooseUrl, STALE_BLOCK_THRESHOLD, type Health } from "./subgraphFailover";
+import { chooseUrl, STALE_BLOCK_THRESHOLD, shouldProbeBackup, type Health } from "./subgraphFailover";
 
 const P = "https://primary.example";
 const B = "https://backup.example";
@@ -42,5 +42,29 @@ describe("chooseUrl", () => {
   it("when neither is reachable, picks the higher block (least stale)", () => {
     expect(chooseUrl(h(P, 800, false), h(B, 900, false))).toBe(B);
     expect(chooseUrl(h(P, 900, false), h(B, 800, false))).toBe(P);
+  });
+});
+
+describe("shouldProbeBackup", () => {
+  it("skips the metered backup probe when primary is healthy and advancing", () => {
+    expect(shouldProbeBackup(h(P, 1010), 1000, true)).toBe(false);
+  });
+
+  it("skips on the first poll (no previous block yet)", () => {
+    expect(shouldProbeBackup(h(P, 1000), null, true)).toBe(false);
+  });
+
+  it("probes when the primary block is not advancing (silent stall)", () => {
+    expect(shouldProbeBackup(h(P, 1000), 1000, true)).toBe(true);
+    expect(shouldProbeBackup(h(P, 990), 1000, true)).toBe(true); // went backwards
+  });
+
+  it("probes when the primary is unreachable or has indexing errors", () => {
+    expect(shouldProbeBackup(h(P, null, false), 1000, true)).toBe(true);
+    expect(shouldProbeBackup(h(P, 1010, true, true), 1000, true)).toBe(true);
+  });
+
+  it("always probes while running on the backup (to detect primary recovery)", () => {
+    expect(shouldProbeBackup(h(P, 1010), 1000, false)).toBe(true);
   });
 });
