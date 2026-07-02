@@ -5,6 +5,8 @@ import { createPublicClient, http } from "viem";
 import { Landmark, ExternalLink, Vote, Wrench, BookOpen, Megaphone, Bot, BarChart3, Loader2, Zap, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import LazySnapshotVotePanel from "@/components/dao/LazySnapshotVotePanel";
+import { QuorumPanel } from "@/components/dao/QuorumPanel";
+import { SNAPSHOT_QUORUM_VP } from "@/lib/quorumVp";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { shortAddress as short } from "@/lib/format";
@@ -148,13 +150,13 @@ function useSpaceStats() {
 }
 
 // ---- Snapshot proposals (with results: leading choice) ----
-type Proposal = { id: string; title: string; state: string; votes: number; end: number; choices: string[]; scores: number[]; type: string };
+type Proposal = { id: string; title: string; state: string; votes: number; end: number; choices: string[]; scores: number[]; scoresTotal: number; quorum: number; type: string };
 async function fetchProposals(): Promise<Proposal[]> {
-  const query = `{ proposals(first: 6, where: { space: "${SNAPSHOT_SPACE}" }, orderBy: "created", orderDirection: desc){ id title state votes end choices scores type } }`;
+  const query = `{ proposals(first: 6, where: { space: "${SNAPSHOT_SPACE}" }, orderBy: "created", orderDirection: desc){ id title state votes end choices scores scores_total quorum type } }`;
   const res = await fetch("https://hub.snapshot.org/graphql", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query }) });
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "snapshot error");
-  return (json.data?.proposals ?? []).map((p: any) => ({ id: p.id, title: p.title, state: p.state, votes: Number(p.votes) || 0, end: Number(p.end) || 0, choices: p.choices ?? [], scores: (p.scores ?? []).map(Number), type: p.type ?? "" }));
+  return (json.data?.proposals ?? []).map((p: any) => ({ id: p.id, title: p.title, state: p.state, votes: Number(p.votes) || 0, end: Number(p.end) || 0, choices: p.choices ?? [], scores: (p.scores ?? []).map(Number), scoresTotal: Number(p.scores_total) || 0, quorum: Number(p.quorum) || 0, type: p.type ?? "" }));
 }
 
 // Which of these proposals has the connected wallet already voted on?
@@ -221,6 +223,22 @@ function ProposalsSection({ address }: { address?: string }) {
                     <button onClick={() => setOpenId(open ? null : p.id)} className="h-7 px-3 rounded-md bg-primary/15 text-primary border border-primary/40 text-[11px] font-semibold shrink-0">{open ? "Close" : "Vote"}</button>
                   ) : null}
                 </div>
+                {p.state === "active" && (() => {
+                  // quorum progress: proposal.quorum when set, else the space default
+                  const q = p.quorum > 0 ? p.quorum : SNAPSHOT_QUORUM_VP;
+                  const pct = Math.min(100, Math.round((p.scoresTotal / q) * 100));
+                  return (
+                    <div className="mt-2">
+                      <div className="flex justify-between text-[10px] text-muted-foreground gap-2">
+                        <span>quorum {pct}%</span>
+                        <span className="tabular-nums">{Math.round(p.scoresTotal).toLocaleString()} / {q.toLocaleString()} VP</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted/40 overflow-hidden">
+                        <div className={`h-full rounded-full ${pct >= 100 ? "bg-emerald-500/80" : "bg-amber-500/70"}`} style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })()}
                 {p.scores.some((s) => s > 0) && (
                   <div className="mt-2 space-y-1">
                     {p.choices.map((c, i) => ({ c, score: p.scores[i] || 0, i })).sort((a, b) => b.score - a.score).slice(0, 4).map(({ c, score, i }) => {
@@ -295,6 +313,9 @@ export default function DaoPage() {
           </>
         )}
       </div>
+
+      {/* DAO-wide votable VP + quorum (community-requested "Live Quorum") */}
+      <QuorumPanel yourVp={vp?.total ?? null} />
 
       {/* Treasury */}
       <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-muted/10 to-muted/30 p-5 ring-1 ring-primary/5 mb-5">

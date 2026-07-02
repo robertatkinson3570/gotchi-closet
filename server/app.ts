@@ -10,6 +10,7 @@ import roastRoutes from "./routes/roast";
 import soulRoutes from "./routes/soul";
 import arenaRoutes from "./routes/arena";
 import mcpBillingRoutes from "./routes/mcpBilling";
+import daoRoutes from "./routes/dao";
 import { stewardRouter } from "./routes/steward";
 import { wispMcpHttpHandler } from "./mcp/http";
 import { getDebugStats } from "./aavegotchi/serverSvgService";
@@ -90,6 +91,8 @@ export function createApp() {
   app.use("/api/mcp", mcpBillingRoutes);
   // Steward — non-custodial estate automation (pet/channel/claim) enroll + manage.
   app.use("/api/steward", stewardRouter);
+  // DAO-wide votable VP ("live quorum") — public, cached server-side.
+  app.use("/api/dao", daoRoutes);
   // Keyed, rate-limited MCP protocol endpoint for external customers (POST only).
   // Distinct from /api/mcp (billing REST). Plan limits enforced in mcp/http.ts.
   app.post("/mcp", wispMcpHttpHandler);
