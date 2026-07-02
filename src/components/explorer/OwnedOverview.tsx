@@ -1,9 +1,14 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAccount, useReadContracts } from "wagmi";
-import { Coins, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Coins, Sparkles, Wallet } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { GHST_TOKEN_BASE, ALCHEMICA_TOKENS_BASE, ERC20_ABI } from "@/lib/lending/contracts";
+import { CORE_SUBGRAPH } from "@/lib/subgraph";
+import { qk } from "@/lib/queryKeys";
+import { portfolioFloorGhst, weiToGhst } from "@/lib/portfolio";
+import { useGhstUsd } from "@/hooks/useGhstUsd";
 import { PortalsPanel } from "./PortalsPanel";
 import { PetOperatorControl } from "./PetOperatorControl";
 
@@ -17,9 +22,11 @@ const fmt = (wei: bigint) => {
   return v.toLocaleString(undefined, { maximumFractionDigits: v < 1 ? 3 : v < 1000 ? 1 : 0 });
 };
 
-/** Owned-asset overview shown on the Explorer's "Owned" scope: wallet token
- *  balances + the user's portals (open/summon/claim). Consolidates what used to
- *  live on the now-deprecated profile page. */
+const fmtGhst = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+/** Owned-asset overview shown on the Explorer's "Owned" scope: rough floor
+ *  value, wallet token balances + the user's portals (open/summon/claim).
+ *  Consolidates what used to live on the now-deprecated profile page. */
 export function OwnedOverview() {
   const { address, isConnected } = useAccount();
   const { data: balData } = useReadContracts({
@@ -31,10 +38,57 @@ export function OwnedOverview() {
     [balData]
   );
 
+  // Cheapest active Baazaar gotchi listing (category 3) = the "floor".
+  const { data: floorWei = null } = useQuery({
+    queryKey: qk.gotchiFloor(),
+    staleTime: 60_000,
+    queryFn: async (): Promise<string | null> => {
+      const q = `{ erc721Listings(first:1, where:{ category:3, cancelled:false, timePurchased:"0" }, orderBy:priceInWei, orderDirection:asc){ priceInWei } }`;
+      const res = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+      const j = await res.json();
+      return j.data?.erc721Listings?.[0]?.priceInWei ?? null;
+    },
+  });
+
+  // Owned + lent-out gotchis (lent ones sit in the lending escrow but remain yours).
+  const { data: gotchiCount = 0 } = useQuery({
+    queryKey: qk.ownedGotchiCount(address?.toLowerCase()),
+    enabled: !!address,
+    staleTime: 60_000,
+    queryFn: async (): Promise<number> => {
+      const q = `{ user(id:"${address!.toLowerCase()}"){ gotchisOwned(first:1000){ id } gotchisLentOut } }`;
+      const res = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+      const j = await res.json();
+      const u = j.data?.user;
+      return (u?.gotchisOwned?.length ?? 0) + (u?.gotchisLentOut?.length ?? 0);
+    },
+  });
+
+  const { data: ghstUsd = 0 } = useGhstUsd();
+  const ghstWei = balances[0]?.bal ?? 0n;
+  const totalGhst = portfolioFloorGhst({ gotchiCount, gotchiFloorWei: floorWei, ghstWei });
+
   if (!isConnected) return null;
 
   return (
     <div className="px-2 md:px-4 pt-2 space-y-3">
+      <div className="rounded-xl border border-border/40 bg-gradient-to-r from-primary/10 to-transparent p-3 flex items-baseline justify-between gap-3 flex-wrap">
+        <div>
+          <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide inline-flex items-center gap-1.5">
+            <Wallet className="w-3.5 h-3.5" /> Floor value (rough)
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold tabular-nums">{fmtGhst(totalGhst)}</span>
+            <span className="text-sm text-muted-foreground">GHST</span>
+            {ghstUsd > 0 && totalGhst > 0 && (
+              <span className="text-sm text-emerald-500 font-medium">≈ ${fmtGhst(totalGhst * ghstUsd)}</span>
+            )}
+          </div>
+        </div>
+        <div className="text-[11px] text-muted-foreground">
+          {gotchiCount} gotchi{gotchiCount === 1 ? "" : "s"} × {fmtGhst(weiToGhst(floorWei))} GHST floor + wallet GHST
+        </div>
+      </div>
       <div>
         <div className="flex items-center justify-between mb-2">
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide inline-flex items-center gap-1.5"><Coins className="w-4 h-4" /> Your tokens</div>
