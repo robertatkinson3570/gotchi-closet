@@ -13,6 +13,10 @@ services:
       - COMPANION_DB_PATH=/srv/gotchicloset/data/companion.db
       # Pulse daily-metrics DB on the same writable volume (see server/pulse/store.ts).
       - PULSE_DB_PATH=/srv/gotchicloset/data/pulse.db
+      # Game Center: games.db auto-lands next to companion.db via the COMPANION_DB_PATH
+      # fallback (server/games/store.ts). Admin allowlist = the operator's public wallets
+      # that may approve/reject submissions (public addresses, not secrets).
+      - GAME_CENTER_ADMINS=0xc4cb6cb969e8b4e309ab98e4da51b77887afad96,0xe0d4f8f6f04a42aed5a7ea4f68bc612e6a54a3c2
     ports:
       - "127.0.0.1:8791:8787"
     volumes:
