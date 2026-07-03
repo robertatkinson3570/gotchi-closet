@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAccount, useChainId, usePublicClient, useReadContract } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { Button } from "@/ui/button";
 import { useAppStore } from "@/state/useAppStore";
 import { useWearablesById } from "@/state/selectors";
@@ -341,13 +341,18 @@ export function SaveOutfitButton(props: {
     <>
       <Button
         ref={btnRef}
+        variant="outline"
         size="sm"
         data-testid={`save-outfit-${props.instanceId}`}
-        className={`h-7 w-full px-1 rounded-lg text-[10px] font-bold text-white shadow bg-gradient-to-r from-primary to-fuchsia-500 hover:opacity-90 ${pulse ? "animate-pulse" : ""}`}
+        className={`h-auto py-1 px-1.5 text-[9px] flex-col leading-tight w-full border-purple-500/50 bg-purple-500/10 hover:bg-purple-500/20 ${pulse ? "animate-pulse" : ""}`}
         onClick={openPopover}
         title="Commit this outfit (and respec) to the chain"
       >
-        Save on-chain
+        <span className="flex items-center gap-0.5">
+          <Save className="h-3 w-3" />
+          Save
+        </span>
+        <span className="text-[8px] text-muted-foreground">On-Chain</span>
       </Button>
       {open && anchor &&
         createPortal(
