@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { getCanonicalModifiedTraits } from "@/lib/traits";
 import { traitToBRS } from "@/lib/rarity";
 
 const EDITABLE_COUNT = 4;
@@ -59,27 +58,6 @@ export function editableBrsCorrection(fromBase: number[], toBase: number[]): num
   return delta;
 }
 
-export function computeWearableDelta(
-  baseTraits: number[],
-  modifiedTraits?: number[],
-  localComputedTraits?: number[],
-  withSetsTraits?: number[]
-): number[] {
-  const delta = [0, 0, 0, 0];
-  const canonical = getCanonicalModifiedTraits(
-    baseTraits,
-    modifiedTraits,
-    localComputedTraits,
-    withSetsTraits
-  );
-  for (let i = 0; i < EDITABLE_COUNT; i++) {
-    const base = Number(baseTraits[i]) || 0;
-    const mod = Number(canonical[i]) || 0;
-    delta[i] = mod - base;
-  }
-  return delta;
-}
-
 export function computeSimTraits(params: {
   baseTraits: number[];
   respecBaseTraits?: number[];
@@ -119,7 +97,6 @@ export function useRespecSimulator(params: {
   usedSkillPoints?: number;
   availableSkillPoints?: number;
   baseTraits: number[];
-  respecBaseTraits?: number[];
   wearableDelta?: number[];
   setDelta?: number[];
 }) {
@@ -128,43 +105,51 @@ export function useRespecSimulator(params: {
   const [committedAllocated, setCommittedAllocated] = useState<number[] | null>(null);
   const [fetchedBirthTraits, setFetchedBirthTraits] = useState<number[] | null>(null);
   const [isFetchingBirth, setIsFetchingBirth] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsRespecMode(false);
     setAllocated([0, 0, 0, 0]);
     setCommittedAllocated(null);
     setFetchedBirthTraits(null);
+    setFetchError(null);
   }, [params.resetKey]);
 
   useEffect(() => {
-    if (isRespecMode && !fetchedBirthTraits && !isFetchingBirth && params.tokenId) {
+    if (isRespecMode && !fetchedBirthTraits && !isFetchingBirth && !fetchError && params.tokenId) {
       setIsFetchingBirth(true);
       getRespecBaseTraits(params.tokenId)
         .then((traits) => {
-          setFetchedBirthTraits(traits.slice(0, 4));
+          // Keep all 6 traits so eyes pass through to the sim unchanged.
+          setFetchedBirthTraits(traits);
+          setFetchError(null);
         })
         .catch((err) => {
           console.error("Failed to fetch birth traits:", err);
+          setFetchError(err instanceof Error ? err.message : "Failed to fetch birth traits");
         })
         .finally(() => {
           setIsFetchingBirth(false);
         });
     }
-  }, [isRespecMode, fetchedBirthTraits, isFetchingBirth, params.tokenId]);
+  }, [isRespecMode, fetchedBirthTraits, isFetchingBirth, fetchError, params.tokenId]);
 
-  const birthTraits = fetchedBirthTraits || params.respecBaseTraits;
+  // No fallback to current traits (audit M1): until the true birth baseline
+  // arrives, the sim must not offer allocations the chain can never produce.
+  const birthTraits = fetchedBirthTraits;
 
   const totalSP = totalSpiritPoints(params.usedSkillPoints, params.availableSkillPoints);
   const used = allocated.reduce((acc, val) => acc + Math.abs(val), 0);
   const spLeft = Math.max(0, totalSP - used);
   const hasBaseline =
-    Array.isArray(birthTraits) && birthTraits.length >= 4;
+    Array.isArray(fetchedBirthTraits) && fetchedBirthTraits.length >= 4;
+  const baselinePending = !hasBaseline;
 
-  const { simBase, simModified, usingFallback } = useMemo(
+  const { simBase, simModified } = useMemo(
     () =>
       computeSimTraits({
         baseTraits: params.baseTraits,
-        respecBaseTraits: birthTraits,
+        respecBaseTraits: birthTraits ?? undefined,
         allocated,
         wearableDelta: params.wearableDelta,
         setDelta: params.setDelta,
@@ -176,7 +161,7 @@ export function useRespecSimulator(params: {
     if (!committedAllocated) return null;
     return computeSimTraits({
       baseTraits: params.baseTraits,
-      respecBaseTraits: birthTraits,
+      respecBaseTraits: birthTraits ?? undefined,
       allocated: committedAllocated,
       wearableDelta: params.wearableDelta,
       setDelta: params.setDelta,
@@ -240,7 +225,8 @@ export function useRespecSimulator(params: {
     hasBaseline,
     simBase,
     simModified,
-    usingFallback,
+    baselinePending,
+    fetchError,
     isFetchingBirth,
     increment,
     decrement,

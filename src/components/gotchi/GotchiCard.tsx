@@ -70,7 +70,6 @@ export function GotchiCard({
     usedSkillPoints: gotchi.usedSkillPoints,
     availableSkillPoints,
     baseTraits: numericTraitSource,
-    respecBaseTraits: gotchi.baseNumericTraits || gotchi.numericTraits,
     wearableDelta,
     setDelta,
   });
@@ -192,12 +191,18 @@ export function GotchiCard({
                       <span
                         className="rounded-full border border-[hsl(var(--border))] px-2 py-0.5 text-[10px] text-muted-foreground"
                         title={
-                          respec.usingFallback
-                            ? "Baseline: current traits (respec baseline unavailable)"
-                            : undefined
+                          respec.fetchError
+                            ? "Couldn't load birth traits — respec disabled"
+                            : respec.baselinePending
+                              ? "Loading birth traits…"
+                              : undefined
                         }
                       >
-                        SP left: {respec.spLeft}
+                        {respec.hasBaseline
+                          ? `SP left: ${respec.spLeft}`
+                          : respec.fetchError
+                            ? "Respec unavailable"
+                            : "Loading…"}
                       </span>
                     )}
                     <Button

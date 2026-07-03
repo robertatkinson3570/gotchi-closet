@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   totalSpiritPoints,
-  computeWearableDelta,
   computeSimTraits,
   editableBrsCorrection,
 } from "./respec";
@@ -27,11 +26,16 @@ describe("respec BRS correction (audit H3)", () => {
   });
 });
 
-describe("computeWearableDelta", () => {
-  it("computes modified - base for first 4 traits", () => {
-    const base = [10, 20, 30, 40, 50, 60];
-    const modified = [12, 18, 35, 37, 50, 60];
-    expect(computeWearableDelta(base, modified)).toEqual([2, -2, 5, -3]);
+describe("birth baseline integrity (audit M1 + eye slice)", () => {
+  it("simBase preserves eye traits from a 6-length baseline", () => {
+    const { simBase } = computeSimTraits({
+      baseTraits: [1, 2, 3, 4, 90, 80],
+      respecBaseTraits: [5, 6, 7, 8, 90, 80],
+      allocated: [1, 0, 0, 0],
+    });
+    expect(simBase[4]).toBe(90);
+    expect(simBase[5]).toBe(80);
+    expect(simBase.slice(0, 4)).toEqual([6, 6, 7, 8]);
   });
 });
 
