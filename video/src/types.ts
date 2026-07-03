@@ -53,7 +53,7 @@ export type PulseStat = {
   label: string;
   value: number;
   unit: string;
-  wow: number | null; // week-over-week fraction, e.g. 0.12 = +12%
+  wow: number | null; // week-over-week percent (pulse pctChange), e.g. 12 = +12%
 };
 
 export type PulseCameo = { svg: string; name: string; caption: string };
