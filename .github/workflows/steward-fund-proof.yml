@@ -1,0 +1,53 @@
+# One-off, manually-triggered: move a small proof budget from the steward pet relayer
+# (STEWARD_PET_RELAYER_KEY — funded 2026-06-24, 0.01 ETH on Base mainnet) to the two
+# throwaway proof wallets whose keys live in the local gitignored .env.testnet. Runs on the
+# self-hosted VPS runner so the key never leaves GitHub-secret/VPS custody; only tx hashes
+# are logged. Destinations are HARDCODED — no dispatch inputs, nothing to tamper with.
+name: Steward proof funding (one-off)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: steward-fund-proof
+  cancel-in-progress: false
+
+jobs:
+  fund:
+    runs-on: [self-hosted, gotchicloset-vps]
+    timeout-minutes: 10
+    steps:
+      - name: Send 0.0035 ETH x2 from relayer to proof wallets (Base mainnet)
+        env:
+          KEY: ${{ secrets.STEWARD_PET_RELAYER_KEY }}
+        run: |
+          set -euo pipefail
+          W=/tmp/steward-fund-$$
+          mkdir -p "$W" && cd "$W"
+          cat > fund.mjs <<'EOF'
+          import { createWalletClient, createPublicClient, http, parseEther, formatEther } from "viem";
+          import { privateKeyToAccount } from "viem/accounts";
+          import { base } from "viem/chains";
+          const key = process.env.KEY;
+          if (!key) throw new Error("STEWARD_PET_RELAYER_KEY secret is empty");
+          const account = privateKeyToAccount(key.startsWith("0x") ? key : `0x${key}`);
+          const rpc = "https://mainnet.base.org";
+          const pub = createPublicClient({ chain: base, transport: http(rpc) });
+          const wallet = createWalletClient({ account, chain: base, transport: http(rpc) });
+          // The two proof wallets (.env.testnet EXECUTOR + OWNER). Hardcoded on purpose.
+          const DESTS = [
+            "0x8551e2919146eC24f20267bff3d92A9c3743Bd6d",
+            "0x1216f072e243025bf7623A360e64423A56779D8a",
+          ];
+          const AMT = parseEther("0.0035");
+          console.log("relayer:", account.address, "start balance:", formatEther(await pub.getBalance({ address: account.address })), "ETH");
+          for (const to of DESTS) {
+            const hash = await wallet.sendTransaction({ to, value: AMT });
+            await pub.waitForTransactionReceipt({ hash });
+            console.log(`sent 0.0035 ETH -> ${to}  tx: ${hash}`);
+          }
+          console.log("final relayer balance:", formatEther(await pub.getBalance({ address: account.address })), "ETH");
+          EOF
+          docker run --rm -v "$W":/w -w /w -e KEY node:24 bash -lc \
+            "npm init -y >/dev/null 2>&1 && npm i --silent viem@2.44.0 >/dev/null 2>&1 && node fund.mjs"
+          rm -rf "$W"
