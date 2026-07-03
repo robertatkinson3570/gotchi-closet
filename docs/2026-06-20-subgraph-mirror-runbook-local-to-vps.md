@@ -13,17 +13,20 @@ local PC first**, promoted to an always-on **VPS** only when chosen.
 ---
 
 ## STATUS — resume here
+- **SUPERSEDED (2026-07-02): the mirror goal is LIVE via The Graph decentralized network
+  instead of self-hosting.** Subgraph published (ID `GYwfMkWWeD6ZDXQLWd2MkiwwKK16QmsWiUc22GG5kX7U`),
+  `*_BACKUP` env vars set (Vercel + VPS via GH secret), failover active in prod. **Do NOT build
+  the Docker/VPS mirror phases below** — kept for reference only (e.g. if The Graph is ever
+  abandoned). See `docs/subgraph-fallback-runbook.md` (ops) and
+  `docs/superpowers/plans/2026-07-01-graph-network-subgraph-fallback.md` (build history).
 - **Phase 0 DONE** — archive at `robertatkinson3570/gv2` (`aavegotchi-core-subgraph` + `MANIFEST.md`).
   Forge art (0.2) deferred (unverified CDN scheme).
-- **Phase 1.5 DONE (client + server)** — failover live in both layers, **committed on branch
-  `feat/subgraph-failover` (not pushed)**. Client: `src/graphql/subgraphFailover.ts` + `client.ts`.
-  Server: `server/aavegotchi/subgraphFetch.ts`, used by `lending/relist.ts` + `companion/gotchiState.ts`.
-  Env: `VITE_GOTCHI_SUBGRAPH_URL_BACKUP` + `SUBGRAPH_URL_BACKUP` (empty = no-op today). 12 unit tests pass.
-- **Next action:** EITHER Phase 1 local validation slice (install Docker Desktop + WSL2, step 1.0a),
-  OR — once a mirror endpoint exists — set the `*_BACKUP` env vars to activate failover. (Also: push
-  the branch / open a PR when ready.)
-- **Blockers:** Docker Desktop + WSL2 not installed (needed for the Phase 1 local slice).
-- _Update this block as work proceeds: set current phase, next action, and any blocker._
+- **Phase 1.5 DONE (client + server)** — failover in both layers, since merged to `main`
+  (+ lazy backup probing added 2026-07-01, commit `f835533`). Client:
+  `src/graphql/subgraphFailover.ts` + `client.ts`. Server: `server/aavegotchi/subgraphFetch.ts`,
+  used by `lending/relist.ts` + `companion/gotchiState.ts`.
+- **Phases 1–4 (Docker local → VPS): CANCELLED** in favour of The Graph network (free tier vs
+  ~$60/mo self-host; their indexers, no RPC).
 
 ## ENVIRONMENT (verified 2026-06-20)
 - **Local PC (dev/validation only — sometimes powered off):** Windows, 8 cores,
