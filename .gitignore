@@ -52,3 +52,12 @@ tools/gotchi-kb/**/*.jsonl
 # Playwright test artifacts/reports
 test-results/
 playwright-report/
+.claude/settings.local.json
+
+# video workspace (generated)
+video/node_modules/
+video/out/
+video/props/
+video/assets-cache/
+video/public/audio/
+video/golden/current/
