@@ -754,6 +754,23 @@ export function useExplorerData(
     return () => clearTimeout(timeout);
   }, [filtersKey, mode]);
 
+  // Optimistically reflect an on-chain equip immediately. The subgraph lags a
+  // few seconds behind the tx, so a plain refetch would return the OLD outfit
+  // and the user would have to manually refresh. We already know exactly what
+  // was equipped, so patch that gotchi's wearables in place (and the module
+  // cache, so other views don't resurrect the stale outfit).
+  const patchGotchiEquip = useCallback((tokenId: string, equipped: number[]) => {
+    const key = String(tokenId);
+    const normalized = new Array(16).fill(0);
+    for (let i = 0; i < Math.min(16, equipped.length); i++) {
+      const v = Number(equipped[i]);
+      normalized[i] = Number.isFinite(v) ? v : 0;
+    }
+    setGotchis((prev) => prev.map((g) => (g.tokenId === key ? { ...g, equippedWearables: normalized } : g)));
+    const cached = gotchiCache.get(key);
+    if (cached) gotchiCache.set(key, { ...cached, equippedWearables: normalized });
+  }, []);
+
   const filteredGotchis = useMemo(() => {
     return applyFilters(gotchis, filters);
   }, [gotchis, filters]);
@@ -774,5 +791,6 @@ export function useExplorerData(
     sort,
     setSort,
     refresh: loadInitial,
+    patchGotchiEquip,
   };
 }

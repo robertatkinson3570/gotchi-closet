@@ -239,6 +239,7 @@ export default function ExplorerPage() {
     setFilters: setGotchiFilters,
     sort: gotchiSort,
     setSort: setGotchiSort,
+    patchGotchiEquip,
   } = useExplorerData(mode, connectedAddress);
 
   const {
@@ -636,7 +637,18 @@ export default function ExplorerPage() {
         </div>
       )}
 
-      {manage && <GotchiManageModal gotchi={manage} onClose={() => setManage(null)} />}
+      {manage && (
+        <GotchiManageModal
+          gotchi={manage}
+          onClose={() => setManage(null)}
+          onEquipped={(equipped) => {
+            // Update the grid immediately and keep the open manage object in
+            // sync so the change shows without a manual refresh (subgraph lags).
+            patchGotchiEquip(manage.gotchiId, equipped);
+            setManage((m) => (m ? { ...m, equippedWearables: equipped } : m));
+          }}
+        />
+      )}
       {sealGotchi && <SoulCertificate tokenId={sealGotchi} onClose={() => setSealGotchi(null)} />}
     </div>
   );

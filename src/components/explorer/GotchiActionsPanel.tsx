@@ -86,7 +86,7 @@ const TRAITS = ["NRG", "AGG", "SPK", "BRN"] as const;
 type Status = { kind: "idle" } | { kind: "busy"; label: string } | { kind: "ok"; label: string } | { kind: "err"; label: string };
 
 /** Large, controlled modal to view + manage a gotchi (opened from the profile). */
-export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; onClose: () => void }) {
+export function GotchiManageModal({ gotchi, onClose, onEquipped }: { gotchi: ManageGotchi; onClose: () => void; onEquipped?: (equipped: number[]) => void }) {
   const { gotchiId, name, hauntId, collateral, numericTraits, equippedWearables, locked, lockReason, listed, readOnly, owner, listingId, listingPriceWei } = gotchi;
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -451,6 +451,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
           numericTraits={numericTraits}
           baseRarityScore={ag?.baseRarityScore}
           withSetsRarityScore={ag?.withSetsRarityScore}
+          onSaved={(equipped) => { onEquipped?.(equipped); refetchDetail(); }}
           onClose={() => setEquipOpen(false)}
         />
       )}

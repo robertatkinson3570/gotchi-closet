@@ -84,7 +84,8 @@ export function EquipWearablesModal({
   /** On-chain rarity incl. sets + age; anchors the live total via an age offset. */
   withSetsRarityScore?: number | string;
   onClose: () => void;
-  onSaved?: () => void;
+  /** Called after a successful on-chain equip with the committed 16-slot outfit. */
+  onSaved?: (equipped: number[]) => void;
 }) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -188,7 +189,9 @@ export function EquipWearablesModal({
       const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: EQUIP_ABI, functionName: "equipWearables", args: [BigInt(gotchiId), arr16] });
       await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
       setStatus({ kind: "ok" });
-      onSaved?.();
+      // Hand back the committed outfit so the grid can update without waiting
+      // on the subgraph (which lags the tx) or a manual page refresh.
+      onSaved?.([...arr16] as number[]);
     } catch (e) {
       setStatus({ kind: "err", msg: parseRevert(e).slice(0, 160) });
     }
