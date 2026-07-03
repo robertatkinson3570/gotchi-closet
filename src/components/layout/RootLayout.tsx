@@ -148,7 +148,7 @@ export function RootLayout() {
     <div className="min-h-screen flex flex-col">
       <Gv2Banner />
       <header className="h-14 w-full glass-nav sticky top-0 z-30">
-        <div className="flex h-14 items-center justify-between px-3 md:px-4 gap-3 max-w-[1600px] mx-auto">
+        <div className="flex h-14 items-center justify-between px-3 md:px-4 gap-3">
           <Link to="/" className="flex items-center gap-1.5 min-w-0 hover:opacity-90 transition-opacity">
             <img src="/logo.png" alt="GotchiCloset" className="h-12 w-12 object-contain -my-2" />
             <div className="text-xl font-heading tracking-tight truncate gradient-text hidden sm:block">GotchiCloset</div>
