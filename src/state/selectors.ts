@@ -186,6 +186,7 @@ export function computeInstanceTraits(params: {
     ageBrs: breakdown.ageBrs,
     totalBrs: breakdown.totalBrs,
     activeSets: breakdown.activeSets,
+    bestSet: breakdown.bestSet,
     equippedIds,
     finalTraits: breakdown.finalTraits,
     wearableDelta,

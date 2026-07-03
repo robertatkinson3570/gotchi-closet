@@ -151,6 +151,21 @@ function sumSetBonusBrs(sets: SetDefinition[]): number {
   return sets.reduce((acc, set) => acc + (set.setBonusBRS || 0), 0);
 }
 
+/**
+ * Official rule (aavegotchi-core-subgraph): only ONE set counts — the matched
+ * set with the most pieces; ties resolved by `>=` while iterating in on-chain
+ * set order, so the later set id wins.
+ */
+export function pickBestSet(sets: SetDefinition[]): SetDefinition | null {
+  let best: SetDefinition | null = null;
+  for (const s of sets) {
+    if (!best || s.requiredWearableIds.length >= best.requiredWearableIds.length) {
+      best = s;
+    }
+  }
+  return best;
+}
+
 export function ageBrsFromBlocks(blocksElapsed: number): number {
   return ageBRSFromBlocksElapsed(blocksElapsed);
 }
@@ -214,12 +229,15 @@ export function computeBRSBreakdown(params: {
   blocksElapsed?: number;
   ageBrsOverride?: number;
 }) {
+  // All matched sets are kept for display only; only the single best set
+  // counts toward BRS (audit H1, official subgraph rule).
   const activeSets = detectActiveSets(params.equippedWearables);
+  const bestSet = pickBestSet(activeSets);
   const wearableTraitMods = sumWearableCoreMods(
     params.equippedWearables,
     params.wearablesById
   );
-  const setTraitMods = sumSetCoreMods(activeSets);
+  const setTraitMods = sumSetCoreMods(bestSet ? [bestSet] : []);
   const traitsWithWearables = applyCoreTraitMods(
     params.baseTraits,
     wearableTraitMods
@@ -249,7 +267,7 @@ export function computeBRSBreakdown(params: {
     if (!wearable) continue;
     wearableFlat += wearableRarityToBrs(wearable);
   }
-  const setFlatBrs = sumSetBonusBrs(activeSets);
+  const setFlatBrs = sumSetBonusBrs(bestSet ? [bestSet] : []);
   const setDeltaTotal = setRarityDelta({
     baseTraits: params.baseTraits,
     wearableTraitMods,
@@ -288,6 +306,7 @@ export function computeBRSBreakdown(params: {
     ageBrs,
     totalBrs,
     activeSets,
+    bestSet,
     wearableTraitMods,
     setTraitMods,
   };

@@ -5,7 +5,11 @@ import {
   wearableFlatBrs,
   setRarityDelta,
   computeTotalBRS,
+  pickBestSet,
+  detectActiveSets,
+  computeBRSBreakdown,
 } from "./rarity";
+import type { SetDefinition } from "./sets";
 import { ageBRSFromBlocksElapsed } from "./age";
 import { getCanonicalModifiedTraits } from "./traits";
 
@@ -104,6 +108,43 @@ describe("totalBRS sanity", () => {
     expect(total).toBe(
       traitWithMods + wearableFlatBRS + setBonusBRS + ageBRS
     );
+  });
+});
+
+describe("best-set rule (audit H1)", () => {
+  it("pickBestSet picks the longest set; ties go to the later (higher index) set", () => {
+    const sets = [
+      { id: "a", name: "A", requiredWearableIds: [1, 2], traitModifiers: {}, setBonusBRS: 1 },
+      { id: "b", name: "B", requiredWearableIds: [1, 2, 3], traitModifiers: {}, setBonusBRS: 2 },
+      { id: "c", name: "C", requiredWearableIds: [4, 5, 6], traitModifiers: {}, setBonusBRS: 3 },
+    ] as SetDefinition[];
+    expect(pickBestSet(sets)?.id).toBe("c"); // same length as b → later wins
+    expect(pickBestSet(sets.slice(0, 2))?.id).toBe("b");
+    expect(pickBestSet([])).toBeNull();
+  });
+
+  it("computeBRSBreakdown counts only the best set when a superset outfit matches 2 sets", () => {
+    // Real subset pair from data/wearableSets.json:
+    // Aagent       requires [55, 56, 57, 58]      → bonuses [-1, 0, 1, 0], flat 3
+    // Super Aagent requires [55, 56, 57, 58, 59]  → bonuses [-1, 0, 2, 0], flat 4
+    const equipped = [55, 56, 57, 58, 59];
+    const matched = detectActiveSets(equipped);
+    expect(matched.map((s) => s.name).sort()).toEqual(["Aagent", "Super Aagent"]);
+
+    const breakdown = computeBRSBreakdown({
+      baseTraits: [50, 50, 50, 50, 10, 20],
+      equippedWearables: equipped,
+      wearablesById: new Map(),
+    });
+    // Only Super Aagent counts — not the sum of both (3 + 4 = 7).
+    expect(breakdown.bestSet?.name).toBe("Super Aagent");
+    expect(breakdown.setFlatBrs).toBe(4);
+    // Trait mods come only from the best set.
+    expect(breakdown.setTraitMods).toEqual({ nrg: -1, agg: 0, spk: 2, brn: 0 });
+    // All matches remain available for display.
+    expect(breakdown.activeSets).toHaveLength(2);
+    // Final traits reflect only the single set's modifiers.
+    expect(breakdown.finalTraits).toEqual([49, 50, 52, 50, 10, 20]);
   });
 });
 

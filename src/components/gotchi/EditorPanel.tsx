@@ -136,7 +136,7 @@ export function EditorPanel() {
               setFlatBrs,
               ageBrs,
               totalBrs,
-              activeSets,
+              bestSet,
               wearableDelta,
               setTraitModsDelta,
             } = computeInstanceTraits({
@@ -148,7 +148,9 @@ export function EditorPanel() {
               blocksElapsed: instance.baseGotchi.blocksElapsed,
             });
             
-            const activeSetNames = activeSets.map((set) => set.name);
+            // Only the single best set counts toward BRS (audit H1) — showing
+            // every matched set here would imply they all count.
+            const activeSetNames = bestSet ? [bestSet.name] : [];
             const mommyResultForInstance = mommyResult[instance.instanceId];
             const mommyOptionsForInstance = mommyOptions[instance.instanceId];
             const preMommyEquipped = mommyPreEquipped[instance.instanceId];
@@ -162,7 +164,7 @@ export function EditorPanel() {
               wearablesById,
               blocksElapsed: instance.baseGotchi.blocksElapsed,
             });
-            const currentActiveSets = currentTraitsEval.activeSets;
+            const currentSetCount = currentTraitsEval.bestSet ? 1 : 0;
             
             const mommyEquipped = mommyResultForInstance?.equippedWearables;
             const currentMatchesMommy = mommyEquipped 
@@ -399,9 +401,9 @@ export function EditorPanel() {
                               wearablesById,
                               blocksElapsed: instance.baseGotchi.blocksElapsed,
                             });
-                            const finalActiveSets = finalTraitsEval.activeSets;
+                            const finalSetCount = finalTraitsEval.bestSet ? 1 : 0;
                             const brsDelta = mommyResultForInstance.brsDelta || 0;
-                            const setDelta = finalActiveSets.length - currentActiveSets.length;
+                            const setDelta = finalSetCount - currentSetCount;
                             
                             return (
                               <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-fuchsia-500/10 border border-fuchsia-500/20">
