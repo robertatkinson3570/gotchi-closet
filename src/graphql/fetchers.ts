@@ -208,7 +208,8 @@ export const PATCHED_WEARABLE_IDS = new Set(Object.keys(WEARABLE_MODIFIER_PATCHE
 export function applyWearablePatches(wearable: Wearable): Wearable {
   const patch = WEARABLE_MODIFIER_PATCHES[wearable.id];
   if (patch) {
-    if (import.meta.env.DEV) {
+    // Optional chaining: import.meta.env is undefined under tsx/Node (see src/lib/env.ts)
+    if (import.meta.env?.DEV) {
       const current = wearable.traitModifiers?.slice(0, 4) || [];
       const expected = patch.slice(0, 4);
       const mismatch = current.some((v, i) => v !== expected[i]);
