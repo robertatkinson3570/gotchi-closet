@@ -88,7 +88,14 @@ export function computeWearableInventory(state: {
   // walletItemCounts is category-filtered at the producer (DressPage).
   const ownedCounts = computeOwnedCounts(state.gotchis, state.walletItemCounts);
   const usedCounts = computeUsedCounts(state.editorInstances);
-  const lockedAllocations = computeLockedWearableAllocations(state.overridesById, state.lockedById);
+  // A gotchi both locked AND open in the editor must not reserve twice
+  // (audit M5): its editor instance already consumes the copies, so its
+  // locked allocation is excluded.
+  const editorGotchiIds = new Set(state.editorInstances.map((i) => i.baseGotchi.id));
+  const lockedByIdNotInEditor = Object.fromEntries(
+    Object.entries(state.lockedById).filter(([id]) => !editorGotchiIds.has(id))
+  );
+  const lockedAllocations = computeLockedWearableAllocations(state.overridesById, lockedByIdNotInEditor);
   const availCounts = computeAvailCounts(ownedCounts, usedCounts);
   const availCountsWithLocked = computeAvailCountsWithLocked(ownedCounts, usedCounts, lockedAllocations);
   return { ownedCounts, usedCounts, availCounts, lockedAllocations, availCountsWithLocked };

@@ -62,3 +62,41 @@ describe("manual gotchis are preview-only (audit H7)", () => {
     expect(inv.availCounts).toEqual({ 10: 0 });
   });
 });
+
+describe("locked + in-editor reservation (audit M5)", () => {
+  it("locked gotchi open in the editor reserves once, not twice", () => {
+    // Owned 1 of item 10; gotchi #1 locked with 10 in its override AND open in
+    // the editor wearing 10. The editor reservation alone must account for it.
+    const wallet = g("1", [10, 0]);
+    const inv = computeWearableInventory({
+      ...emptyInventoryState,
+      gotchis: [wallet],
+      editorInstances: [inst(wallet, [10, 0])],
+      lockedById: { "1": true },
+      overridesById: {
+        "1": { wearablesBySlot: [10, 0], respecAllocated: null, timestamp: 1 },
+      },
+    });
+    expect(inv.ownedCounts).toEqual({ 10: 1 });
+    expect(inv.usedCounts).toEqual({ 10: 1 });
+    // No locked allocation for #1 — it has an editor instance.
+    expect(inv.lockedAllocations).toEqual({});
+    expect(inv.availCountsWithLocked).toEqual({ 10: 0 });
+  });
+
+  it("locked gotchis without an editor instance still reserve", () => {
+    const wallet1 = g("1", [10, 0]);
+    const wallet2 = g("2", [10, 0]);
+    const inv = computeWearableInventory({
+      ...emptyInventoryState,
+      gotchis: [wallet1, wallet2],
+      editorInstances: [inst(wallet1, [10, 0])],
+      lockedById: { "2": true },
+      overridesById: {
+        "2": { wearablesBySlot: [10, 0], respecAllocated: null, timestamp: 1 },
+      },
+    });
+    expect(inv.lockedAllocations).toEqual({ 10: 1 });
+    expect(inv.availCountsWithLocked).toEqual({ 10: 0 });
+  });
+});
