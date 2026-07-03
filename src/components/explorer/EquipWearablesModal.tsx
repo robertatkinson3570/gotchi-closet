@@ -1,12 +1,15 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
-import { Loader2, X, CheckCircle2, XCircle, Shirt, Trash2, Bookmark, Plus } from "lucide-react";
+import { Loader2, X, CheckCircle2, XCircle, Shirt, Trash2, Bookmark, Plus, Sparkles } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { SLOT_NAMES } from "@/lib/constants";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
+import { LiveTraitPanel } from "@/components/gotchi/LiveTraitPanel";
+import { BrsSummary } from "@/components/gotchi/BrsSummary";
+import { computeInstanceTraits, useWearablesById } from "@/state/selectors";
 import wearablesData from "../../../data/wearables.json";
 
 const EQUIP_ABI = [
@@ -43,13 +46,17 @@ function saveOutfits(o: Outfit[]) {
 }
 
 export function EquipWearablesModal({
-  gotchiId, equippedWearables, hauntId, collateral, numericTraits, onClose, onSaved,
+  gotchiId, equippedWearables, hauntId, collateral, numericTraits, baseRarityScore, withSetsRarityScore, onClose, onSaved,
 }: {
   gotchiId: string;
   equippedWearables?: number[];
   hauntId?: number;
   collateral?: string;
   numericTraits?: number[];
+  /** On-chain trait-only rarity, used to anchor the live base score. */
+  baseRarityScore?: number | string;
+  /** On-chain rarity incl. sets + age; anchors the live total via an age offset. */
+  withSetsRarityScore?: number | string;
   onClose: () => void;
   onSaved?: () => void;
 }) {
@@ -90,6 +97,27 @@ export function EquipWearablesModal({
   });
 
   const dirty = slots.some((s, i) => s !== initial[i]);
+
+  // Live traits/BRS — same pure engine the dress page uses. Recomputes on every
+  // slot change because `slots` is state. numericTraits are the base (birth +
+  // respec) traits with no wearables; the engine applies wearable + set mods.
+  const wearablesById = useWearablesById();
+  const hasTraits = Array.isArray(numericTraits) && numericTraits.length >= 4;
+  const live = useMemo(() => {
+    if (!hasTraits) return null;
+    return computeInstanceTraits({ baseTraits: numericTraits!, equippedBySlot: slots, wearablesById });
+  }, [hasTraits, numericTraits, slots, wearablesById]);
+  // Age BRS isn't plumbed into the modal, so anchor the total to the on-chain
+  // withSetsRarityScore: offset = onchain − engine(currentOnChainOutfit). At
+  // baseline the displayed Rarity matches the manage modal exactly, and it
+  // tracks correctly as the outfit changes. Degrades to 0 when unavailable.
+  const ageOffset = useMemo(() => {
+    if (!hasTraits || withSetsRarityScore == null) return 0;
+    const onchain = computeInstanceTraits({ baseTraits: numericTraits!, equippedBySlot: initial, wearablesById });
+    return Number(withSetsRarityScore) - onchain.totalBrs;
+  }, [hasTraits, withSetsRarityScore, numericTraits, initial, wearablesById]);
+  const displayedTotal = live ? Math.round(live.totalBrs + ageOffset) : 0;
+  const displayedBase = baseRarityScore != null ? Number(baseRarityScore) : (live?.traitBase ?? 0);
 
   // How many of a wearable are already placed across the current selection.
   const usedInSelection = (id: number) => slots.filter((s) => s === id).length;
@@ -138,6 +166,25 @@ export function EquipWearablesModal({
               <GotchiSvg gotchiId={gotchiId} hauntId={hauntId} collateral={collateral} numericTraits={numericTraits} equippedWearables={previewWearables} mode="preview" useBlobUrl className="w-full h-full object-contain" />
             </div>
             <p className="text-[11px] text-muted-foreground">Live preview. Equipping is signed in your wallet; unequipped wearables return to it. You must own this gotchi and it must be unlocked.</p>
+
+            {live && (
+              <div className="space-y-2">
+                <div className="rounded-lg border border-border/50 p-2.5">
+                  <BrsSummary traitBase={displayedBase} traitWithMods={0} wearableFlat={0} setFlatBrs={0} ageBrs={0} totalBrs={displayedTotal} />
+                  {live.bestSet && (
+                    <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-[10px] font-medium text-purple-400">
+                      <Sparkles className="w-3 h-3" /> {live.bestSet.name} set
+                    </div>
+                  )}
+                </div>
+                <LiveTraitPanel
+                  baseTraits={numericTraits!}
+                  finalTraits={live.finalTraits}
+                  wearableDelta={live.wearableDelta}
+                  setDelta={live.setTraitModsDelta}
+                />
+              </div>
+            )}
             <div className="flex gap-2">
               <button onClick={() => setSlots([0, 0, 0, 0, 0, 0, 0, 0])} disabled={slots.every((s) => s === 0)} className="flex-1 h-9 rounded-lg border border-border/60 text-xs font-medium hover:bg-muted/50 disabled:opacity-40 inline-flex items-center justify-center gap-1.5"><Trash2 className="w-3.5 h-3.5" /> Unequip all</button>
               <button onClick={save} disabled={status.kind === "busy" || !dirty} className="flex-1 h-9 rounded-lg bg-gradient-to-r from-primary to-fuchsia-500 text-white text-xs font-bold disabled:opacity-40 inline-flex items-center justify-center gap-1.5 hover:brightness-110 shadow">

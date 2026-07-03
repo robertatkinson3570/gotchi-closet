@@ -449,6 +449,8 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
           hauntId={hauntId}
           collateral={collateral}
           numericTraits={numericTraits}
+          baseRarityScore={ag?.baseRarityScore}
+          withSetsRarityScore={ag?.withSetsRarityScore}
           onClose={() => setEquipOpen(false)}
         />
       )}
