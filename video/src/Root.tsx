@@ -1,28 +1,20 @@
 import React from "react";
-import { AbsoluteFill, Composition } from "remotion";
+import { Composition } from "remotion";
+import spotlightFixture from "../fixtures/spotlight.json";
+import { SPOTLIGHT_DURATION, Spotlight } from "./compositions/Spotlight";
+import { theme } from "./theme";
+import type { SpotlightProps } from "./types";
 
-const Hello: React.FC = () => (
-  <AbsoluteFill
-    style={{
-      backgroundColor: "hsl(265, 60%, 4%)",
-      color: "hsl(326, 100%, 68%)",
-      justifyContent: "center",
-      alignItems: "center",
-      fontSize: 80,
-      fontFamily: "sans-serif",
-    }}
-  >
-    gotchi video engine
-  </AbsoluteFill>
-);
+const size = { fps: theme.fps, width: theme.width, height: theme.height } as const;
 
 export const Root: React.FC = () => (
-  <Composition
-    id="Hello"
-    component={Hello}
-    durationInFrames={60}
-    fps={30}
-    width={1080}
-    height={1920}
-  />
+  <>
+    <Composition
+      id="Spotlight"
+      component={Spotlight}
+      durationInFrames={SPOTLIGHT_DURATION}
+      {...size}
+      defaultProps={spotlightFixture as SpotlightProps}
+    />
+  </>
 );
