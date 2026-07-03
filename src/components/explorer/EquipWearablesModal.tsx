@@ -32,21 +32,27 @@ function traitSummary(w?: WData): string {
   return parts.join(" · ");
 }
 
-// Visible per-wearable stat modifiers (color-coded), shown on equipped slots and
-// in the picker so you can see what each piece does before/after equipping it.
-function TraitMods({ w }: { w?: WData }) {
+// Visible per-wearable stat modifiers, shown on equipped slots and in the picker
+// so you can see what each piece does before/after equipping it. Colored by
+// ALIGNMENT to this gotchi (via `directions`): green when the mod pushes a trait
+// the rarity-beneficial way, red when it hurts. With no directions it falls back
+// to raw sign (all directions default to +1).
+function TraitMods({ w, directions }: { w?: WData; directions?: number[] }) {
   if (!w) return null;
   const chips = (w.traitModifiers?.slice(0, 4) ?? [])
-    .map((v, i) => ({ label: TRAIT_ABBR[i], v: Number(v) || 0 }))
+    .map((v, i) => ({ label: TRAIT_ABBR[i], v: Number(v) || 0, dir: directions?.[i] ?? 1 }))
     .filter((c) => c.v !== 0);
   if (chips.length === 0 && !w.rarityScoreModifier) return null;
   return (
     <div className="mt-0.5 flex flex-wrap justify-center gap-x-1 gap-y-0.5 leading-none">
-      {chips.map((c) => (
-        <span key={c.label} className={`text-[8px] font-semibold tabular-nums ${c.v > 0 ? "text-emerald-400" : "text-rose-400"}`}>
-          {c.v > 0 ? "+" : ""}{c.v} {c.label}
-        </span>
-      ))}
+      {chips.map((c) => {
+        const helps = c.dir * c.v > 0;
+        return (
+          <span key={c.label} className={`text-[8px] font-semibold tabular-nums ${helps ? "text-emerald-400" : "text-rose-400"}`} title={helps ? "Improves this gotchi's rarity" : "Hurts this gotchi's rarity"}>
+            {c.v > 0 ? "+" : ""}{c.v} {c.label}
+          </span>
+        );
+      })}
       {!!w.rarityScoreModifier && <span className="text-[8px] text-muted-foreground tabular-nums">+{w.rarityScoreModifier} BRS</span>}
     </div>
   );
@@ -273,7 +279,7 @@ export function EquipWearablesModal({
                     )}
                   </button>
                   <div className="mt-1 text-[9px] text-center leading-tight text-muted-foreground truncate" title={w ? `${w.name} (${traitSummary(w)})` : ""}>{w?.name ?? "—"}</div>
-                  <TraitMods w={w} />
+                  <TraitMods w={w} directions={traitDirections} />
                 </div>
               );
             })}
@@ -312,7 +318,7 @@ export function EquipWearablesModal({
                       <span className="block aspect-square rounded bg-muted/30 flex items-center justify-center"><img src={itemImg(id)} alt={w?.name ?? `#${id}`} className="max-w-[80%] max-h-[80%] object-contain" /></span>
                       <div className="mt-1 text-[9px] font-medium truncate text-center">{w?.name ?? `#${id}`}</div>
                       <div className="text-[8px] text-muted-foreground text-center">×{bal}</div>
-                      <TraitMods w={w} />
+                      <TraitMods w={w} directions={traitDirections} />
                     </button>
                   );
                 })}
