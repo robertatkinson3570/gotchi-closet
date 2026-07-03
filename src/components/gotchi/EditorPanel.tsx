@@ -425,12 +425,12 @@ export function EditorPanel() {
                             
                             const finalTraitsEval = computeInstanceTraits({
                               baseTraits: finalBaseTraits,
-                              modifiedNumericTraits: isBaseEquipment && !mommyResultForInstance.respecAllocated
-                                ? instance.baseGotchi.modifiedNumericTraits
-                                : undefined,
-                              withSetsNumericTraits: isBaseEquipment && !mommyResultForInstance.respecAllocated
-                                ? instance.baseGotchi.withSetsNumericTraits
-                                : undefined,
+                              // The Mommy outfit differs from the on-chain one
+                              // by construction — the subgraph's precomputed
+                              // traits describe the OLD outfit and must never
+                              // be mixed in here (audit M10).
+                              modifiedNumericTraits: undefined,
+                              withSetsNumericTraits: undefined,
                               equippedBySlot: mommyResultForInstance.equippedWearables,
                               wearablesById,
                               blocksElapsed: instance.baseGotchi.blocksElapsed,
@@ -519,14 +519,18 @@ export function EditorPanel() {
             onClose={() => setMommyModalInstanceId(null)}
             onApply={(result: AutoDressResult, options: AutoDressOptions) => {
               if (import.meta.env.DEV && result.success) {
-                for (const wearableId of result.equippedWearables) {
-                  if (wearableId !== 0 && !ownedWearables.has(wearableId)) {
-                    console.error(
-                      `[Mommy Dress Me] INVARIANT VIOLATION: Wearable ${wearableId} not in owned inventory`,
-                      { wearableId, ownedWearableIds: Array.from(ownedWearables.keys()) }
-                    );
-                    return;
-                  }
+                const bad = result.equippedWearables.find(
+                  (id) => id !== 0 && !ownedWearables.has(id)
+                );
+                if (bad) {
+                  // Visible failure instead of a silent no-op (audit M10):
+                  // the user pressed Apply and nothing happening is a bug.
+                  toast({
+                    title: "Auto-dress bug",
+                    description: `Wearable ${bad} is not in owned inventory — build rejected.`,
+                    variant: "destructive",
+                  });
+                  return;
                 }
               }
 
