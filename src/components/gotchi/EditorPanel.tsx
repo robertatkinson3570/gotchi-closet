@@ -1,7 +1,7 @@
 import { SlotGrid } from "./SlotGrid";
 import { useAppStore } from "@/state/useAppStore";
 import { GotchiSvg } from "./GotchiSvg";
-import { X, Wand2, Sparkles, Shirt, RotateCcw, Lock, Unlock, Baby } from "lucide-react";
+import { X, Wand2, Sparkles, Shirt, RotateCcw, Lock, Unlock, Baby, Undo2 } from "lucide-react";
 import { Button } from "@/ui/button";
 import { computeInstanceTraits, useWearablesById, useWearableInventory } from "@/state/selectors";
 import { GotchiCard } from "./GotchiCard";
@@ -410,6 +410,31 @@ export function EditorPanel() {
                                 (modified)
                               </span>
                             )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                              onClick={() => {
+                                // Restore the pre-Mommy outfit (snapshot taken on Apply);
+                                // fall back to the on-chain outfit for safety.
+                                updateEditorInstance(
+                                  instance.instanceId,
+                                  preMommyEquipped ?? instance.baseGotchi.equippedWearables
+                                );
+                                if (mommyResultForInstance.respecAllocated) {
+                                  // Only Mommy-committed respec targets are undone here.
+                                  setCommittedRespecTargets((prev) => {
+                                    const next = { ...prev };
+                                    delete next[instance.instanceId];
+                                    return next;
+                                  });
+                                }
+                                clearMommyState(instance.instanceId);
+                              }}
+                            >
+                              <Undo2 className="h-3 w-3 mr-1" />
+                              Undo
+                            </Button>
                           </div>
                           
                           {mommyOptionsForInstance && (

@@ -155,11 +155,15 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
 
   const advancePhase = useCallback(() => {
     if (reducedMotion) {
-      if (activeIndex < sortedGotchis.length - 1) {
-        setActiveIndex((i) => i + 1);
-      } else {
-        setStatus("done");
-      }
+      // Reduced motion: show each gotchi as a static card for a fixed beat
+      // instead of synchronously skipping the whole show (audit low).
+      setTimeout(() => {
+        if (activeIndex < sortedGotchis.length - 1) {
+          setActiveIndex((i) => i + 1);
+        } else {
+          setStatus("done");
+        }
+      }, 2500);
       return;
     }
 
@@ -325,6 +329,23 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
               className="catwalk-loading-fill"
               style={{ width: `${progress}%` }}
             />
+          </div>
+        </div>
+      )}
+
+      {status !== "loading" && sortedGotchis.length === 0 && (
+        <div className="catwalk-end">
+          <div className="catwalk-end-title">No gotchis to strut.</div>
+          <div className="catwalk-end-subtitle">Load a wallet with gotchis, then come back.</div>
+          <div className="catwalk-end-buttons">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="text-white border-white/20 hover:bg-white/10"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dress
+            </Button>
           </div>
         </div>
       )}
