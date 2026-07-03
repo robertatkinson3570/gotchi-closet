@@ -4,7 +4,7 @@ import { useAccount, useDisconnect, usePublicClient, useReadContract } from "wag
 import { useQuery } from "@tanstack/react-query";
 import { Menu } from "@headlessui/react";
 import { Loader2 } from "lucide-react";
-import { Coins, Search, Shirt, MapPin, Activity, Flame, Droplets, Landmark, Receipt, Bot, Copy, LogOut, Ghost, Trophy, HeartPulse, Gamepad2 } from "lucide-react";
+import { Coins, Search, Shirt, MapPin, Activity, Flame, Droplets, Landmark, Receipt, Bot, Copy, LogOut, Ghost, Trophy, HeartPulse, Gamepad2, Megaphone } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { GHST_TOKEN_BASE, ERC20_ABI } from "@/lib/lending/contracts";
 import { BASE_CHAIN_ID } from "@/lib/chains";
@@ -31,6 +31,7 @@ const NAV: { to: string; title: string; icon: LucideIcon }[] = [
   { to: "/leaderboard", title: "Kinship & XP Leaderboard", icon: Trophy },
   { to: "/pulse", title: "Pulse — State of the Aavegotchiverse", icon: HeartPulse },
   { to: "/games", title: "Game Center — community games & tools", icon: Gamepad2 },
+  { to: "/megaphone", title: "Megaphone — auto-generated gotchi videos", icon: Megaphone },
   { to: "/forge", title: "Forge", icon: Flame },
   { to: "/staking", title: "GLTR Staking", icon: Droplets },
   { to: "/lending", title: "Lending", icon: Coins },

@@ -5,6 +5,7 @@ import {
   Area, AreaChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { Seo } from "@/components/Seo";
+import { PulseVideoHero } from "@/components/megaphone/PulseVideoHero";
 import { siteUrl } from "@/lib/site";
 import { env } from "@/lib/env";
 import { addDays } from "@/lib/pulse/aggregate";
@@ -175,6 +176,9 @@ export default function PulsePage() {
         <span className="bg-gradient-to-r from-[hsl(var(--spectral))] via-[hsl(var(--ghst-pink))] to-[hsl(var(--cyan))] bg-clip-text text-transparent">Pulse</span>
       </h1>
       <p className="text-sm text-muted-foreground mb-5">State of the Aavegotchiverse — reality first, levers second. Chain: <span className="font-semibold text-foreground">Base</span></p>
+
+      <PulseVideoHero />
+
 
       {error && <div className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm mb-3">{(error as Error).message}</div>}
 
