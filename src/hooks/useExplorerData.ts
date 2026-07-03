@@ -5,6 +5,7 @@ import type { DataMode, ExplorerGotchi, ExplorerFilters, ExplorerSort, SortField
 import { defaultFilters } from "@/lib/explorer/types";
 import { applyFilters, applyClientSideFilters } from "@/lib/explorer/filters";
 import { applySorts } from "@/lib/explorer/sorts";
+import { computeInstanceTraits, useWearablesById } from "@/state/selectors";
 
 // Build a where clause for server-side filtering
 function buildWhereClause(filters: ExplorerFilters): Record<string, any> {
@@ -492,6 +493,12 @@ export function useExplorerData(
   const prevFiltersKey = useRef("");
   const loadInitialRef = useRef<() => void>(() => {});
 
+  // Wearable definitions for the local rarity/trait recompute on equip. Held in a
+  // ref so patchGotchiEquip can stay a stable (deps: []) callback.
+  const wearablesById = useWearablesById();
+  const wearablesByIdRef = useRef(wearablesById);
+  wearablesByIdRef.current = wearablesById;
+
   const batchSize = typeof window !== "undefined" && window.innerWidth < 768
     ? BATCH_SIZE_MOBILE
     : BATCH_SIZE_DESKTOP;
@@ -766,9 +773,35 @@ export function useExplorerData(
       const v = Number(equipped[i]);
       normalized[i] = Number.isFinite(v) ? v : 0;
     }
-    setGotchis((prev) => prev.map((g) => (g.tokenId === key ? { ...g, equippedWearables: normalized } : g)));
+    const wById = wearablesByIdRef.current;
+
+    // Recompute the with-wearables rarity + traits locally using the same engine
+    // the dress/equip views use, so the card's RAR number, tier color and trait
+    // row update instantly. baseRarityScore is trait-only and unaffected. Age BRS
+    // isn't recomputable here, so anchor it via the old outfit's known
+    // withSetsRarityScore (offset = knownWithSets − engine(oldOutfit)).
+    const recompute = (g: ExplorerGotchi): Partial<ExplorerGotchi> | null => {
+      if (!wById || wById.size === 0 || !Array.isArray(g.numericTraits) || g.numericTraits.length < 4) return null;
+      const base = g.numericTraits;
+      const oldEval = computeInstanceTraits({ baseTraits: base, equippedBySlot: g.equippedWearables, wearablesById: wById });
+      const newEval = computeInstanceTraits({ baseTraits: base, equippedBySlot: normalized, wearablesById: wById });
+      const ageOffset = Number(g.withSetsRarityScore || 0) - oldEval.totalBrs;
+      const eyes = base.slice(4, 6);
+      const finalTraits6 = [...newEval.finalTraits.slice(0, 4).map((v) => Math.round(Number(v) || 0)), ...eyes];
+      return {
+        withSetsRarityScore: Math.round(newEval.totalBrs + ageOffset),
+        withSetsNumericTraits: finalTraits6,
+        modifiedNumericTraits: finalTraits6,
+      };
+    };
+
+    setGotchis((prev) => prev.map((g) => {
+      if (g.tokenId !== key) return g;
+      const patch = recompute(g);
+      return { ...g, equippedWearables: normalized, ...(patch ?? {}) };
+    }));
     const cached = gotchiCache.get(key);
-    if (cached) gotchiCache.set(key, { ...cached, equippedWearables: normalized });
+    if (cached) gotchiCache.set(key, { ...cached, equippedWearables: normalized, ...(recompute(cached) ?? {}) });
   }, []);
 
   const filteredGotchis = useMemo(() => {
