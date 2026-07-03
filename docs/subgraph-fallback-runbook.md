@@ -1,8 +1,20 @@
 # Subgraph Fallback — The Graph Network (LIVE)
 
-**Status: LIVE since 2026-07-02.** GotchiCloset's core subgraph dependency has an automatic
-fallback on The Graph decentralized network. If Goldsky (primary) goes down **or silently
-stalls**, both the browser client and the VPS server auto-route to our self-published mirror.
+**Status: LIVE since 2026-07-02; on the production GATEWAY endpoint since 2026-07-03.**
+GotchiCloset's core subgraph dependency has an automatic fallback on The Graph decentralized
+network. If Goldsky (primary) goes down **or silently stalls**, both the browser client and the
+VPS server auto-route to our self-published mirror.
+
+> **Rollout note (2026-07-01→03):** On publish day the gateway would not route
+> (`bad indexers ... no status`) because The Graph's storage `shard_bb` was misconfigured — the
+> same shard error also broke the Studio endpoint mid-incident. Root-caused as their infra bug
+> (reproduced via raw curl + their own playground, status page stayed green). Meanwhile Goldsky
+> was ALSO silently stalled (~30h at block 48,080,274). The app rode out the double outage on
+> whichever endpoint was healthiest. On 2026-07-03 The Graph fixed shard_bb, the gateway
+> immediately began routing (proving the shard was the gateway's root cause), and Goldsky
+> unfroze — all three back within 1-2 blocks of head. The prod backup env, which had been
+> temporarily pointed at the Studio dev endpoint (3k/day) during the outage, was swapped back to
+> the gateway URL (100k/mo, spend-capped) and redeployed.
 
 Built via `docs/superpowers/plans/2026-07-01-graph-network-subgraph-fallback.md` (full task
 history + STATUS there). Supersedes the self-hosted Docker mirror idea in
