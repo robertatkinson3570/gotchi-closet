@@ -40,6 +40,7 @@ jobs:
           SOUL_ATTESTOR_KEY: ${{ secrets.SOUL_ATTESTOR_KEY }}
           SOUL_ENCRYPTION_KEY: ${{ secrets.SOUL_ENCRYPTION_KEY }}
           STEWARD_PET_RELAYER_KEY: ${{ secrets.STEWARD_PET_RELAYER_KEY }}
+          STEWARD_BUNDLER_EXECUTOR_KEY: ${{ secrets.STEWARD_BUNDLER_EXECUTOR_KEY }}
           SUBGRAPH_URL_BACKUP: ${{ secrets.SUBGRAPH_URL_BACKUP }}
         run: |
           set -euo pipefail
@@ -64,6 +65,10 @@ jobs:
           # Steward gasless-petting relayer (operator mode). Setting this starts the steward
           # cron; with zero operator-mode enrollments it simply no-ops until an owner approves.
           if [ -n "${STEWARD_PET_RELAYER_KEY:-}" ]; then set_var STEWARD_PET_RELAYER_KEY "$STEWARD_PET_RELAYER_KEY"; echo "STEWARD_PET_RELAYER_KEY synced (len=${#STEWARD_PET_RELAYER_KEY})"; else echo "no STEWARD_PET_RELAYER_KEY secret"; fi
+          # Steward session-mode bundler executor (Alto in deploy/docker-compose.yml). Fronts each
+          # handleOps and is reimbursed in-protocol, so it needs only a small Base ETH float. The
+          # PLAYER pays the actual userOp gas. Without this the alto container restart-loops.
+          if [ -n "${STEWARD_BUNDLER_EXECUTOR_KEY:-}" ]; then set_var STEWARD_BUNDLER_EXECUTOR_KEY "$STEWARD_BUNDLER_EXECUTOR_KEY"; echo "STEWARD_BUNDLER_EXECUTOR_KEY synced (len=${#STEWARD_BUNDLER_EXECUTOR_KEY})"; else echo "no STEWARD_BUNDLER_EXECUTOR_KEY secret"; fi
 
       - name: Build + start
         # Isolation guarantee: -p gotchicloset namespaces every container, volume,

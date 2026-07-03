@@ -17,6 +17,11 @@ services:
       # fallback (server/games/store.ts). Admin allowlist = the operator's public wallets
       # that may approve/reject submissions (public addresses, not secrets).
       - GAME_CENTER_ADMINS=0xc4cb6cb969e8b4e309ab98e4da51b77887afad96,0xe0d4f8f6f04a42aed5a7ea4f68bc612e6a54a3c2
+      # Steward hands-off automation: the cron submits session userOps through the co-located
+      # Alto bundler (below). The PLAYER's 7702 account pays gas; the bundler executor only
+      # fronts-and-is-reimbursed. Cron is a no-op until an owner enrolls via the wizard.
+      - STEWARD_BUNDLER_URL=http://alto:3000
+      - STEWARD_RPC_URL=https://mainnet.base.org
     ports:
       - "127.0.0.1:8791:8787"
     volumes:
@@ -26,6 +31,31 @@ services:
       interval: 30s
       timeout: 5s
       retries: 5
+
+  # Self-hosted ERC-4337 bundler (Alto) for Steward session userOps — $0 vendor cost. It only
+  # relays userOps; the player's 7702 account pays its own gas (no paymaster). The executor
+  # wallet fronts each handleOps and is reimbursed in-protocol, so it needs only a small ETH
+  # float. Not published to the host (no ports:) — only the autorenew app reaches it over the
+  # compose network at http://alto:3000. EntryPoint v0.7.
+  alto:
+    image: ghcr.io/pimlicolabs/alto:latest
+    container_name: gotchicloset-alto
+    restart: unless-stopped
+    command:
+      - "--entrypoints"
+      - "0x0000000071727De22E5E9d8BAf0edAc6f37da032"
+      - "--executor-private-keys"
+      - "${STEWARD_BUNDLER_EXECUTOR_KEY}"
+      - "--utility-private-key"
+      - "${STEWARD_BUNDLER_EXECUTOR_KEY}"
+      - "--rpc-url"
+      - "https://mainnet.base.org"
+      - "--safe-mode"
+      - "false"
+      - "--port"
+      - "3000"
+    expose:
+      - "3000"
 
 volumes:
   autorenew_data:
