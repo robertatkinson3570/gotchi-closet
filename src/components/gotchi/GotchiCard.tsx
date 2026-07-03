@@ -3,13 +3,12 @@ import { Card } from "@/ui/card";
 import { SvgInline } from "./SvgInline";
 import { GotchiSvg } from "./GotchiSvg";
 import type { Gotchi } from "@/types";
-import { useRespecSimulator } from "@/lib/respec";
+import { useRespecSimulator, editableBrsCorrection } from "@/lib/respec";
 import { useAvailableSkillPoints } from "@/lib/hooks/useAvailableSkillPoints";
 import { Button } from "@/ui/button";
 import { Minus, Plus } from "lucide-react";
 import { BrsSummary } from "./BrsSummary";
 import { BestSetsPanel } from "./BestSetsPanel";
-import { sumTraitBrs } from "@/lib/rarity";
 
 interface GotchiCardProps {
   gotchi: Gotchi;
@@ -95,27 +94,31 @@ export function GotchiCard({
     : committedSim
       ? safeTraits(committedSim.simModified)
       : safeTraits(traits) || safeTraits(baseTraitSource) || currentTraits;
-  const birthTraitsArr = respec.simBase ? respec.simBase.map((v, i) => v - (respec.allocated[i] ?? 0)) : [];
-  const birthBrs = birthTraitsArr.length ? sumTraitBrs(birthTraitsArr) : 0;
-  const simBrs = sumTraitBrs(respec.simBase);
-  const brsDelta = simBrs - birthBrs;
-  const committedBirthBrs = committedSim ? sumTraitBrs(committedSim.simBase.map((v, i) => v - (respec.committedAllocated?.[i] ?? 0))) : 0;
-  const committedDelta = committedSim ? sumTraitBrs(committedSim.simBase) - committedBirthBrs : 0;
+  // Exact BRS correction (audit H3): displayed value = current display value +
+  // (BRS of the simulated editable base − BRS of the CURRENT editable base).
+  // Never assumes each spent point was worth ±1 BRS (wrong across 49/50).
+  const liveCorrection = editableBrsCorrection(
+    safeTraits(numericTraitSource),
+    safeTraits(respec.simBase)
+  );
+  const committedCorrection = committedSim
+    ? editableBrsCorrection(safeTraits(numericTraitSource), safeTraits(committedSim.simBase))
+    : 0;
   const traitBaseValue = showRespec && respec.isRespecMode
-    ? (traitBase ?? 0) - respec.totalSP + brsDelta
+    ? (traitBase ?? 0) + liveCorrection
     : committedSim
-      ? (traitBase ?? 0) - respec.totalSP + committedDelta
+      ? (traitBase ?? 0) + committedCorrection
       : traitBase;
   const traitWithModsValue = showRespec && respec.isRespecMode
-    ? (traitWithMods ?? 0) - respec.totalSP + brsDelta
+    ? (traitWithMods ?? 0) + liveCorrection
     : committedSim
-      ? (traitWithMods ?? 0) - respec.totalSP + committedDelta
+      ? (traitWithMods ?? 0) + committedCorrection
       : traitWithMods;
   const totalBrsValue =
     showRespec && respec.isRespecMode
-      ? (totalBrs ?? 0) - respec.totalSP + brsDelta
+      ? (totalBrs ?? 0) + liveCorrection
       : committedSim
-        ? (totalBrs ?? 0) - respec.totalSP + committedDelta
+        ? (totalBrs ?? 0) + committedCorrection
         : totalBrs;
   return (
     <motion.div

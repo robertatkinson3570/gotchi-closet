@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getCanonicalModifiedTraits } from "@/lib/traits";
+import { traitToBRS } from "@/lib/rarity";
 
 const EDITABLE_COUNT = 4;
 const respecBaseTraitsCache = new Map<string, number[]>();
@@ -43,6 +44,19 @@ export function totalSpiritPoints(
     ? Math.max(0, Math.floor(availableSkillPoints as number))
     : 0;
   return used + avail;
+}
+
+/**
+ * BRS difference contributed by the 4 editable traits between two base-trait
+ * arrays (audit H3). Exact across the 49/50 boundary — never assumes a point
+ * is worth ±1 BRS.
+ */
+export function editableBrsCorrection(fromBase: number[], toBase: number[]): number {
+  let delta = 0;
+  for (let i = 0; i < EDITABLE_COUNT; i++) {
+    delta += traitToBRS(Number(toBase[i]) || 0) - traitToBRS(Number(fromBase[i]) || 0);
+  }
+  return delta;
 }
 
 export function computeWearableDelta(

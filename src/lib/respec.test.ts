@@ -3,6 +3,7 @@ import {
   totalSpiritPoints,
   computeWearableDelta,
   computeSimTraits,
+  editableBrsCorrection,
 } from "./respec";
 
 describe("respec pool (audit H2)", () => {
@@ -11,6 +12,18 @@ describe("respec pool (audit H2)", () => {
     expect(totalSpiritPoints(5, undefined)).toBe(5); // chain read pending → conservative
     expect(totalSpiritPoints(undefined, 3)).toBe(3);
     expect(totalSpiritPoints(-1, -1)).toBe(0);
+  });
+});
+
+describe("respec BRS correction (audit H3)", () => {
+  it("is 0 for a point spent 49→50 (boundary)", () => {
+    expect(editableBrsCorrection([49, 10, 10, 10], [50, 10, 10, 10])).toBe(0);
+  });
+  it("is -1 for a point spent toward 50", () => {
+    expect(editableBrsCorrection([10, 10, 10, 10], [11, 10, 10, 10])).toBe(-1);
+  });
+  it("is +1 for a point away from 50", () => {
+    expect(editableBrsCorrection([10, 10, 10, 10], [9, 10, 10, 10])).toBe(1);
   });
 });
 
