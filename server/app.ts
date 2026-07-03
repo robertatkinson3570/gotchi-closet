@@ -13,6 +13,7 @@ import mcpBillingRoutes from "./routes/mcpBilling";
 import daoRoutes from "./routes/dao";
 import mapRoutes from "./routes/map";
 import pulseRoutes from "./routes/pulse";
+import gamesRoutes from "./routes/games";
 import { stewardRouter } from "./routes/steward";
 import { wispMcpHttpHandler } from "./mcp/http";
 import { getDebugStats } from "./aavegotchi/serverSvgService";
@@ -100,6 +101,7 @@ export function createApp() {
   app.use("/api/map", mapRoutes);
   // Pulse — state-of-the-Aavegotchiverse daily metrics, cached server-side.
   app.use("/api/pulse", pulseRoutes);
+  app.use("/api/games", gamesRoutes);
   // Keyed, rate-limited MCP protocol endpoint for external customers (POST only).
   // Distinct from /api/mcp (billing REST). Plan limits enforced in mcp/http.ts.
   app.post("/mcp", wispMcpHttpHandler);
