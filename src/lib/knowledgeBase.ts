@@ -15,10 +15,11 @@ export const KB_SECTIONS: KBSection[] = [
     emoji: "👋",
     blurb: "What GotchiCloset is and how to begin.",
     items: [
-      { heading: "What is GotchiCloset?", body: "A community-built, non-custodial web app for the full Aavegotchi experience on the Base chain: browse and trade the Baazaar, bid in auctions, manage and pet your gotchis, equip wearables, rent/lend, forge, manage land, follow activity & stats, and take part in the DAO — all from one place.", tags: ["what is", "gotchicloset", "about", "overview", "app"] },
+      { heading: "What is GotchiCloset?", body: "A community-built, non-custodial web app for the full Aavegotchi experience on the Base chain: browse and trade the Baazaar, bid in (and create) auctions, manage and pet your gotchis, dress and equip wearables, rent/lend, forge, stake for GLTR, swap into GHST, manage land, explore the Citaadel map, follow activity, stats and leaderboards, chat with your Gotchi Companion, and take part in the DAO — all from one place.", tags: ["what is", "gotchicloset", "about", "overview", "app", "features"] },
       { heading: "Non-custodial & safe", body: "GotchiCloset never holds your keys, seed phrase, or assets. Every action that moves an asset is a transaction you sign yourself in your own wallet. Token approvals only ever go to the official Aavegotchi / GBM / Forge contracts on Base — never to GotchiCloset.", tags: ["safe", "safety", "custody", "non-custodial", "approval", "secure", "scam"] },
       { heading: "Connect your wallet", body: "Click Connect (top right) and approve the connection in your wallet, then make sure you're on the Base network. The app prompts you to switch to Base if you're on the wrong chain.", tags: ["connect", "wallet", "login", "base", "network", "switch"] },
-      { heading: "Get GHST to spend", body: "GHST is the currency for buying, bidding, forging and summoning. Use the Get GHST page to swap (CowSwap/Aerodrome/Uniswap), bridge from another chain (Bungee/Socket), or buy with card (Coinbase/MoonPay/Transak) — all targeting GHST on Base.", tags: ["ghst", "get ghst", "buy ghst", "swap", "bridge", "onramp", "fund"] },
+      { heading: "Get GHST to spend", body: "GHST is the currency for buying, bidding, forging and summoning. The Get GHST page has an in-app Instant Swap (ETH/USDC/WETH ⇄ GHST, best aggregated route on Base with live quotes, min-received and slippage shown) plus external venues: swap (CowSwap/Aerodrome/Uniswap), bridge from another chain (Bungee/Socket), or buy with card (Coinbase/MoonPay/Transak).", tags: ["ghst", "get ghst", "buy ghst", "swap", "instant swap", "bridge", "onramp", "fund"] },
+      { heading: "GHST price ticker", body: "The footer on every page shows the live GHST price with its 24-hour change. Click it to jump to the Get GHST page.", tags: ["price", "ticker", "ghst price", "24h", "footer"] },
     ],
   },
   {
@@ -32,6 +33,9 @@ export const KB_SECTIONS: KBSection[] = [
       { heading: "Buying", body: "Click Buy on any listing. The app first ensures GHST is approved to the Aavegotchi diamond, then executes the purchase via the front-run-protected function (the transaction reverts if the listing changed), so you never overpay. You can multi-select and bulk-buy.", tags: ["buy", "purchase", "buy now", "bulk buy", "cart", "checkout"] },
       { heading: "Make an Offer (buy orders)", body: "On gotchis, wearables and items, use Make Offer to place a Baazaar buy order: enter a price (and quantity for items), pick an expiry (1/3/7/30 days or none). Your GHST is escrowed to the Aavegotchi diamond and refunded if you cancel or it expires; the owner can fill it any time.", tags: ["offer", "make offer", "buy order", "bid offer", "escrow"] },
       { heading: "FAKE Gotchis, Guardians & Forge items", body: "Beyond the core collections you can trade FAKE Gotchis & FAKE Cards (community art NFTs), Guardian Skins, and Forge items (alloy/essence/geodes/cores) — each as its own Explorer tab with buy + offer.", tags: ["fake gotchi", "fake card", "guardian", "guardian skin", "forge item", "collection"] },
+      { heading: "Citaadel map", body: "The Parcels tab has a 'Citaadel map' view: all 30,000+ REALM parcels on one pan/zoom map. Color by district, size, for-sale status or price; search by parcel #, name or owner; Baazaar listings glow green and GBM auctions amber. Click a listed parcel to see its details and buy it right from the map.", tags: ["citaadel", "map", "parcel map", "land map", "district", "realm", "buy land"] },
+      { heading: "Gotchi detail extras", body: "A gotchi's detail view goes deep: lifetime price history sparkline (every past sale), wardrobe history and past on-chain outfits, XP drop claim status (which airdrops it has claimed), plus full traits, sets and listing state.", tags: ["price history", "sparkline", "wardrobe history", "outfits", "xp drop", "claims", "detail"] },
+      { heading: "Wearable insights", body: "Wearable detail shows holder distribution (how concentrated a wearable's supply is) alongside price, rarity, trait effects and the sets it belongs to. Owned wearables count toward your portfolio floor value.", tags: ["wearable", "holders", "distribution", "supply", "insight"] },
     ],
   },
   {
@@ -41,15 +45,29 @@ export const KB_SECTIONS: KBSection[] = [
     blurb: "Everything you can do with gotchis you own.",
     items: [
       { heading: "Your owned assets", body: "Switch the Explorer to the Owned scope (or open it connected) to see your gotchis, wearables, items, parcels and token balances. Click a gotchi to open the manage modal.", tags: ["owned", "my gotchis", "my assets", "inventory", "manage"] },
+      { heading: "Portfolio floor value", body: "The Owned overview shows a rough floor value for your whole portfolio — gotchis, wearables and other assets priced from current Baazaar floors, in GHST and ≈USD.", tags: ["portfolio", "floor", "value", "worth", "net worth", "usd"] },
+      { heading: "Family photo", body: "In the Owned view, switch to Family mode for a group portrait of all your gotchis and use Take Picture to download it as a shareable image.", tags: ["family", "photo", "picture", "group", "share", "screenshot"] },
       { heading: "Pet (kinship)", body: "Pet your gotchi roughly every 12 hours to grow its kinship; neglect lowers it. Petting still works while a gotchi is rented out or listed.", tags: ["pet", "petting", "kinship", "interact", "bond"] },
       { heading: "Spend skill points & respec", body: "Spend earned skill points to boost a gotchi's four spectrum traits, or Respec to reset spent points back to base (first respec per gotchi is free; later ones charge a small fee).", tags: ["skill points", "spend skill", "respec", "reset", "traits"] },
       { heading: "Rename, transfer, sacrifice", body: "Set your gotchi's name, transfer it to another address, or Sacrifice it — which destroys the gotchi, returns its staked collateral, and transfers its XP to another gotchi you choose.", tags: ["rename", "name", "transfer", "send", "sacrifice", "destroy", "xp transfer"] },
       { heading: "Use consumables", body: "Apply consumables you hold (XP potions, Greater XP potions, kinship potions, etc.) to a gotchi from the manage modal — it shows each consumable's effect and how many you own.", tags: ["consumable", "use item", "xp potion", "kinship potion", "potion"] },
       { heading: "GHST pocket (escrow)", body: "Each gotchi has an escrow wallet that can hold GHST (its 'pocket'). You can withdraw GHST from your gotchi's escrow to your wallet from the manage modal.", tags: ["pocket", "escrow", "withdraw", "ghst pocket", "stake"] },
       { heading: "Equip wearables", body: "Open the equip modal to put wearables into a gotchi's 16 slots. Wearables shift traits; completing a full Set grants bonus trait boosts and rarity (BRS). Save outfits for reuse.", tags: ["equip", "wearable", "dress", "outfit", "slot", "set"] },
-      { heading: "Bulk list & set pet operator", body: "Bulk-list several owned gotchis (or items) for sale in one flow. Set Pet Operator lets you authorize another address (a pet bot or friend) to pet ALL your gotchis — it grants petting only, never transfer rights.", tags: ["bulk list", "list many", "pet operator", "petting access", "bot"] },
+      { heading: "Bulk list & bulk send", body: "In the Owned view hit 'List / Send' to select multiple gotchis, then either bulk-list them for sale at a price, or Send them all to another wallet in a single transaction (safeBatchTransferFrom — one signature, not one per gotchi). Lent-out gotchis are blocked from sending.", tags: ["bulk list", "list many", "bulk send", "batch transfer", "transfer many", "send gotchis"] },
+      { heading: "Set pet operator", body: "Set Pet Operator lets you authorize another address (a pet bot or friend) to pet ALL your gotchis — it grants petting only, never transfer rights.", tags: ["pet operator", "petting access", "bot", "operator"] },
       { heading: "Open portals & summon", body: "Own a closed portal? Open it to reveal 10 candidate gotchis, compare their traits/BRS, then claim (summon) the one you want. Opened portals show a 'Choose Gotchi' action.", tags: ["portal", "open portal", "summon", "claim", "choose gotchi", "haunt"] },
       { heading: "Rented / borrowed limits", body: "If a gotchi is rented out or borrowed, only petting (and claiming alchemica) is available until the rental ends — other actions are locked. Listed-for-sale gotchis allow petting and editing the listing.", tags: ["rented", "borrowed", "locked", "rental", "limits"] },
+    ],
+  },
+  {
+    id: "dress-encyclopedia",
+    title: "Dress & Wearable Encyclopedia",
+    emoji: "👗",
+    blurb: "Style your gotchi and study every wearable, set and trait.",
+    items: [
+      { heading: "The Dress page", body: "A full dressing room: preview any outfit on your gotchi live, slot by slot, and see trait and rarity effects before you equip on-chain. The auto-dress assistant ('Mommy dress') can style your gotchi for you in one click.", tags: ["dress", "dressing room", "outfit", "preview", "auto dress", "mommy", "style"] },
+      { heading: "Wardrobe Lab", body: "A sandbox to experiment: try any wearables on your gotchis and simulate the resulting traits, set bonuses and BRS — no transactions, just theory-crafting your best build.", tags: ["wardrobe lab", "lab", "simulate", "experiment", "theorycraft", "build"] },
+      { heading: "Sets, traits & rarity guides", body: "Built-in encyclopedia pages: browse all wearable Sets (bonuses, required pieces, live previews), every Wearable (trait modifiers, slots), each Trait explained for builds, and a full Rarity Score guide showing exactly how BRS is calculated.", tags: ["sets", "wearables index", "traits guide", "rarity guide", "encyclopedia", "reference"] },
     ],
   },
   {
@@ -59,7 +77,10 @@ export const KB_SECTIONS: KBSection[] = [
     blurb: "Bid on live GBM auctions.",
     items: [
       { heading: "How GBM auctions work", body: "The Auctions tab shows live GBM auctions (gotchis, parcels, items and more). Place a bid in GHST that exceeds the current top bid; the app approves GHST to the GBM diamond then commits your bid. GBM rewards being outbid with incentives.", tags: ["auction", "gbm", "bid", "bidding", "commit bid", "outbid"] },
-      { heading: "Reading an auction", body: "Each card shows the item, top bid, top bidder, seller, total bids and time remaining. Click for full detail and to bid. Gotchi auctions show full traits so you can scan before bidding.", tags: ["auction detail", "top bid", "time remaining", "ends"] },
+      { heading: "Reading an auction", body: "Each card shows the item, top bid, top bidder, seller, total bids and time remaining. Click for full detail and to bid. Gotchi auctions show full traits so you can scan before bidding. Filter by type, sort, and search by name or ID.", tags: ["auction detail", "top bid", "time remaining", "ends", "filter", "sort"] },
+      { heading: "Watchlist & alerts", body: "Watch any auction and GotchiCloset alerts you app-wide when you're outbid or a watched auction is ending soon — no more sniped endings you didn't see coming.", tags: ["watch", "watchlist", "alert", "outbid", "ending soon", "notification"] },
+      { heading: "Create your own auction", body: "You can start a GBM auction for your own gotchi or item directly from GotchiCloset (something even the official dapp can't do on Base). Set your parameters and the asset goes under the hammer.", tags: ["create auction", "start auction", "sell auction", "gbm create"] },
+      { heading: "GBM earnings", body: "The Activity page's GBM earnings tab tracks your auction economics: incentives earned from being outbid, a scorecard, and seller profit & loss.", tags: ["gbm earnings", "incentives", "outbid rewards", "pnl", "scorecard"] },
     ],
   },
   {
@@ -72,6 +93,8 @@ export const KB_SECTIONS: KBSection[] = [
       { heading: "Auto-renew", body: "Enable auto-renew so a rental re-lists automatically when it ends, keeping your gotchi earning without manual re-listing.", tags: ["auto-renew", "autorenew", "renew", "subscription"] },
       { heading: "Borrow a gotchi", body: "Browse rentals and rent (agree to) a gotchi to use it (e.g. for Gotchiverse/rarity activities) for the rental period; bulk-rent is supported. You can pet and claim alchemica per the lending terms.", tags: ["borrow", "rent", "agree", "rental", "bulk rent"] },
       { heading: "Claim & end rentals", body: "Claim accrued alchemica from active rentals, and end a rental once its agreed time has passed to take your gotchi back.", tags: ["claim", "end rental", "claim and end", "alchemica"] },
+      { heading: "Lending analytics & suggested pricing", body: "Lending Analytics shows market-wide rental data — rates, durations, splits and volume — and a Suggested Price widget recommends competitive terms for your gotchi based on comparable live rentals.", tags: ["lending analytics", "suggested price", "pricing", "rental market", "rates"] },
+      { heading: "Whitelist manager", body: "Create and manage lending whitelists (allowed borrower lists) and attach them to rentals so only approved addresses can rent your gotchis.", tags: ["whitelist", "whitelists", "allowed", "private rental", "manage whitelist"] },
     ],
   },
   {
@@ -83,6 +106,7 @@ export const KB_SECTIONS: KBSection[] = [
       { heading: "The Forge", body: "Smelt wearables into forge materials, and forge wearables from schematics + materials. Forge materials are Alloy, Essence, Geodes and Cores. The Forge uses GLTR and alchemica.", tags: ["forge", "smelt", "craft", "schematic", "alloy", "essence", "geode", "core", "gltr"] },
       { heading: "Land, installations & tiles", body: "Parcels (land) hold installations (altars, harvesters, reservoirs, lodges, walls, etc.) and tiles. Build and upgrade installations using alchemica + GLTR; stage multiple changes and save them together.", tags: ["land", "parcel", "installation", "tile", "build", "upgrade", "altar", "harvester"] },
       { heading: "Channel & claim alchemica", body: "From Land Management, channel and claim alchemica (FUD, FOMO, ALPHA, KEK) produced by your parcels. If a gotchi is rented out, channelling depends on the rights you granted the renter.", tags: ["channel", "channelling", "claim alchemica", "alchemica", "harvest", "parcel", "fud", "fomo", "alpha", "kek"] },
+      { heading: "GLTR staking (earn GLTR)", body: "The GLTR Staking page stakes Aavegotchi LP tokens (GHST paired with FUD/FOMO/ALPHA/KEK/WETH/GLTR) into the farm on Base. See live emission per block, pool weights and totals; stake, unstake, harvest per pool or Claim All in one transaction. Earned GLTR feeds the Forge to skip queue time.", tags: ["gltr staking", "staking", "farm", "lp", "pool", "stake", "harvest", "claim all", "emission"] },
     ],
   },
   {
@@ -93,6 +117,8 @@ export const KB_SECTIONS: KBSection[] = [
     items: [
       { heading: "Activity feed", body: "Activity shows recent on-chain marketplace events in three feeds — Sales, Offers (buy orders, with Open/Filled/Cancelled/Expired status), and Auctions/Bids. Filter by category and click any row for detail.", tags: ["activity", "recent", "sales", "offers", "history", "feed"] },
       { heading: "Marketplace Stats", body: "The Stats page shows settled Baazaar and Auction volume on Base by window (24H / 7D / 30D / 3M) in GHST and ≈USD, with a per-category breakdown and all-time totals.", tags: ["stats", "volume", "analytics", "metrics", "settled"] },
+      { heading: "My Activity", body: "Your personal activity page (wallet menu → My activity) gathers everything about YOUR wallet: listings, offers made and received, bids, auctions and sales. Any address has a public version too — open a seller or bidder to see their history.", tags: ["my activity", "personal", "my listings", "my offers", "my bids", "profile", "address history"] },
+      { heading: "Kinship & XP Leaderboard", body: "The Leaderboard ranks every gotchi by kinship and XP, live from the subgraph. See where your gotchis stand and who the most-loved and most-leveled gotchis on Base are.", tags: ["leaderboard", "kinship leaderboard", "xp leaderboard", "rank", "top gotchis"] },
     ],
   },
   {
@@ -102,6 +128,7 @@ export const KB_SECTIONS: KBSection[] = [
     blurb: "Treasury, proposals and voting.",
     items: [
       { heading: "Your voting power", body: "The DAO page shows your AavegotchiDAO voting power (GHST-equivalent, via Snapshot) and a breakdown by strategy. Voting power generally comes from GHST you hold and stake.", tags: ["voting power", "dao", "vote weight", "snapshot", "governance"] },
+      { heading: "Live quorum", body: "The DAO page tracks live quorum: the DAO-wide total votable voting power right now (wallet GHST, gotchis, wearables, land and staked LP), and per-proposal quorum bars showing how close each live proposal is to the 7.2M VP quorum it needs to pass.", tags: ["quorum", "live quorum", "votable", "7.2m", "proposal quorum", "pass", "voting power"] },
       { heading: "Vote on proposals (gasless)", body: "Live proposals show their state, votes, leading choice and result bars. You can vote in-app with a gasless off-chain signature (no gas) — single-choice, approval and weighted proposals are supported. Proposals you've voted on show a Voted badge.", tags: ["vote", "proposal", "governance", "gasless", "snapshot", "weighted"] },
       { heading: "Treasury", body: "The DAO treasury panel sums the DAO's holdings across Base, Polygon and Ethereum (GHST/USDC/DAI), with the full labeled list of DAO addresses linking to block explorers.", tags: ["treasury", "dao funds", "addresses", "polygon", "ethereum"] },
     ],
@@ -117,7 +144,8 @@ export const KB_SECTIONS: KBSection[] = [
       { heading: "Talk-only & safe", body: "The companion is talk-only: it coaches you (e.g. when to pet or channel) but never signs transactions or moves your assets. You stay in control of every on-chain action.", tags: ["companion safe", "talk only", "no transactions", "coach"] },
       { heading: "Per-gotchi memory", body: "Each companion keeps a lightweight memory of your conversations, so your bond and context carry across chats.", tags: ["memory", "remember", "bond", "history"] },
       { heading: "Free & premium", body: "The companion is free for everyone (a free hosted model with an in-character fallback so it never hard-fails). A premium tier with a sharper model — and extra roast edge — can be unlocked by paying GHST on Base.", tags: ["companion premium", "free", "premium", "ghst", "model"] },
-      { heading: "Roast Arena ⚔️", body: "Send your gotchi into the Roast Arena to trade playful, in-character roasts with other gotchis. Enter the queue, roast an opponent, and view battles — a fun, social way to show off your gotchi's personality.", tags: ["roast", "arena", "battle", "roast arena", "versus", "vs", "fight", "social"] },
+      { heading: "Roast Arena ⚔️", body: "Send your gotchi into the Roast Arena to trade playful, in-character roasts with other gotchis. Enter the queue, roast an opponent, and view battles — a fun, social way to show off your gotchi's personality. Battles have public pages you can share.", tags: ["roast", "arena", "battle", "roast arena", "versus", "vs", "fight", "social"] },
+      { heading: "Global chat room", body: "Beyond one-on-one chat, your companion can join the global room — a community chat where everyone's gotchis hang out and talk together.", tags: ["global chat", "community", "room", "chat room", "social"] },
     ],
   },
   {
