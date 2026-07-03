@@ -24,11 +24,15 @@ Severity: **BLOCKER** ships nothing until fixed · **HIGH** fix before flipping 
 
 > **STATUS UPDATE (2026-07-03, same day):** B1, B2, B3, B5, B6, B7, C1, C2, C3, C4, C5, C6, C7 are **FIXED**
 > and verified (tsc 0 · vitest 633 pass · eslint 0 · steward API e2e 11/11). Owner-pays is now enforced at the
-> API: operator-mode enrollments are rejected unless a relayer key is deliberately configured. Remaining:
-> **A1** (Base Sepolia 7702 verification — needs owner-supplied free-tier Rhinestone/Pimlico key + faucet
-> wallet; see `docs/steward/SEPOLIA-VERIFY.md`), **B4** (move Rhinestone auth off VITE_ to server-minted JWT —
-> do together with A1 since it changes the same client path), **D** (lending chore decision), **E** (low-sev
-> housekeeping).
+> API: operator-mode enrollments are rejected unless a relayer key is deliberately configured.
+>
+> **WALL DOWN (same day, later):** Rhinestone's dashboard is invite-gated, so the paid SDK was ripped out by
+> merging `feat/steward-aa` — the AA layer now runs on the FREE stack (`@rhinestone/module-sdk` encoding +
+> `permissionless` + self-hosted Alto bundler, EntryPoint v0.7, Safe7579 7702 account). **No vendor account,
+> no API key, operator cost ~$0.** This also makes **B4 moot** (no client-exposed vendor key exists anymore).
+> Remaining: **A1** — the funded Sepolia proof, procedure + faucet addresses in
+> `docs/steward/PHASE1-HANDOFF.md` (preflight is already green on both chains); **D** (lending chore
+> decision); **E** (low-sev housekeeping).
 
 ---
 

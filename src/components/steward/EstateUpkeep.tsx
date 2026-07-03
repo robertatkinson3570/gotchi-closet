@@ -11,8 +11,8 @@ import { useUpkeep } from "@/hooks/useSteward";
 import { sessionActions } from "@/lib/steward/sessionSpec";
 
 const ALLOWED_PAIRS = new Set(
-  sessionActions({ pet: true, channel: true, claim: true }).flatMap((a) =>
-    "target" in a && "selector" in a ? [`${a.target.toLowerCase()}:${a.selector.toLowerCase()}`] : []
+  sessionActions({ pet: true, channel: true, claim: true }).map(
+    (a) => `${a.actionTarget.toLowerCase()}:${a.actionTargetSelector.toLowerCase()}`
   )
 );
 
