@@ -100,9 +100,12 @@ Anything that turns out to be Vite-coupled gets its logic extracted, not duplica
 
 ## 5. Visual style & sound
 
-- `video/theme.ts` holds the entire look: app palette colors, pixel font,
-  gotchi-pink/purple gradients, scanline/CRT flourish. All templates read from it —
-  one file *is* the "new visual style" line item.
+- `video/theme.ts` holds the entire look and mirrors the SITE's neon-spectral dark
+  mode exactly (tokens verbatim from `src/styles/globals.css` `.dark` + fonts/gradients
+  from `tailwind.config.ts`): phantom-void bg, spectral/ghst-pink/cyan/ecto/gold triad,
+  DM Serif Display headings, Inter body, JetBrains Mono numbers, color-matched glows,
+  aurora-drift background, shimmer on hero text. All templates read from it — one file
+  *is* the "new visual style" line item, and it IS the brand.
 - Audio: per-template mood mapping into a CC0 chiptune pool; SFX set (equip blip,
   counter tick, sale cha-ching). Track choice = seeded hash of video ID (stable per
   video, varied across videos).
