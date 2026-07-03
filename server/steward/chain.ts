@@ -1,7 +1,7 @@
 // server/steward/chain.ts
 // Reads the owner's gotchi + parcel state into a ChainSnapshot for dueWork. Enumeration via
 // the Goldsky subgraphs (same endpoints as src/lib/subgraph.ts); per-id reads via viem.
-import { createPublicClient, http } from "viem";
+import { createPublicClient, http, BaseError, ExecutionRevertedError } from "viem";
 import { base } from "viem/chains";
 import { AAVEGOTCHI_DIAMOND, REALM_DIAMOND } from "./abi";
 import type { ChainSnapshot } from "./dueWork";
@@ -26,7 +26,14 @@ const gotchiAbi = [
 ] as const;
 
 async function sg(url: string, query: string, variables: Record<string, unknown>) {
-  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query, variables }) });
+  // Hard timeout: a single hung subgraph socket must never wedge the cron loop (the awaits
+  // in runAllDue are sequential, so one eternal fetch would stall every owner's steward).
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables }),
+    signal: AbortSignal.timeout(20_000),
+  });
   const j = await r.json();
   if (j.errors) throw new Error(JSON.stringify(j.errors));
   return j.data;
@@ -73,16 +80,22 @@ export async function snapshotFor(owner: string): Promise<ChainSnapshot> {
   return { gotchis, parcels };
 }
 
-// Best-effort pre-submit check: eth_call each action from the player's account and keep only
-// the ones that don't revert (filters stale cooldowns, Not Altar, lent-gotchi channel, etc.)
-// so the runner never submits a reverting userOp the player would pay for.
+// Pre-submit check: eth_call each action from the player's account and keep only the ones
+// that don't revert (filters stale cooldowns, Not Altar, lent-gotchi channel, etc.) so the
+// runner never submits a reverting userOp the player would pay for.
+// Only genuine REVERTS are dropped. Infra errors (rate limit, network, RPC down) rethrow:
+// swallowing them would record a "successful" empty run, advance lastRunAt, and silently
+// skip the owner's due upkeep for a whole interval.
 export async function simulateCalls(from: string, calls: Call[]): Promise<Call[]> {
   const out: Call[] = [];
   for (const c of calls) {
     try {
       await client.call({ account: from as `0x${string}`, to: c.to, data: c.data });
       out.push(c);
-    } catch {
+    } catch (err) {
+      const msg = err instanceof BaseError ? `${err.shortMessage} ${err.details ?? ""}` : String((err as Error).message);
+      const isRevert = (err instanceof BaseError && err.walk((e) => e instanceof ExecutionRevertedError) !== null) || /revert/i.test(msg);
+      if (!isRevert) throw err;
       /* would revert — drop it */
     }
   }

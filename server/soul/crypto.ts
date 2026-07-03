@@ -11,6 +11,14 @@ function getKey(): Buffer {
   if (hex && hex.length === 64) {
     return Buffer.from(hex, "hex");
   }
+  // In production the dev-constant fallback would mean every "encrypted" secret (incl.
+  // steward session keys) is decryptable from a constant that lives in the public repo —
+  // refuse to run rather than degrade silently.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "[soul/crypto] SOUL_ENCRYPTION_KEY must be set to a 64-hex-char string in production"
+    );
+  }
   if (!_warnedOnce) {
     console.warn(
       "[soul/crypto] SOUL_ENCRYPTION_KEY is not set (or not a 64-hex-char string). " +

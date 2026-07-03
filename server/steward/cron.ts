@@ -21,6 +21,9 @@ function deps(): RunnerDeps {
 
 // Operator-mode (Ledger fallback): pet-only, executed by the relayer via setPetOperatorForAll.
 async function runOperatorPet(e: Enrollment, now: number, force = false): Promise<RunResult> {
+  // Same status gate as runEnrollment: a paused/revoked enrollment must never run (the
+  // relayer would otherwise keep petting for owners who fired their steward).
+  if (e.status !== "active") return { ran: false, reason: "inactive" };
   if (!force && e.lastRunAt !== null && now - e.lastRunAt < e.intervalSec) return { ran: false, reason: "not-due" };
   const snap = await snapshotFor(e.owner);
   const plan = computeWork({ pet: true, channel: false, claim: false }, snap, now);
@@ -46,6 +49,19 @@ const failures = new Map<number, { count: number; nextAttempt: number }>();
 const BACKOFF_BASE_MS = 30 * 60 * 1000;
 const BACKOFF_MAX_MS = 12 * 60 * 60 * 1000;
 
+// Wall-clock cap per enrollment: without it a single hung await inside runOne would keep
+// `running` true forever and every later tick would skip — the whole cron silently dead.
+const RUN_TIMEOUT_MS = 5 * 60 * 1000;
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms);
+    p.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e) => { clearTimeout(t); reject(e); }
+    );
+  });
+}
+
 export async function runAllDue(now = Math.floor(Date.now() / 1000)): Promise<void> {
   if (running) { console.warn("[steward] previous run still in progress; skipping tick"); return; }
   running = true;
@@ -58,7 +74,7 @@ export async function runAllDue(now = Math.floor(Date.now() / 1000)): Promise<vo
         const fail = failures.get(e.id);
         if (fail && nowMs < fail.nextAttempt) continue; // backing off after repeated failures
         try {
-          await runOne(e, now, {}, d);
+          await withTimeout(runOne(e, now, {}, d), RUN_TIMEOUT_MS, `steward enrollment ${e.id}`);
           failures.delete(e.id); // recovered
         } catch (err) {
           const count = (fail?.count ?? 0) + 1;

@@ -27,8 +27,14 @@ export async function upkeepFor(owner: string, deps: PreviewDeps, now: number): 
   const snap = await deps.snapshotFor(owner);
   const plan = computeWork({ pet: true, channel: true, claim: true }, snap, now);
   const lent = new Set(snap.gotchis.filter((g) => g.lentOut).map((g) => g.id));
-  const filtered: WorkPlan = { ...plan, pet: plan.pet.filter((id) => !lent.has(id)) };
   const claimerGotchiId = snap.gotchis.find((g) => !g.lentOut)?.id;
+  const filtered: WorkPlan = {
+    ...plan,
+    pet: plan.pet.filter((id) => !lent.has(id)),
+    // Claiming needs a non-lent gotchi as the claimer; if every gotchi is lent out, degrade
+    // to pet/channel instead of erroring the whole plan (workPlanToCalls would throw).
+    claim: claimerGotchiId === undefined ? [] : plan.claim,
+  };
   const calls = workPlanToCalls(filtered, { claimerGotchiId });
   return {
     summary: { pet: filtered.pet.length, channel: filtered.channel.length, claim: filtered.claim.length },

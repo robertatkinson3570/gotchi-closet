@@ -1,6 +1,9 @@
 // src/hooks/useSteward.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWalletClient } from "wagmi";
 import { stewardApi } from "@/lib/steward/api";
+import { mutateMessage, type StewardAction } from "@/lib/steward/enrollAuth";
+import type { Chores } from "@/lib/steward/cardState";
 import { env } from "@/lib/env";
 
 // Steward routes live on the VPS in prod (not Vercel); empty in dev so the Vite proxy handles it.
@@ -45,13 +48,28 @@ export function useSoulStats(owner?: string, gotchiId?: number) {
 }
 export function useStewardMutations(owner?: string) {
   const qc = useQueryClient();
+  const { data: walletClient } = useWalletClient();
   const invalidate = () => qc.invalidateQueries({ queryKey: ["steward", "status", owner] });
+  // Management actions are owner-signature gated server-side: sign the action message with
+  // the connected wallet and send ownerSig/signedAt along (one popup per action).
+  async function signed(action: StewardAction, id: number, chores?: Chores) {
+    if (!walletClient || !owner) throw new Error("Connect your wallet first.");
+    const signedAt = Date.now();
+    const ownerSig = await walletClient.signMessage({ message: mutateMessage({ action, id, owner, signedAt, chores }) });
+    return { id, ownerSig, signedAt };
+  }
   return {
     enroll: useMutation({ mutationFn: stewardApi.enroll, onSuccess: invalidate }),
-    pause: useMutation({ mutationFn: stewardApi.pause, onSuccess: invalidate }),
-    resume: useMutation({ mutationFn: stewardApi.resume, onSuccess: invalidate }),
-    revoke: useMutation({ mutationFn: stewardApi.revoke, onSuccess: invalidate }),
-    editChores: useMutation({ mutationFn: (v: { id: number; chores: any }) => stewardApi.editChores(v.id, v.chores), onSuccess: invalidate }),
-    runNow: useMutation({ mutationFn: stewardApi.runNow, onSuccess: () => { invalidate(); qc.invalidateQueries({ queryKey: ["steward", "log", owner] }); } }),
+    pause: useMutation({ mutationFn: async (id: number) => stewardApi.pause(await signed("pause", id)), onSuccess: invalidate }),
+    resume: useMutation({ mutationFn: async (id: number) => stewardApi.resume(await signed("resume", id)), onSuccess: invalidate }),
+    revoke: useMutation({ mutationFn: async (id: number) => stewardApi.revoke(await signed("revoke", id)), onSuccess: invalidate }),
+    editChores: useMutation({
+      mutationFn: async (v: { id: number; chores: Chores }) => stewardApi.editChores({ ...(await signed("edit-chores", v.id, v.chores)), chores: v.chores }),
+      onSuccess: invalidate,
+    }),
+    runNow: useMutation({
+      mutationFn: async (id: number) => stewardApi.runNow(await signed("run-now", id)),
+      onSuccess: () => { invalidate(); qc.invalidateQueries({ queryKey: ["steward", "log", owner] }); },
+    }),
   };
 }

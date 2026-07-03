@@ -9,18 +9,57 @@ import { parseEnrollBody } from "../steward/validate";
 import { soulStatsFor } from "../steward/soulStats";
 import { readOnChainSeal, readOnChainSealsBatch } from "../soul/seal";
 import { petOperatorAddress } from "../steward/petRelayer";
-import { enrollMessage, ENROLL_SIG_TTL_MS } from "../../src/lib/steward/enrollAuth";
+import { enrollMessage, mutateMessage, ENROLL_SIG_TTL_MS, type StewardAction } from "../../src/lib/steward/enrollAuth";
+import type { Chores } from "../steward/db";
 
 export const stewardRouter = Router();
+
+// Local/e2e bypass for signature auth. HARD-IGNORED in production: a stray env line must
+// never disable enroll/mutation auth on the VPS.
+const devOpen = () => process.env.STEWARD_DEV_OPEN_ENROLL === "1" && process.env.NODE_ENV !== "production";
+
+// Owner-signature gate for management actions on an existing enrollment. The signer must be
+// the enrollment's owner (not just any wallet), the signature binds action+id (+chores for
+// edit-chores) and expires with the same TTL as enroll. Writes the error response and
+// returns false when unauthorized.
+async function requireOwnerSig(
+  req: any, res: any, action: StewardAction, ownerOf: string, chores?: Chores
+): Promise<boolean> {
+  if (devOpen()) return true;
+  const { ownerSig, signedAt } = req.body ?? {};
+  const id = Number(req.body?.id);
+  if (typeof ownerSig !== "string" || typeof signedAt !== "number") {
+    res.status(401).json({ error: "owner signature required" });
+    return false;
+  }
+  if (Math.abs(Date.now() - signedAt) > ENROLL_SIG_TTL_MS) {
+    res.status(401).json({ error: "signature expired" });
+    return false;
+  }
+  const message = mutateMessage({ action, id, owner: ownerOf, signedAt, chores });
+  let signer = "";
+  try { signer = await recoverMessageAddress({ message, signature: ownerSig as `0x${string}` }); } catch { signer = ""; }
+  if (signer.toLowerCase() !== ownerOf.toLowerCase()) {
+    res.status(401).json({ error: "invalid owner signature" });
+    return false;
+  }
+  return true;
+}
 
 stewardRouter.post("/enroll", async (req, res) => {
   const parsed = parseEnrollBody(req.body);
   if (!parsed.ok) return res.status(400).json({ error: parsed.error });
   const v = parsed.value;
 
+  // Owner-pays invariant: operator mode makes OUR relayer pay gas, so it is enrollable only
+  // when the operator has explicitly configured (= chosen to fund) a relayer key.
+  if (v.authMode === "operator" && !petOperatorAddress()) {
+    return res.status(400).json({ error: "operator mode is disabled — no pet relayer configured" });
+  }
+
   // Authorize the enrollment (proves the caller controls `owner`, binds the terms, enforces
   // the soul-cert gate) unless explicitly opened for local dev / e2e.
-  if (process.env.STEWARD_DEV_OPEN_ENROLL !== "1") {
+  if (!devOpen()) {
     if (!v.ownerSig || !v.signedAt || !v.smartAccount) return res.status(401).json({ error: "owner signature required" });
     if (Math.abs(Date.now() - v.signedAt) > ENROLL_SIG_TTL_MS) return res.status(401).json({ error: "signature expired" });
     const message = enrollMessage({ owner: v.owner, gotchiId: v.gotchiId, chores: v.chores, smartAccount: v.smartAccount, signedAt: v.signedAt });
@@ -93,15 +132,17 @@ stewardRouter.get("/soul", (req, res) => {
   res.json(soulStatsFor(owner, gotchiId));
 });
 
-function mutateStatus(req: any, res: any, status: "active" | "paused" | "revoked") {
+async function mutateStatus(req: any, res: any, action: StewardAction, status: "active" | "paused" | "revoked") {
   const id = Number(req.body?.id);
-  if (!getEnrollment(id)) return res.status(404).json({ error: "not found" });
+  const e = getEnrollment(id);
+  if (!e) return res.status(404).json({ error: "not found" });
+  if (!(await requireOwnerSig(req, res, action, e.owner))) return;
   setStatus(id, status);
   res.json(getEnrollment(id));
 }
-stewardRouter.post("/pause", (req, res) => mutateStatus(req, res, "paused"));
-stewardRouter.post("/resume", (req, res) => mutateStatus(req, res, "active"));
-stewardRouter.post("/revoke", (req, res) => mutateStatus(req, res, "revoked"));
+stewardRouter.post("/pause", (req, res) => mutateStatus(req, res, "pause", "paused"));
+stewardRouter.post("/resume", (req, res) => mutateStatus(req, res, "resume", "active"));
+stewardRouter.post("/revoke", (req, res) => mutateStatus(req, res, "revoke", "revoked"));
 
 // Manual "run now": run a single enrollment immediately. Skips the per-enrollment interval gate,
 // but on-chain cooldowns still apply (computeWork only returns due work; simulate drops reverts),
@@ -112,6 +153,7 @@ stewardRouter.post("/run-now", async (req, res) => {
   const id = Number(req.body?.id);
   const e = getEnrollmentForRun(id);
   if (!e) return res.status(404).json({ error: "not found" });
+  if (!(await requireOwnerSig(req, res, "run-now", e.owner))) return;
   if (e.status !== "active") return res.status(400).json({ error: "enrollment is not active" });
   const now = Date.now();
   if (now - (lastManualRun.get(id) ?? 0) < MANUAL_RUN_COOLDOWN_MS) {
@@ -125,10 +167,12 @@ stewardRouter.post("/run-now", async (req, res) => {
   }
 });
 
-stewardRouter.post("/edit-chores", (req, res) => {
+stewardRouter.post("/edit-chores", async (req, res) => {
   const id = Number(req.body?.id);
-  if (!getEnrollment(id)) return res.status(404).json({ error: "not found" });
+  const e = getEnrollment(id);
+  if (!e) return res.status(404).json({ error: "not found" });
   const chores = { pet: !!req.body.chores?.pet, channel: !!req.body.chores?.channel, claim: !!req.body.chores?.claim };
+  if (!(await requireOwnerSig(req, res, "edit-chores", e.owner, chores))) return;
   try { res.json(editChores(id, chores)); }
   catch (err) {
     if (err instanceof ChoreConflictError) return res.status(409).json({ error: err.message, conflicts: err.conflicts });

@@ -24,6 +24,8 @@ async function get(path: string) {
   return r.json();
 }
 
+export interface MutateAuth { id: number; ownerSig: string; signedAt: number; }
+
 export interface UpkeepPlan {
   summary: { pet: number; channel: number; claim: number };
   calls: { to: `0x${string}`; data: `0x${string}` }[];
@@ -35,9 +37,11 @@ export const stewardApi = {
   upkeep: (owner: string) => get(`upkeep?owner=${owner}`) as Promise<UpkeepPlan>,
   enroll: (body: { owner: string; gotchiId: number; chores: Chores; intervalSec: number; smartAccount?: string; sessionKey?: string; ownerSig?: string; signedAt?: number; authMode?: "session" | "operator" }) =>
     post("enroll", body) as Promise<Enrollment>,
-  pause: (id: number) => post("pause", { id }),
-  resume: (id: number) => post("resume", { id }),
-  revoke: (id: number) => post("revoke", { id }),
-  editChores: (id: number, chores: Chores) => post("edit-chores", { id, chores }),
-  runNow: (id: number) => post("run-now", { id }) as Promise<{ ran: boolean; reason?: string; txHash?: string }>,
+  // Management actions require an owner signature (see enrollAuth.mutateMessage); the
+  // useStewardMutations hook signs and fills ownerSig/signedAt.
+  pause: (body: MutateAuth) => post("pause", body),
+  resume: (body: MutateAuth) => post("resume", body),
+  revoke: (body: MutateAuth) => post("revoke", body),
+  editChores: (body: MutateAuth & { chores: Chores }) => post("edit-chores", body),
+  runNow: (body: MutateAuth) => post("run-now", body) as Promise<{ ran: boolean; reason?: string; txHash?: string }>,
 };

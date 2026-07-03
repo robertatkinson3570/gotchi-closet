@@ -1,21 +1,26 @@
 // src/components/steward/EstateUpkeep.tsx
 // Path 2 ("prepare + one-click"): the steward computes what's due across your whole wallet and
 // you execute it from YOUR OWN wallet — your gas, no session key, no AA, fully non-custodial.
-// Safety: we only ever send calls whose selector is one of pet/channel/claim (sessionSpec).
-import { useState } from "react";
+// Safety: we only ever send the exact (diamond, selector) pairs a session key would be scoped
+// to (sessionSpec.sessionActions) — selector alone isn't enough, a hostile `to` could collide.
+import { useRef, useState } from "react";
 import { useWalletClient, usePublicClient, useAccount, useSwitchChain } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
 import { base } from "viem/chains";
 import { useUpkeep } from "@/hooks/useSteward";
-import { SELECTORS } from "@/lib/steward/sessionSpec";
+import { sessionActions } from "@/lib/steward/sessionSpec";
 
-const ALLOWED = new Set(Object.values(SELECTORS).map((s) => s.toLowerCase()));
+const ALLOWED_PAIRS = new Set(
+  sessionActions({ pet: true, channel: true, claim: true }).flatMap((a) =>
+    "target" in a && "selector" in a ? [`${a.target.toLowerCase()}:${a.selector.toLowerCase()}`] : []
+  )
+);
 
 export function EstateUpkeep({ owner }: { owner: string }) {
-  const { data, isLoading, refetch } = useUpkeep(owner);
+  const { data, isLoading, isError, refetch } = useUpkeep(owner);
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
-  const { chainId } = useAccount();
+  const { address, chainId } = useAccount();
   const { switchChain } = useSwitchChain();
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
@@ -23,33 +28,57 @@ export function EstateUpkeep({ owner }: { owner: string }) {
   const [hashes, setHashes] = useState<string[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
+  // Live account/chain, readable from inside the async run loop (the hook values it closed
+  // over would be stale after a mid-run wallet switch).
+  const live = useRef({ address, chainId });
+  live.current = { address, chainId };
+
   const s = data?.summary;
   const txCount = data?.calls.length ?? 0;
   const onBase = chainId === base.id;
 
   async function run() {
-    if (!walletClient || !data) { setErr("Connect your wallet first."); return; }
+    if (!walletClient || !publicClient || !data) { setErr("Connect your wallet first."); return; }
+    const startAccount = walletClient.account.address.toLowerCase();
     setBusy(true); setErr(null); setHashes([]); setProgress({ done: 0, total: data.calls.length });
     const sent: string[] = [];
     try {
       for (const c of data.calls) {
-        // HARD safety: never sign anything that isn't pet/channel/claim, even if the API returned it.
-        if (!ALLOWED.has(c.data.slice(0, 10).toLowerCase())) throw new Error("Refused an unexpected call (not pet/channel/claim).");
+        // HARD safety: only the exact (diamond, selector) pairs from sessionSpec ever reach
+        // the wallet — a hostile/malformed API response can't route a colliding selector at
+        // some other contract.
+        const pair = `${c.to.toLowerCase()}:${c.data.slice(0, 10).toLowerCase()}`;
+        if (!ALLOWED_PAIRS.has(pair)) throw new Error("Refused an unexpected call (not pet/channel/claim on the Aavegotchi/Realm diamonds).");
+        // Stop cleanly if the wallet account or network changed mid-run — the remaining
+        // calls were planned for the original account on Base.
+        if ((live.current.address ?? "").toLowerCase() !== startAccount) throw new Error("Wallet account changed — stopped. Rerun from the new account.");
+        if (live.current.chainId !== base.id) throw new Error("Network changed — switch back to Base and rerun.");
         const hash = await walletClient.sendTransaction({ to: c.to, data: c.data, account: walletClient.account, chain: base });
         sent.push(hash); setHashes([...sent]);
-        await publicClient?.waitForTransactionReceipt({ hash });
+        await publicClient.waitForTransactionReceipt({ hash, timeout: 120_000 });
         setProgress({ done: sent.length, total: data.calls.length });
       }
-      qc.invalidateQueries({ queryKey: ["steward", "upkeep", owner] });
-      refetch();
     } catch (e) {
       setErr((e as Error).message?.slice(0, 160) || "Run failed");
     } finally {
+      // Always resync — after a partial run some calls are already mined and must not be
+      // offered (and replayed, reverting) again.
+      qc.invalidateQueries({ queryKey: ["steward", "upkeep", owner] });
+      refetch();
       setBusy(false);
     }
   }
 
   if (isLoading) return <div className="rounded-2xl border border-white/10 bg-zinc-900 p-4 text-sm text-zinc-400">Checking your estate…</div>;
+  if (isError) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-zinc-900 p-4">
+        <h2 className="text-lg font-bold">Estate upkeep</h2>
+        <p className="mt-0.5 text-sm text-red-400">Couldn&rsquo;t check what&rsquo;s due (network hiccup).</p>
+        <button onClick={() => refetch()} className="mt-2 rounded-lg bg-white/10 px-3 py-1.5 text-sm font-semibold hover:bg-white/15">Try again</button>
+      </div>
+    );
+  }
   if (!data) return null;
 
   const nothingDue = txCount === 0;
@@ -74,7 +103,10 @@ export function EstateUpkeep({ owner }: { owner: string }) {
               {busy && progress ? `Running ${progress.done}/${progress.total}…` : "Run upkeep"}
             </button>
           ) : (
-            <button onClick={() => switchChain({ chainId: base.id })} className="shrink-0 rounded-lg bg-amber-600 px-4 py-2 font-semibold">
+            <button
+              onClick={() => switchChain({ chainId: base.id }, { onError: (e) => setErr(e.message?.slice(0, 120) || "Network switch was rejected.") })}
+              className="shrink-0 rounded-lg bg-amber-600 px-4 py-2 font-semibold"
+            >
               Switch to Base
             </button>
           )
