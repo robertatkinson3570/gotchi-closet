@@ -27,9 +27,22 @@ export async function getRespecBaseTraits(tokenId: string): Promise<number[]> {
   return traits;
 }
 
-export function totalSpiritPoints(usedSkillPoints?: number): number {
-  if (!Number.isFinite(usedSkillPoints)) return 0;
-  return Math.max(0, Math.floor(usedSkillPoints as number));
+/**
+ * Spendable respec pool = points refunded by resetSkillPoints (usedSkillPoints)
+ * PLUS unspent on-chain availableSkillPoints (audit H2). Never derived from
+ * level — floor(level/3) is empirically wrong on-chain.
+ */
+export function totalSpiritPoints(
+  usedSkillPoints?: number,
+  availableSkillPoints?: number
+): number {
+  const used = Number.isFinite(usedSkillPoints)
+    ? Math.max(0, Math.floor(usedSkillPoints as number))
+    : 0;
+  const avail = Number.isFinite(availableSkillPoints)
+    ? Math.max(0, Math.floor(availableSkillPoints as number))
+    : 0;
+  return used + avail;
 }
 
 export function computeWearableDelta(
@@ -90,6 +103,7 @@ export function useRespecSimulator(params: {
   resetKey: string;
   tokenId?: string;
   usedSkillPoints?: number;
+  availableSkillPoints?: number;
   baseTraits: number[];
   respecBaseTraits?: number[];
   wearableDelta?: number[];
@@ -126,7 +140,7 @@ export function useRespecSimulator(params: {
 
   const birthTraits = fetchedBirthTraits || params.respecBaseTraits;
 
-  const totalSP = totalSpiritPoints(params.usedSkillPoints);
+  const totalSP = totalSpiritPoints(params.usedSkillPoints, params.availableSkillPoints);
   const used = allocated.reduce((acc, val) => acc + Math.abs(val), 0);
   const spLeft = Math.max(0, totalSP - used);
   const hasBaseline =

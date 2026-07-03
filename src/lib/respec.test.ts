@@ -5,12 +5,12 @@ import {
   computeSimTraits,
 } from "./respec";
 
-describe("totalSpiritPoints", () => {
-  it("uses usedSkillPoints as refundable pool", () => {
-    expect(totalSpiritPoints(0)).toBe(0);
-    expect(totalSpiritPoints(1)).toBe(1);
-    expect(totalSpiritPoints(3)).toBe(3);
-    expect(totalSpiritPoints(19)).toBe(19);
+describe("respec pool (audit H2)", () => {
+  it("pool = usedSkillPoints + availableSkillPoints (post-reset refund + unspent)", () => {
+    expect(totalSpiritPoints(5, 3)).toBe(8);
+    expect(totalSpiritPoints(5, undefined)).toBe(5); // chain read pending → conservative
+    expect(totalSpiritPoints(undefined, 3)).toBe(3);
+    expect(totalSpiritPoints(-1, -1)).toBe(0);
   });
 });
 

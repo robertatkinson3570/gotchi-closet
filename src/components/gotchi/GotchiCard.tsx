@@ -4,6 +4,7 @@ import { SvgInline } from "./SvgInline";
 import { GotchiSvg } from "./GotchiSvg";
 import type { Gotchi } from "@/types";
 import { useRespecSimulator } from "@/lib/respec";
+import { useAvailableSkillPoints } from "@/lib/hooks/useAvailableSkillPoints";
 import { Button } from "@/ui/button";
 import { Minus, Plus } from "lucide-react";
 import { BrsSummary } from "./BrsSummary";
@@ -62,10 +63,13 @@ export function GotchiCard({
   const numericTraitSource = baseTraits || gotchi.numericTraits;
   const baseTraitSource = baseTraits || gotchi.numericTraits;
   const tokenId = gotchi.gotchiId || gotchi.id.split("-").pop() || gotchi.id;
+  // Unspent on-chain points join the refund in the respec pool (audit H2).
+  const availableSkillPoints = useAvailableSkillPoints(tokenId, showRespec);
   const respec = useRespecSimulator({
     resetKey: respecResetKey || gotchi.id,
     tokenId,
     usedSkillPoints: gotchi.usedSkillPoints,
+    availableSkillPoints,
     baseTraits: numericTraitSource,
     respecBaseTraits: gotchi.baseNumericTraits || gotchi.numericTraits,
     wearableDelta,
