@@ -13,6 +13,9 @@ services:
       - COMPANION_DB_PATH=/srv/gotchicloset/data/companion.db
       # Pulse daily-metrics DB on the same writable volume (see server/pulse/store.ts).
       - PULSE_DB_PATH=/srv/gotchicloset/data/pulse.db
+      # Steward enrollments/log DB on the writable volume too — the default ./data/steward.db
+      # under /app is not writable, so status/log/enroll/cron would 500 without this.
+      - STEWARD_DB_PATH=/srv/gotchicloset/data/steward.db
       # Game Center: games.db auto-lands next to companion.db via the COMPANION_DB_PATH
       # fallback (server/games/store.ts). Admin allowlist = the operator's public wallets
       # that may approve/reject submissions (public addresses, not secrets).
