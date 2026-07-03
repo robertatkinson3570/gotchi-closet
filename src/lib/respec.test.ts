@@ -24,6 +24,20 @@ describe("respec BRS correction (audit H3)", () => {
   it("is +1 for a point away from 50", () => {
     expect(editableBrsCorrection([10, 10, 10, 10], [9, 10, 10, 10])).toBe(1);
   });
+
+  it("base and modified corrections differ across the 50 fold (I-1)", () => {
+    // Respec base 48→52 with a +10 wearable equipped: in base space the
+    // correction is +1 (BRS 52→53), but the displayed MODIFIED traits move
+    // 58→62, a +4 correction (BRS 59→63). Scores shown in modified space
+    // (traitWithMods/totalBrs) must use the modified-space correction —
+    // applying the base-space one understates the change.
+    const currentBase = [48, 10, 10, 10];
+    const targetBase = [52, 10, 10, 10];
+    const currentModified = [58, 10, 10, 10]; // +10 wearable
+    const targetModified = [62, 10, 10, 10];
+    expect(editableBrsCorrection(currentBase, targetBase)).toBe(1);
+    expect(editableBrsCorrection(currentModified, targetModified)).toBe(4);
+  });
 });
 
 describe("birth baseline integrity (audit M1 + eye slice)", () => {

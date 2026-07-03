@@ -251,7 +251,7 @@ export function GotchiCarousel({
                 setFlatBrs,
                 ageBrs,
                 totalBrs,
-                activeSets,
+                bestSet,
               } = computeInstanceTraits({
                 baseTraits: adjustedBaseTraits,
                 modifiedNumericTraits: isLocked ? undefined : gotchi.modifiedNumericTraits,
@@ -260,7 +260,9 @@ export function GotchiCarousel({
                 wearablesById,
                 blocksElapsed: gotchi.blocksElapsed,
               });
-              const activeSetNames = activeSets.map((set) => set.name);
+              // Only the single best set counts toward BRS (audit H1) — listing
+              // every matched set would imply they all count.
+              const activeSetNames = bestSet ? [bestSet.name] : [];
               const displayGotchi = isLocked
                 ? { ...gotchi, equippedWearables: displayEquipped }
                 : gotchi;
@@ -299,7 +301,10 @@ export function GotchiCarousel({
                   )}
                   <GotchiCard
                     gotchi={displayGotchi}
-                    traitBase={gotchi.baseRarityScore ?? traitBase}
+                    // A locked-in respec target changes the base traits, so the
+                    // subgraph's baseRarityScore is stale — use the locally
+                    // computed score (mirrors EditorPanel, audit H5).
+                    traitBase={respecTarget || respecDelta ? traitBase : gotchi.baseRarityScore ?? traitBase}
                     traitWithMods={traitWithMods}
                     wearableFlat={wearableFlat}
                     setFlatBrs={setFlatBrs}

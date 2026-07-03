@@ -52,9 +52,16 @@ describe("wearableRarityToBrs (audit low)", () => {
     expect(wearableRarityToBrs(w({ rarityScoreModifier: 12, rarity: "legendary" }))).toBe(12);
   });
 
-  it("falls back to the rarity-string mapping when the modifier is missing", () => {
-    expect(wearableRarityToBrs(w({ rarityScoreModifier: 0, rarity: "legendary" }))).toBe(10);
-    expect(wearableRarityToBrs(w({ rarityScoreModifier: 0 }))).toBe(0);
+  it("treats modifier 0 as a real value (+0 flat), not as missing", () => {
+    // e.g. #210 Haunt1 BG: on-chain rarityScoreModifier 0 — its derived rarity
+    // string is "common", but it must NOT contribute the +1 common flat.
+    expect(wearableRarityToBrs(w({ rarityScoreModifier: 0, rarity: "common" }))).toBe(0);
+    expect(wearableRarityToBrs(w({ rarityScoreModifier: 0, rarity: "legendary" }))).toBe(0);
+  });
+
+  it("falls back to the rarity-string mapping only when the modifier is missing", () => {
+    expect(wearableRarityToBrs(w({ rarityScoreModifier: undefined, rarity: "legendary" }))).toBe(10);
+    expect(wearableRarityToBrs(w({ rarityScoreModifier: undefined }))).toBe(0);
   });
 });
 

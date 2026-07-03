@@ -95,8 +95,13 @@ export function GotchiCard({
       ? safeTraits(committedSim.simModified)
       : safeTraits(traits) || safeTraits(baseTraitSource) || currentTraits;
   // Exact BRS correction (audit H3): displayed value = current display value +
-  // (BRS of the simulated editable base − BRS of the CURRENT editable base).
+  // (BRS of the simulated editable traits − BRS of the CURRENT editable traits).
   // Never assumes each spent point was worth ±1 BRS (wrong across 49/50).
+  //
+  // Two corrections, two spaces (I-1): traitBase is a base-space score, but
+  // traitWithMods/totalBrs are computed from the MODIFIED traits — the same
+  // point can be worth a different BRS delta once wearable/set modifiers shift
+  // it across the 50 fold, so those scores need a modified-space correction.
   const liveCorrection = editableBrsCorrection(
     safeTraits(numericTraitSource),
     safeTraits(respec.simBase)
@@ -104,21 +109,32 @@ export function GotchiCard({
   const committedCorrection = committedSim
     ? editableBrsCorrection(safeTraits(numericTraitSource), safeTraits(committedSim.simBase))
     : 0;
+  // Currently displayed modified traits (the `traits` prop; base as fallback).
+  const currentFinalTraits4 = safeTraits(
+    Array.isArray(traits) && traits.length >= 4 ? traits : baseTraitSource
+  );
+  const liveModifiedCorrection = editableBrsCorrection(
+    currentFinalTraits4,
+    safeTraits(respec.simModified)
+  );
+  const committedModifiedCorrection = committedSim
+    ? editableBrsCorrection(currentFinalTraits4, safeTraits(committedSim.simModified))
+    : 0;
   const traitBaseValue = showRespec && respec.isRespecMode
     ? (traitBase ?? 0) + liveCorrection
     : committedSim
       ? (traitBase ?? 0) + committedCorrection
       : traitBase;
   const traitWithModsValue = showRespec && respec.isRespecMode
-    ? (traitWithMods ?? 0) + liveCorrection
+    ? (traitWithMods ?? 0) + liveModifiedCorrection
     : committedSim
-      ? (traitWithMods ?? 0) + committedCorrection
+      ? (traitWithMods ?? 0) + committedModifiedCorrection
       : traitWithMods;
   const totalBrsValue =
     showRespec && respec.isRespecMode
-      ? (totalBrs ?? 0) + liveCorrection
+      ? (totalBrs ?? 0) + liveModifiedCorrection
       : committedSim
-        ? (totalBrs ?? 0) + committedCorrection
+        ? (totalBrs ?? 0) + committedModifiedCorrection
         : totalBrs;
   return (
     <motion.div
@@ -214,7 +230,14 @@ export function GotchiCard({
                         if (respec.isRespecMode && onCommitRespec) {
                           // The TARGET base, not a delta vs current (audit M2):
                           // deltas are ambiguous after resetSkillPoints.
-                          onCommitRespec(respec.simBase.slice(0, 4));
+                          const target = respec.simBase.slice(0, 4);
+                          const current = safeTraits(numericTraitSource);
+                          // Zero-change confirm just exits respec mode (I-8):
+                          // committing an unchanged target would plan a bare
+                          // resetSkillPoints — a fee for nothing.
+                          if (target.some((v, i) => safeNum(v) !== current[i])) {
+                            onCommitRespec(target);
+                          }
                         }
                         respec.toggleRespecMode();
                       }}

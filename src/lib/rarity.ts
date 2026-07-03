@@ -171,10 +171,13 @@ export function ageBrsFromBlocks(blocksElapsed: number): number {
 }
 
 export function wearableRarityToBrs(wearable: Wearable): number {
-  // The on-chain `rarityScoreModifier` is authoritative; the rarity-string
-  // mapping is only a fallback for entries missing the modifier.
+  // The on-chain `rarityScoreModifier` is authoritative whenever present —
+  // INCLUDING 0, a real value meaning +0 flat (e.g. #210 Haunt1 BG). Its
+  // derived rarity string is "common", so falling through to the string
+  // mapping would add a phantom +1 per zero-modifier item. The rarity-string
+  // mapping is only a fallback for entries missing the modifier entirely.
   const modifier = Number(wearable.rarityScoreModifier);
-  if (Number.isFinite(modifier) && modifier > 0) return modifier;
+  if (Number.isFinite(modifier) && modifier >= 0) return modifier;
   const rarity = wearable.rarity?.toLowerCase();
   if (
     rarity === "common" ||
