@@ -8,6 +8,7 @@ import { GotchiCard } from "./GotchiCard";
 import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import type { LockedOverride } from "@/lib/lockedBuilds";
 import { MommyDressModal } from "./MommyDressModal";
+import { SaveOutfitButton } from "./SaveOutfitButton";
 import type { AutoDressResult, AutoDressOptions } from "@/lib/autoDressEngine";
 import { assignSetSlots } from "@/lib/equipRules";
 import { useToast } from "@/ui/use-toast";
@@ -35,6 +36,7 @@ export function EditorPanel() {
   const isLockSetEnabled = useAppStore((state) => state.isLockSetEnabled);
   const toggleLockSet = useAppStore((state) => state.toggleLockSet);
   const updateEditorInstance = useAppStore((state) => state.updateEditorInstance);
+  const rebaseEditorInstance = useAppStore((state) => state.rebaseEditorInstance);
   const { availCountsWithLocked } = useWearableInventory();
   const { toast } = useToast();
   const [mommyModalInstanceId, setMommyModalInstanceId] = useState<string | null>(null);
@@ -343,6 +345,28 @@ export function EditorPanel() {
                             </span>
                             <span className="text-[8px] text-muted-foreground">Dress Me™</span>
                           </Button>
+                          <SaveOutfitButton
+                            gotchiId={instance.baseGotchi.gotchiId || instance.baseGotchi.id}
+                            storeId={instance.baseGotchi.id}
+                            instanceId={instance.instanceId}
+                            desiredSlots={instance.equippedBySlot}
+                            currentSlots={instance.baseGotchi.equippedWearables}
+                            respecTarget={committedRespecTargets[instance.instanceId]}
+                            locked={!!(instance.baseGotchi.lending || instance.baseGotchi.lentOut)}
+                            onSaved={(finalSlots, respecApplied) => {
+                              if (respecApplied) {
+                                const eyes = instance.baseGotchi.numericTraits.slice(4, 6);
+                                rebaseEditorInstance(instance.instanceId, finalSlots, [...respecApplied, ...eyes]);
+                                setCommittedRespecTargets((prev) => {
+                                  const n = { ...prev };
+                                  delete n[instance.instanceId];
+                                  return n;
+                                });
+                              } else {
+                                rebaseEditorInstance(instance.instanceId, finalSlots);
+                              }
+                            }}
+                          />
                         </div>
                         
                         {mommyStatusMessage && mommyStatusMessage.instanceId === instance.instanceId && (

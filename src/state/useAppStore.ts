@@ -61,6 +61,9 @@ interface AppState {
   addEditorInstance: (gotchi: Gotchi) => void;
   removeEditorInstance: (instanceId: string) => void;
   updateEditorInstance: (instanceId: string, equippedBySlot: number[]) => void;
+  /** After a successful on-chain save: the new chain state becomes the
+   * instance's baseline so the dirty flag clears (current == desired). */
+  rebaseEditorInstance: (instanceId: string, equippedWearables: number[], newBaseTraits?: number[]) => void;
   setWearables: (wearables: Wearable[]) => void;
   setSets: (sets: WearableSet[]) => void;
   setWearableThumbs: (thumbs: Record<number, string>) => void;
@@ -220,6 +223,24 @@ export const useAppStore = create<AppState>((set, get) => ({
         instance.instanceId === instanceId
           ? { ...instance, equippedBySlot }
           : instance
+      ),
+    })),
+  rebaseEditorInstance: (instanceId, equippedWearables, newBaseTraits) =>
+    set((state) => ({
+      editorInstances: state.editorInstances.map((inst) =>
+        inst.instanceId === instanceId
+          ? {
+              ...inst,
+              baseGotchi: {
+                ...inst.baseGotchi,
+                equippedWearables: [...equippedWearables],
+                ...(newBaseTraits ? { numericTraits: [...newBaseTraits] } : {}),
+                // Post-respec the subgraph-precomputed traits are stale until reindex:
+                ...(newBaseTraits ? { modifiedNumericTraits: undefined, withSetsNumericTraits: undefined } : {}),
+              },
+              equippedBySlot: [...equippedWearables].slice(0, 8),
+            }
+          : inst
       ),
     })),
   setWearables: (wearables) => set({ wearables }),
