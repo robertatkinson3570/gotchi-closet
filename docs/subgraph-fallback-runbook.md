@@ -30,6 +30,14 @@ vs ~$60/mo, and The Graph's indexers do the work).
   number stopped advancing (silent stall), or we're already failed-over ("lazy probing" —
   protects the metered quota; see quota math below). Routes to the backup when it leads a
   reachable primary by >25 blocks or the primary is down. Per-request hard fallback too.
+  A 🛡️ "backup data" pill appears in the header while failed over (`FailoverPill.tsx`).
+- **RULE for new code:** never call `fetch(CORE_SUBGRAPH, ...)` directly — use
+  `coreSubgraphFetch(CORE_SUBGRAPH, ...)` from `@/lib/subgraph` (same signature; non-core
+  URLs pass through, so it's safe in shared helpers). Raw fetch bypasses failover — that gap
+  left ~25 files (explorer/activity/stats/pet panel) on stalled Goldsky during the 2026-07
+  incident until fixed in commit `746af68`. Guard test: `src/lib/subgraph.test.ts`.
+  Also: `src/lib/env.ts` must stay server-safe (`import.meta.env?.` — server/dao/quorum.ts
+  imports this chain under tsx; unguarded access crashes VPS boot).
 - **Server** (`server/aavegotchi/subgraphFetch.ts`): no polling; retries the backup once when
   the primary request network-fails or returns non-OK.
 - Both are **no-ops if the backup env var is empty** — unsetting `VITE_GOTCHI_SUBGRAPH_URL_BACKUP`
