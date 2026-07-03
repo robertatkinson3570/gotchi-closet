@@ -153,30 +153,32 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
     setStatus("running");
   }, [sortedGotchis.length]);
 
-  const advancePhase = useCallback(() => {
+  // Returns the scheduled timer id so the driving effect can clear it on
+  // unmount/close — otherwise a pending timeout fires setState on an
+  // unmounted component (reduced-motion beat included). (audit minor)
+  const advancePhase = useCallback((): ReturnType<typeof setTimeout> | undefined => {
     if (reducedMotion) {
       // Reduced motion: show each gotchi as a static card for a fixed beat
       // instead of synchronously skipping the whole show (audit low).
-      setTimeout(() => {
+      return setTimeout(() => {
         if (activeIndex < sortedGotchis.length - 1) {
           setActiveIndex((i) => i + 1);
         } else {
           setStatus("done");
         }
       }, 2500);
-      return;
     }
 
     if (phase === "approach") {
-      setTimeout(() => setPhase("pose"), 2200);
+      return setTimeout(() => setPhase("pose"), 2200);
     } else if (phase === "pose") {
-      setTimeout(() => setPhase("move"), 400);
+      return setTimeout(() => setPhase("move"), 400);
     } else if (phase === "move") {
       const move = getMoveForGotchi(sortedGotchis[activeIndex]?.id || "0");
       const duration = move === "moonwalk" ? 1200 : 800;
-      setTimeout(() => setPhase("exit"), duration);
+      return setTimeout(() => setPhase("exit"), duration);
     } else if (phase === "exit") {
-      setTimeout(() => {
+      return setTimeout(() => {
         if (activeIndex < sortedGotchis.length - 1) {
           setActiveIndex((i) => i + 1);
           setPhase("approach");
@@ -185,12 +187,15 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
         }
       }, 1000);
     }
+    return undefined;
   }, [phase, activeIndex, sortedGotchis, reducedMotion]);
 
   useEffect(() => {
-    if (status === "running") {
-      advancePhase();
-    }
+    if (status !== "running") return;
+    const timer = advancePhase();
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [status, phase, activeIndex, advancePhase]);
 
   useEffect(() => {
