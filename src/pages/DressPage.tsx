@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   DndContext,
@@ -20,10 +20,12 @@ import { fetchAllWearables, fetchAllWearableSets } from "@/graphql/fetchers";
 import { cacheGet, cacheSet, cacheIsStale, CACHE_KEYS } from "@/lib/cache";
 import { normalizeAddress } from "@/lib/address";
 import { useToast } from "@/ui/use-toast";
-import { useWearablesById } from "@/state/selectors";
+import { useWearablesById, useWearableInventory } from "@/state/selectors";
+import { canEquipInSlot } from "@/lib/equipRules";
 import type { Wearable, Gotchi } from "@/types";
 import { useAddressState } from "@/lib/addressState";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
+import { useWalletItemBalances } from "@/lib/hooks/useWalletItemBalances";
 import { WalletHeader } from "@/components/wallet/WalletHeader";
 import { loadMultiWallets, removeWallet } from "@/lib/multiWallet";
 import { CatwalkModal } from "@/components/catwalk/CatwalkModal";
@@ -65,10 +67,14 @@ export default function DressPage() {
     setLoadingSets,
     setError,
     equipWearable,
+    setWalletItemCounts,
+    setConnectedOwnedIds,
   } = useAppStore();
   const appError = useAppStore((state) => state.error);
+  const wearables = useAppStore((state) => state.wearables);
 
   const wearablesById = useWearablesById();
+  const { ownedCounts } = useWearableInventory();
 
   useEffect(() => {
     setMultiWallets(loadMultiWallets());
@@ -127,17 +133,61 @@ export default function DressPage() {
     setGotchis([]);
   }, [ownersKey, setGotchis, setLoadedAddress]);
 
+  // Track which gotchis the CONNECTED wallet owns (empty when disconnected) —
+  // watch-only wallets' gotchis can't be signed for, so Save is gated on this.
+  useEffect(() => {
+    setConnectedOwnedIds(new Set(connectedOwner ? connectedResult.gotchis.map((gg) => gg.id) : []));
+  }, [connectedOwner, connectedResult.gotchis, setConnectedOwnedIds]);
+
+  // Wallet-held (unequipped) wearables join the owned inventory (audit H4).
+  const walletList = useMemo(
+    () => [connectedOwner, ...multiWallets].filter((w): w is string => !!w),
+    [connectedOwner, multiWallets]
+  );
+  const { data: walletItems } = useWalletItemBalances(walletList);
+  // Raw itemBalances includes consumables/badges — keep only real wearables
+  // (category 0) before the map enters the store.
+  const filteredWalletItems = useMemo(() => {
+    const out: Record<number, number> = {};
+    if (!walletItems) return out;
+    const wearableIds = new Set<number>();
+    for (const w of wearables) {
+      if (w.category === 0) wearableIds.add(w.id);
+    }
+    for (const [idStr, count] of Object.entries(walletItems)) {
+      const id = Number(idStr);
+      if (wearableIds.has(id)) out[id] = count;
+    }
+    return out;
+  }, [walletItems, wearables]);
+
+  useEffect(() => {
+    setWalletItemCounts(filteredWalletItems);
+  }, [filteredWalletItems, setWalletItemCounts]);
+
+  const lastToastedError = useRef<string | null>(null);
   useEffect(() => {
     setLoadingGotchis(isLoadingGotchis);
     if (gotchiError) {
       setError(gotchiError);
-      toast({
-        title: "Error Loading Gotchis",
-        description: gotchiError,
-        variant: "destructive",
-      });
+      if (lastToastedError.current !== gotchiError) {
+        lastToastedError.current = gotchiError;
+        toast({
+          title: "Error Loading Gotchis",
+          description: gotchiError,
+          variant: "destructive",
+        });
+      }
+    } else if (!isLoadingGotchis) {
+      // all queries settled without error — clear stale banner (audit M7)
+      lastToastedError.current = null;
+      setError(null);
     }
-    if (!isLoadingGotchis) {
+    // I-2: on partial wallet failure (one query errored) combinedGotchis only
+    // holds the surviving wallets — committing it would wipe locks and let the
+    // prune effect drop editor instances for gotchis that still exist. Keep
+    // the store's previous list until every query settles cleanly.
+    if (!isLoadingGotchis && !gotchiError) {
       setGotchis(combinedGotchis);
     }
   }, [
@@ -151,6 +201,20 @@ export default function DressPage() {
     setError,
     toast,
   ]);
+
+  // Prune editor instances whose base gotchi has disappeared (wallet removed,
+  // gotchi transferred/rented away) — but only after a settled, non-empty,
+  // error-free load; otherwise a transient empty/loading/partial-failure
+  // state would wipe instances that still exist (mirrors the C1 guard).
+  // (audit M9, I-2)
+  useEffect(() => {
+    if (isLoadingGotchis || combinedGotchis.length === 0 || gotchiError) return;
+    const valid = new Set([...combinedGotchis.map((gg) => gg.id), ...manualGotchis.map((gg) => gg.id)]);
+    const { editorInstances, removeEditorInstance } = useAppStore.getState();
+    for (const inst of editorInstances) {
+      if (!valid.has(inst.baseGotchi.id)) removeEditorInstance(inst.instanceId);
+    }
+  }, [combinedGotchis, isLoadingGotchis, manualGotchis, gotchiError]);
 
   useEffect(() => {
     if (!connectedOwner && multiWallets.length === 0) {
@@ -240,17 +304,7 @@ export default function DressPage() {
         return;
       }
 
-      const handPlacement = wearable.handPlacement || "none";
-      const isLeftHand = slotIndex === 4;
-      const isRightHand = slotIndex === 5;
-      const isHandSlot = isLeftHand || isRightHand;
-      const matchesHand = !isHandSlot
-        ? true
-        : handPlacement === "either" ||
-          (handPlacement === "left" && isLeftHand) ||
-          (handPlacement === "right" && isRightHand) ||
-          (handPlacement === "none" && wearable.slotPositions[slotIndex]);
-      if (!wearable.slotPositions[slotIndex] || !matchesHand) {
+      if (!canEquipInSlot(wearable, slotIndex)) {
         toast({
           title: "Invalid Slot",
           description: `${wearable.name} cannot be equipped in that slot`,
@@ -260,11 +314,17 @@ export default function DressPage() {
         return;
       }
 
-      equipWearable(instanceId, wearableId, slotIndex);
-      toast({
-        title: "Equipped",
-        description: `${wearable.name} equipped`,
-      });
+      const equipped = equipWearable(instanceId, wearableId, slotIndex);
+      if (!equipped) {
+        toast({
+          title: "Not enough copies",
+          description: `You only own ${ownedCounts[wearableId] || 0} of ${wearable.name}`,
+          variant: "destructive",
+        });
+        setActiveWearable(null);
+        return;
+      }
+      // No success toast — the slot visibly updating is the feedback (audit low).
     }
 
     setActiveWearable(null);

@@ -11,8 +11,12 @@ import { Switch } from "@/ui/switch";
 import { useAddressState } from "@/lib/addressState";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
 import { shortenAddress, normalizeAddress, isValidAddress } from "@/lib/address";
+import { usePublicClient } from "wagmi";
 import { computeBRSBreakdown, traitToBRS, detectActiveSets } from "@/lib/rarity";
-import { getRespecBaseTraits } from "@/lib/respec";
+import { getRespecBaseTraits, totalSpiritPoints } from "@/lib/respec";
+import { AVAILABLE_SKILL_POINTS_ABI } from "@/lib/hooks/useAvailableSkillPoints";
+import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
+import { BASE_CHAIN_ID } from "@/lib/chains";
 import { useWearablesById } from "@/state/selectors";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
@@ -88,6 +92,7 @@ export default function WardrobeLabPage() {
 
   const { connectedAddress, isOnBase, isConnected } = useAddressState();
   const wearablesById = useWearablesById();
+  const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
   const [manualViewAddress, setManualViewAddress] = useState<string | null>(null);
 
   useEffect(() => {
@@ -180,9 +185,10 @@ export default function WardrobeLabPage() {
     return "unknown";
   };
 
-  const simulateRespec = (birthTraits: number[], usedSkillPoints: number): { optimizedTraits: number[]; respecUsed: number; brsDelta: number; changes: { trait: number; from: number; to: number; brsGain: number }[] } => {
+  const simulateRespec = (birthTraits: number[], poolPoints: number): { optimizedTraits: number[]; respecUsed: number; brsDelta: number; changes: { trait: number; from: number; to: number; brsGain: number }[] } => {
     const traits = [...birthTraits];
-    const available = usedSkillPoints || 0;
+    // Full spendable pool: refunded (used) + unspent (available) points (audit H2).
+    const available = Math.max(0, poolPoints || 0);
     let remaining = available;
     let brsDelta = 0;
     const changes: { trait: number; from: number; to: number; brsGain: number }[] = [];
@@ -271,7 +277,25 @@ export default function WardrobeLabPage() {
       const equippedWearables = gotchi.equippedWearables || [];
       const usedSkillPoints = gotchi.usedSkillPoints || 0;
       const owner = findGotchiOwner(gotchi.id);
-      
+
+      // Unspent on-chain skill points join the refund in the pool (audit H2).
+      let availableSkillPoints = 0;
+      const tokenIdStr = gotchi.gotchiId || gotchi.id;
+      if (publicClient && /^\d+$/.test(tokenIdStr)) {
+        try {
+          const raw = await publicClient.readContract({
+            address: AAVEGOTCHI_DIAMOND_BASE,
+            abi: AVAILABLE_SKILL_POINTS_ABI,
+            functionName: "availableSkillPoints",
+            args: [BigInt(tokenIdStr)],
+          });
+          availableSkillPoints = Number(raw);
+        } catch (err) {
+          console.error(`Failed to read availableSkillPoints for ${tokenIdStr}:`, err);
+        }
+      }
+      const respecPool = totalSpiritPoints(usedSkillPoints, availableSkillPoints);
+
       let birthTraits: number[];
       try {
         birthTraits = await getRespecBaseTraits(gotchi.id);
@@ -286,7 +310,7 @@ export default function WardrobeLabPage() {
         wearablesById,
       });
 
-      const { optimizedTraits, respecUsed, brsDelta, changes } = simulateRespec(birthTraits, usedSkillPoints);
+      const { optimizedTraits, respecUsed, brsDelta, changes } = simulateRespec(birthTraits, respecPool);
       const activeSets = detectActiveSets(equippedWearables);
       
       const afterBreakdown = computeBRSBreakdown({
@@ -332,7 +356,7 @@ export default function WardrobeLabPage() {
           traits: [...optimizedTraits],
           brs: afterBreakdown.totalBrs,
           respecUsed,
-          respecAvailable: usedSkillPoints,
+          respecAvailable: respecPool,
         },
         explanation,
         isOptimized: isAlreadyOptimized,

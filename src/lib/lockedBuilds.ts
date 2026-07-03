@@ -1,6 +1,9 @@
 export interface LockedOverride {
   wearablesBySlot: number[];
+  /** @deprecated legacy delta vs current base — kept for old storage entries */
   respecAllocated: number[] | null;
+  /** Absolute post-respec base traits [NRG,AGG,SPK,BRN] the user committed. */
+  respecTargetBase?: number[] | null;
   timestamp: number;
 }
 
@@ -11,17 +14,38 @@ export interface LockedBuildsData {
 }
 
 const STORAGE_KEY_PREFIX = "gotchicloset.lockedBuilds.v1";
+const GLOBAL_NS = "global";
 
-function getStorageKey(chainId: number, walletAddress: string): string {
-  const normalized = walletAddress.toLowerCase();
-  return `${STORAGE_KEY_PREFIX}:${chainId}:${normalized}`;
+function getStorageKey(chainId: number): string {
+  return `${STORAGE_KEY_PREFIX}:${chainId}:${GLOBAL_NS}`;
 }
 
-export function loadLockedBuilds(
-  chainId: number,
-  walletAddress: string
-): LockedBuildsData {
-  const key = getStorageKey(chainId, walletAddress);
+/** One-time migration: merge any legacy per-wallet(-combo) keys into the global key. */
+function migrateLegacyKeys(chainId: number): void {
+  try {
+    const globalKey = getStorageKey(chainId);
+    if (localStorage.getItem(globalKey)) return;
+    const merged: LockedBuildsData = { version: 1, lockedById: {}, overridesById: {} };
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(`${STORAGE_KEY_PREFIX}:${chainId}:`) || key === globalKey) continue;
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) || "");
+        if (parsed?.version === 1) {
+          Object.assign(merged.lockedById, parsed.lockedById || {});
+          Object.assign(merged.overridesById, parsed.overridesById || {});
+        }
+      } catch { /* skip corrupt entries */ }
+    }
+    if (Object.keys(merged.lockedById).length > 0) {
+      localStorage.setItem(globalKey, JSON.stringify(merged));
+    }
+  } catch { /* storage unavailable */ }
+}
+
+export function loadLockedBuilds(chainId: number): LockedBuildsData {
+  migrateLegacyKeys(chainId);
+  const key = getStorageKey(chainId);
   try {
     const raw = localStorage.getItem(key);
     if (!raw) {
@@ -43,10 +67,9 @@ export function loadLockedBuilds(
 
 export function saveLockedBuilds(
   chainId: number,
-  walletAddress: string,
   data: LockedBuildsData
 ): void {
-  const key = getStorageKey(chainId, walletAddress);
+  const key = getStorageKey(chainId);
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch (err) {

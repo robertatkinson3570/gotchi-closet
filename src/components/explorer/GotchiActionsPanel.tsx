@@ -140,7 +140,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
   const lastInteracted = ag ? Number(ag.lastInteracted) : 0;
   const nextPet = lastInteracted + PET_COOLDOWN;
   const petReady = !lastInteracted || nowSec >= nextPet;
-  const spSum = sp.reduce((s, v) => s + Math.max(0, Math.trunc(Number(v) || 0)), 0);
+  const spSum = sp.reduce((s, v) => s + Math.abs(Math.trunc(Number(v) || 0)), 0);
 
   const run = async (label: string, functionName: string, args: any[]) => {
     if (!isConnected || !address || !publicClient) return setStatus({ kind: "err", label: "Connect your wallet first" });

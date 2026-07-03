@@ -5,7 +5,7 @@ import type { Gotchi } from "@/types";
 // vitest runs this suite in a plain Node environment (no jsdom/happy-dom
 // dependency in the repo), so `localStorage` isn't ambiently available.
 // Shim it with an in-memory Map — lockedBuilds.ts talks to the real
-// localStorage API surface (getItem/setItem/removeItem/clear) only.
+// localStorage API surface (getItem/setItem/removeItem/clear/length/key) only.
 if (typeof globalThis.localStorage === "undefined") {
   const backing = new Map<string, string>();
   (globalThis as any).localStorage = {
@@ -18,6 +18,10 @@ if (typeof globalThis.localStorage === "undefined") {
     },
     clear: () => {
       backing.clear();
+    },
+    key: (index: number) => Array.from(backing.keys())[index] ?? null,
+    get length() {
+      return backing.size;
     },
   };
 }
@@ -59,5 +63,32 @@ describe("locked build persistence (audit C1)", () => {
     useAppStore.getState().lockGotchi("2", override);
     useAppStore.getState().setGotchis([g("1")]); // gotchi 2 left the wallet
     expect(useAppStore.getState().lockedById["2"]).toBeUndefined();
+  });
+
+  it("locks survive a wallet-set change (storage not keyed to the combo)", () => {
+    useAppStore.getState().setLoadedAddress("0xabc|0xdef");
+    useAppStore.getState().setGotchis([g("1")]);
+    useAppStore.getState().lockGotchi("1", override);
+    // wallet added → different composite key
+    useAppStore.getState().setLoadedAddress("0xabc|0xdef|0x123");
+    expect(useAppStore.getState().lockedById["1"]).toBe(true);
+  });
+});
+
+describe("committed respec target persistence (audit M2)", () => {
+  it("respecTargetBase (absolute post-respec base) round-trips through storage", () => {
+    useAppStore.getState().setLoadedAddress("0xabc");
+    useAppStore.getState().setGotchis([g("1")]);
+    useAppStore.getState().lockGotchi("1", {
+      wearablesBySlot: [1, 0, 0, 0, 0, 0, 0, 0],
+      respecAllocated: null,
+      respecTargetBase: [10, 60, 40, 55],
+      timestamp: 1,
+    });
+    // wipe in-memory state, then reload from storage
+    useAppStore.setState({ lockedById: {}, overridesById: {} });
+    useAppStore.getState().loadLockedBuildsFromStorage();
+    expect(useAppStore.getState().overridesById["1"]?.respecTargetBase).toEqual([10, 60, 40, 55]);
+    expect(useAppStore.getState().overridesById["1"]?.respecAllocated).toBeNull();
   });
 });

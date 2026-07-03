@@ -1,14 +1,17 @@
 import { SlotGrid } from "./SlotGrid";
 import { useAppStore } from "@/state/useAppStore";
 import { GotchiSvg } from "./GotchiSvg";
-import { X, Wand2, Sparkles, Shirt, RotateCcw, Lock, Unlock, Baby } from "lucide-react";
+import { X, Wand2, Sparkles, Shirt, RotateCcw, Lock, Unlock, Baby, Undo2 } from "lucide-react";
 import { Button } from "@/ui/button";
 import { computeInstanceTraits, useWearablesById, useWearableInventory } from "@/state/selectors";
 import { GotchiCard } from "./GotchiCard";
 import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import type { LockedOverride } from "@/lib/lockedBuilds";
 import { MommyDressModal } from "./MommyDressModal";
+import { SaveOutfitButton } from "./SaveOutfitButton";
 import type { AutoDressResult, AutoDressOptions } from "@/lib/autoDressEngine";
+import { assignSetSlots } from "@/lib/equipRules";
+import { useToast } from "@/ui/use-toast";
 import type { Wearable } from "@/types";
 
 function normalizeEquipped(equipped: number[]): number[] {
@@ -33,14 +36,17 @@ export function EditorPanel() {
   const isLockSetEnabled = useAppStore((state) => state.isLockSetEnabled);
   const toggleLockSet = useAppStore((state) => state.toggleLockSet);
   const updateEditorInstance = useAppStore((state) => state.updateEditorInstance);
+  const rebaseEditorInstance = useAppStore((state) => state.rebaseEditorInstance);
   const { availCountsWithLocked } = useWearableInventory();
+  const { toast } = useToast();
   const [mommyModalInstanceId, setMommyModalInstanceId] = useState<string | null>(null);
   const [mommyResult, setMommyResult] = useState<Record<string, AutoDressResult>>({});
   const [mommyOptions, setMommyOptions] = useState<Record<string, AutoDressOptions>>({});
   const [mommyPreEquipped, setMommyPreEquipped] = useState<Record<string, number[]>>({});
   const [mommyStatusMessage, setMommyStatusMessage] = useState<{ instanceId: string; message: string } | null>(null);
   const mommyStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [committedRespecs, setCommittedRespecs] = useState<Record<string, number[]>>({});
+  // Absolute post-respec base traits [NRG,AGG,SPK,BRN] per instance (audit M2).
+  const [committedRespecTargets, setCommittedRespecTargets] = useState<Record<string, number[]>>({});
 
   const activeSet = useMemo(() => {
     if (!filters.set) return null;
@@ -50,20 +56,36 @@ export function EditorPanel() {
   const applySetToInstance = useCallback(
     (instanceId: string) => {
       if (!activeSet) return;
-      for (const wearableId of activeSet.wearableIds) {
-        const wearable = wearablesById.get(wearableId);
-        if (!wearable) continue;
-        let slotIndex = wearable.slotPositions.findIndex((allowed) => allowed);
-        if (slotIndex === -1) continue;
-        if (wearable.handPlacement === "left" && wearable.slotPositions[4]) {
-          slotIndex = 4;
-        } else if (wearable.handPlacement === "right" && wearable.slotPositions[5]) {
-          slotIndex = 5;
+      // Shared slot rules (audit H6): two either-hand pieces land in left AND
+      // right instead of fighting over the left hand.
+      const pieces = activeSet.wearableIds
+        .map((id) => wearablesById.get(id))
+        .filter(Boolean) as Wearable[];
+      const skipped: string[] = [
+        ...activeSet.wearableIds
+          .filter((id) => !wearablesById.get(id))
+          .map((id) => `#${id}`),
+      ];
+      const placements = assignSetSlots(pieces);
+      const placedIds = new Set(placements.map((p) => p.wearableId));
+      for (const piece of pieces) {
+        if (!placedIds.has(piece.id)) skipped.push(piece.name); // unplaceable
+      }
+      for (const { wearableId, slot } of placements) {
+        // equipWearable also enforces owned-copy counts (audit M4).
+        if (!equipWearable(instanceId, wearableId, slot)) {
+          skipped.push(wearablesById.get(wearableId)?.name || `#${wearableId}`);
         }
-        equipWearable(instanceId, wearableId, slotIndex);
+      }
+      if (skipped.length > 0) {
+        toast({
+          title: "Set partially applied",
+          description: `Could not equip: ${skipped.join(", ")}`,
+          variant: "destructive",
+        });
       }
     },
-    [activeSet, wearablesById, equipWearable]
+    [activeSet, wearablesById, equipWearable, toast]
   );
 
   const getTraitDirections = useCallback((traits: number[]) => {
@@ -115,6 +137,19 @@ export function EditorPanel() {
     });
   }, []);
 
+  // Removing an instance must also drop its per-instance state — otherwise a
+  // stale Mommy result / committed respec target for a now-gone instanceId
+  // lingers in memory (audit M9).
+  const handleRemoveInstance = useCallback((instanceId: string) => {
+    clearMommyState(instanceId);
+    setCommittedRespecTargets(prev => {
+      const next = { ...prev };
+      delete next[instanceId];
+      return next;
+    });
+    removeEditorInstance(instanceId);
+  }, [clearMommyState, removeEditorInstance]);
+
   return (
     <div className="h-full overflow-auto scrollbar-thin">
       {editorInstances.length === 0 ? (
@@ -124,10 +159,22 @@ export function EditorPanel() {
       ) : (
         <div className="space-y-2 p-1">
           {editorInstances.map((instance) => {
-            const isBaseEquipment =
-              instance.equippedBySlot.length === instance.baseGotchi.equippedWearables.length &&
-              instance.equippedBySlot.every((id, idx) => id === instance.baseGotchi.equippedWearables[idx]);
-            
+            // equippedBySlot holds the 8 real slots while the subgraph's
+            // equippedWearables may be length 16 (upper slots always 0) —
+            // compare the first 8 with empty-slot normalization. (I-3)
+            const sameOutfit = instance.equippedBySlot
+              .slice(0, 8)
+              .every((id, idx) => (id || 0) === (instance.baseGotchi.equippedWearables[idx] || 0));
+            // A committed respec target changes the base traits, so the
+            // subgraph's precomputed traits no longer apply (audit H5).
+            const committedTarget = committedRespecTargets[instance.instanceId];
+            const isBaseEquipment = sameOutfit && !committedTarget;
+            // Base traits the card should reflect: the committed respec target
+            // (4 editable traits) + the original eye traits.
+            const effectiveBaseTraits = committedTarget
+              ? [...committedTarget, ...instance.baseGotchi.numericTraits.slice(4)]
+              : instance.baseGotchi.numericTraits;
+
             const {
               finalTraits,
               traitBase,
@@ -136,11 +183,11 @@ export function EditorPanel() {
               setFlatBrs,
               ageBrs,
               totalBrs,
-              activeSets,
+              bestSet,
               wearableDelta,
               setTraitModsDelta,
             } = computeInstanceTraits({
-              baseTraits: instance.baseGotchi.numericTraits,
+              baseTraits: effectiveBaseTraits,
               modifiedNumericTraits: isBaseEquipment ? instance.baseGotchi.modifiedNumericTraits : undefined,
               withSetsNumericTraits: isBaseEquipment ? instance.baseGotchi.withSetsNumericTraits : undefined,
               equippedBySlot: instance.equippedBySlot,
@@ -148,7 +195,9 @@ export function EditorPanel() {
               blocksElapsed: instance.baseGotchi.blocksElapsed,
             });
             
-            const activeSetNames = activeSets.map((set) => set.name);
+            // Only the single best set counts toward BRS (audit H1) — showing
+            // every matched set here would imply they all count.
+            const activeSetNames = bestSet ? [bestSet.name] : [];
             const mommyResultForInstance = mommyResult[instance.instanceId];
             const mommyOptionsForInstance = mommyOptions[instance.instanceId];
             const preMommyEquipped = mommyPreEquipped[instance.instanceId];
@@ -162,7 +211,7 @@ export function EditorPanel() {
               wearablesById,
               blocksElapsed: instance.baseGotchi.blocksElapsed,
             });
-            const currentActiveSets = currentTraitsEval.activeSets;
+            const currentSetCount = currentTraitsEval.bestSet ? 1 : 0;
             
             const mommyEquipped = mommyResultForInstance?.equippedWearables;
             const currentMatchesMommy = mommyEquipped 
@@ -183,7 +232,7 @@ export function EditorPanel() {
                 <div className="relative rounded-xl bg-gradient-to-br from-background via-background to-purple-950/5 group/card">
                   <div 
                     className="absolute top-0 right-0 bottom-0 w-6 flex items-center justify-center cursor-pointer opacity-0 group-hover/card:opacity-100 transition-opacity bg-gradient-to-l from-rose-500/20 to-transparent hover:from-rose-500/40 rounded-r-xl"
-                    onClick={() => removeEditorInstance(instance.instanceId)}
+                    onClick={() => handleRemoveInstance(instance.instanceId)}
                     title="Remove from editor"
                   >
                     <X className="h-3.5 w-3.5 text-rose-400" />
@@ -247,7 +296,8 @@ export function EditorPanel() {
                               onClick={() => {
                                 const override: LockedOverride = {
                                   wearablesBySlot: [...instance.equippedBySlot],
-                                  respecAllocated: committedRespecs[instance.instanceId] || null,
+                                  respecAllocated: null,
+                                  respecTargetBase: committedRespecTargets[instance.instanceId] || null,
                                   timestamp: Date.now(),
                                 };
                                 toggleLockSet(instance.baseGotchi.id, override);
@@ -264,7 +314,8 @@ export function EditorPanel() {
                               onClick={() => {
                                 const override: LockedOverride = {
                                   wearablesBySlot: [...instance.equippedBySlot],
-                                  respecAllocated: committedRespecs[instance.instanceId] || null,
+                                  respecAllocated: null,
+                                  respecTargetBase: committedRespecTargets[instance.instanceId] || null,
                                   timestamp: Date.now(),
                                 };
                                 toggleLockSet(instance.baseGotchi.id, override);
@@ -297,6 +348,28 @@ export function EditorPanel() {
                             </span>
                             <span className="text-[8px] text-muted-foreground">Dress Me™</span>
                           </Button>
+                          <SaveOutfitButton
+                            gotchiId={instance.baseGotchi.gotchiId || instance.baseGotchi.id}
+                            storeId={instance.baseGotchi.id}
+                            instanceId={instance.instanceId}
+                            desiredSlots={instance.equippedBySlot}
+                            currentSlots={instance.baseGotchi.equippedWearables}
+                            respecTarget={committedRespecTargets[instance.instanceId]}
+                            locked={!!(instance.baseGotchi.lending || instance.baseGotchi.lentOut)}
+                            onSaved={(finalSlots, respecApplied) => {
+                              if (respecApplied) {
+                                const eyes = instance.baseGotchi.numericTraits.slice(4, 6);
+                                rebaseEditorInstance(instance.instanceId, finalSlots, [...respecApplied, ...eyes]);
+                                setCommittedRespecTargets((prev) => {
+                                  const n = { ...prev };
+                                  delete n[instance.instanceId];
+                                  return n;
+                                });
+                              } else {
+                                rebaseEditorInstance(instance.instanceId, finalSlots);
+                              }
+                            }}
+                          />
                         </div>
                         
                         {mommyStatusMessage && mommyStatusMessage.instanceId === instance.instanceId && (
@@ -310,7 +383,10 @@ export function EditorPanel() {
                         <div className="min-w-0 md:max-w-[200px]">
                           <GotchiCard
                             gotchi={instance.baseGotchi}
-                            traitBase={instance.baseGotchi.baseRarityScore ?? traitBase}
+                            // With a committed respec target, the subgraph's
+                            // baseRarityScore is stale — use the locally
+                            // computed score from the target base (audit H5).
+                            traitBase={committedTarget ? traitBase : instance.baseGotchi.baseRarityScore ?? traitBase}
                             traitWithMods={traitWithMods}
                             wearableFlat={wearableFlat}
                             setFlatBrs={setFlatBrs}
@@ -321,15 +397,15 @@ export function EditorPanel() {
                             showImage={false}
                             showRespec
                             respecResetKey={instance.instanceId}
-                            baseTraits={instance.baseGotchi.numericTraits}
+                            baseTraits={effectiveBaseTraits}
                             wearableDelta={wearableDelta}
                             setDelta={setTraitModsDelta}
                             enableSetFilter
                             showBestSets
-                            onCommitRespec={(delta) => {
-                              setCommittedRespecs(prev => ({
+                            onCommitRespec={(targetBase) => {
+                              setCommittedRespecTargets(prev => ({
                                 ...prev,
-                                [instance.instanceId]: delta,
+                                [instance.instanceId]: targetBase,
                               }));
                             }}
                           />
@@ -361,6 +437,31 @@ export function EditorPanel() {
                                 (modified)
                               </span>
                             )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                              onClick={() => {
+                                // Restore the pre-Mommy outfit (snapshot taken on Apply);
+                                // fall back to the on-chain outfit for safety.
+                                updateEditorInstance(
+                                  instance.instanceId,
+                                  preMommyEquipped ?? instance.baseGotchi.equippedWearables
+                                );
+                                if (mommyResultForInstance.respecAllocated) {
+                                  // Only Mommy-committed respec targets are undone here.
+                                  setCommittedRespecTargets((prev) => {
+                                    const next = { ...prev };
+                                    delete next[instance.instanceId];
+                                    return next;
+                                  });
+                                }
+                                clearMommyState(instance.instanceId);
+                              }}
+                            >
+                              <Undo2 className="h-3 w-3 mr-1" />
+                              Undo
+                            </Button>
                           </div>
                           
                           {mommyOptionsForInstance && (
@@ -389,19 +490,19 @@ export function EditorPanel() {
                             
                             const finalTraitsEval = computeInstanceTraits({
                               baseTraits: finalBaseTraits,
-                              modifiedNumericTraits: isBaseEquipment && !mommyResultForInstance.respecAllocated
-                                ? instance.baseGotchi.modifiedNumericTraits
-                                : undefined,
-                              withSetsNumericTraits: isBaseEquipment && !mommyResultForInstance.respecAllocated
-                                ? instance.baseGotchi.withSetsNumericTraits
-                                : undefined,
+                              // The Mommy outfit differs from the on-chain one
+                              // by construction — the subgraph's precomputed
+                              // traits describe the OLD outfit and must never
+                              // be mixed in here (audit M10).
+                              modifiedNumericTraits: undefined,
+                              withSetsNumericTraits: undefined,
                               equippedBySlot: mommyResultForInstance.equippedWearables,
                               wearablesById,
                               blocksElapsed: instance.baseGotchi.blocksElapsed,
                             });
-                            const finalActiveSets = finalTraitsEval.activeSets;
+                            const finalSetCount = finalTraitsEval.bestSet ? 1 : 0;
                             const brsDelta = mommyResultForInstance.brsDelta || 0;
-                            const setDelta = finalActiveSets.length - currentActiveSets.length;
+                            const setDelta = finalSetCount - currentSetCount;
                             
                             return (
                               <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-fuchsia-500/10 border border-fuchsia-500/20">
@@ -483,14 +584,18 @@ export function EditorPanel() {
             onClose={() => setMommyModalInstanceId(null)}
             onApply={(result: AutoDressResult, options: AutoDressOptions) => {
               if (import.meta.env.DEV && result.success) {
-                for (const wearableId of result.equippedWearables) {
-                  if (wearableId !== 0 && !ownedWearables.has(wearableId)) {
-                    console.error(
-                      `[Mommy Dress Me] INVARIANT VIOLATION: Wearable ${wearableId} not in owned inventory`,
-                      { wearableId, ownedWearableIds: Array.from(ownedWearables.keys()) }
-                    );
-                    return;
-                  }
+                const bad = result.equippedWearables.find(
+                  (id) => id !== 0 && !ownedWearables.has(id)
+                );
+                if (bad) {
+                  // Visible failure instead of a silent no-op (audit M10):
+                  // the user pressed Apply and nothing happening is a bug.
+                  toast({
+                    title: "Auto-dress bug",
+                    description: `Wearable ${bad} is not in owned inventory — build rejected.`,
+                    variant: "destructive",
+                  });
+                  return;
                 }
               }
 
@@ -511,6 +616,19 @@ export function EditorPanel() {
               }));
 
               updateEditorInstance(instance.instanceId, result.equippedWearables);
+
+              if (result.respecAllocated) {
+                // Mommy's allocation is relative to the CURRENT base traits.
+                // Committing the absolute target lets the card, Lock&Set and
+                // Save all agree on the post-respec base (audit H5).
+                const target = instance.baseGotchi.numericTraits
+                  .slice(0, 4)
+                  .map((v, i) => (Number(v) || 0) + (result.respecAllocated![i] || 0));
+                setCommittedRespecTargets((prev) => ({
+                  ...prev,
+                  [instance.instanceId]: target,
+                }));
+              }
             }}
             onNoImprovement={() => {
               setMommyStatusMessage({ instanceId: instance.instanceId, message: "Already optimized for this goal." });

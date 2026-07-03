@@ -1,24 +1,64 @@
 import { describe, expect, it } from "vitest";
 import {
   totalSpiritPoints,
-  computeWearableDelta,
   computeSimTraits,
+  editableBrsCorrection,
 } from "./respec";
 
-describe("totalSpiritPoints", () => {
-  it("uses usedSkillPoints as refundable pool", () => {
-    expect(totalSpiritPoints(0)).toBe(0);
-    expect(totalSpiritPoints(1)).toBe(1);
-    expect(totalSpiritPoints(3)).toBe(3);
-    expect(totalSpiritPoints(19)).toBe(19);
+describe("respec pool (audit H2)", () => {
+  it("pool = usedSkillPoints + availableSkillPoints (post-reset refund + unspent)", () => {
+    expect(totalSpiritPoints(5, 3)).toBe(8);
+    expect(totalSpiritPoints(5, undefined)).toBe(5); // chain read pending → conservative
+    expect(totalSpiritPoints(undefined, 3)).toBe(3);
+    expect(totalSpiritPoints(-1, -1)).toBe(0);
   });
 });
 
-describe("computeWearableDelta", () => {
-  it("computes modified - base for first 4 traits", () => {
-    const base = [10, 20, 30, 40, 50, 60];
-    const modified = [12, 18, 35, 37, 50, 60];
-    expect(computeWearableDelta(base, modified)).toEqual([2, -2, 5, -3]);
+describe("respec BRS correction (audit H3)", () => {
+  it("is 0 for a point spent 49→50 (boundary)", () => {
+    expect(editableBrsCorrection([49, 10, 10, 10], [50, 10, 10, 10])).toBe(0);
+  });
+  it("is -1 for a point spent toward 50", () => {
+    expect(editableBrsCorrection([10, 10, 10, 10], [11, 10, 10, 10])).toBe(-1);
+  });
+  it("is +1 for a point away from 50", () => {
+    expect(editableBrsCorrection([10, 10, 10, 10], [9, 10, 10, 10])).toBe(1);
+  });
+
+  it("base and modified corrections differ across the 50 fold (I-1)", () => {
+    // Respec base 48→52 with a +10 wearable equipped: in base space the
+    // correction is +1 (BRS 52→53), but the displayed MODIFIED traits move
+    // 58→62, a +4 correction (BRS 59→63). Scores shown in modified space
+    // (traitWithMods/totalBrs) must use the modified-space correction —
+    // applying the base-space one understates the change.
+    const currentBase = [48, 10, 10, 10];
+    const targetBase = [52, 10, 10, 10];
+    const currentModified = [58, 10, 10, 10]; // +10 wearable
+    const targetModified = [62, 10, 10, 10];
+    expect(editableBrsCorrection(currentBase, targetBase)).toBe(1);
+    expect(editableBrsCorrection(currentModified, targetModified)).toBe(4);
+  });
+});
+
+describe("birth baseline integrity (audit M1 + eye slice)", () => {
+  it("simBase preserves eye traits from a 6-length baseline", () => {
+    const { simBase } = computeSimTraits({
+      baseTraits: [1, 2, 3, 4, 90, 80],
+      respecBaseTraits: [5, 6, 7, 8, 90, 80],
+      allocated: [1, 0, 0, 0],
+    });
+    expect(simBase[4]).toBe(90);
+    expect(simBase[5]).toBe(80);
+    expect(simBase.slice(0, 4)).toEqual([6, 6, 7, 8]);
+  });
+
+  it("preserves eye traits with a larger multi-trait allocation", () => {
+    const { simBase } = computeSimTraits({
+      baseTraits: [1, 2, 3, 4, 90, 80],
+      respecBaseTraits: [10, 20, 30, 40, 90, 80],
+      allocated: [3, 2, 0, 5],
+    });
+    expect(simBase).toEqual([13, 22, 30, 45, 90, 80]);
   });
 });
 

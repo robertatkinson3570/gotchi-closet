@@ -151,11 +151,33 @@ function sumSetBonusBrs(sets: SetDefinition[]): number {
   return sets.reduce((acc, set) => acc + (set.setBonusBRS || 0), 0);
 }
 
+/**
+ * Official rule (aavegotchi-core-subgraph): only ONE set counts — the matched
+ * set with the most pieces; ties resolved by `>=` while iterating in on-chain
+ * set order, so the later set id wins.
+ */
+export function pickBestSet(sets: SetDefinition[]): SetDefinition | null {
+  let best: SetDefinition | null = null;
+  for (const s of sets) {
+    if (!best || s.requiredWearableIds.length >= best.requiredWearableIds.length) {
+      best = s;
+    }
+  }
+  return best;
+}
+
 export function ageBrsFromBlocks(blocksElapsed: number): number {
   return ageBRSFromBlocksElapsed(blocksElapsed);
 }
 
-function wearableRarityToBrs(wearable: Wearable): number {
+export function wearableRarityToBrs(wearable: Wearable): number {
+  // The on-chain `rarityScoreModifier` is authoritative whenever present —
+  // INCLUDING 0, a real value meaning +0 flat (e.g. #210 Haunt1 BG). Its
+  // derived rarity string is "common", so falling through to the string
+  // mapping would add a phantom +1 per zero-modifier item. The rarity-string
+  // mapping is only a fallback for entries missing the modifier entirely.
+  const modifier = Number(wearable.rarityScoreModifier);
+  if (Number.isFinite(modifier) && modifier >= 0) return modifier;
   const rarity = wearable.rarity?.toLowerCase();
   if (
     rarity === "common" ||
@@ -167,7 +189,7 @@ function wearableRarityToBrs(wearable: Wearable): number {
   ) {
     return wearableFlatBrs(rarity);
   }
-  return wearable.rarityScoreModifier || 0;
+  return 0;
 }
 
 function sumWearableCoreMods(
@@ -214,12 +236,15 @@ export function computeBRSBreakdown(params: {
   blocksElapsed?: number;
   ageBrsOverride?: number;
 }) {
+  // All matched sets are kept for display only; only the single best set
+  // counts toward BRS (audit H1, official subgraph rule).
   const activeSets = detectActiveSets(params.equippedWearables);
+  const bestSet = pickBestSet(activeSets);
   const wearableTraitMods = sumWearableCoreMods(
     params.equippedWearables,
     params.wearablesById
   );
-  const setTraitMods = sumSetCoreMods(activeSets);
+  const setTraitMods = sumSetCoreMods(bestSet ? [bestSet] : []);
   const traitsWithWearables = applyCoreTraitMods(
     params.baseTraits,
     wearableTraitMods
@@ -249,7 +274,7 @@ export function computeBRSBreakdown(params: {
     if (!wearable) continue;
     wearableFlat += wearableRarityToBrs(wearable);
   }
-  const setFlatBrs = sumSetBonusBrs(activeSets);
+  const setFlatBrs = sumSetBonusBrs(bestSet ? [bestSet] : []);
   const setDeltaTotal = setRarityDelta({
     baseTraits: params.baseTraits,
     wearableTraitMods,
@@ -288,6 +313,7 @@ export function computeBRSBreakdown(params: {
     ageBrs,
     totalBrs,
     activeSets,
+    bestSet,
     wearableTraitMods,
     setTraitMods,
   };

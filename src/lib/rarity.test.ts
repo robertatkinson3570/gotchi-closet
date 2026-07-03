@@ -3,9 +3,14 @@ import {
   traitToBRS,
   traitsToBRS,
   wearableFlatBrs,
+  wearableRarityToBrs,
   setRarityDelta,
   computeTotalBRS,
+  pickBestSet,
+  detectActiveSets,
+  computeBRSBreakdown,
 } from "./rarity";
+import type { SetDefinition } from "./sets";
 import { ageBRSFromBlocksElapsed } from "./age";
 import { getCanonicalModifiedTraits } from "./traits";
 
@@ -35,6 +40,28 @@ describe("wearableFlatBrs", () => {
     expect(wearableFlatBrs("legendary")).toBe(10);
     expect(wearableFlatBrs("mythical")).toBe(20);
     expect(wearableFlatBrs("godlike")).toBe(50);
+  });
+});
+
+describe("wearableRarityToBrs (audit low)", () => {
+  const w = (over: Partial<import("@/types").Wearable>) =>
+    ({ id: 1, name: "W", traitModifiers: [], rarityScoreModifier: 0,
+       category: 0, slotPositions: [], ...over }) as import("@/types").Wearable;
+
+  it("prefers the authoritative rarityScoreModifier over the rarity string", () => {
+    expect(wearableRarityToBrs(w({ rarityScoreModifier: 12, rarity: "legendary" }))).toBe(12);
+  });
+
+  it("treats modifier 0 as a real value (+0 flat), not as missing", () => {
+    // e.g. #210 Haunt1 BG: on-chain rarityScoreModifier 0 — its derived rarity
+    // string is "common", but it must NOT contribute the +1 common flat.
+    expect(wearableRarityToBrs(w({ rarityScoreModifier: 0, rarity: "common" }))).toBe(0);
+    expect(wearableRarityToBrs(w({ rarityScoreModifier: 0, rarity: "legendary" }))).toBe(0);
+  });
+
+  it("falls back to the rarity-string mapping only when the modifier is missing", () => {
+    expect(wearableRarityToBrs(w({ rarityScoreModifier: undefined, rarity: "legendary" }))).toBe(10);
+    expect(wearableRarityToBrs(w({ rarityScoreModifier: undefined }))).toBe(0);
   });
 });
 
@@ -107,12 +134,58 @@ describe("totalBRS sanity", () => {
   });
 });
 
+describe("best-set rule (audit H1)", () => {
+  it("pickBestSet picks the longest set; ties go to the later (higher index) set", () => {
+    const sets = [
+      { id: "a", name: "A", requiredWearableIds: [1, 2], traitModifiers: {}, setBonusBRS: 1 },
+      { id: "b", name: "B", requiredWearableIds: [1, 2, 3], traitModifiers: {}, setBonusBRS: 2 },
+      { id: "c", name: "C", requiredWearableIds: [4, 5, 6], traitModifiers: {}, setBonusBRS: 3 },
+    ] as SetDefinition[];
+    expect(pickBestSet(sets)?.id).toBe("c"); // same length as b → later wins
+    expect(pickBestSet(sets.slice(0, 2))?.id).toBe("b");
+    expect(pickBestSet([])).toBeNull();
+  });
+
+  it("computeBRSBreakdown counts only the best set when a superset outfit matches 2 sets", () => {
+    // Real subset pair from data/wearableSets.json:
+    // Aagent       requires [55, 56, 57, 58]      → bonuses [-1, 0, 1, 0], flat 3
+    // Super Aagent requires [55, 56, 57, 58, 59]  → bonuses [-1, 0, 2, 0], flat 4
+    const equipped = [55, 56, 57, 58, 59];
+    const matched = detectActiveSets(equipped);
+    expect(matched.map((s) => s.name).sort()).toEqual(["Aagent", "Super Aagent"]);
+
+    const breakdown = computeBRSBreakdown({
+      baseTraits: [50, 50, 50, 50, 10, 20],
+      equippedWearables: equipped,
+      wearablesById: new Map(),
+    });
+    // Only Super Aagent counts — not the sum of both (3 + 4 = 7).
+    expect(breakdown.bestSet?.name).toBe("Super Aagent");
+    expect(breakdown.setFlatBrs).toBe(4);
+    // Trait mods come only from the best set.
+    expect(breakdown.setTraitMods).toEqual({ nrg: -1, agg: 0, spk: 2, brn: 0 });
+    // All matches remain available for display.
+    expect(breakdown.activeSets).toHaveLength(2);
+    // Final traits reflect only the single set's modifiers.
+    expect(breakdown.finalTraits).toEqual([49, 50, 52, 50, 10, 20]);
+  });
+});
+
 describe("getCanonicalModifiedTraits", () => {
-  it("uses modifiedNumericTraits when valid", () => {
+  // Audit M10: local (set-inclusive) traits now outrank modifiedNumericTraits
+  // (wearable-only) when both are valid — see src/lib/traits.test.ts for the
+  // full fallback-order coverage.
+  it("prefers local computed traits over modifiedNumericTraits when both are valid", () => {
     const base = [1, 2, 3, 4, 5, 6];
     const modified = [6, 5, 4, 3, 2, 1];
     const local = [9, 9, 9, 9, 9, 9];
-    expect(getCanonicalModifiedTraits(base, modified, local)).toEqual(modified);
+    expect(getCanonicalModifiedTraits(base, modified, local)).toEqual(local);
+  });
+
+  it("uses modifiedNumericTraits when local computed traits aren't available", () => {
+    const base = [1, 2, 3, 4, 5, 6];
+    const modified = [6, 5, 4, 3, 2, 1];
+    expect(getCanonicalModifiedTraits(base, modified)).toEqual(modified);
   });
 
   it("falls back to local computed traits when modified is invalid", () => {

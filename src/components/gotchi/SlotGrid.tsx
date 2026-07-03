@@ -1,7 +1,8 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SlotCard } from "./SlotCard";
 import { useAppStore } from "@/state/useAppStore";
-import { useWearablesById } from "@/state/selectors";
+import { useWearablesById, useWearableInventory } from "@/state/selectors";
+import { canEquipInSlot } from "@/lib/equipRules";
 import { useToast } from "@/ui/use-toast";
 import type { Wearable } from "@/types";
 import type { DragEventHandler } from "react";
@@ -56,6 +57,7 @@ function SlotDropTarget({
   });
   const equipWearable = useAppStore((state) => state.equipWearable);
   const wearablesById = useWearablesById();
+  const { ownedCounts } = useWearableInventory();
   const { toast } = useToast();
 
   const handleDrop: DragEventHandler<HTMLDivElement> = (event) => {
@@ -66,18 +68,7 @@ function SlotDropTarget({
     const wearableData = wearablesById.get(wearableId);
     if (!wearableData) return;
 
-    const handPlacement = wearableData.handPlacement || "none";
-    const isLeftHand = slotIndex === 4;
-    const isRightHand = slotIndex === 5;
-    const isHandSlot = isLeftHand || isRightHand;
-    const matchesHand = !isHandSlot
-      ? true
-      : handPlacement === "either" ||
-        (handPlacement === "left" && isLeftHand) ||
-        (handPlacement === "right" && isRightHand) ||
-        (handPlacement === "none" && wearableData.slotPositions[slotIndex]);
-
-    if (!wearableData.slotPositions[slotIndex] || !matchesHand) {
+    if (!canEquipInSlot(wearableData, slotIndex)) {
       toast({
         title: "Invalid Slot",
         description: `${wearableData.name} cannot be equipped in that slot`,
@@ -86,11 +77,16 @@ function SlotDropTarget({
       return;
     }
 
-    equipWearable(instanceId, wearableId, slotIndex);
-    toast({
-      title: "Equipped",
-      description: `${wearableData.name} equipped`,
-    });
+    const equipped = equipWearable(instanceId, wearableId, slotIndex);
+    if (!equipped) {
+      toast({
+        title: "Not enough copies",
+        description: `You only own ${ownedCounts[wearableId] || 0} of ${wearableData.name}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    // No success toast — the slot visibly updating is the feedback (audit low).
   };
 
   const handleDragOver: DragEventHandler<HTMLDivElement> = (event) => {

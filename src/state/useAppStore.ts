@@ -7,6 +7,9 @@ import {
   saveLockedBuilds,
   cleanupStaleLockedBuilds,
 } from "@/lib/lockedBuilds";
+// Circular with ./selectors (which imports this store) — safe: both sides only
+// reference the other's exports at call time, never during module init.
+import { computeOwnedCounts } from "./selectors";
 
 const BASE_CHAIN_ID = 8453;
 
@@ -35,6 +38,14 @@ interface AppState {
   lockedById: Record<string, boolean>;
   overridesById: Record<string, LockedOverride>;
 
+  // Wallet-held (unequipped) wearable balances across the loaded wallets,
+  // already filtered to category-0 wearables by the producer (audit H4).
+  walletItemCounts: Record<number, number>;
+
+  // Gotchi ids owned by the CONNECTED wallet (not watch-only wallets) —
+  // gates on-chain actions like Save that require signing as the owner.
+  connectedOwnedIds: Set<string>;
+
   // Loading & Errors
   loadingGotchis: boolean;
   loadingWearables: boolean;
@@ -50,18 +61,26 @@ interface AppState {
   addEditorInstance: (gotchi: Gotchi) => void;
   removeEditorInstance: (instanceId: string) => void;
   updateEditorInstance: (instanceId: string, equippedBySlot: number[]) => void;
+  /** After a successful on-chain save: the new chain state becomes the
+   * instance's baseline so the dirty flag clears (current == desired). */
+  rebaseEditorInstance: (instanceId: string, equippedWearables: number[], newBaseTraits?: number[]) => void;
   setWearables: (wearables: Wearable[]) => void;
   setSets: (sets: WearableSet[]) => void;
   setWearableThumbs: (thumbs: Record<number, string>) => void;
   setBaazaarPrices: (prices: BaazaarPriceMap) => void;
   setBaazaarLoading: (loading: boolean) => void;
   setBaazaarError: (error: string | null) => void;
+  setWalletItemCounts: (counts: Record<number, number>) => void;
+  setConnectedOwnedIds: (ids: Set<string>) => void;
   setFilters: (filters: Partial<WearableFilters>) => void;
   setLoadingGotchis: (loading: boolean) => void;
   setLoadingWearables: (loading: boolean) => void;
   setLoadingSets: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  equipWearable: (instanceId: string, wearableId: number, slotIndex: number) => void;
+  /** Equips into the instance's slot. Returns false (no-op) when the user owns
+   * N > 0 copies and all N are already placed elsewhere (audit M4); wearables
+   * owned 0 of equip freely — pure simulation mode. */
+  equipWearable: (instanceId: string, wearableId: number, slotIndex: number) => boolean;
   unequipSlot: (instanceId: string, slotIndex: number) => void;
   stripAllWearables: (instanceId: string) => void;
   restoreOriginalWearables: (instanceId: string) => void;
@@ -120,6 +139,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   filters: initialFilters,
   lockedById: {},
   overridesById: {},
+  walletItemCounts: {},
+  connectedOwnedIds: new Set<string>(),
   loadingGotchis: false,
   loadingWearables: false,
   loadingSets: false,
@@ -128,7 +149,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setLoadedAddress: (address) => {
     set({ loadedAddress: address });
     if (address) {
-      const data = loadLockedBuilds(BASE_CHAIN_ID, address);
+      const data = loadLockedBuilds(BASE_CHAIN_ID);
       set({ lockedById: data.lockedById, overridesById: data.overridesById });
     } else {
       set({ lockedById: {}, overridesById: {} });
@@ -139,18 +160,21 @@ export const useAppStore = create<AppState>((set, get) => ({
     const state = get();
     // Never clean/persist against an empty list — the DressPage mount reset
     // (setGotchis([])) and transient loading states must not wipe saved locks.
+    // Trade-off: this means stale locks for a fully-emptied wallet persist as
+    // inert data until a non-empty load arrives to clean them — never wrongly
+    // deleting a lock beats eventually cleaning one up.
     if (!state.loadedAddress || gotchis.length === 0) return;
     const keepIds = new Set([
-      ...gotchis.map((gg) => gg.id),
+      ...gotchis.map((g) => g.id),
       // Manual gotchis are lockable (toggleLockSet supports them) — keep theirs.
-      ...state.manualGotchis.map((gg) => gg.id),
+      ...state.manualGotchis.map((g) => g.id),
     ]);
     const cleaned = cleanupStaleLockedBuilds(
       { version: 1, lockedById: state.lockedById, overridesById: state.overridesById },
       keepIds
     );
     set({ lockedById: cleaned.lockedById, overridesById: cleaned.overridesById });
-    saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, cleaned);
+    saveLockedBuilds(BASE_CHAIN_ID, cleaned);
   },
   addManualGotchi: (gotchi) =>
     set((state) => {
@@ -182,7 +206,8 @@ export const useAppStore = create<AppState>((set, get) => ({
               .toString(36)
               .slice(2, 8)}`,
             baseGotchi: gotchi,
-            equippedBySlot: [...initialWearables],
+            // equippedBySlot contract: length 8 (subgraph arrays may be 16).
+            equippedBySlot: [...initialWearables].slice(0, 8),
           },
         ],
       };
@@ -201,6 +226,29 @@ export const useAppStore = create<AppState>((set, get) => ({
           : instance
       ),
     })),
+  rebaseEditorInstance: (instanceId, equippedWearables, newBaseTraits) =>
+    set((state) => ({
+      editorInstances: state.editorInstances.map((inst) =>
+        inst.instanceId === instanceId
+          ? {
+              ...inst,
+              baseGotchi: {
+                ...inst.baseGotchi,
+                // Full array as passed in (length 16); equippedBySlot below
+                // keeps the length-8 contract. (I-3)
+                equippedWearables: [...equippedWearables],
+                ...(newBaseTraits ? { numericTraits: [...newBaseTraits] } : {}),
+                // A rebase means the on-chain outfit changed by definition, so
+                // the subgraph-precomputed traits are ALWAYS stale until
+                // reindex — not just after a respec. (I-3)
+                modifiedNumericTraits: undefined,
+                withSetsNumericTraits: undefined,
+              },
+              equippedBySlot: [...equippedWearables].slice(0, 8),
+            }
+          : inst
+      ),
+    })),
   setWearables: (wearables) => set({ wearables }),
   setSets: (sets) => set({ sets }),
   setWearableThumbs: (thumbs) =>
@@ -208,6 +256,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   setBaazaarPrices: (prices) => set({ baazaarPrices: prices }),
   setBaazaarLoading: (loading) => set({ baazaarLoading: loading }),
   setBaazaarError: (error) => set({ baazaarError: error }),
+  setWalletItemCounts: (counts) => set({ walletItemCounts: counts }),
+  setConnectedOwnedIds: (ids) => set({ connectedOwnedIds: ids }),
   setFilters: (filters) =>
     set((state) => {
       const newFilters = { ...state.filters, ...filters };
@@ -228,7 +278,30 @@ export const useAppStore = create<AppState>((set, get) => ({
     const instance = state.editorInstances.find(
       (item) => item.instanceId === instanceId
     );
-    if (!instance) return;
+    if (!instance) return false;
+
+    // Ownership enforcement (audit M4): if the user owns N > 0 copies, at most
+    // N may be placed across all editor instances. Moving a copy within this
+    // instance (its old slot gets vacated by this same call) doesn't count.
+    // owned === 0 stays freely equippable: pure simulation mode (the Save
+    // feature classifies those as buy/blocked).
+    const owned =
+      computeOwnedCounts(state.gotchis, state.walletItemCounts)[wearableId] || 0;
+    if (owned > 0) {
+      let usedElsewhere = 0;
+      for (const inst of state.editorInstances) {
+        for (let i = 0; i < inst.equippedBySlot.length; i++) {
+          if (inst.equippedBySlot[i] !== wearableId) continue;
+          const vacatedByThisCall =
+            inst.instanceId === instanceId &&
+            // same-instance occurrences are cleared by the loop below…
+            !((i === 4 || i === 5) && (slotIndex === 4 || slotIndex === 5) && i !== slotIndex);
+            // …EXCEPT the other hand slot, which is deliberately kept (dual-wield).
+          if (!vacatedByThisCall) usedElsewhere += 1;
+        }
+      }
+      if (usedElsewhere + 1 > owned) return false;
+    }
 
     const equippedBySlot = [...instance.equippedBySlot];
     const isHandSlot = slotIndex === 4 || slotIndex === 5;
@@ -251,6 +324,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           : item
       ),
     });
+    return true;
   },
 
   unequipSlot: (instanceId, slotIndex) => {
@@ -300,7 +374,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({
       editorInstances: state.editorInstances.map((item) =>
         item.instanceId === instanceId
-          ? { ...item, equippedBySlot: [...instance.baseGotchi.equippedWearables] }
+          ? // equippedBySlot contract: length 8 (subgraph arrays may be 16).
+            { ...item, equippedBySlot: [...instance.baseGotchi.equippedWearables].slice(0, 8) }
           : item
       ),
     });
@@ -331,7 +406,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const newOverridesById = { ...state.overridesById, [gotchiId]: override };
     set({ lockedById: newLockedById, overridesById: newOverridesById });
     if (state.loadedAddress) {
-      saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, {
+      saveLockedBuilds(BASE_CHAIN_ID, {
         version: 1,
         lockedById: newLockedById,
         overridesById: newOverridesById,
@@ -347,7 +422,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     delete newOverridesById[gotchiId];
     set({ lockedById: newLockedById, overridesById: newOverridesById });
     if (state.loadedAddress) {
-      saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, {
+      saveLockedBuilds(BASE_CHAIN_ID, {
         version: 1,
         lockedById: newLockedById,
         overridesById: newOverridesById,
@@ -358,7 +433,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   loadLockedBuildsFromStorage: () => {
     const state = get();
     if (!state.loadedAddress) return;
-    const data = loadLockedBuilds(BASE_CHAIN_ID, state.loadedAddress);
+    const data = loadLockedBuilds(BASE_CHAIN_ID);
     set({ lockedById: data.lockedById, overridesById: data.overridesById });
   },
 
@@ -466,7 +541,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     
     set({ lockedById: newLockedById, overridesById: newOverridesById });
     if (state.loadedAddress) {
-      saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, {
+      saveLockedBuilds(BASE_CHAIN_ID, {
         version: 1,
         lockedById: newLockedById,
         overridesById: newOverridesById,

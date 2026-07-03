@@ -153,26 +153,32 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
     setStatus("running");
   }, [sortedGotchis.length]);
 
-  const advancePhase = useCallback(() => {
+  // Returns the scheduled timer id so the driving effect can clear it on
+  // unmount/close — otherwise a pending timeout fires setState on an
+  // unmounted component (reduced-motion beat included). (audit minor)
+  const advancePhase = useCallback((): ReturnType<typeof setTimeout> | undefined => {
     if (reducedMotion) {
-      if (activeIndex < sortedGotchis.length - 1) {
-        setActiveIndex((i) => i + 1);
-      } else {
-        setStatus("done");
-      }
-      return;
+      // Reduced motion: show each gotchi as a static card for a fixed beat
+      // instead of synchronously skipping the whole show (audit low).
+      return setTimeout(() => {
+        if (activeIndex < sortedGotchis.length - 1) {
+          setActiveIndex((i) => i + 1);
+        } else {
+          setStatus("done");
+        }
+      }, 2500);
     }
 
     if (phase === "approach") {
-      setTimeout(() => setPhase("pose"), 2200);
+      return setTimeout(() => setPhase("pose"), 2200);
     } else if (phase === "pose") {
-      setTimeout(() => setPhase("move"), 400);
+      return setTimeout(() => setPhase("move"), 400);
     } else if (phase === "move") {
       const move = getMoveForGotchi(sortedGotchis[activeIndex]?.id || "0");
       const duration = move === "moonwalk" ? 1200 : 800;
-      setTimeout(() => setPhase("exit"), duration);
+      return setTimeout(() => setPhase("exit"), duration);
     } else if (phase === "exit") {
-      setTimeout(() => {
+      return setTimeout(() => {
         if (activeIndex < sortedGotchis.length - 1) {
           setActiveIndex((i) => i + 1);
           setPhase("approach");
@@ -181,12 +187,15 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
         }
       }, 1000);
     }
+    return undefined;
   }, [phase, activeIndex, sortedGotchis, reducedMotion]);
 
   useEffect(() => {
-    if (status === "running") {
-      advancePhase();
-    }
+    if (status !== "running") return;
+    const timer = advancePhase();
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [status, phase, activeIndex, advancePhase]);
 
   useEffect(() => {
@@ -325,6 +334,23 @@ export function CatwalkModal({ gotchis, onClose }: CatwalkModalProps) {
               className="catwalk-loading-fill"
               style={{ width: `${progress}%` }}
             />
+          </div>
+        </div>
+      )}
+
+      {status !== "loading" && sortedGotchis.length === 0 && (
+        <div className="catwalk-end">
+          <div className="catwalk-end-title">No gotchis to strut.</div>
+          <div className="catwalk-end-subtitle">Load a wallet with gotchis, then come back.</div>
+          <div className="catwalk-end-buttons">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="text-white border-white/20 hover:bg-white/10"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dress
+            </Button>
           </div>
         </div>
       )}

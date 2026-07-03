@@ -328,7 +328,7 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
                       setFlatBrs,
                       ageBrs,
                       totalBrs,
-                      activeSets,
+                      bestSet,
                     } = computeInstanceTraits({
                       baseTraits: gotchi.numericTraits,
                       modifiedNumericTraits: gotchi.modifiedNumericTraits,
@@ -337,7 +337,8 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
                       wearablesById,
                       blocksElapsed: gotchi.blocksElapsed,
                     });
-                    const activeSetNames = activeSets.map((set) => set.name);
+                    // Only the counted (best) set is shown (audit H1).
+                    const activeSetNames = bestSet ? [bestSet.name] : [];
                     return (
                       <div
                         key={gotchi.id}
@@ -387,7 +388,7 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
                         setFlatBrs,
                         ageBrs,
                         totalBrs,
-                        activeSets,
+                        bestSet,
                       } = computeInstanceTraits({
                         baseTraits: gotchi.numericTraits,
                         modifiedNumericTraits: gotchi.modifiedNumericTraits,
@@ -396,7 +397,8 @@ export function GotchiSearch({ onAdd, excludeIds, rightElement }: GotchiSearchPr
                         wearablesById,
                         blocksElapsed: gotchi.blocksElapsed,
                       });
-                      const activeSetNames = activeSets.map((set) => set.name);
+                      // Only the counted (best) set is shown (audit H1).
+                      const activeSetNames = bestSet ? [bestSet.name] : [];
                       const price = gotchi.market?.price ? formatPrice(gotchi.market.price) : undefined;
                       const isLoadingThis = loadingGotchiId === (gotchi.gotchiId || gotchi.id);
 

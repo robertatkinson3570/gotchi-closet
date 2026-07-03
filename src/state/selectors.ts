@@ -2,12 +2,22 @@ import { useMemo } from "react";
 import { useAppStore } from "./useAppStore";
 import { computeBRSBreakdown } from "@/lib/rarity";
 import type { Wearable, Gotchi, EditorInstance } from "@/types";
-import { computeLockedWearableAllocations } from "@/lib/lockedBuilds";
+import { computeLockedWearableAllocations, type LockedOverride } from "@/lib/lockedBuilds";
 
 export type WearableCounts = Record<number, number>;
 
-export function computeOwnedCounts(gotchis: Gotchi[]): WearableCounts {
-  const counts: WearableCounts = {};
+/**
+ * Owned = wallet-held ERC1155 balances (audit H4) + wearables equipped on the
+ * given gotchis. Equipped items are NOT included in on-chain `itemBalances`,
+ * so the two sources are added, never maxed. `walletItemCounts` must already
+ * be filtered to actual wearables (category 0) by the producer — the raw
+ * itemBalances read includes consumables/badges.
+ */
+export function computeOwnedCounts(
+  gotchis: Gotchi[],
+  walletItemCounts: WearableCounts = {}
+): WearableCounts {
+  const counts: WearableCounts = { ...walletItemCounts };
   for (const gotchi of gotchis) {
     for (const wearableId of gotchi.equippedWearables) {
       if (wearableId !== 0) {
@@ -58,23 +68,57 @@ export function computeAvailCountsWithLocked(
   return avail;
 }
 
+/**
+ * Pure composition behind useWearableInventory (extracted for node-env tests).
+ *
+ * Manual gotchis are preview-only (audit H7): their equipped items are NOT
+ * owned by the viewer, so they never enter ownedCounts — the param is accepted
+ * (and deliberately ignored) to pin that contract in tests. Their editor
+ * instances still consume availability through `editorInstances`.
+ */
+export function computeWearableInventory(state: {
+  gotchis: Gotchi[];
+  manualGotchis?: Gotchi[];
+  editorInstances: EditorInstance[];
+  lockedById: Record<string, boolean>;
+  overridesById: Record<string, LockedOverride>;
+  walletItemCounts: WearableCounts;
+}) {
+  // Owned = wallet gotchis' equipped + wallet-held balances (audit H4/H7).
+  // walletItemCounts is category-filtered at the producer (DressPage).
+  const ownedCounts = computeOwnedCounts(state.gotchis, state.walletItemCounts);
+  const usedCounts = computeUsedCounts(state.editorInstances);
+  // A gotchi both locked AND open in the editor must not reserve twice
+  // (audit M5): its editor instance already consumes the copies, so its
+  // locked allocation is excluded.
+  const editorGotchiIds = new Set(state.editorInstances.map((i) => i.baseGotchi.id));
+  const lockedByIdNotInEditor = Object.fromEntries(
+    Object.entries(state.lockedById).filter(([id]) => !editorGotchiIds.has(id))
+  );
+  const lockedAllocations = computeLockedWearableAllocations(state.overridesById, lockedByIdNotInEditor);
+  const availCounts = computeAvailCounts(ownedCounts, usedCounts);
+  const availCountsWithLocked = computeAvailCountsWithLocked(ownedCounts, usedCounts, lockedAllocations);
+  return { ownedCounts, usedCounts, availCounts, lockedAllocations, availCountsWithLocked };
+}
+
 export function useWearableInventory() {
   const gotchis = useAppStore((state) => state.gotchis);
-  const manualGotchis = useAppStore((state) => state.manualGotchis);
   const editorInstances = useAppStore((state) => state.editorInstances);
   const lockedById = useAppStore((state) => state.lockedById);
   const overridesById = useAppStore((state) => state.overridesById);
-  
-  return useMemo(() => {
-    // Combine wallet gotchis and manual gotchis for owned counts
-    const allGotchis = [...gotchis, ...manualGotchis];
-    const ownedCounts = computeOwnedCounts(allGotchis);
-    const usedCounts = computeUsedCounts(editorInstances);
-    const lockedAllocations = computeLockedWearableAllocations(overridesById, lockedById);
-    const availCounts = computeAvailCounts(ownedCounts, usedCounts);
-    const availCountsWithLocked = computeAvailCountsWithLocked(ownedCounts, usedCounts, lockedAllocations);
-    return { ownedCounts, usedCounts, availCounts, lockedAllocations, availCountsWithLocked };
-  }, [gotchis, manualGotchis, editorInstances, lockedById, overridesById]);
+  const walletItemCounts = useAppStore((state) => state.walletItemCounts);
+
+  return useMemo(
+    () =>
+      computeWearableInventory({
+        gotchis,
+        editorInstances,
+        lockedById,
+        overridesById,
+        walletItemCounts,
+      }),
+    [gotchis, editorInstances, lockedById, overridesById, walletItemCounts]
+  );
 }
 
 export function useWearablesById() {
@@ -89,25 +133,21 @@ export function useWearablesById() {
 export function useSortedGotchis() {
   const gotchis = useAppStore((state) => state.gotchis);
   const wearablesById = useWearablesById();
-  return [...gotchis].sort((a, b) => {
-    const traitsA = computeInstanceTraits({
-      baseTraits: a.numericTraits,
-      modifiedNumericTraits: a.modifiedNumericTraits,
-      withSetsNumericTraits: a.withSetsNumericTraits,
-      equippedBySlot: a.equippedWearables,
-      wearablesById,
-      blocksElapsed: a.blocksElapsed,
-    }).totalBrs;
-    const traitsB = computeInstanceTraits({
-      baseTraits: b.numericTraits,
-      modifiedNumericTraits: b.modifiedNumericTraits,
-      withSetsNumericTraits: b.withSetsNumericTraits,
-      equippedBySlot: b.equippedWearables,
-      wearablesById,
-      blocksElapsed: b.blocksElapsed,
-    }).totalBrs;
-    return traitsB - traitsA;
-  });
+  // Compute each gotchi's score once (O(n)) instead of inside the comparator.
+  return gotchis
+    .map((gotchi) => ({
+      gotchi,
+      score: computeInstanceTraits({
+        baseTraits: gotchi.numericTraits,
+        modifiedNumericTraits: gotchi.modifiedNumericTraits,
+        withSetsNumericTraits: gotchi.withSetsNumericTraits,
+        equippedBySlot: gotchi.equippedWearables,
+        wearablesById,
+        blocksElapsed: gotchi.blocksElapsed,
+      }).totalBrs,
+    }))
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.gotchi);
 }
 
 export function computeInstanceTraits(params: {
@@ -186,6 +226,7 @@ export function computeInstanceTraits(params: {
     ageBrs: breakdown.ageBrs,
     totalBrs: breakdown.totalBrs,
     activeSets: breakdown.activeSets,
+    bestSet: breakdown.bestSet,
     equippedIds,
     finalTraits: breakdown.finalTraits,
     wearableDelta,

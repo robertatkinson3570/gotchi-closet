@@ -1,7 +1,6 @@
 {
   "numericTraits": [50, 50, 50, 50, 50, 50],
-  "modifiedNumericTraits": [52, 46, 54, 54, 50, 50],
-  "withSetsNumericTraits": [52, 46, 57, 54, 50, 50],
+  "modifiedNumericTraits": [47, 46, 57, 51, 50, 50],
+  "withSetsNumericTraits": [47, 46, 60, 51, 50, 50],
   "equippedWearables": [30, 31, 32, 0, 0, 0, 0, 0]
 }
-

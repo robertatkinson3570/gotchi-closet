@@ -17,7 +17,20 @@ function loadFixture() {
 }
 
 describe("canonical modified traits selection", () => {
-  it("uses modifiedNumericTraits when valid", () => {
+  // Audit M10 reordered the fallback to withSets ?? local ?? modified ?? base
+  // — locally computed traits (which include set bonuses) now outrank the
+  // subgraph's wearable-only modifiedNumericTraits, since the latter can't be
+  // trusted when it disagrees with what's actually equipped.
+  it("uses modifiedNumericTraits when valid and no local computation is available", () => {
+    const gotchi = loadFixture();
+    const canonical = getCanonicalModifiedTraits(
+      gotchi.numericTraits,
+      gotchi.modifiedNumericTraits
+    );
+    expect(canonical).toEqual(gotchi.modifiedNumericTraits);
+  });
+
+  it("prefers a valid localComputedTraits over modifiedNumericTraits (audit M10)", () => {
     const gotchi = loadFixture();
     const local = gotchi.numericTraits.slice();
     const canonical = getCanonicalModifiedTraits(
@@ -25,12 +38,16 @@ describe("canonical modified traits selection", () => {
       gotchi.modifiedNumericTraits,
       local
     );
-    expect(canonical).toEqual(gotchi.modifiedNumericTraits);
-    expect(canonical).not.toEqual(local);
+    expect(canonical).toEqual(local);
+    expect(canonical).not.toEqual(gotchi.modifiedNumericTraits);
   });
 
-  it("feeds rarity scoring from modifiedNumericTraits when present", () => {
+  it("computeBRSBreakdown scores off the locally computed traits when nothing is equipped, not the subgraph's stale modifiedNumericTraits", () => {
     const gotchi = loadFixture();
+    // Fixture's equippedWearables are all 0 — the locally computed traits
+    // correctly equal the base traits (no wearable/set mods apply), which is
+    // now what canonical selection returns in preference to
+    // modifiedNumericTraits.
     const breakdown = computeBRSBreakdown({
       baseTraits: gotchi.numericTraits,
       modifiedNumericTraits: gotchi.modifiedNumericTraits,
@@ -38,8 +55,22 @@ describe("canonical modified traits selection", () => {
       wearablesById: new Map(),
       blocksElapsed: 0,
     });
-    const expected = traitsToBRS(gotchi.modifiedNumericTraits);
+    const expected = traitsToBRS(gotchi.numericTraits);
     expect(breakdown.traitWithMods).toBe(expected);
+  });
+});
+
+describe("canonical trait fallback order (audit M10)", () => {
+  it("prefers withSets > local > wearables-only (audit M10)", () => {
+    const base = [10, 10, 10, 10, 1, 1];
+    const modified = [12, 10, 10, 10, 1, 1]; // wearables only (no sets)
+    const local = [13, 10, 10, 10, 1, 1]; // wearables + sets, locally computed
+    const withSets = [13, 11, 10, 10, 1, 1]; // authoritative
+    expect(getCanonicalModifiedTraits(base, modified, local, withSets)).toEqual(withSets);
+    // KEY case: no withSets from subgraph → local (has set mods) must beat modified (doesn't)
+    expect(getCanonicalModifiedTraits(base, modified, local, undefined)).toEqual(local);
+    expect(getCanonicalModifiedTraits(base, modified, undefined, undefined)).toEqual(modified);
+    expect(getCanonicalModifiedTraits(base, undefined, undefined, undefined)).toEqual(base);
   });
 });
 

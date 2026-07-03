@@ -3,12 +3,12 @@ import { Card } from "@/ui/card";
 import { SvgInline } from "./SvgInline";
 import { GotchiSvg } from "./GotchiSvg";
 import type { Gotchi } from "@/types";
-import { useRespecSimulator } from "@/lib/respec";
+import { useRespecSimulator, editableBrsCorrection } from "@/lib/respec";
+import { useAvailableSkillPoints } from "@/lib/hooks/useAvailableSkillPoints";
 import { Button } from "@/ui/button";
 import { Minus, Plus } from "lucide-react";
 import { BrsSummary } from "./BrsSummary";
 import { BestSetsPanel } from "./BestSetsPanel";
-import { sumTraitBrs } from "@/lib/rarity";
 
 interface GotchiCardProps {
   gotchi: Gotchi;
@@ -32,7 +32,8 @@ interface GotchiCardProps {
   enableSetFilter?: boolean;
   showBestSets?: boolean;
   price?: string;
-  onCommitRespec?: (delta: number[]) => void;
+  /** Called with the ABSOLUTE post-respec base traits [NRG,AGG,SPK,BRN] (audit M2). */
+  onCommitRespec?: (targetBase: number[]) => void;
 }
 
 export function GotchiCard({
@@ -62,12 +63,14 @@ export function GotchiCard({
   const numericTraitSource = baseTraits || gotchi.numericTraits;
   const baseTraitSource = baseTraits || gotchi.numericTraits;
   const tokenId = gotchi.gotchiId || gotchi.id.split("-").pop() || gotchi.id;
+  // Unspent on-chain points join the refund in the respec pool (audit H2).
+  const availableSkillPoints = useAvailableSkillPoints(tokenId, showRespec);
   const respec = useRespecSimulator({
     resetKey: respecResetKey || gotchi.id,
     tokenId,
     usedSkillPoints: gotchi.usedSkillPoints,
+    availableSkillPoints,
     baseTraits: numericTraitSource,
-    respecBaseTraits: gotchi.baseNumericTraits || gotchi.numericTraits,
     wearableDelta,
     setDelta,
   });
@@ -91,27 +94,47 @@ export function GotchiCard({
     : committedSim
       ? safeTraits(committedSim.simModified)
       : safeTraits(traits) || safeTraits(baseTraitSource) || currentTraits;
-  const birthTraitsArr = respec.simBase ? respec.simBase.map((v, i) => v - (respec.allocated[i] ?? 0)) : [];
-  const birthBrs = birthTraitsArr.length ? sumTraitBrs(birthTraitsArr) : 0;
-  const simBrs = sumTraitBrs(respec.simBase);
-  const brsDelta = simBrs - birthBrs;
-  const committedBirthBrs = committedSim ? sumTraitBrs(committedSim.simBase.map((v, i) => v - (respec.committedAllocated?.[i] ?? 0))) : 0;
-  const committedDelta = committedSim ? sumTraitBrs(committedSim.simBase) - committedBirthBrs : 0;
+  // Exact BRS correction (audit H3): displayed value = current display value +
+  // (BRS of the simulated editable traits − BRS of the CURRENT editable traits).
+  // Never assumes each spent point was worth ±1 BRS (wrong across 49/50).
+  //
+  // Two corrections, two spaces (I-1): traitBase is a base-space score, but
+  // traitWithMods/totalBrs are computed from the MODIFIED traits — the same
+  // point can be worth a different BRS delta once wearable/set modifiers shift
+  // it across the 50 fold, so those scores need a modified-space correction.
+  const liveCorrection = editableBrsCorrection(
+    safeTraits(numericTraitSource),
+    safeTraits(respec.simBase)
+  );
+  const committedCorrection = committedSim
+    ? editableBrsCorrection(safeTraits(numericTraitSource), safeTraits(committedSim.simBase))
+    : 0;
+  // Currently displayed modified traits (the `traits` prop; base as fallback).
+  const currentFinalTraits4 = safeTraits(
+    Array.isArray(traits) && traits.length >= 4 ? traits : baseTraitSource
+  );
+  const liveModifiedCorrection = editableBrsCorrection(
+    currentFinalTraits4,
+    safeTraits(respec.simModified)
+  );
+  const committedModifiedCorrection = committedSim
+    ? editableBrsCorrection(currentFinalTraits4, safeTraits(committedSim.simModified))
+    : 0;
   const traitBaseValue = showRespec && respec.isRespecMode
-    ? (traitBase ?? 0) - respec.totalSP + brsDelta
+    ? (traitBase ?? 0) + liveCorrection
     : committedSim
-      ? (traitBase ?? 0) - respec.totalSP + committedDelta
+      ? (traitBase ?? 0) + committedCorrection
       : traitBase;
   const traitWithModsValue = showRespec && respec.isRespecMode
-    ? (traitWithMods ?? 0) - respec.totalSP + brsDelta
+    ? (traitWithMods ?? 0) + liveModifiedCorrection
     : committedSim
-      ? (traitWithMods ?? 0) - respec.totalSP + committedDelta
+      ? (traitWithMods ?? 0) + committedModifiedCorrection
       : traitWithMods;
   const totalBrsValue =
     showRespec && respec.isRespecMode
-      ? (totalBrs ?? 0) - respec.totalSP + brsDelta
+      ? (totalBrs ?? 0) + liveModifiedCorrection
       : committedSim
-        ? (totalBrs ?? 0) - respec.totalSP + committedDelta
+        ? (totalBrs ?? 0) + committedModifiedCorrection
         : totalBrs;
   return (
     <motion.div
@@ -121,7 +144,7 @@ export function GotchiCard({
       <Card
         data-testid={`gotchi-card-${gotchi.id}`}
         data-base-score={typeof traitBase === "number" ? traitBase : undefined}
-        data-modified-score={typeof totalBrs === "number" ? totalBrs : undefined}
+        data-total-score={typeof totalBrs === "number" ? totalBrs : undefined}
         className={`cursor-pointer transition-all ${
           isSelected
             ? "ring-2 ring-primary shadow-lg"
@@ -185,12 +208,18 @@ export function GotchiCard({
                       <span
                         className="rounded-full border border-[hsl(var(--border))] px-2 py-0.5 text-[10px] text-muted-foreground"
                         title={
-                          respec.usingFallback
-                            ? "Baseline: current traits (respec baseline unavailable)"
-                            : undefined
+                          respec.fetchError
+                            ? "Couldn't load birth traits — respec disabled"
+                            : respec.baselinePending
+                              ? "Loading birth traits…"
+                              : undefined
                         }
                       >
-                        SP left: {respec.spLeft}
+                        {respec.hasBaseline
+                          ? `SP left: ${respec.spLeft}`
+                          : respec.fetchError
+                            ? "Respec unavailable"
+                            : "Loading…"}
                       </span>
                     )}
                     <Button
@@ -199,8 +228,16 @@ export function GotchiCard({
                       className="h-6 px-2 text-[11px]"
                       onClick={() => {
                         if (respec.isRespecMode && onCommitRespec) {
-                          const delta = respec.simBase.slice(0, 4).map((v, i) => v - (numericTraitSource[i] || 0));
-                          onCommitRespec(delta);
+                          // The TARGET base, not a delta vs current (audit M2):
+                          // deltas are ambiguous after resetSkillPoints.
+                          const target = respec.simBase.slice(0, 4);
+                          const current = safeTraits(numericTraitSource);
+                          // Zero-change confirm just exits respec mode (I-8):
+                          // committing an unchanged target would plan a bare
+                          // resetSkillPoints — a fee for nothing.
+                          if (target.some((v, i) => safeNum(v) !== current[i])) {
+                            onCommitRespec(target);
+                          }
                         }
                         respec.toggleRespecMode();
                       }}

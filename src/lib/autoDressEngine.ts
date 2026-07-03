@@ -964,6 +964,18 @@ function fillEmptySlots(context: AutoDressContext, state: BuildState): BuildStat
 }
 
 /**
+ * C-1: a respec enumeration candidate is affordable iff Σ|delta| ≤ pool
+ * (deltas measured against the CURRENT base). Invalid pools count as 0 —
+ * conservative, never over-spends.
+ */
+export function respecDeltaAffordable(delta: number[], pool: number): boolean {
+  const safePool = Number.isFinite(pool) ? Math.max(0, Math.floor(pool)) : 0;
+  let cost = 0;
+  for (const d of delta) cost += Math.abs(Number(d) || 0);
+  return cost <= safePool;
+}
+
+/**
  * Optimize respect/respec allocation for Trait Shape (post-pass, deterministic enumeration)
  */
 function optimizeRespectForTraitShape(
@@ -972,16 +984,24 @@ function optimizeRespectForTraitShape(
   bestEval: Evaluation
 ): number[] | undefined {
   const cap = 3; // Trait Shape always uses aggressive respec (±3)
-  
-  // Enumerate all feasible deltas: each trait delta ∈ [-cap, cap], sum = 0
+
+  // C-1: bound allocations by the true spendable pool. The engine only knows
+  // usedSkillPoints (from the input gotchi); availableSkillPoints isn't plumbed
+  // in, so bound by usedSkillPoints alone — conservative: never proposes an
+  // allocation the chain would revert, at the cost of missing allocations that
+  // unspent points could have afforded.
+  const skillPointPool = Number(context.instance.baseGotchi.usedSkillPoints) || 0;
+
+  // Enumerate all feasible deltas: each trait delta ∈ [-cap, cap], sum = 0,
+  // and Σ|delta| within the skill-point pool.
   const feasibleDeltas: number[][] = [];
-  
+
   // Generate all combinations (small space for cap=1: 3^4=81, filter sum=0)
   for (let d0 = -cap; d0 <= cap; d0++) {
     for (let d1 = -cap; d1 <= cap; d1++) {
       for (let d2 = -cap; d2 <= cap; d2++) {
         for (let d3 = -cap; d3 <= cap; d3++) {
-          if (d0 + d1 + d2 + d3 === 0) {
+          if (d0 + d1 + d2 + d3 === 0 && respecDeltaAffordable([d0, d1, d2, d3], skillPointPool)) {
             feasibleDeltas.push([d0, d1, d2, d3]);
           }
         }

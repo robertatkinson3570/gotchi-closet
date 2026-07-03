@@ -7,6 +7,11 @@ type CacheEntry<T> = {
 const CACHE_VERSION = 1;
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
+/**
+ * Stale-while-revalidate: returns cached data regardless of age (TTL is NOT
+ * enforced here). Callers pair this with `cacheIsStale` to decide whether to
+ * refresh in the background.
+ */
 export function cacheGet<T>(key: string): T | null {
   try {
     const item = localStorage.getItem(key);
@@ -16,12 +21,6 @@ export function cacheGet<T>(key: string): T | null {
     if (entry.v !== CACHE_VERSION) {
       localStorage.removeItem(key);
       return null;
-    }
-
-    const age = Date.now() - entry.ts;
-    if (age > CACHE_TTL) {
-      // Cache expired but return it anyway (will be refreshed in background)
-      return entry.data;
     }
 
     return entry.data;
