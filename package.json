@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@10.12.1",
   "engines": {
-    "node": ">=18.18 <21"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "concurrently \"vite --host 0.0.0.0 --port 5000\" \"tsx server/index.ts\"",
