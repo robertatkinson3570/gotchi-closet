@@ -9,7 +9,7 @@ const CHIP: Record<string, string> = {
   Other: "bg-muted/40 text-muted-foreground border-border/40",
 };
 
-export function GameCard({ game }: { game: GamePublic }) {
+export function GameCard({ game, onRemove }: { game: GamePublic; onRemove?: (id: number) => void }) {
   return (
     <a
       href={game.url}
@@ -18,6 +18,15 @@ export function GameCard({ game }: { game: GamePublic }) {
       className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-muted/10 to-muted/30 ring-1 ring-primary/5 transition-shadow hover:shadow-[0_0_24px_rgba(217,70,239,0.25)]"
     >
       <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full blur-3xl pointer-events-none bg-fuchsia-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+      {onRemove && (
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(game.id); }}
+          className="absolute top-2 right-2 z-10 rounded-md border border-red-500/50 bg-black/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-red-300 hover:bg-red-500/20"
+        >
+          Remove
+        </button>
+      )}
       <div className="aspect-video w-full overflow-hidden bg-black/30">
         <img src={approvedImageUrl(game.id)} alt={game.title} loading="lazy" className="w-full h-full object-cover" />
       </div>

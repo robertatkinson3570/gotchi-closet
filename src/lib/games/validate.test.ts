@@ -1,6 +1,6 @@
 // src/lib/games/validate.test.ts
 import { describe, expect, it } from "vitest";
-import { validateSubmission } from "./validate";
+import { validateSubmission, validateEdit } from "./validate";
 
 const ok = {
   title: "My Game",
@@ -33,5 +33,22 @@ describe("validateSubmission", () => {
   it("rejects an oversized image", () => {
     const big = "A".repeat(420_000); // ~315 KB decoded, over the 300 KB cap
     expect(validateSubmission({ ...ok, imageBase64: big }).ok).toBe(false);
+  });
+});
+
+describe("validateEdit", () => {
+  const fields = { title: "Edited", description: "new desc", url: "https://example.com", category: "Tools" };
+
+  it("accepts an edit with no image (keep existing)", () => {
+    expect(validateEdit(fields)).toEqual({ ok: true });
+  });
+  it("accepts an edit with a valid replacement image", () => {
+    expect(validateEdit({ ...fields, imageBase64: "aGVsbG8=", imageMime: "image/png" })).toEqual({ ok: true });
+  });
+  it("still validates the text fields", () => {
+    expect(validateEdit({ ...fields, url: "not-a-url" }).ok).toBe(false);
+  });
+  it("rejects a supplied image that is the wrong type", () => {
+    expect(validateEdit({ ...fields, imageBase64: "aGVsbG8=", imageMime: "text/html" }).ok).toBe(false);
   });
 });

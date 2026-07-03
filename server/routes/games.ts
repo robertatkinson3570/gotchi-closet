@@ -1,9 +1,9 @@
 // server/routes/games.ts
 import { Router } from "express";
-import { insertPending, listApproved, listPending, review, getImage, pendingCountForWallet } from "../games/store";
+import { insertPending, listApproved, listPending, review, getImage, pendingCountForWallet, listForWallet, updateForWallet, deleteGame } from "../games/store";
 import { verifySubmitSignature, verifyAdminSignature, isAdmin } from "../games/auth";
 import { ownsAavegotchi } from "../games/ownership";
-import { validateSubmission } from "../../src/lib/games/validate";
+import { validateSubmission, validateEdit } from "../../src/lib/games/validate";
 import { isCategory } from "../../src/lib/games/types";
 
 const router = Router();
@@ -31,9 +31,14 @@ router.get("/:id/image", async (req, res) => {
   const row = getImage(id);
   if (!row) return res.status(404).end();
   if (row.status !== "approved") {
-    const { wallet, signature, signedAt } = req.query;
-    const okAdmin = await verifyAdminSignature(String(wallet || ""), Number(signedAt), String(signature || ""));
-    if (!okAdmin) return res.status(404).end();
+    // A non-approved image is visible to an admin (review queue) or to the entry's own
+    // submitter (their "My submissions" view) — both must present a valid signature.
+    const wallet = String(req.query.wallet || "");
+    const signedAt = Number(req.query.signedAt);
+    const signature = String(req.query.signature || "");
+    const okAdmin = await verifyAdminSignature(wallet, signedAt, signature);
+    const okOwner = wallet.toLowerCase() === row.submitter_wallet && (await verifySubmitSignature(wallet, signedAt, signature));
+    if (!okAdmin && !okOwner) return res.status(404).end();
   }
   res.setHeader("Content-Type", row.image_mime);
   res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
@@ -86,6 +91,57 @@ router.post("/:id/review", async (req, res) => {
     return res.status(403).json({ error: "not authorized" });
   }
   review(id, action === "approve" ? "approved" : "rejected", wallet);
+  res.json({ ok: true });
+});
+
+// Owner: list my own submissions (any status). Signature proves wallet ownership so you
+// can't enumerate someone else's pending/rejected entries.
+router.get("/mine", async (req, res) => {
+  const { wallet, signature, signedAt } = req.query;
+  const w = String(wallet || "");
+  if (!(await verifySubmitSignature(w, Number(signedAt), String(signature || "")))) {
+    return res.status(403).json({ error: "invalid signature" });
+  }
+  res.json({ games: listForWallet(w) });
+});
+
+// Owner: edit my own entry and resubmit → back to pending review. Image is optional
+// (omit to keep the existing one). Re-checks ownership on-chain, same as a fresh submit.
+router.post("/:id/edit", async (req, res) => {
+  const id = Number(req.params.id);
+  const { title, description, url, category, imageBase64, imageMime, wallet, signature, signedAt } = req.body ?? {};
+  if (!Number.isInteger(id)) return res.status(400).json({ error: "bad id" });
+
+  if (!(await verifySubmitSignature(String(wallet || ""), Number(signedAt), String(signature || "")))) {
+    return res.status(403).json({ error: "invalid signature" });
+  }
+
+  const v = validateEdit({ title, description, url, category, imageBase64, imageMime });
+  if (!v.ok) return res.status(400).json({ error: v.error });
+
+  let owns: boolean;
+  try {
+    owns = await ownsAavegotchi(wallet);
+  } catch {
+    return res.status(503).json({ error: "couldn't verify Aavegotchi ownership, try again" });
+  }
+  if (!owns) return res.status(403).json({ error: "you must own at least one Aavegotchi to submit" });
+
+  const image = imageBase64 ? { mime: imageMime, data: imageBase64 } : undefined;
+  const ok = updateForWallet(id, wallet, { title: title.trim(), description: description.trim(), url, category }, image);
+  if (!ok) return res.status(403).json({ error: "not your submission" });
+  res.json({ ok: true });
+});
+
+// Admin: hard-delete an entry (removes it from the live grid).
+router.post("/:id/delete", async (req, res) => {
+  const id = Number(req.params.id);
+  const { wallet, signature, signedAt } = req.body ?? {};
+  if (!Number.isInteger(id)) return res.status(400).json({ error: "bad id" });
+  if (!(await verifyAdminSignature(String(wallet || ""), Number(signedAt), String(signature || "")))) {
+    return res.status(403).json({ error: "not authorized" });
+  }
+  deleteGame(id);
   res.json({ ok: true });
 });
 

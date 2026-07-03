@@ -23,7 +23,7 @@ function base64Bytes(b64: string): number {
   return Math.floor((len * 3) / 4) - pad;
 }
 
-export function validateSubmission(input: SubmissionInput): ValidationResult {
+function validateFields(input: { title: string; description: string; url: string; category: string }): ValidationResult {
   const title = (input.title ?? "").trim();
   if (title.length < 1 || title.length > 80) return { ok: false, error: "title must be 1–80 chars" };
 
@@ -40,9 +40,29 @@ export function validateSubmission(input: SubmissionInput): ValidationResult {
   }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return { ok: false, error: "url must be http(s)" };
 
-  if (!IMAGE_MIMES.has(input.imageMime)) return { ok: false, error: "image must be png, jpeg, or webp" };
-  if (!input.imageBase64) return { ok: false, error: "image required" };
-  if (base64Bytes(input.imageBase64) > MAX_IMAGE_BYTES) return { ok: false, error: "image too large (max 300 KB)" };
+  return { ok: true };
+}
 
+function validateImage(imageBase64: string, imageMime: string): ValidationResult {
+  if (!IMAGE_MIMES.has(imageMime)) return { ok: false, error: "image must be png, jpeg, or webp" };
+  if (!imageBase64) return { ok: false, error: "image required" };
+  if (base64Bytes(imageBase64) > MAX_IMAGE_BYTES) return { ok: false, error: "image too large (max 300 KB)" };
+  return { ok: true };
+}
+
+export function validateSubmission(input: SubmissionInput): ValidationResult {
+  const fields = validateFields(input);
+  if (!fields.ok) return fields;
+  return validateImage(input.imageBase64, input.imageMime);
+}
+
+/**
+ * Edit validation: the image is optional (a keep-existing edit omits it). When an image
+ * IS supplied it must still pass the same checks as a fresh submission.
+ */
+export function validateEdit(input: { title: string; description: string; url: string; category: string; imageBase64?: string; imageMime?: string }): ValidationResult {
+  const fields = validateFields(input);
+  if (!fields.ok) return fields;
+  if (input.imageBase64) return validateImage(input.imageBase64, input.imageMime ?? "");
   return { ok: true };
 }

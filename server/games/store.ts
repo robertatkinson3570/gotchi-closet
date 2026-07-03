@@ -94,11 +94,50 @@ export function listPending(): Omit<GameRow, "image_data">[] {
 }
 
 /** Image bytes for a single row, regardless of status (route decides who may see it). */
-export function getImage(id: number): { image_mime: string; image_data: string; status: GameStatus } | null {
-  const row = getDb().prepare(`SELECT image_mime, image_data, status FROM games WHERE id=?`).get(id) as
-    | { image_mime: string; image_data: string; status: GameStatus }
+export function getImage(id: number): { image_mime: string; image_data: string; status: GameStatus; submitter_wallet: string } | null {
+  const row = getDb().prepare(`SELECT image_mime, image_data, status, submitter_wallet FROM games WHERE id=?`).get(id) as
+    | { image_mime: string; image_data: string; status: GameStatus; submitter_wallet: string }
     | undefined;
   return row ?? null;
+}
+
+/** A submitter's own entries, every status, newest first (no image bytes). */
+export function listForWallet(wallet: string): Omit<GameRow, "image_data">[] {
+  return getDb()
+    .prepare(`SELECT id, title, description, url, category, image_mime, submitter_wallet, status, created_at, reviewed_at, reviewed_by FROM games WHERE submitter_wallet=? ORDER BY created_at DESC`)
+    .all(wallet.toLowerCase()) as Omit<GameRow, "image_data">[];
+}
+
+export interface EditFields {
+  title: string;
+  description: string;
+  url: string;
+  category: Category;
+}
+
+/**
+ * Owner edit: updates text fields (and the image when `image` is given), then resets the
+ * entry to `pending` so an admin re-reviews it. Returns false if the row doesn't exist or
+ * isn't owned by `wallet` — the route turns that into a 403.
+ */
+export function updateForWallet(id: number, wallet: string, fields: EditFields, image?: { mime: string; data: string }): boolean {
+  const row = getDb().prepare(`SELECT submitter_wallet FROM games WHERE id=?`).get(id) as { submitter_wallet: string } | undefined;
+  if (!row || row.submitter_wallet !== wallet.toLowerCase()) return false;
+  if (image) {
+    getDb()
+      .prepare(`UPDATE games SET title=?, description=?, url=?, category=?, image_mime=?, image_data=?, status='pending', reviewed_at=NULL, reviewed_by=NULL WHERE id=?`)
+      .run(fields.title, fields.description, fields.url, fields.category, image.mime, image.data, id);
+  } else {
+    getDb()
+      .prepare(`UPDATE games SET title=?, description=?, url=?, category=?, status='pending', reviewed_at=NULL, reviewed_by=NULL WHERE id=?`)
+      .run(fields.title, fields.description, fields.url, fields.category, id);
+  }
+  return true;
+}
+
+/** Admin hard-delete: removes the row and its inline image entirely. */
+export function deleteGame(id: number): void {
+  getDb().prepare(`DELETE FROM games WHERE id=?`).run(id);
 }
 
 export function review(id: number, status: Exclude<GameStatus, "pending">, admin: string): void {
