@@ -312,10 +312,7 @@ export default function DressPage() {
         setActiveWearable(null);
         return;
       }
-      toast({
-        title: "Equipped",
-        description: `${wearable.name} equipped`,
-      });
+      // No success toast — the slot visibly updating is the feedback (audit low).
     }
 
     setActiveWearable(null);

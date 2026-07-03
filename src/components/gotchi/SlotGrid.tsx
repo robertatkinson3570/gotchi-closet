@@ -86,10 +86,7 @@ function SlotDropTarget({
       });
       return;
     }
-    toast({
-      title: "Equipped",
-      description: `${wearableData.name} equipped`,
-    });
+    // No success toast — the slot visibly updating is the feedback (audit low).
   };
 
   const handleDragOver: DragEventHandler<HTMLDivElement> = (event) => {

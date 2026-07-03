@@ -170,7 +170,11 @@ export function ageBrsFromBlocks(blocksElapsed: number): number {
   return ageBRSFromBlocksElapsed(blocksElapsed);
 }
 
-function wearableRarityToBrs(wearable: Wearable): number {
+export function wearableRarityToBrs(wearable: Wearable): number {
+  // The on-chain `rarityScoreModifier` is authoritative; the rarity-string
+  // mapping is only a fallback for entries missing the modifier.
+  const modifier = Number(wearable.rarityScoreModifier);
+  if (Number.isFinite(modifier) && modifier > 0) return modifier;
   const rarity = wearable.rarity?.toLowerCase();
   if (
     rarity === "common" ||
@@ -182,7 +186,7 @@ function wearableRarityToBrs(wearable: Wearable): number {
   ) {
     return wearableFlatBrs(rarity);
   }
-  return wearable.rarityScoreModifier || 0;
+  return 0;
 }
 
 function sumWearableCoreMods(

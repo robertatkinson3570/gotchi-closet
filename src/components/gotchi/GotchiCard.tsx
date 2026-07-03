@@ -128,7 +128,7 @@ export function GotchiCard({
       <Card
         data-testid={`gotchi-card-${gotchi.id}`}
         data-base-score={typeof traitBase === "number" ? traitBase : undefined}
-        data-modified-score={typeof totalBrs === "number" ? totalBrs : undefined}
+        data-total-score={typeof totalBrs === "number" ? totalBrs : undefined}
         className={`cursor-pointer transition-all ${
           isSelected
             ? "ring-2 ring-primary shadow-lg"

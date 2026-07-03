@@ -133,25 +133,21 @@ export function useWearablesById() {
 export function useSortedGotchis() {
   const gotchis = useAppStore((state) => state.gotchis);
   const wearablesById = useWearablesById();
-  return [...gotchis].sort((a, b) => {
-    const traitsA = computeInstanceTraits({
-      baseTraits: a.numericTraits,
-      modifiedNumericTraits: a.modifiedNumericTraits,
-      withSetsNumericTraits: a.withSetsNumericTraits,
-      equippedBySlot: a.equippedWearables,
-      wearablesById,
-      blocksElapsed: a.blocksElapsed,
-    }).totalBrs;
-    const traitsB = computeInstanceTraits({
-      baseTraits: b.numericTraits,
-      modifiedNumericTraits: b.modifiedNumericTraits,
-      withSetsNumericTraits: b.withSetsNumericTraits,
-      equippedBySlot: b.equippedWearables,
-      wearablesById,
-      blocksElapsed: b.blocksElapsed,
-    }).totalBrs;
-    return traitsB - traitsA;
-  });
+  // Compute each gotchi's score once (O(n)) instead of inside the comparator.
+  return gotchis
+    .map((gotchi) => ({
+      gotchi,
+      score: computeInstanceTraits({
+        baseTraits: gotchi.numericTraits,
+        modifiedNumericTraits: gotchi.modifiedNumericTraits,
+        withSetsNumericTraits: gotchi.withSetsNumericTraits,
+        equippedBySlot: gotchi.equippedWearables,
+        wearablesById,
+        blocksElapsed: gotchi.blocksElapsed,
+      }).totalBrs,
+    }))
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.gotchi);
 }
 
 export function computeInstanceTraits(params: {

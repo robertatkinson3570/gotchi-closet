@@ -41,7 +41,7 @@ const wearables = loadWearables();
 const COLLATERAL = "0xf0f5d65fa08b32d6a07a0ec84c7e3a0e0a8a8a8a";
 
 // Three owned gotchis with distinct trait spreads so their computed BRS
-// (the carousel sort key, also surfaced as `data-modified-score`) is distinct
+// (the carousel sort key, also surfaced as `data-total-score`) is distinct
 // and deterministically ordered. No equipped wearables (all-zero slots) so BRS
 // is the pure base-trait BRS.
 function makeGotchi(id: string, name: string, numericTraits: number[], baseRarityScore: string) {
@@ -271,7 +271,7 @@ test("gotchis sorted by modified score desc", async ({ page }) => {
   const count = await cards.count();
   const scores: number[] = [];
   for (let i = 0; i < count; i++) {
-    const scoreAttr = await cards.nth(i).getAttribute("data-modified-score");
+    const scoreAttr = await cards.nth(i).getAttribute("data-total-score");
     scores.push(Number(scoreAttr || 0));
   }
   const sorted = [...scores].sort((a, b) => b - a);

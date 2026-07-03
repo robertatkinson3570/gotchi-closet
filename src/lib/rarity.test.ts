@@ -3,6 +3,7 @@ import {
   traitToBRS,
   traitsToBRS,
   wearableFlatBrs,
+  wearableRarityToBrs,
   setRarityDelta,
   computeTotalBRS,
   pickBestSet,
@@ -39,6 +40,21 @@ describe("wearableFlatBrs", () => {
     expect(wearableFlatBrs("legendary")).toBe(10);
     expect(wearableFlatBrs("mythical")).toBe(20);
     expect(wearableFlatBrs("godlike")).toBe(50);
+  });
+});
+
+describe("wearableRarityToBrs (audit low)", () => {
+  const w = (over: Partial<import("@/types").Wearable>) =>
+    ({ id: 1, name: "W", traitModifiers: [], rarityScoreModifier: 0,
+       category: 0, slotPositions: [], ...over }) as import("@/types").Wearable;
+
+  it("prefers the authoritative rarityScoreModifier over the rarity string", () => {
+    expect(wearableRarityToBrs(w({ rarityScoreModifier: 12, rarity: "legendary" }))).toBe(12);
+  });
+
+  it("falls back to the rarity-string mapping when the modifier is missing", () => {
+    expect(wearableRarityToBrs(w({ rarityScoreModifier: 0, rarity: "legendary" }))).toBe(10);
+    expect(wearableRarityToBrs(w({ rarityScoreModifier: 0 }))).toBe(0);
   });
 });
 
