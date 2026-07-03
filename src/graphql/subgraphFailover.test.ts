@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { chooseUrl, STALE_BLOCK_THRESHOLD, shouldProbeBackup, type Health } from "./subgraphFailover";
 
 const P = "https://primary.example";
@@ -66,5 +66,83 @@ describe("shouldProbeBackup", () => {
 
   it("always probes while running on the backup (to detect primary recovery)", () => {
     expect(shouldProbeBackup(h(P, 1010), 1000, false)).toBe(true);
+  });
+});
+
+/**
+ * Routing-state subscription (consumed by the header FailoverPill). Uses a fresh
+ * module instance per test (env + fetch stubbed) so refreshActiveUrl() exercises
+ * the real flow: probe -> chooseUrl -> notify-on-change.
+ */
+describe("routing subscription (isOnBackup / subscribeRouting)", () => {
+  type Mod = typeof import("./subgraphFailover");
+  let mod: Mod;
+  // url -> block number (null = endpoint unreachable / network error)
+  const blocks = new Map<string, number | null>();
+
+  beforeEach(async () => {
+    vi.resetModules();
+    vi.stubEnv("VITE_GOTCHI_SUBGRAPH_URL", P);
+    vi.stubEnv("VITE_GOTCHI_SUBGRAPH_URL_BACKUP", B);
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    blocks.clear();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: RequestInfo | URL) => {
+        const block = blocks.get(String(url));
+        if (block == null) throw new Error("endpoint down");
+        return {
+          ok: true,
+          json: async () => ({
+            data: { _meta: { block: { number: block }, hasIndexingErrors: false } },
+          }),
+        } as Response;
+      })
+    );
+    mod = await import("./subgraphFailover");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("reports primary routing initially", () => {
+    expect(mod.isOnBackup()).toBe(false);
+  });
+
+  it("notifies once per routing change, in both directions", async () => {
+    const listener = vi.fn();
+    mod.subscribeRouting(listener);
+
+    // Primary dies, backup healthy -> fail over, one notification.
+    blocks.set(P, null);
+    blocks.set(B, 2000);
+    await mod.refreshActiveUrl();
+    expect(mod.isOnBackup()).toBe(true);
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    // Same conditions again -> no routing change, no extra notification.
+    await mod.refreshActiveUrl();
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    // Primary recovers and catches up -> fail back, second notification.
+    blocks.set(P, 2000);
+    await mod.refreshActiveUrl();
+    expect(mod.isOnBackup()).toBe(false);
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
+
+  it("stops notifying after unsubscribe", async () => {
+    const listener = vi.fn();
+    const unsubscribe = mod.subscribeRouting(listener);
+    unsubscribe();
+
+    blocks.set(P, null);
+    blocks.set(B, 2000);
+    await mod.refreshActiveUrl();
+    expect(mod.isOnBackup()).toBe(true);
+    expect(listener).not.toHaveBeenCalled();
   });
 });

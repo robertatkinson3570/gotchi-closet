@@ -13,6 +13,7 @@ import { useToast } from "@/ui/use-toast";
 import { useAuctionAlerts } from "@/hooks/useAuctionAlerts";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { FailoverPill } from "@/components/layout/FailoverPill";
 import { Gv2Banner } from "@/components/layout/Gv2Banner";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { shortenAddress } from "@/lib/address";
@@ -170,6 +171,7 @@ export function RootLayout() {
                 </Button>
               </Link>
             )}
+            <FailoverPill />
             <div className="ml-0.5">
               <WalletChip />
             </div>

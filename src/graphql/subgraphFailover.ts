@@ -80,6 +80,32 @@ const BACKUP = env.gotchiSubgraphUrlBackup; // "" when unconfigured
 
 let activeUrl = PRIMARY;
 
+const routingListeners = new Set<() => void>();
+
+/**
+ * Subscribe to routing changes (React: pair with `isOnBackup` in
+ * `useSyncExternalStore`). Returns an unsubscribe function.
+ */
+export function subscribeRouting(listener: () => void): () => void {
+  routingListeners.add(listener);
+  return () => routingListeners.delete(listener);
+}
+
+/** True while the app is routed to the backup mirror (drives the header pill). */
+export function isOnBackup(): boolean {
+  return activeUrl !== PRIMARY;
+}
+
+/** Change the active endpoint, notifying subscribers only on an actual switch. */
+function setActiveUrl(url: string): void {
+  if (url === activeUrl) return;
+  activeUrl = url;
+  console.info(
+    `[subgraph] routing -> ${url === PRIMARY ? "primary (Goldsky)" : "backup (The Graph Network)"}`
+  );
+  for (const listener of routingListeners) listener();
+}
+
 const META_QUERY = `{ _meta { block { number } hasIndexingErrors } }`;
 
 /** Probe one endpoint's `_meta` freshness. Never throws. */
@@ -106,18 +132,18 @@ let lastPrimaryBlock: number | null = null;
 /** Re-probe endpoints (backup only when needed) and update the active URL. */
 export async function refreshActiveUrl(): Promise<string> {
   if (!BACKUP) {
-    activeUrl = PRIMARY;
+    setActiveUrl(PRIMARY);
     return activeUrl;
   }
   const p = await probeHealth(PRIMARY);
   const prevBlock = lastPrimaryBlock;
   if (p.block != null) lastPrimaryBlock = p.block;
   if (!shouldProbeBackup(p, prevBlock, activeUrl === PRIMARY)) {
-    activeUrl = PRIMARY;
+    setActiveUrl(PRIMARY);
     return activeUrl;
   }
   const b = await probeHealth(BACKUP);
-  activeUrl = chooseUrl(p, b);
+  setActiveUrl(chooseUrl(p, b));
   return activeUrl;
 }
 
