@@ -135,6 +135,19 @@ export function EditorPanel() {
     });
   }, []);
 
+  // Removing an instance must also drop its per-instance state — otherwise a
+  // stale Mommy result / committed respec target for a now-gone instanceId
+  // lingers in memory (audit M9).
+  const handleRemoveInstance = useCallback((instanceId: string) => {
+    clearMommyState(instanceId);
+    setCommittedRespecTargets(prev => {
+      const next = { ...prev };
+      delete next[instanceId];
+      return next;
+    });
+    removeEditorInstance(instanceId);
+  }, [clearMommyState, removeEditorInstance]);
+
   return (
     <div className="h-full overflow-auto scrollbar-thin">
       {editorInstances.length === 0 ? (
@@ -214,7 +227,7 @@ export function EditorPanel() {
                 <div className="relative rounded-xl bg-gradient-to-br from-background via-background to-purple-950/5 group/card">
                   <div 
                     className="absolute top-0 right-0 bottom-0 w-6 flex items-center justify-center cursor-pointer opacity-0 group-hover/card:opacity-100 transition-opacity bg-gradient-to-l from-rose-500/20 to-transparent hover:from-rose-500/40 rounded-r-xl"
-                    onClick={() => removeEditorInstance(instance.instanceId)}
+                    onClick={() => handleRemoveInstance(instance.instanceId)}
                     title="Remove from editor"
                   >
                     <X className="h-3.5 w-3.5 text-rose-400" />

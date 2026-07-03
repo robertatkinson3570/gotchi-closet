@@ -191,6 +191,19 @@ export default function DressPage() {
     toast,
   ]);
 
+  // Prune editor instances whose base gotchi has disappeared (wallet removed,
+  // gotchi transferred/rented away) — but only after a settled, non-empty
+  // load; otherwise a transient empty/loading state would wipe every
+  // instance (mirrors the C1 guard). (audit M9)
+  useEffect(() => {
+    if (isLoadingGotchis || combinedGotchis.length === 0) return;
+    const valid = new Set([...combinedGotchis.map((gg) => gg.id), ...manualGotchis.map((gg) => gg.id)]);
+    const { editorInstances, removeEditorInstance } = useAppStore.getState();
+    for (const inst of editorInstances) {
+      if (!valid.has(inst.baseGotchi.id)) removeEditorInstance(inst.instanceId);
+    }
+  }, [combinedGotchis, isLoadingGotchis, manualGotchis]);
+
   useEffect(() => {
     if (!connectedOwner && multiWallets.length === 0) {
       setError(null);
