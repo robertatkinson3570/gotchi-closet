@@ -21,6 +21,47 @@ export function useGhstUsd() {
 
 export type GhstTicker = { price: number; change24h: number | null };
 
+export type AlchPrice = { symbol: string; usd: number; change24h: number | null };
+
+// Alchemica + GLTR CoinGecko ids. DefiLlama has no feed for the Base
+// deployments (FUD 0x2028…fF4, FOMO 0xA321…b58, ALPHA 0x15e7…947,
+// KEK 0xE52b…0e5, GLTR 0x4D14…c9D), so USD comes from these listings.
+const ALCH_IDS: { id: string; symbol: string }[] = [
+  { id: "aavegotchi-fud", symbol: "FUD" },
+  { id: "aavegotchi-fomo", symbol: "FOMO" },
+  { id: "aavegotchi-alpha", symbol: "ALPHA" },
+  { id: "aavegotchi-kek", symbol: "KEK" },
+  { id: "gax-liquidity-token-reward", symbol: "GLTR" },
+];
+
+/**
+ * USD prices for the four alchemica tokens + GLTR, one batched CoinGecko
+ * call. Only mounted when the ticker panel is open, so it costs nothing
+ * until the user expands it. Tokens with no price are dropped.
+ */
+export function useAlchemicaUsd() {
+  return useQuery({
+    queryKey: ["alchemica-usd"],
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<AlchPrice[]> => {
+      try {
+        const ids = ALCH_IDS.map((a) => a.id).join(",");
+        const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`);
+        const j = await r.json();
+        return ALCH_IDS
+          .map(({ id, symbol }) => ({
+            symbol,
+            usd: Number(j?.[id]?.usd ?? 0),
+            change24h: j?.[id]?.usd_24h_change == null ? null : Number(j[id].usd_24h_change),
+          }))
+          .filter((p) => p.usd > 0);
+      } catch {
+        return [];
+      }
+    },
+  });
+}
+
 /**
  * GHST price + 24h change for the footer ticker. CoinGecko carries the 24h
  * delta; on failure fall back to the DefiLlama spot price with no delta so

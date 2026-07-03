@@ -174,6 +174,7 @@ export function RootLayout() {
               </Link>
             )}
             <FailoverPill />
+            <GhstTicker />
             <div className="ml-0.5">
               <WalletChip />
             </div>
@@ -188,7 +189,6 @@ export function RootLayout() {
         </Suspense>
       </main>
       <footer className="flex flex-col items-center gap-2 px-4 py-4">
-        <GhstTicker />
         <PoweredByWisp />
         <FooterAttribution className="text-center" />
       </footer>
