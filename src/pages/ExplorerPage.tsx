@@ -79,7 +79,6 @@ export default function ExplorerPage() {
   const { connectedAddress, isConnected } = useAddressState();
   const setWearables = useAppStore((s) => s.setWearables);
   const setSets = useAppStore((s) => s.setSets);
-  const setGotchis = useAppStore((s) => s.setGotchis);
   const setFilters = useAppStore((s) => s.setFilters);
   const storeWearables = useAppStore((s) => s.wearables);
   const [assetType, setAssetType] = useState<AssetType>(() => {
@@ -241,15 +240,6 @@ export default function ExplorerPage() {
     sort: gotchiSort,
     setSort: setGotchiSort,
   } = useExplorerData(mode, connectedAddress);
-
-  useEffect(() => {
-    if (mode !== "mine") return;
-    if (!connectedAddress) return;
-
-    if (gotchis.length > 0) {
-      setGotchis(gotchis as any);
-    }
-  }, [mode, connectedAddress, gotchis, setGotchis]);
 
   const {
     wearables,

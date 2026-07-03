@@ -137,15 +137,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   setGotchis: (gotchis) => {
     set({ gotchis });
     const state = get();
-    if (state.loadedAddress) {
-      const gotchiIds = new Set(gotchis.map((g) => g.id));
-      const cleaned = cleanupStaleLockedBuilds(
-        { version: 1, lockedById: state.lockedById, overridesById: state.overridesById },
-        gotchiIds
-      );
-      set({ lockedById: cleaned.lockedById, overridesById: cleaned.overridesById });
-      saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, cleaned);
-    }
+    // Never clean/persist against an empty list — the DressPage mount reset
+    // (setGotchis([])) and transient loading states must not wipe saved locks.
+    if (!state.loadedAddress || gotchis.length === 0) return;
+    const keepIds = new Set([
+      ...gotchis.map((gg) => gg.id),
+      // Manual gotchis are lockable (toggleLockSet supports them) — keep theirs.
+      ...state.manualGotchis.map((gg) => gg.id),
+    ]);
+    const cleaned = cleanupStaleLockedBuilds(
+      { version: 1, lockedById: state.lockedById, overridesById: state.overridesById },
+      keepIds
+    );
+    set({ lockedById: cleaned.lockedById, overridesById: cleaned.overridesById });
+    saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, cleaned);
   },
   addManualGotchi: (gotchi) =>
     set((state) => {
