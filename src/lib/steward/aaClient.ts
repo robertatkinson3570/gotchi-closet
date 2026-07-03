@@ -45,6 +45,8 @@ import { env } from "@/lib/env";
 const SAFE_SINGLETON = "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762" as Address;
 const SAFE7579_MODULE = "0x7579EE8307284F293B1927136486880611F20002" as Address;
 const SAFE7579_LAUNCHPAD = "0x7579011aB74c46090561ea277Ba79D510c6C00ff" as Address;
+// Vestigial Safe native owner (see setup() below): burn address, not the account itself.
+const SAFE_NATIVE_OWNER = "0x000000000000000000000000000000000000dEaD" as Address;
 
 const rpc = () => env.baseRpcUrl || "https://mainnet.base.org";
 
@@ -103,7 +105,12 @@ export async function issueSessionKey(
     ]),
     functionName: "setup",
     args: [
-      [ownerAddr], 1n, SAFE7579_LAUNCHPAD,
+      // Safe's native owner must NOT be the account itself — on a 7702 account the Safe lives
+      // at ownerAddr, so passing [ownerAddr] reverts GS203 ("invalid owner"). Real auth runs
+      // through the ownable + smart-sessions 7579 validators (ownable is initialized with the
+      // owner's EOA above), so the Safe native owner is vestigial: set it to the burn address
+      // (threshold 1) — valid, non-self, and leaves no usable native-owner key.
+      [SAFE_NATIVE_OWNER], 1n, SAFE7579_LAUNCHPAD,
       encodeFunctionData({
         abi: parseAbi([
           "struct ModuleInit {address module;bytes initData;}",

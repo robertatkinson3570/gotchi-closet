@@ -35,6 +35,7 @@ import { entryPoint07Address, getUserOperationHash } from "viem/account-abstract
 const SAFE_SINGLETON = "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762";
 const SAFE7579_MODULE = "0x7579EE8307284F293B1927136486880611F20002";
 const SAFE7579_LAUNCHPAD = "0x7579011aB74c46090561ea277Ba79D510c6C00ff";
+const SAFE_NATIVE_OWNER = "0x000000000000000000000000000000000000dEaD"; // vestigial; not the account itself (GS203)
 // Harmless in-scope target: the fresh proof executor EOA (no code on mainnet — a bare call no-ops).
 const DUMMY_TARGET = "0x74B1be1bbced1eb31f58BE6562C3340fe941e027";
 
@@ -86,7 +87,7 @@ async function main() {
     abi: parseAbi(["function setup(address[] calldata _owners,uint256 _threshold,address to,bytes calldata data,address fallbackHandler,address paymentToken,uint256 payment, address paymentReceiver) external"]),
     functionName: "setup",
     args: [
-      [owner.address], 1n, SAFE7579_LAUNCHPAD,
+      [SAFE_NATIVE_OWNER], 1n, SAFE7579_LAUNCHPAD,
       encodeFunctionData({
         abi: parseAbi([
           "struct ModuleInit {address module;bytes initData;}",
