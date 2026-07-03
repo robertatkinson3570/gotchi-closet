@@ -42,6 +42,10 @@ interface AppState {
   // already filtered to category-0 wearables by the producer (audit H4).
   walletItemCounts: Record<number, number>;
 
+  // Gotchi ids owned by the CONNECTED wallet (not watch-only wallets) —
+  // gates on-chain actions like Save that require signing as the owner.
+  connectedOwnedIds: Set<string>;
+
   // Loading & Errors
   loadingGotchis: boolean;
   loadingWearables: boolean;
@@ -64,6 +68,7 @@ interface AppState {
   setBaazaarLoading: (loading: boolean) => void;
   setBaazaarError: (error: string | null) => void;
   setWalletItemCounts: (counts: Record<number, number>) => void;
+  setConnectedOwnedIds: (ids: Set<string>) => void;
   setFilters: (filters: Partial<WearableFilters>) => void;
   setLoadingGotchis: (loading: boolean) => void;
   setLoadingWearables: (loading: boolean) => void;
@@ -132,6 +137,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   lockedById: {},
   overridesById: {},
   walletItemCounts: {},
+  connectedOwnedIds: new Set<string>(),
   loadingGotchis: false,
   loadingWearables: false,
   loadingSets: false,
@@ -224,6 +230,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setBaazaarLoading: (loading) => set({ baazaarLoading: loading }),
   setBaazaarError: (error) => set({ baazaarError: error }),
   setWalletItemCounts: (counts) => set({ walletItemCounts: counts }),
+  setConnectedOwnedIds: (ids) => set({ connectedOwnedIds: ids }),
   setFilters: (filters) =>
     set((state) => {
       const newFilters = { ...state.filters, ...filters };

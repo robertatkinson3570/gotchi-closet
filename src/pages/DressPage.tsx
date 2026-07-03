@@ -68,6 +68,7 @@ export default function DressPage() {
     setError,
     equipWearable,
     setWalletItemCounts,
+    setConnectedOwnedIds,
   } = useAppStore();
   const appError = useAppStore((state) => state.error);
   const wearables = useAppStore((state) => state.wearables);
@@ -131,6 +132,12 @@ export default function DressPage() {
     setLoadedAddress(ownersKey || null);
     setGotchis([]);
   }, [ownersKey, setGotchis, setLoadedAddress]);
+
+  // Track which gotchis the CONNECTED wallet owns (empty when disconnected) —
+  // watch-only wallets' gotchis can't be signed for, so Save is gated on this.
+  useEffect(() => {
+    setConnectedOwnedIds(new Set(connectedOwner ? connectedResult.gotchis.map((gg) => gg.id) : []));
+  }, [connectedOwner, connectedResult.gotchis, setConnectedOwnedIds]);
 
   // Wallet-held (unequipped) wearables join the owned inventory (audit H4).
   const walletList = useMemo(
