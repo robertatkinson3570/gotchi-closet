@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   DndContext,
@@ -158,15 +158,23 @@ export default function DressPage() {
     setWalletItemCounts(filteredWalletItems);
   }, [filteredWalletItems, setWalletItemCounts]);
 
+  const lastToastedError = useRef<string | null>(null);
   useEffect(() => {
     setLoadingGotchis(isLoadingGotchis);
     if (gotchiError) {
       setError(gotchiError);
-      toast({
-        title: "Error Loading Gotchis",
-        description: gotchiError,
-        variant: "destructive",
-      });
+      if (lastToastedError.current !== gotchiError) {
+        lastToastedError.current = gotchiError;
+        toast({
+          title: "Error Loading Gotchis",
+          description: gotchiError,
+          variant: "destructive",
+        });
+      }
+    } else if (!isLoadingGotchis) {
+      // all queries settled without error — clear stale banner (audit M7)
+      lastToastedError.current = null;
+      setError(null);
     }
     if (!isLoadingGotchis) {
       setGotchis(combinedGotchis);
