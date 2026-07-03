@@ -122,6 +122,16 @@ describe("planSave (spec: save classifier)", () => {
     expect(p.steps.map((s) => s.kind)).toEqual(["resetSkillPoints", "spendSkillPoints"]);
   });
 
+  it("duplicate ownedGotchis entries are deduped (single unequip, single warning)", () => {
+    const source = { gotchiId: "200", equippedWearables: [7, 0, 0, 0, 0, 0, 0, 0], locked: false };
+    const p = planSave(base({
+      desiredSlots: [7, 0, 0, 0, 0, 0, 0, 0],
+      ownedGotchis: [source, { ...source, equippedWearables: [...source.equippedWearables] }],
+    }));
+    expect(p.steps.filter((s) => s.kind === "unequip")).toHaveLength(1);
+    expect(p.warnings).toEqual([{ wearableId: 7, fromGotchiId: "200" }]);
+  });
+
   it("respec with used=0 and zero allocation → no respec steps at all", () => {
     const p = planSave(base({
       respec: { targetBase: [48, 40, 30, 20], birthBase: [48, 40, 30, 20], respecCount: 0, usedSkillPoints: 0, availableSkillPoints: 5 },

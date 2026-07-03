@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useAccount, useChainId, useReadContract } from "wagmi";
+import { useAccount, useChainId, usePublicClient, useReadContract } from "wagmi";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/ui/button";
 import { useAppStore } from "@/state/useAppStore";
@@ -17,6 +18,14 @@ import { BASE_CHAIN_ID } from "@/lib/chains";
 // Same signature the explorer uses (GotchiActionsPanel) — token id is uint32.
 const RESPEC_COUNT_ABI = [
   { name: "respecCount", type: "function", stateMutability: "view", inputs: [{ name: "_tokenId", type: "uint32" }], outputs: [{ name: "", type: "uint256" }] },
+] as const;
+
+// I-4: standard AavegotchiFacet view (documented facet signature); the repo's
+// write side already sends the matching equipWearables(uint256, uint16[16]).
+const EQUIPPED_WEARABLES_ABI = [
+  { name: "equippedWearables", type: "function", stateMutability: "view",
+    inputs: [{ name: "_tokenId", type: "uint256" }],
+    outputs: [{ name: "wearableIds_", type: "uint16[16]" }] },
 ] as const;
 
 const POPOVER_WIDTH = 272;
@@ -112,16 +121,72 @@ export function SaveOutfitButton(props: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [walletQuery.data, wearablesById.size]);
 
-  const ownedGotchis = useMemo(
+  const lockedById = useAppStore((s) => s.lockedById);
+  const storeOwnedGotchis = useMemo(
     () =>
       gotchis
         .filter((g) => connectedOwnedIds.has(g.id))
         .map((g) => ({
           gotchiId: g.gotchiId || g.id,
           equippedWearables: g.equippedWearables,
-          locked: !!(g.lending || g.lentOut),
+          // I-7: an active Lock&Set build holds its wearables by user intent —
+          // never steal from it (treated like a lending lock).
+          locked: !!(g.lending || g.lentOut) || !!lockedById[g.id],
         })),
-    [gotchis, connectedOwnedIds]
+    [gotchis, connectedOwnedIds, lockedById]
+  );
+
+  // I-4: the subgraph's equipped state lags the chain (indexing delay, equips
+  // made outside this app). Re-read equippedWearables for the target and every
+  // potential steal source at popover open so unequip/equip steps are built
+  // from reality; the store's subgraph copy stays as instant fallback.
+  const isNumericId = /^\d+$/.test(gotchiId);
+  const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
+  const freshIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (isNumericId) ids.add(gotchiId);
+    for (const g of storeOwnedGotchis) {
+      if (/^\d+$/.test(g.gotchiId)) ids.add(g.gotchiId);
+    }
+    return [...ids].sort();
+  }, [isNumericId, gotchiId, storeOwnedGotchis]);
+  const freshEquippedQuery = useQuery({
+    queryKey: ["fresh-equipped-wearables", freshIds.join("|")],
+    enabled: open && freshIds.length > 0 && !!publicClient,
+    staleTime: 15_000,
+    queryFn: async () => {
+      const results = await publicClient!.multicall({
+        contracts: freshIds.map((id) => ({
+          address: AAVEGOTCHI_DIAMOND_BASE,
+          abi: EQUIPPED_WEARABLES_ABI,
+          functionName: "equippedWearables" as const,
+          args: [BigInt(id)] as const,
+        })),
+        allowFailure: true,
+      });
+      const out: Record<string, number[]> = {};
+      freshIds.forEach((id, i) => {
+        const r = results[i];
+        if (r.status === "success") {
+          out[id] = (r.result as readonly (number | bigint)[]).map((n) => Number(n) || 0);
+        }
+      });
+      return out;
+    },
+  });
+
+  const effectiveCurrent8 = useMemo(() => {
+    const fresh = freshEquippedQuery.data?.[gotchiId];
+    return fresh ? fresh.slice(0, 8) : current8;
+  }, [freshEquippedQuery.data, gotchiId, current8]);
+
+  const ownedGotchis = useMemo(
+    () =>
+      storeOwnedGotchis.map((g) => ({
+        ...g,
+        equippedWearables: freshEquippedQuery.data?.[g.gotchiId] ?? g.equippedWearables,
+      })),
+    [storeOwnedGotchis, freshEquippedQuery.data]
   );
 
   // Respec inputs — fetched only when a respec is committed.
@@ -142,8 +207,7 @@ export function SaveOutfitButton(props: {
     };
   }, [open, respecTarget, gotchiId]);
 
-  const isNumericId = /^\d+$/.test(gotchiId);
-  const { data: respecCountData } = useReadContract({
+  const { data: respecCountData, error: respecCountError } = useReadContract({
     address: AAVEGOTCHI_DIAMOND_BASE,
     abi: RESPEC_COUNT_ABI,
     functionName: "respecCount",
@@ -151,6 +215,9 @@ export function SaveOutfitButton(props: {
     chainId: BASE_CHAIN_ID,
     query: { enabled: open && !!respecTarget && isNumericId, staleTime: 30_000 },
   });
+  // A failed respecCount read must not spin forever — proceed with an
+  // "unknown fee" note instead (the count only affects the fee warning).
+  const respecCountUnknown = respecCountData == null && !!respecCountError;
 
   // C-1: the respec pool = refunded (usedSkillPoints, from the subgraph gotchi)
   // + unspent on-chain points. planSave blocks over-pool allocations so a
@@ -163,16 +230,16 @@ export function SaveOutfitButton(props: {
 
   const respec = useMemo(
     () =>
-      respecTarget && birthBase && respecCountData != null && availableSkillPoints != null
+      respecTarget && birthBase && (respecCountData != null || respecCountUnknown) && availableSkillPoints != null
         ? {
             targetBase: respecTarget,
             birthBase,
-            respecCount: Number(respecCountData),
+            respecCount: respecCountData != null ? Number(respecCountData) : 0,
             usedSkillPoints,
             availableSkillPoints,
           }
         : null,
-    [respecTarget, birthBase, respecCountData, usedSkillPoints, availableSkillPoints]
+    [respecTarget, birthBase, respecCountData, respecCountUnknown, usedSkillPoints, availableSkillPoints]
   );
 
   // Ids not coverable by wallet + steal → they need a Baazaar listing.
@@ -181,14 +248,14 @@ export function SaveOutfitButton(props: {
     const pre = planSave({
       targetGotchiId: gotchiId,
       desiredSlots: desired8,
-      currentSlots: current8,
+      currentSlots: effectiveCurrent8,
       walletBalances,
       ownedGotchis,
       respec: null,
       listingsByWearable: {},
     });
     return pre.blocked.flatMap((b) => (b.reason === "unobtainable" ? [b.wearableId] : []));
-  }, [open, walletQuery.data, gotchiId, desired8, current8, walletBalances, ownedGotchis]);
+  }, [open, walletQuery.data, gotchiId, desired8, effectiveCurrent8, walletBalances, ownedGotchis]);
 
   const listingsQuery = useCheapestWearableListings(missingIds, open && !!walletQuery.data);
 
@@ -197,18 +264,25 @@ export function SaveOutfitButton(props: {
     return planSave({
       targetGotchiId: gotchiId,
       desiredSlots: desired8,
-      currentSlots: current8,
+      currentSlots: effectiveCurrent8,
       walletBalances,
       ownedGotchis,
       respec,
       listingsByWearable: listingsQuery.data ?? {},
     });
-  }, [open, gotchiId, desired8, current8, walletBalances, ownedGotchis, respec, listingsQuery.data]);
+  }, [open, gotchiId, desired8, effectiveCurrent8, walletBalances, ownedGotchis, respec, listingsQuery.data]);
 
   const balancesReady = !!walletQuery.data;
   const listingsReady = missingIds.length === 0 || !!listingsQuery.data;
   const respecReady = !respecTarget || respec !== null;
-  const planReady = balancesReady && listingsReady && respecReady && !birthError;
+  // I-6: with an empty wearables catalog every wallet item is filtered out and
+  // the plan invents buy steps for items the user already holds.
+  const catalogReady = wearablesById.size > 0;
+  // I-4: wait for the on-chain equipped reads to settle (on failure the store
+  // fallback is used and planning proceeds).
+  const freshReady = !freshEquippedQuery.isFetching;
+  const planReady =
+    balancesReady && listingsReady && respecReady && catalogReady && freshReady && !birthError;
 
   const close = useCallback(() => {
     setOpen(false);
@@ -289,6 +363,7 @@ export function SaveOutfitButton(props: {
               planReady={planReady}
               birthError={birthError}
               respec={respec}
+              respecCountUnknown={respecCountUnknown}
               nameOf={(id) => wearablesById.get(id)?.name || `#${id}`}
               onConfirm={onConfirm}
               onCancel={close}
@@ -308,12 +383,13 @@ function SavePopoverBody(props: {
   planReady: boolean;
   birthError: string | null;
   respec: { targetBase: number[]; birthBase: number[]; respecCount: number } | null;
+  respecCountUnknown: boolean;
   nameOf: (id: number) => string;
   onConfirm: () => void;
   onCancel: () => void;
   onRetry: () => void;
 }) {
-  const { progress, plan, planReady, birthError, respec, nameOf } = props;
+  const { progress, plan, planReady, birthError, respec, respecCountUnknown, nameOf } = props;
 
   if (progress.phase === "running") {
     return (
@@ -406,11 +482,15 @@ function SavePopoverBody(props: {
               </li>
             ))}
           </ol>
-          {respec && respec.respecCount > 0 && (
+          {respec && respecCountUnknown ? (
+            <div className="text-amber-400">
+              Couldn't read the respec count — a respec fee may apply.
+            </div>
+          ) : respec && respec.respecCount > 0 ? (
             <div className="text-amber-400">
               Respec #{respec.respecCount + 1} — a fee applies.
             </div>
-          )}
+          ) : null}
           {plan.totalBuyCostWei > 0n && (
             <div className="text-muted-foreground">Total: {ghst(plan.totalBuyCostWei)} GHST</div>
           )}

@@ -58,7 +58,12 @@ export function planSave(input: SavePlanInput): SavePlan {
   }
 
   const wallet = { ...input.walletBalances };
-  const sources = input.ownedGotchis
+  // Defensive dedupe: a gotchi listed twice (e.g. overlapping wallet queries)
+  // would otherwise be counted as two steal sources and emit two unequips.
+  const uniqueOwned = Array.from(
+    new Map(input.ownedGotchis.map((g) => [g.gotchiId, g])).values()
+  );
+  const sources = uniqueOwned
     .filter((g) => !g.locked && g.gotchiId !== input.targetGotchiId)
     .map((g) => ({ gotchiId: g.gotchiId, slots: [...g.equippedWearables] }));
   const stolenBySource = new Map<string, number[]>();
@@ -128,7 +133,7 @@ export function planSave(input: SavePlanInput): SavePlan {
     }
   }
 
-  for (const src of input.ownedGotchis) {
+  for (const src of uniqueOwned) {
     const stolen = stolenBySource.get(src.gotchiId);
     if (!stolen) continue;
     const remainingSlots = sources.find((s) => s.gotchiId === src.gotchiId)!.slots;

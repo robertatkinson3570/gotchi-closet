@@ -28,14 +28,17 @@ const ITEM_BALANCES_ABI = [
  */
 export function useWalletItemBalances(wallets: string[]) {
   const publicClient = usePublicClient({ chainId: BASE_CHAIN_ID });
-  const key = wallets.map((w) => w.toLowerCase()).sort().join("|");
+  // Dedupe (I-5): the same address entered twice (connected + manual, or
+  // differing case) must not double every balance.
+  const uniqueWallets = [...new Set(wallets.map((w) => w.toLowerCase()))];
+  const key = [...uniqueWallets].sort().join("|");
   return useQuery({
     queryKey: ["wallet-item-balances", key],
-    enabled: wallets.length > 0 && !!publicClient,
+    enabled: uniqueWallets.length > 0 && !!publicClient,
     staleTime: 60_000,
     queryFn: async () => {
       const combined: Record<number, number> = {};
-      for (const wallet of wallets) {
+      for (const wallet of uniqueWallets) {
         const res = (await publicClient!.readContract({
           address: AAVEGOTCHI_DIAMOND_BASE,
           abi: ITEM_BALANCES_ABI,
