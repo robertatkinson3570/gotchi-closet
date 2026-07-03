@@ -149,11 +149,20 @@ describe("best-set rule (audit H1)", () => {
 });
 
 describe("getCanonicalModifiedTraits", () => {
-  it("uses modifiedNumericTraits when valid", () => {
+  // Audit M10: local (set-inclusive) traits now outrank modifiedNumericTraits
+  // (wearable-only) when both are valid — see src/lib/traits.test.ts for the
+  // full fallback-order coverage.
+  it("prefers local computed traits over modifiedNumericTraits when both are valid", () => {
     const base = [1, 2, 3, 4, 5, 6];
     const modified = [6, 5, 4, 3, 2, 1];
     const local = [9, 9, 9, 9, 9, 9];
-    expect(getCanonicalModifiedTraits(base, modified, local)).toEqual(modified);
+    expect(getCanonicalModifiedTraits(base, modified, local)).toEqual(local);
+  });
+
+  it("uses modifiedNumericTraits when local computed traits aren't available", () => {
+    const base = [1, 2, 3, 4, 5, 6];
+    const modified = [6, 5, 4, 3, 2, 1];
+    expect(getCanonicalModifiedTraits(base, modified)).toEqual(modified);
   });
 
   it("falls back to local computed traits when modified is invalid", () => {

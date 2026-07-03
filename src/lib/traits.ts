@@ -50,18 +50,18 @@ export function getCanonicalModifiedTraits(
     return withSetsNumericTraits.map((value) => Number(value));
   }
   if (
-    Array.isArray(modifiedNumericTraits) &&
-    modifiedNumericTraits.length === 6 &&
-    modifiedNumericTraits.every((value) => Number.isFinite(value))
-  ) {
-    return modifiedNumericTraits.map((value) => Number(value));
-  }
-  if (
     Array.isArray(localComputedTraits) &&
     localComputedTraits.length === 6 &&
     localComputedTraits.every((value) => Number.isFinite(value))
   ) {
     return localComputedTraits.map((value) => Number(value));
+  }
+  if (
+    Array.isArray(modifiedNumericTraits) &&
+    modifiedNumericTraits.length === 6 &&
+    modifiedNumericTraits.every((value) => Number.isFinite(value))
+  ) {
+    return modifiedNumericTraits.map((value) => Number(value));
   }
   return normalizeTraits(baseTraits);
 }
