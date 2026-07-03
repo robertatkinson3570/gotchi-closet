@@ -40,7 +40,8 @@ export function EditorPanel() {
   const [mommyPreEquipped, setMommyPreEquipped] = useState<Record<string, number[]>>({});
   const [mommyStatusMessage, setMommyStatusMessage] = useState<{ instanceId: string; message: string } | null>(null);
   const mommyStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [committedRespecs, setCommittedRespecs] = useState<Record<string, number[]>>({});
+  // Absolute post-respec base traits [NRG,AGG,SPK,BRN] per instance (audit M2).
+  const [committedRespecTargets, setCommittedRespecTargets] = useState<Record<string, number[]>>({});
 
   const activeSet = useMemo(() => {
     if (!filters.set) return null;
@@ -249,7 +250,8 @@ export function EditorPanel() {
                               onClick={() => {
                                 const override: LockedOverride = {
                                   wearablesBySlot: [...instance.equippedBySlot],
-                                  respecAllocated: committedRespecs[instance.instanceId] || null,
+                                  respecAllocated: null,
+                                  respecTargetBase: committedRespecTargets[instance.instanceId] || null,
                                   timestamp: Date.now(),
                                 };
                                 toggleLockSet(instance.baseGotchi.id, override);
@@ -266,7 +268,8 @@ export function EditorPanel() {
                               onClick={() => {
                                 const override: LockedOverride = {
                                   wearablesBySlot: [...instance.equippedBySlot],
-                                  respecAllocated: committedRespecs[instance.instanceId] || null,
+                                  respecAllocated: null,
+                                  respecTargetBase: committedRespecTargets[instance.instanceId] || null,
                                   timestamp: Date.now(),
                                 };
                                 toggleLockSet(instance.baseGotchi.id, override);
@@ -328,10 +331,10 @@ export function EditorPanel() {
                             setDelta={setTraitModsDelta}
                             enableSetFilter
                             showBestSets
-                            onCommitRespec={(delta) => {
-                              setCommittedRespecs(prev => ({
+                            onCommitRespec={(targetBase) => {
+                              setCommittedRespecTargets(prev => ({
                                 ...prev,
-                                [instance.instanceId]: delta,
+                                [instance.instanceId]: targetBase,
                               }));
                             }}
                           />

@@ -32,7 +32,8 @@ interface GotchiCardProps {
   enableSetFilter?: boolean;
   showBestSets?: boolean;
   price?: string;
-  onCommitRespec?: (delta: number[]) => void;
+  /** Called with the ABSOLUTE post-respec base traits [NRG,AGG,SPK,BRN] (audit M2). */
+  onCommitRespec?: (targetBase: number[]) => void;
 }
 
 export function GotchiCard({
@@ -211,8 +212,9 @@ export function GotchiCard({
                       className="h-6 px-2 text-[11px]"
                       onClick={() => {
                         if (respec.isRespecMode && onCommitRespec) {
-                          const delta = respec.simBase.slice(0, 4).map((v, i) => v - (numericTraitSource[i] || 0));
-                          onCommitRespec(delta);
+                          // The TARGET base, not a delta vs current (audit M2):
+                          // deltas are ambiguous after resetSkillPoints.
+                          onCommitRespec(respec.simBase.slice(0, 4));
                         }
                         respec.toggleRespecMode();
                       }}

@@ -1,6 +1,9 @@
 export interface LockedOverride {
   wearablesBySlot: number[];
+  /** @deprecated legacy delta vs current base — kept for old storage entries */
   respecAllocated: number[] | null;
+  /** Absolute post-respec base traits [NRG,AGG,SPK,BRN] the user committed. */
+  respecTargetBase?: number[] | null;
   timestamp: number;
 }
 

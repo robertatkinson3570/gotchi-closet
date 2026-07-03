@@ -74,3 +74,21 @@ describe("locked build persistence (audit C1)", () => {
     expect(useAppStore.getState().lockedById["1"]).toBe(true);
   });
 });
+
+describe("committed respec target persistence (audit M2)", () => {
+  it("respecTargetBase (absolute post-respec base) round-trips through storage", () => {
+    useAppStore.getState().setLoadedAddress("0xabc");
+    useAppStore.getState().setGotchis([g("1")]);
+    useAppStore.getState().lockGotchi("1", {
+      wearablesBySlot: [1, 0, 0, 0, 0, 0, 0, 0],
+      respecAllocated: null,
+      respecTargetBase: [10, 60, 40, 55],
+      timestamp: 1,
+    });
+    // wipe in-memory state, then reload from storage
+    useAppStore.setState({ lockedById: {}, overridesById: {} });
+    useAppStore.getState().loadLockedBuildsFromStorage();
+    expect(useAppStore.getState().overridesById["1"]?.respecTargetBase).toEqual([10, 60, 40, 55]);
+    expect(useAppStore.getState().overridesById["1"]?.respecAllocated).toBeNull();
+  });
+});

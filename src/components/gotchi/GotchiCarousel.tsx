@@ -233,10 +233,16 @@ export function GotchiCarousel({
               const isManual = isManualGotchi(gotchi.id);
               const override = isLocked ? overridesById[gotchi.id] : null;
               const displayEquipped = override?.wearablesBySlot || gotchi.equippedWearables;
+              // Prefer the absolute committed target base (audit M2); fall
+              // back to applying legacy current-relative deltas for old
+              // storage entries.
+              const respecTarget = override?.respecTargetBase;
               const respecDelta = override?.respecAllocated;
-              const adjustedBaseTraits = respecDelta
-                ? gotchi.numericTraits.map((v, i) => i < 4 ? v + (respecDelta[i] || 0) : v)
-                : gotchi.numericTraits;
+              const adjustedBaseTraits = respecTarget
+                ? gotchi.numericTraits.map((v, i) => (i < 4 ? respecTarget[i] ?? v : v))
+                : respecDelta
+                  ? gotchi.numericTraits.map((v, i) => (i < 4 ? v + (respecDelta[i] || 0) : v))
+                  : gotchi.numericTraits;
               const {
                 finalTraits,
                 traitBase,
