@@ -77,7 +77,10 @@ async function main() {
   const smartSessions = getSmartSessionsValidator({ sessions: [session] });
 
   console.log("1) sending EIP-7702 setup tx (owner-paid)…");
-  const authorization = await walletClient.signAuthorization({ account: owner, contractAddress: SAFE_SINGLETON });
+  // executor: "self" — the owner EOA both signs this authorization AND sends the setup tx, so
+  // the authorization nonce must be current+1 (the tx consumes the current nonce first).
+  // Without it the authorization is silently rejected and the EOA is never delegated.
+  const authorization = await walletClient.signAuthorization({ account: owner, contractAddress: SAFE_SINGLETON, executor: "self" });
   const setupHash = await walletClient.writeContract({
     address: owner.address,
     abi: parseAbi(["function setup(address[] calldata _owners,uint256 _threshold,address to,bytes calldata data,address fallbackHandler,address paymentToken,uint256 payment, address paymentReceiver) external"]),

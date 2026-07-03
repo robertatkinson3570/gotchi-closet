@@ -92,7 +92,10 @@ export async function issueSessionKey(
 
   // ONE owner-signed, owner-PAID setup tx: 7702-delegate the EOA to the Safe singleton and run
   // addSafe7579 to install ownable + smart-sessions validators with this session pre-enabled.
-  const authorization = await walletClient.signAuthorization({ account, contractAddress: SAFE_SINGLETON });
+  // executor: "self" — the owner both authorizes AND sends this tx, so the authorization nonce
+  // must be current+1 (the tx consumes the current nonce first). Without it the authorization
+  // is silently rejected and the EOA is never delegated (proven on Base mainnet 2026-07-03).
+  const authorization = await walletClient.signAuthorization({ account, contractAddress: SAFE_SINGLETON, executor: "self" });
   const txHash = await walletClient.writeContract({
     address: ownerAddr,
     abi: parseAbi([
