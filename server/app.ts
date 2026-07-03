@@ -12,11 +12,13 @@ import arenaRoutes from "./routes/arena";
 import mcpBillingRoutes from "./routes/mcpBilling";
 import daoRoutes from "./routes/dao";
 import mapRoutes from "./routes/map";
+import pulseRoutes from "./routes/pulse";
 import { stewardRouter } from "./routes/steward";
 import { wispMcpHttpHandler } from "./mcp/http";
 import { getDebugStats } from "./aavegotchi/serverSvgService";
 import { startAutoRenewCron } from "./lending/cron";
 import { startStewardCron } from "./steward/cron";
+import { startPulseCron } from "./pulse/cron";
 
 export function createApp() {
   const app = express();
@@ -96,6 +98,8 @@ export function createApp() {
   app.use("/api/dao", daoRoutes);
   // Citaadel map — all REALM parcels, cached hourly server-side.
   app.use("/api/map", mapRoutes);
+  // Pulse — state-of-the-Aavegotchiverse daily metrics, cached server-side.
+  app.use("/api/pulse", pulseRoutes);
   // Keyed, rate-limited MCP protocol endpoint for external customers (POST only).
   // Distinct from /api/mcp (billing REST). Plan limits enforced in mcp/http.ts.
   app.post("/mcp", wispMcpHttpHandler);
@@ -104,6 +108,8 @@ export function createApp() {
   startAutoRenewCron();
   // Boot steward cron (no-op if STEWARD_BUNDLER_URL not set)
   startStewardCron();
+  // Boot pulse backfill/refresh (backfills data/pulse.db on first run)
+  startPulseCron();
 
   return app;
 }
