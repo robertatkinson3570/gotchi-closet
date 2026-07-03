@@ -41,9 +41,9 @@ importers:
       '@radix-ui/react-toast':
         specifier: ^1.1.5
         version: 1.2.15(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@rhinestone/sdk':
-        specifier: 1.9.2
-        version: 1.9.2(express@5.2.1)(jose@5.9.6)(typescript@5.9.3)(viem@2.44.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+      '@rhinestone/module-sdk':
+        specifier: 0.4.0
+        version: 0.4.0(viem@2.44.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@snapshot-labs/snapshot.js':
         specifier: ^0.14.22
         version: 0.14.22(bufferutil@4.1.0)(utf-8-validate@5.0.10)
@@ -1330,23 +1330,11 @@ packages:
   '@reown/appkit@1.8.17-wc-circular-dependencies-fix.0':
     resolution: {integrity: sha512-7JjEp+JNxRUDOa7CxOCbUbG8uYVo38ojc9FN/fuzJuJADUzKDaH287MLV9qI1ZyQyXA8qXvhXRqjtw+3xo2/7A==}
 
-  '@rhinestone/sdk@1.9.2':
-    resolution: {integrity: sha512-Y5jV6o24i+PhvWO6t7xWrKZ4sA+Kpbb3fVGsGVAxiW06ztV820Ad1keumARegsHe2WhXDQpuNZA4cEKEoS0jRg==}
+  '@rhinestone/module-sdk@0.4.0':
+    resolution: {integrity: sha512-MezAYnw+D7tWCVyUMYiA6YutsQT/dL2XPoVhJcfHUh+xccxadubBhU+IKA0MkAyibOWLWZ0yplbgPUKq7MPkFg==}
+    deprecated: This SDK is no longer supported. Please switch to '@rhinestone/sdk' to continue getting updates.
     peerDependencies:
-      express: '>=4'
-      jose: '>=5.0.0'
-      viem: ^2.38.0
-    peerDependenciesMeta:
-      express:
-        optional: true
-      jose:
-        optional: true
-
-  '@rhinestone/shared-configs@1.6.10':
-    resolution: {integrity: sha512-rUSmn78bzXohGhwohuS39qCiDZlMgVrBpvoDb7ZRNi/fJ0Nb62EwtbdktCyB5ACl2vRaR2Or04TO7y+3tHBO0A==}
-    peerDependencies:
-      typescript: ^5
-      viem: ^2.40.1
+      viem: ^2.0.0
 
   '@rolldown/pluginutils@1.0.0-beta.27':
     resolution: {integrity: sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA==}
@@ -4095,8 +4083,8 @@ packages:
   slow-redact@0.3.2:
     resolution: {integrity: sha512-MseHyi2+E/hBRqdOi5COy6wZ7j7DxXRz9NkseavNYSvvWC06D8a5cidVZX3tcG5eCW3NIyVU4zT63hw0Q486jw==}
 
-  solady@0.1.26:
-    resolution: {integrity: sha512-dhGr/ptJFdea/1KE6xgqgwEdbMhUiSfRc6A+jLeltPe16zyt9qtED3PElIBVRnzEmUO5aZTjKVAr6SlqXBBcIw==}
+  solady@0.0.235:
+    resolution: {integrity: sha512-JUEXLDG7ag3HmqUnrDG7ilhafH6R9bFPpwV63O2kH4UbnS2+gRGEOqqy4k01O7tHjo3MWkDD0cpG+UY9pjy/fQ==}
 
   sonic-boom@4.2.0:
     resolution: {integrity: sha512-INb7TM37/mAcsGmc9hyyI6+QR3rR1zVRu36B0NeGXKnOOLiZOfER5SA+N7X7k3yUYRzLWafduTDvJAfDswwEww==}
@@ -6233,20 +6221,10 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@rhinestone/sdk@1.9.2(express@5.2.1)(jose@5.9.6)(typescript@5.9.3)(viem@2.44.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
+  '@rhinestone/module-sdk@0.4.0(viem@2.44.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
     dependencies:
-      '@rhinestone/shared-configs': 1.6.10(typescript@5.9.3)(viem@2.44.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
-      solady: 0.1.26
-      viem: 2.44.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
-    optionalDependencies:
-      express: 5.2.1
-      jose: 5.9.6
-    transitivePeerDependencies:
-      - typescript
-
-  '@rhinestone/shared-configs@1.6.10(typescript@5.9.3)(viem@2.44.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
-    dependencies:
-      typescript: 5.9.3
+      solady: 0.0.235
+      tslib: 2.8.1
       viem: 2.44.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
 
   '@rolldown/pluginutils@1.0.0-beta.27': {}
@@ -9688,7 +9666,7 @@ snapshots:
 
   slow-redact@0.3.2: {}
 
-  solady@0.1.26: {}
+  solady@0.0.235: {}
 
   sonic-boom@4.2.0:
     dependencies:

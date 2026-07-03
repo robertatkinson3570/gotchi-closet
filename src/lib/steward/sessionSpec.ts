@@ -4,11 +4,7 @@
 // chosen chores' (target, selector) pairs — never transfer/sell/list/spend. This is the
 // HARD custody invariant, expressed as ERC-7579 smart-session scoped actions.
 import { toFunctionSelector, type Hex, type Address } from "viem";
-import type { Session } from "@rhinestone/sdk";
-
-// The scoped-action shape, derived from the SDK's Session type (Action isn't re-exported at
-// the package root).
-type Action = NonNullable<Session["actions"]>[number];
+import { getSudoPolicy } from "@rhinestone/module-sdk";
 
 // Verified Base diamonds (same as server/steward/abi.ts + src/lib/lending/contracts.ts).
 const AAVEGOTCHI_DIAMOND: Address = "0xA99c4B08201F2913Db8D28e71d020c4298F29dBF";
@@ -22,13 +18,21 @@ export const SELECTORS = {
 
 export interface ChoresLike { pet: boolean; channel: boolean; claim: boolean; }
 
+// An ERC-7579 smart-session scoped action (module-sdk shape): the session key may call ONLY this
+// exact (target, selector); the sudo policy permits that one call and nothing else.
+export interface SessionAction {
+  actionTarget: Address;
+  actionTargetSelector: Hex;
+  actionPolicies: ReturnType<typeof getSudoPolicy>[];
+}
+
 // Map enabled chores -> the exact (target, selector) actions the session key may perform.
-// Every action carries a sudo policy: allowed when target+selector match, nothing else.
-export function sessionActions(chores: ChoresLike): Action[] {
-  const sudo = [{ type: "sudo" as const }];
-  const actions: Action[] = [];
-  if (chores.pet) actions.push({ target: AAVEGOTCHI_DIAMOND, selector: SELECTORS.interact as Hex, policies: sudo });
-  if (chores.channel) actions.push({ target: REALM_DIAMOND, selector: SELECTORS.channelAlchemica as Hex, policies: sudo });
-  if (chores.claim) actions.push({ target: REALM_DIAMOND, selector: SELECTORS.claimAllAvailableAlchemica as Hex, policies: sudo });
+// Anything outside this set is rejected on-chain by the smart-sessions module.
+export function sessionActions(chores: ChoresLike): SessionAction[] {
+  const sudo = getSudoPolicy();
+  const actions: SessionAction[] = [];
+  if (chores.pet) actions.push({ actionTarget: AAVEGOTCHI_DIAMOND, actionTargetSelector: SELECTORS.interact as Hex, actionPolicies: [sudo] });
+  if (chores.channel) actions.push({ actionTarget: REALM_DIAMOND, actionTargetSelector: SELECTORS.channelAlchemica as Hex, actionPolicies: [sudo] });
+  if (chores.claim) actions.push({ actionTarget: REALM_DIAMOND, actionTargetSelector: SELECTORS.claimAllAvailableAlchemica as Hex, actionPolicies: [sudo] });
   return actions;
 }
