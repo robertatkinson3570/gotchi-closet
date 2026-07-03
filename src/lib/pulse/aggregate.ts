@@ -73,6 +73,55 @@ export function bucketClaims(claimTimes: number[]): MetricRow[] {
     .map(([day, value]) => ({ day, metric: "gotchis_summoned", value }));
 }
 
+export type LendingRow = { t: number; upfrontGhst: number; borrower: string };
+
+/** Folds lending agreements into per-day count / upfront GHST / unique borrowers. */
+export function bucketLendings(rows: LendingRow[]): MetricRow[] {
+  type Agg = { count: number; upfront: number; borrowers: Set<string> };
+  const days = new Map<string, Agg>();
+  for (const r of rows) {
+    if (!(r.t > 0)) continue;
+    const day = dayKey(r.t);
+    let a = days.get(day);
+    if (!a) {
+      a = { count: 0, upfront: 0, borrowers: new Set() };
+      days.set(day, a);
+    }
+    a.count += 1;
+    a.upfront += r.upfrontGhst;
+    if (r.borrower) a.borrowers.add(r.borrower.toLowerCase());
+  }
+  const out: MetricRow[] = [];
+  for (const [day, a] of [...days.entries()].sort((x, y) => (x[0] < y[0] ? -1 : 1))) {
+    out.push({ day, metric: "lendings_agreed", value: a.count });
+    out.push({ day, metric: "lending_upfront_ghst", value: a.upfront });
+    out.push({ day, metric: "lending_borrowers", value: a.borrowers.size });
+  }
+  return out;
+}
+
+export type ProposalRow = { end: number; votes: number; scoresTotal: number };
+
+/** Folds closed Snapshot proposals into turnout VP + vote counts by end day. */
+export function bucketProposals(rows: ProposalRow[]): MetricRow[] {
+  type Agg = { vp: number; votes: number };
+  const days = new Map<string, Agg>();
+  for (const r of rows) {
+    if (!(r.end > 0)) continue;
+    const day = dayKey(r.end);
+    const a = days.get(day) ?? { vp: 0, votes: 0 };
+    a.vp += r.scoresTotal;
+    a.votes += r.votes;
+    days.set(day, a);
+  }
+  const out: MetricRow[] = [];
+  for (const [day, a] of [...days.entries()].sort((x, y) => (x[0] < y[0] ? -1 : 1))) {
+    out.push({ day, metric: "dao_turnout_vp", value: a.vp });
+    out.push({ day, metric: "dao_votes", value: a.votes });
+  }
+  return out;
+}
+
 export type EngagementRow = { kinship: number; lastInteracted: number };
 
 /**

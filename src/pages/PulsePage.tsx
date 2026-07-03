@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { HeartPulse, Loader2, Info } from "lucide-react";
 import {
-  Area, AreaChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Area, AreaChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
@@ -263,6 +263,66 @@ export default function PulsePage() {
             <RealityLever verdicts={p.verdicts} keys={["summons", "petting"]} />
           </GlowCard>
 
+          {/* Lending section */}
+          <GlowCard accent="bg-[hsl(var(--cyan))]/12" className="p-5 mt-4">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-3">Lending agreements / day</h2>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={slice("lendings_agreed")} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+                  <defs>
+                    <linearGradient id="lend-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--cyan))" stopOpacity={0.45} />
+                      <stop offset="100%" stopColor="hsl(var(--cyan))" stopOpacity={0.04} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" vertical={false} />
+                  <XAxis dataKey="day" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} minTickGap={40} />
+                  <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={36} allowDecimals={false} />
+                  <Tooltip formatter={(v) => [`${Number(v)} agreements`, "lendings"]} contentStyle={TOOLTIP_STYLE} />
+                  <Area type="monotone" dataKey="value" stroke="hsl(var(--cyan))" fill="url(#lend-fill)" strokeWidth={2} dot={false} isAnimationActive={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4 mt-4">
+              <MiniChart title="Unique borrowers / day" data={slice("lending_borrowers")} color="hsl(var(--ghst-pink))" />
+              <MiniChart title="Upfront GHST / day" data={slice("lending_upfront_ghst")} color="hsl(var(--gold))" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-4 mt-4">
+              <Accruing label="30d lendings" value={p.windows.lendings_agreed_30d} fmt={(v) => v.toLocaleString()} />
+              <Accruing label="Channeled last 7d" value={p.latest.gotchis_channeled_7d} since={p.trackingSince.gotchis_channeled_7d} fmt={(v) => `${v.toLocaleString()} gotchis`} />
+            </div>
+            <RealityLever verdicts={p.verdicts} keys={["lending", "channeling"]} />
+          </GlowCard>
+
+          {/* DAO section */}
+          <GlowCard accent="bg-[hsl(var(--gold))]/12" className="p-5 mt-4">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-3">DAO turnout — VP cast per proposal close day (line = 7.2M quorum)</h2>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={slice("dao_turnout_vp")} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+                  <defs>
+                    <linearGradient id="dao-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--gold))" stopOpacity={0.45} />
+                      <stop offset="100%" stopColor="hsl(var(--gold))" stopOpacity={0.04} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" vertical={false} />
+                  <XAxis dataKey="day" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} minTickGap={40} />
+                  <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={44} tickFormatter={(v: number) => fmtGhst(v)} />
+                  <Tooltip formatter={(v) => [`${fmtGhst(Number(v))} VP`, "turnout"]} contentStyle={TOOLTIP_STYLE} />
+                  <ReferenceLine y={7_200_000} stroke="hsl(var(--destructive))" strokeDasharray="4 4" />
+                  <Area type="monotone" dataKey="value" stroke="hsl(var(--gold))" fill="url(#dao-fill)" strokeWidth={2} dot={false} isAnimationActive={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
+              <Accruing label="Votable VP (live quorum calc)" value={p.latest.quorum_total_vp} since={p.trackingSince.quorum_total_vp} fmt={(v) => fmtGhst(v)} />
+              <Accruing label="DAO treasury GHST" value={p.latest.treasury_ghst} since={p.trackingSince.treasury_ghst} fmt={(v) => `${fmtGhst(v)} GHST`} />
+              <MiniStat label="Quorum requirement" value="7.2M VP" />
+            </div>
+            <RealityLever verdicts={p.verdicts} keys={["dao-turnout"]} />
+          </GlowCard>
+
           {/* GHST section */}
           <GlowCard accent="bg-[hsl(var(--cyan))]/12" className="p-5 mt-4">
             <h2 className="text-sm font-semibold text-muted-foreground mb-3">GHST price (USD)</h2>
@@ -298,6 +358,7 @@ export default function PulsePage() {
               <p>Sales: settled Baazaar ERC721/ERC1155 listings + settled GBM auctions on Base (Goldsky subgraphs), bucketed by UTC day. ERC1155 volume is price × quantity. Historical USD uses that day's GHST price (DefiLlama), never today's.</p>
               <p>"Unique buyers" windows sum daily unique addresses (an address active on N days counts N times). Supply via Base RPC; holders via Blockscout; floor = cheapest active gotchi listing. Supply, holders and floor accrue forward from the tracking-since date — no history exists before it.</p>
               <p>Engagement: summons = portals claimed on Base by claim timestamp (backfilled). Petting, population and kinship stats come from a nightly full scan of claimed gotchis (kinship + last-interacted) and accrue forward from their tracking-since date.</p>
+              <p>Lending: agreements by timeAgreed with upfront cost and unique borrowers (backfilled). Channeling = gotchiverse gotchis with lastChanneledAlchemica within 7 days (nightly count, accruing). DAO: turnout VP and vote counts by proposal close day from the aavegotchi.eth Snapshot space (backfilled); votable-VP and treasury snapshots come from this site's live-quorum pipeline.</p>
               <p className="font-semibold text-foreground">Verdict rules (computed, transparent):</p>
               <ul className="list-disc pl-5 space-y-1">
                 {p.verdicts.map((v) => (<li key={v.key}><span className="font-medium text-foreground">{v.label}:</span> {v.ruleText}</li>))}
@@ -326,6 +387,15 @@ function MiniChart({ title, data, color }: { title: string; data: { day: string;
           </LineChart>
         </ResponsiveContainer>
       </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border/40 bg-muted/10 p-3">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="text-lg font-bold">{value}</div>
     </div>
   );
 }

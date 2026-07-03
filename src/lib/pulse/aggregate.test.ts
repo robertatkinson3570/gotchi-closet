@@ -84,6 +84,37 @@ describe("summarizeEngagement", () => {
   });
 });
 
+describe("bucketLendings", () => {
+  it("sums agreements, upfront GHST, and unique borrowers per day", async () => {
+    const { bucketLendings } = await import("./aggregate");
+    const out = bucketLendings([
+      { t: ts(2026, 6, 1), upfrontGhst: 10, borrower: "0xA" },
+      { t: ts(2026, 6, 1), upfrontGhst: 0, borrower: "0xa" }, // free rental, same borrower
+      { t: ts(2026, 6, 2), upfrontGhst: 5, borrower: "0xB" },
+    ]);
+    const get = (day: string, metric: string) => out.find((r) => r.day === day && r.metric === metric)?.value;
+    expect(get("2026-06-01", "lendings_agreed")).toBe(2);
+    expect(get("2026-06-01", "lending_upfront_ghst")).toBe(10);
+    expect(get("2026-06-01", "lending_borrowers")).toBe(1);
+    expect(get("2026-06-02", "lendings_agreed")).toBe(1);
+  });
+});
+
+describe("bucketProposals", () => {
+  it("sums turnout VP and votes by proposal end day", async () => {
+    const { bucketProposals } = await import("./aggregate");
+    const out = bucketProposals([
+      { end: ts(2026, 6, 1), votes: 100, scoresTotal: 2_000_000 },
+      { end: ts(2026, 6, 1), votes: 50, scoresTotal: 1_000_000 },
+      { end: ts(2026, 6, 5), votes: 99, scoresTotal: 2_229_489 },
+    ]);
+    const get = (day: string, metric: string) => out.find((r) => r.day === day && r.metric === metric)?.value;
+    expect(get("2026-06-01", "dao_turnout_vp")).toBe(3_000_000);
+    expect(get("2026-06-01", "dao_votes")).toBe(150);
+    expect(get("2026-06-05", "dao_turnout_vp")).toBe(2_229_489);
+  });
+});
+
 describe("pctChange / sumRange / levelAt", () => {
   it("pctChange handles zero prior", () => {
     expect(pctChange(110, 100)).toBeCloseTo(10);

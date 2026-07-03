@@ -21,6 +21,8 @@ const FLOW_METRICS = new Set([
   "sales_volume_ghst", "sales_volume_usd", "sales_count", "sales_buyers", "sales_sellers",
   "sales_ghst_gotchis", "sales_ghst_parcels", "sales_ghst_wearables", "sales_ghst_other",
   "gotchis_summoned",
+  "lendings_agreed", "lending_upfront_ghst", "lending_borrowers",
+  "dao_turnout_vp", "dao_votes",
 ]);
 
 /**
@@ -84,6 +86,7 @@ export function buildPulsePayload(stored: SeriesMap, updatedAt: number): PulsePa
     sales_count_30d: sumRange(series.sales_count ?? [], from30, endDay),
     sales_buyers_30d: sumRange(series.sales_buyers ?? [], from30, endDay),
     gotchis_summoned_30d: sumRange(series.gotchis_summoned ?? [], from30, endDay),
+    lendings_agreed_30d: sumRange(series.lendings_agreed ?? [], from30, endDay),
   };
 
   return { updatedAt, series, latest, deltas, windows, verdicts: evaluateVerdicts(series, endDay), trackingSince };

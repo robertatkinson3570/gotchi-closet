@@ -3,11 +3,14 @@
  * snapshots, and an in-memory payload cache. Quorum-style: /api/pulse serves
  * 202 while the first backfill runs, then always the cached payload.
  */
-import { addDays, bucketClaims, bucketSales, dayKey, dayStartTs, summarizeEngagement } from "../../src/lib/pulse/aggregate";
+import {
+  addDays, bucketClaims, bucketLendings, bucketProposals, bucketSales, dayKey, dayStartTs, summarizeEngagement,
+} from "../../src/lib/pulse/aggregate";
 import { buildPulsePayload, type PulsePayload } from "../../src/lib/pulse/payload";
 import { getAllSeries, getMeta, setMeta, upsertMetrics } from "./store";
 import {
-  fetchClaims, fetchEngagementScan, fetchLlamaDaily, fetchSales1155, fetchSales721, fetchSalesGbm, fetchSnapshots,
+  fetchChanneledCount, fetchClaims, fetchDaoSnapshots, fetchEngagementScan, fetchLendings, fetchLlamaDaily,
+  fetchProposalsHistory, fetchSales1155, fetchSales721, fetchSalesGbm, fetchSnapshots,
 } from "./sources";
 
 /** Day-aligned start of history. Predates Base Baazaar activity; earlier pages are empty. */
@@ -53,6 +56,25 @@ async function backfillEngagement(): Promise<void> {
   console.log("[pulse] engagement backfill complete");
 }
 
+/** Phase 3+4 backfill: lending history + DAO proposal turnout. Runs once, additively. */
+async function backfillPhase3(): Promise<void> {
+  console.log("[pulse] lending/DAO backfill starting");
+  const now = Math.floor(Date.now() / 1000);
+  upsertMetrics(bucketLendings(await fetchLendings(BACKFILL_START_TS - 1, now)));
+  upsertMetrics(bucketProposals(await fetchProposalsHistory(BACKFILL_START_TS - 1)));
+  upsertMetrics(await fetchChanneledCount(now));
+  upsertMetrics(await fetchDaoSnapshots(now));
+  setMeta("backfilled_phase3", "1");
+  rebuildPayload();
+  console.log("[pulse] lending/DAO backfill complete");
+}
+
+/** Run any missing additive backfills (v1 DBs upgrade themselves on boot). */
+async function topUpBackfills(): Promise<void> {
+  if (!getMeta("backfilled_engagement")) await backfillEngagement();
+  if (!getMeta("backfilled_phase3")) await backfillPhase3();
+}
+
 /** Re-settle the last 3 full days (late GBM claims etc.) + today's snapshots. */
 export async function nightlyRefresh(): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
@@ -63,6 +85,10 @@ export async function nightlyRefresh(): Promise<void> {
   upsertMetrics(await fetchSnapshots());
   upsertMetrics(bucketClaims(await fetchClaims(startTs, now)));
   upsertMetrics(summarizeEngagement(await fetchEngagementScan(), now));
+  upsertMetrics(bucketLendings(await fetchLendings(startTs, now)));
+  upsertMetrics(bucketProposals(await fetchProposalsHistory(dayStartTs(addDays(today, -30)))));
+  upsertMetrics(await fetchChanneledCount(now));
+  upsertMetrics(await fetchDaoSnapshots(now));
   rebuildPayload();
   console.log("[pulse] nightly refresh complete");
 }
@@ -72,15 +98,13 @@ export function ensureStarted(): void {
   if (payload || building) return;
   if (getMeta("backfilled")) {
     rebuildPayload();
-    // v1 DBs lack engagement history — top it up in the background, non-blocking.
-    if (!getMeta("backfilled_engagement")) {
-      backfillEngagement().catch((err) => console.error("[pulse] engagement backfill failed:", err));
-    }
+    // Older DBs lack the newer families — top up in the background, non-blocking.
+    topUpBackfills().catch((err) => console.error("[pulse] top-up backfill failed:", err));
     return;
   }
   building = true;
   backfill()
-    .then(() => backfillEngagement())
+    .then(() => topUpBackfills())
     .catch((err) => console.error("[pulse] backfill failed:", err))
     .finally(() => {
       building = false;
