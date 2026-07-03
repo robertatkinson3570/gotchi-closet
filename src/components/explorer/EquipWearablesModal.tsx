@@ -32,6 +32,26 @@ function traitSummary(w?: WData): string {
   return parts.join(" · ");
 }
 
+// Visible per-wearable stat modifiers (color-coded), shown on equipped slots and
+// in the picker so you can see what each piece does before/after equipping it.
+function TraitMods({ w }: { w?: WData }) {
+  if (!w) return null;
+  const chips = (w.traitModifiers?.slice(0, 4) ?? [])
+    .map((v, i) => ({ label: TRAIT_ABBR[i], v: Number(v) || 0 }))
+    .filter((c) => c.v !== 0);
+  if (chips.length === 0 && !w.rarityScoreModifier) return null;
+  return (
+    <div className="mt-0.5 flex flex-wrap justify-center gap-x-1 gap-y-0.5 leading-none">
+      {chips.map((c) => (
+        <span key={c.label} className={`text-[8px] font-semibold tabular-nums ${c.v > 0 ? "text-emerald-400" : "text-rose-400"}`}>
+          {c.v > 0 ? "+" : ""}{c.v} {c.label}
+        </span>
+      ))}
+      {!!w.rarityScoreModifier && <span className="text-[8px] text-muted-foreground tabular-nums">+{w.rarityScoreModifier} BRS</span>}
+    </div>
+  );
+}
+
 type Status = { kind: "idle" } | { kind: "busy" } | { kind: "ok" } | { kind: "err"; msg: string };
 
 // Saved outfits are local (per-browser) named loadouts of the 8 slots, applicable
@@ -73,6 +93,7 @@ export function EquipWearablesModal({
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [outfits, setOutfits] = useState<Outfit[]>(() => loadOutfits());
   const [outfitName, setOutfitName] = useState("");
+  const [bestFirst, setBestFirst] = useState(false);
 
   const persistOutfits = (next: Outfit[]) => { setOutfits(next); saveOutfits(next); };
   const saveCurrentOutfit = () => {
@@ -122,13 +143,32 @@ export function EquipWearablesModal({
   // How many of a wearable are already placed across the current selection.
   const usedInSelection = (id: number) => slots.filter((s) => s === id).length;
 
+  // Trait directions like the dress page: rarity rewards extremeness, so a trait
+  // ≥50 wants to go higher (+1), <50 wants to go lower (−1). A wearable's
+  // "alignment" is how much its modifiers push traits the beneficial way.
+  const traitDirections = useMemo(
+    () => Array.from({ length: 4 }, (_, i) => (Number(numericTraits?.[i] ?? 50) >= 50 ? 1 : -1)),
+    [numericTraits]
+  );
+  const alignScore = (id: number) => {
+    const w = WMAP.get(id);
+    if (!w) return -Infinity;
+    let s = 0;
+    (w.traitModifiers?.slice(0, 4) ?? []).forEach((v, i) => { s += traitDirections[i] * (Number(v) || 0); });
+    return s;
+  };
+
   // Candidates for a slot: owned (balance > current placements) + valid for the slot.
   const candidatesFor = (slot: number) => {
     const ids = Object.keys(owned ?? {}).map(Number);
     return ids
       .filter((id) => WMAP.get(id)?.slotPositions?.[slot])
       .filter((id) => (owned![id] ?? 0) > usedInSelection(id) || slots[slot] === id)
-      .sort((a, b) => (WMAP.get(b)?.rarityScoreModifier ?? 0) - (WMAP.get(a)?.rarityScoreModifier ?? 0));
+      .sort((a, b) =>
+        bestFirst
+          ? alignScore(b) - alignScore(a) || (WMAP.get(b)?.rarityScoreModifier ?? 0) - (WMAP.get(a)?.rarityScoreModifier ?? 0)
+          : (WMAP.get(b)?.rarityScoreModifier ?? 0) - (WMAP.get(a)?.rarityScoreModifier ?? 0)
+      );
   };
 
   const setSlot = (slot: number, id: number) => { setSlots((s) => s.map((v, i) => (i === slot ? id : v))); setPicker(null); };
@@ -232,7 +272,8 @@ export function EquipWearablesModal({
                       <span onClick={(e) => { e.stopPropagation(); setSlot(slot, 0); }} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center shadow" title="Remove"><X className="w-3 h-3" /></span>
                     )}
                   </button>
-                  <div className="mt-1 h-7 text-[9px] text-center leading-tight text-muted-foreground truncate" title={w ? `${w.name} (${traitSummary(w)})` : ""}>{w?.name ?? "—"}</div>
+                  <div className="mt-1 text-[9px] text-center leading-tight text-muted-foreground truncate" title={w ? `${w.name} (${traitSummary(w)})` : ""}>{w?.name ?? "—"}</div>
+                  <TraitMods w={w} />
                 </div>
               );
             })}
@@ -244,7 +285,18 @@ export function EquipWearablesModal({
           <div className="border-t border-border/60 p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm font-semibold">Choose {SLOT_NAMES[picker]} wearable</div>
-              <button onClick={() => setPicker(null)} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
+              <div className="flex items-center gap-2">
+                {hasTraits && (
+                  <button
+                    onClick={() => setBestFirst((v) => !v)}
+                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors ${bestFirst ? "border-primary bg-primary/15 text-primary" : "border-border/60 text-muted-foreground hover:text-foreground"}`}
+                    title="Rank the wearables that most improve this gotchi's rarity first"
+                  >
+                    <Sparkles className="w-3 h-3" /> Best for gotchi
+                  </button>
+                )}
+                <button onClick={() => setPicker(null)} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
+              </div>
             </div>
             {ownedLoading ? (
               <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
@@ -260,6 +312,7 @@ export function EquipWearablesModal({
                       <span className="block aspect-square rounded bg-muted/30 flex items-center justify-center"><img src={itemImg(id)} alt={w?.name ?? `#${id}`} className="max-w-[80%] max-h-[80%] object-contain" /></span>
                       <div className="mt-1 text-[9px] font-medium truncate text-center">{w?.name ?? `#${id}`}</div>
                       <div className="text-[8px] text-muted-foreground text-center">×{bal}</div>
+                      <TraitMods w={w} />
                     </button>
                   );
                 })}
