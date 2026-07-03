@@ -42,6 +42,57 @@ export function stepLabel(step: SaveStep): string {
 
 type Slots16 = readonly [number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number];
 
+export type StepWriteArgs =
+  | { address: `0x${string}`; abi: typeof ERC1155_MARKETPLACE_ABI; functionName: "executeERC1155ListingToRecipient"; args: readonly [bigint, `0x${string}`, bigint, bigint, bigint, `0x${string}`] }
+  | { address: `0x${string}`; abi: typeof RESPEC_ABI; functionName: "resetSkillPoints"; args: readonly [number] }
+  | { address: `0x${string}`; abi: typeof RESPEC_ABI; functionName: "spendSkillPoints"; args: readonly [bigint, [number, number, number, number]] }
+  | { address: `0x${string}`; abi: typeof EQUIP_ABI; functionName: "equipWearables"; args: readonly [bigint, Slots16] };
+
+/**
+ * Pure mapping from a SaveStep to the exact contract write it produces
+ * (unit-tested in useSaveOutfit.test.ts). The GHST-approval pre-step for buys
+ * is handled separately by the executor.
+ */
+export function stepToWriteArgs(
+  step: SaveStep,
+  targetGotchiId: string,
+  recipient: `0x${string}`
+): StepWriteArgs {
+  switch (step.kind) {
+    case "buy":
+      return {
+        address: AAVEGOTCHI_DIAMOND_BASE,
+        abi: ERC1155_MARKETPLACE_ABI,
+        functionName: "executeERC1155ListingToRecipient",
+        args: [BigInt(step.listingId), AAVEGOTCHI_DIAMOND_BASE, BigInt(step.wearableId), BigInt(step.quantity), BigInt(step.priceInWei), recipient],
+      };
+    case "resetSkillPoints":
+      // resetSkillPoints takes uint32 — Number, not BigInt.
+      return {
+        address: AAVEGOTCHI_DIAMOND_BASE,
+        abi: RESPEC_ABI,
+        functionName: "resetSkillPoints",
+        args: [Number(targetGotchiId)],
+      };
+    case "spendSkillPoints":
+      return {
+        address: AAVEGOTCHI_DIAMOND_BASE,
+        abi: RESPEC_ABI,
+        functionName: "spendSkillPoints",
+        args: [BigInt(targetGotchiId), step.values as [number, number, number, number]],
+      };
+    case "unequip":
+    case "equip":
+      // unequip and equip are both equipWearables calls
+      return {
+        address: AAVEGOTCHI_DIAMOND_BASE,
+        abi: EQUIP_ABI,
+        functionName: "equipWearables",
+        args: [BigInt(step.gotchiId), step.slots16 as unknown as Slots16],
+      };
+  }
+}
+
 /** Executes a SavePlan sequentially; each step waits for its receipt. Aborts on the first failure. */
 export function useSaveOutfit() {
   const { address, isConnected } = useAccount();
@@ -67,8 +118,8 @@ export function useSaveOutfit() {
         const step = steps[i];
         setProgress({ phase: "running", stepIndex: i, total: steps.length, label: stepLabel(step) });
         try {
-          let hash: `0x${string}`;
           if (step.kind === "buy") {
+            // GHST-approval pre-step (not part of stepToWriteArgs).
             const price = BigInt(step.priceInWei);
             const allowance = (await publicClient.readContract({
               address: GHST_TOKEN_BASE, abi: ERC20_ABI, functionName: "allowance",
@@ -81,30 +132,9 @@ export function useSaveOutfit() {
               });
               await publicClient.waitForTransactionReceipt({ hash: ah, confirmations: 1 });
             }
-            hash = await writeContractAsync({
-              chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ERC1155_MARKETPLACE_ABI,
-              functionName: "executeERC1155ListingToRecipient",
-              args: [BigInt(step.listingId), AAVEGOTCHI_DIAMOND_BASE, BigInt(step.wearableId), BigInt(step.quantity), BigInt(step.priceInWei), address],
-            });
-          } else if (step.kind === "resetSkillPoints") {
-            hash = await writeContractAsync({
-              chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: RESPEC_ABI,
-              functionName: "resetSkillPoints", args: [Number(targetGotchiId)],
-            });
-          } else if (step.kind === "spendSkillPoints") {
-            hash = await writeContractAsync({
-              chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: RESPEC_ABI,
-              functionName: "spendSkillPoints",
-              args: [BigInt(targetGotchiId), step.values as [number, number, number, number]],
-            });
-          } else {
-            // unequip and equip are both equipWearables calls
-            hash = await writeContractAsync({
-              chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: EQUIP_ABI,
-              functionName: "equipWearables",
-              args: [BigInt(step.gotchiId), step.slots16 as unknown as Slots16],
-            });
           }
+          const w = stepToWriteArgs(step, targetGotchiId, address);
+          const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, ...w } as Parameters<typeof writeContractAsync>[0]);
           await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
         } catch (e) {
           setProgress({ phase: "error", stepIndex: i, label: stepLabel(step), message: parseRevert(e).slice(0, 160) });
