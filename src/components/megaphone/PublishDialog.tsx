@@ -157,7 +157,7 @@ export function PublishDialog({ onClose, onPublished }: { onClose: () => void; o
             Publish a video
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Rendered with the video engine (video/). Drop the MP4 here — a poster frame is grabbed automatically.
+            Rendered with the video engine (video/). Drop the MP4 here and a poster frame is grabbed automatically.
           </p>
         </div>
 
@@ -165,20 +165,20 @@ export function PublishDialog({ onClose, onPublished }: { onClose: () => void; o
           <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed border-white/15 bg-white/5 p-6 text-center transition-colors hover:border-[hsl(var(--spectral))]/50">
             {reading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : <UploadCloud className="h-6 w-6 text-muted-foreground" />}
             <span className="text-sm text-muted-foreground">
-              {loaded ? `${loaded.name} — ${loaded.sizeMb.toFixed(1)}MB · ${Math.round(loaded.durationS)}s` : "Choose an MP4 (max 40MB)"}
+              {loaded ? `${loaded.name} · ${loaded.sizeMb.toFixed(1)}MB · ${Math.round(loaded.durationS)}s` : "Choose an MP4 (max 40MB)"}
             </span>
             <input type="file" accept="video/mp4,.mp4" className="hidden" onChange={onFile} />
           </label>
 
           {loaded && loaded.sizeMb > 40 && (
             <p className="rounded-lg border border-red-500/40 bg-red-500/10 p-2 text-xs text-red-300">
-              That file is {loaded.sizeMb.toFixed(1)}MB. Re-render smaller (or trim) — the cap is 40MB.
+              That file is {loaded.sizeMb.toFixed(1)}MB. Re-render smaller (or trim), the cap is 40MB.
             </p>
           )}
 
           <Input placeholder="Title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} />
           <textarea
-            placeholder="Caption (posted alongside the video — X / Discord / YouTube)"
+            placeholder="Caption (posted with the video on X / Discord / YouTube)"
             value={caption}
             maxLength={600}
             onChange={(e) => setCaption(e.target.value)}

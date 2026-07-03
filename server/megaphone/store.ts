@@ -55,8 +55,18 @@ export function getDb(): Database.Database {
       created_at    INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_videos_status ON videos(status, created_at);
+    CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
   `);
   return db;
+}
+
+export function getMeta(key: string): string | null {
+  const row = getDb().prepare(`SELECT value FROM meta WHERE key=?`).get(key) as { value: string } | undefined;
+  return row?.value ?? null;
+}
+
+export function setMeta(key: string, value: string): void {
+  getDb().prepare(`INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`).run(key, value);
 }
 
 function toPublic(r: VideoRow): VideoPublic {

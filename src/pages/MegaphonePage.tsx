@@ -86,7 +86,7 @@ export default function MegaphonePage() {
   return (
     <div className="relative container mx-auto max-w-[1200px] px-4 py-6">
       <Seo
-        title="Megaphone — GotchiCloset content engine"
+        title="Megaphone · GotchiCloset content engine"
         description="Auto-generated Aavegotchi videos from live on-chain data. Grab a clip, post it anywhere. A functional prototype of a community content + distribution engine."
         canonical={siteUrl("/megaphone")}
       />
@@ -112,7 +112,7 @@ export default function MegaphonePage() {
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             Auto-generated Aavegotchi videos from live on-chain data, rendered at near-zero cost. Grab a clip and
-            post it anywhere — X, Telegram, YouTube. The distribution engine is off-the-shelf; this is the content half, working.
+            post it anywhere you like, X, Telegram, YouTube. The distribution engine is off-the-shelf, this is the content half, working.
           </p>
         </div>
       </div>

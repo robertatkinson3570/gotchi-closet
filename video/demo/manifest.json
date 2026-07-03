@@ -1,0 +1,47 @@
+[
+  {
+    "file": "pulserecap.mp4",
+    "template": "PulseRecap",
+    "title": "Aavegotchi Weekly Pulse",
+    "caption": "gm frens. the weekly pulse, auto-generated from live on chain data and rendered in the gotchicloset video engine at basically zero cost.",
+    "gotchiId": null,
+    "durationS": 27,
+    "pin": true
+  },
+  {
+    "file": "spotlight.mp4",
+    "template": "Spotlight",
+    "title": "Gotchi Spotlight",
+    "caption": "a gotchi spotlight straight from on chain traits, kinship and wearables. one command in, one video out.",
+    "gotchiId": "4285",
+    "durationS": 24,
+    "pin": false
+  },
+  {
+    "file": "fitreveal.mp4",
+    "template": "FitReveal",
+    "title": "Fit Check",
+    "caption": "fit check. watch the rarity score climb as each wearable goes on, all computed from live data.",
+    "gotchiId": "4285",
+    "durationS": 28,
+    "pin": false
+  },
+  {
+    "file": "salealert.mp4",
+    "template": "SaleAlert",
+    "title": "Baazaar Sale Alert",
+    "caption": "sold on the baazaar. notable gotchi sales turned into a clip automatically.",
+    "gotchiId": "15462",
+    "durationS": 15,
+    "pin": false
+  },
+  {
+    "file": "other.mp4",
+    "template": "Other",
+    "title": "Another Spotlight",
+    "caption": "another spotlight. drop any gotchi id in and out comes a video, ready to post.",
+    "gotchiId": "1484",
+    "durationS": 24,
+    "pin": false
+  }
+]

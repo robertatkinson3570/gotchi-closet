@@ -15,6 +15,7 @@ import mapRoutes from "./routes/map";
 import pulseRoutes from "./routes/pulse";
 import gamesRoutes from "./routes/games";
 import megaphoneRoutes from "./routes/megaphone";
+import { seedDemos as seedMegaphoneDemos } from "./megaphone/seed";
 import { stewardRouter } from "./routes/steward";
 import { wispMcpHttpHandler } from "./mcp/http";
 import { getDebugStats } from "./aavegotchi/serverSvgService";
@@ -115,6 +116,8 @@ export function createApp() {
   startStewardCron();
   // Boot pulse backfill/refresh (backfills data/pulse.db on first run)
   startPulseCron();
+  // One-time: publish the committed sample videos so /megaphone + /pulse ship with content.
+  seedMegaphoneDemos();
 
   return app;
 }
