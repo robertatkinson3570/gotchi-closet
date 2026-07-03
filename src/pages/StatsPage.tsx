@@ -5,7 +5,7 @@ import { BarChart3, Loader2, Tag, Gavel, TrendingUp } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { CORE_SUBGRAPH_URL } from "@/lib/lending/contracts";
-import { GBM_SUBGRAPH } from "@/lib/subgraph";
+import { GBM_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { useGhstUsd } from "@/hooks/useGhstUsd";
 
 type Win = { key: string; label: string; seconds: number };
@@ -30,7 +30,7 @@ function catLabelNum(kind: "erc721" | "erc1155", c: number): number {
 }
 
 async function gql(url: string, query: string) {
-  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query }) });
+  const res = await coreSubgraphFetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query }) });
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");
   return json.data;

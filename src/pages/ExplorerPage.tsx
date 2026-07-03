@@ -25,7 +25,7 @@ import { GotchiManageModal, type ManageGotchi } from "@/components/explorer/Gotc
 import { OwnedOverview } from "@/components/explorer/OwnedOverview";
 import { OwnedMarketGrid } from "@/components/explorer/OwnedMarketGrid";
 import { useQuery } from "@tanstack/react-query";
-import { CORE_SUBGRAPH } from "@/lib/subgraph";
+import { CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE, FAKE_CARDS_DIAMOND_BASE, FORGE_DIAMOND_BASE, GUARDIAN_SKINS_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { ChevronLeft, ChevronRight, Tag, X, Loader2 } from "lucide-react";
 import { usePublicClient, useWriteContract } from "wagmi";
@@ -126,7 +126,7 @@ export default function ExplorerPage() {
     staleTime: 60_000,
     queryFn: async () => {
       const q = `{ user(id:"${connectedAddress!.toLowerCase()}"){ gotchisLentOut gotchisBorrowed } }`;
-      const res = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+      const res = await coreSubgraphFetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
       const j = await res.json();
       const u = j.data?.user ?? {};
       return { lentOut: new Set<string>((u.gotchisLentOut ?? []).map(String)), borrowed: new Set<string>((u.gotchisBorrowed ?? []).map(String)) };

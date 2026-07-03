@@ -25,7 +25,7 @@ import { useToast } from "@/ui/use-toast";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "./AssetImage";
 import { GotchiSvgById, FakeGotchiImage } from "./GotchiSvgById";
 import { Gavel } from "lucide-react";
-import { CORE_SUBGRAPH } from "@/lib/subgraph";
+import { CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { GotchiExplorerCard } from "./GotchiExplorerCard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
@@ -261,7 +261,7 @@ async function fetchGotchiBatch(ids: string[]): Promise<Record<string, GInfo>> {
   if (ids.length === 0) return {};
   const idList = ids.map((i) => `"${i}"`).join(",");
   const q = `{ aavegotchis(first:1000, where:{ id_in:[${idList}] }){ id name baseRarityScore modifiedRarityScore withSetsRarityScore kinship level hauntId numericTraits modifiedNumericTraits withSetsNumericTraits } }`;
-  const res = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
   const json = await res.json();
   const out: Record<string, GInfo> = {};
   for (const g of json.data?.aavegotchis ?? []) {
@@ -787,7 +787,7 @@ const num = (a: any): number[] => (Array.isArray(a) ? a.map((n) => Number(n)) : 
 // same card the Explorer uses (traits, BRS, wearables, info overlay).
 async function fetchAuctionGotchi(id: string): Promise<ExplorerGotchi | null> {
   const q = `{ aavegotchi(id:"${id}"){ id gotchiId name hauntId collateral level kinship experience numericTraits modifiedNumericTraits withSetsNumericTraits baseRarityScore modifiedRarityScore withSetsRarityScore equippedWearables owner{ id } createdAt usedSkillPoints equippedSetID equippedSetName stakedAmount lastInteracted } }`;
-  const res = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
   const json = await res.json();
   const g = json.data?.aavegotchi;
   if (!g) return null;

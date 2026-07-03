@@ -4,7 +4,7 @@ import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi
 import { Loader2, Tag, X } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, REALM_DIAMOND_BASE, TILE_DIAMOND_BASE, FORGE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE, FAKE_CARDS_DIAMOND_BASE, GUARDIAN_SKINS_DIAMOND_BASE, ERC1155_MARKETPLACE_ABI, ERC721_MARKETPLACE_ABI } from "@/lib/lending/contracts";
-import { GOTCHIVERSE_SUBGRAPH, CORE_SUBGRAPH } from "@/lib/subgraph";
+import { GOTCHIVERSE_SUBGRAPH, CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
 import { AssetImage, itemImageCandidates, installationImageCandidates, parcelImageCandidates, tileImageCandidates } from "./AssetImage";
@@ -103,7 +103,7 @@ async function fetchOwned(kind: OwnedKind, address: string, publicClient: NonNul
   }
   if (kind === "portal") {
     const q = `{ portals(first: 500, where: { owner: "${address}", status_lt: 3 }){ tokenId } }`;
-    const r = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+    const r = await coreSubgraphFetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
     const j = await r.json();
     return (j.data?.portals ?? []).map((p: { tokenId: string }) => ({ id: String(p.tokenId), bal: 1 }));
   }
@@ -228,7 +228,7 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
     try {
       const cat = LISTING_CATEGORY[itemKind] ?? 4;
       const q = `{ erc721Listings(first:1, where:{ tokenId:"${id}", seller:"${address.toLowerCase()}", category:${cat}, cancelled:false, timePurchased:"0" }){ id } }`;
-      const r = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+      const r = await coreSubgraphFetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
       const lid = (await r.json()).data?.erc721Listings?.[0]?.id;
       if (!lid) { toast({ title: "No active listing found" }); return; }
       const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ERC721_MARKETPLACE_ABI, functionName: "cancelERC721Listing", args: [BigInt(lid)] });

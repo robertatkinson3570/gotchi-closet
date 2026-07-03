@@ -4,7 +4,7 @@ import { fetchBaazaarListings } from "@/lib/baazaarListings";
 
 export type ListingPriceMap = Record<string, string>;
 
-import { CORE_SUBGRAPH as BAAZAAR_SUBGRAPH_URL } from "@/lib/subgraph";
+import { CORE_SUBGRAPH as BAAZAAR_SUBGRAPH_URL, coreSubgraphFetch } from "@/lib/subgraph";
 
 async function fetchListingByTokenId(tokenId: string): Promise<{ tokenId: string; price: string | null }> {
   const query = `
@@ -20,7 +20,7 @@ async function fetchListingByTokenId(tokenId: string): Promise<{ tokenId: string
     }
   `;
 
-  const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
+  const response = await coreSubgraphFetch(BAAZAAR_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, variables: { tokenId } }),

@@ -5,11 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { REALM_DIAMOND_BASE, REALM_FACET_ABI } from "@/lib/lending/contracts";
 
-import { GOTCHIVERSE_SUBGRAPH, CORE_SUBGRAPH } from "@/lib/subgraph";
+import { GOTCHIVERSE_SUBGRAPH, CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 
 // Last Baazaar sale of the parcel (ERC721 category 4 = realm).
 async function fetchLastSale(tokenId: string): Promise<{ priceGhst: number; time: number } | null> {
-  const res = await fetch(CORE_SUBGRAPH, {
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

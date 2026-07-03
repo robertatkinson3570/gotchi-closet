@@ -5,7 +5,7 @@ import { InlineSvg } from "./InlineSvg";
 
 // The svg subgraph stores each gotchi's fully-rendered SVG by token id — used
 // where we have a gotchi id but not its traits (e.g. auction listings).
-import { SVG_SUBGRAPH as SVG_SUBGRAPH_URL, CORE_SUBGRAPH } from "@/lib/subgraph";
+import { SVG_SUBGRAPH as SVG_SUBGRAPH_URL, CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 
 async function fetchGotchiSvg(id: string): Promise<string | null> {
   const res = await fetch(SVG_SUBGRAPH_URL, {
@@ -33,7 +33,7 @@ export function GotchiSvgById({ id, className }: { id: string; className?: strin
 // resolved via the dapp's image proxy using the metadata hash from the core
 // subgraph's fakeGotchiNFTTokens entity.
 async function fetchFakeGotchiImage(id: string): Promise<string | null> {
-  const res = await fetch(CORE_SUBGRAPH, {
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

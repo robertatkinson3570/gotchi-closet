@@ -247,7 +247,7 @@ const GOTCHIS_BY_IDS_EXPLORER = gql`
   }
 `;
 
-import { CORE_SUBGRAPH as BAAZAAR_SUBGRAPH_URL } from "@/lib/subgraph";
+import { CORE_SUBGRAPH as BAAZAAR_SUBGRAPH_URL, coreSubgraphFetch } from "@/lib/subgraph";
 
 const BAAZAAR_GOTCHI_LISTINGS_QUERY = `
   query BaazaarGotchiListings($first: Int!, $skip: Int!, $orderBy: String!, $orderDirection: String!) {
@@ -337,7 +337,7 @@ async function fetchAllListings(): Promise<void> {
     let hasMore = true;
     
     while (hasMore) {
-      const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
+      const response = await coreSubgraphFetch(BAAZAAR_SUBGRAPH_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -531,7 +531,7 @@ export function useExplorerData(
       } else if (mode === "baazaar" || sort.field === "price" || sort.field === "listingCreated" || filters.priceMin || filters.priceMax) {
         const baazaarOrderBy = getBaazaarOrderBy(sort.field);
         const baazaarDirection = (sort.field === "price" || sort.field === "listingCreated") ? sort.direction : "desc";
-        const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
+        const response = await coreSubgraphFetch(BAAZAAR_SUBGRAPH_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -568,7 +568,7 @@ export function useExplorerData(
         // Build where clause from filters for server-side filtering
         const whereClause = buildWhereClause(filters);
         const queryStr = buildGotchisQuery(whereClause);
-        const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
+        const response = await coreSubgraphFetch(BAAZAAR_SUBGRAPH_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -619,7 +619,7 @@ export function useExplorerData(
       if (usesBaazaarSource) {
         const baazaarOrderBy = getBaazaarOrderBy(sort.field);
         const baazaarDirection = (sort.field === "price" || sort.field === "listingCreated") ? sort.direction : "desc";
-        const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
+        const response = await coreSubgraphFetch(BAAZAAR_SUBGRAPH_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -657,7 +657,7 @@ export function useExplorerData(
         const whereClause = buildWhereClause(filters);
         const queryStr = buildGotchisQuery(whereClause);
         
-        const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
+        const response = await coreSubgraphFetch(BAAZAAR_SUBGRAPH_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

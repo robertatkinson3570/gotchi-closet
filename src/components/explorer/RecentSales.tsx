@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { CORE_SUBGRAPH } from "@/lib/subgraph";
+import { CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { shortAddress as short } from "@/lib/format";
 
 type Sale = { seller: string; buyer?: string; priceWei: string; time: number };
@@ -25,7 +25,7 @@ async function fetchSales(kind: "erc721" | "erc1155", tokenId: string): Promise<
   const q = kind === "erc721"
     ? `{ erc721Listings(first: 25, where: { tokenId: "${tokenId}", timePurchased_gt: "0" }, orderBy: timePurchased, orderDirection: desc){ seller buyer priceInWei timePurchased } }`
     : `{ erc1155Listings(first: 25, where: { erc1155TypeId: "${tokenId}", sold: true }, orderBy: timeLastPurchased, orderDirection: desc){ seller priceInWei timeLastPurchased } }`;
-  const res = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");
   if (kind === "erc721") {

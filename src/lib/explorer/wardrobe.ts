@@ -1,4 +1,4 @@
-import { CORE_SUBGRAPH } from "@/lib/subgraph";
+import { CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 
 export type OnchainOutfit = { id: string; name: string; gotchiTokenId: string; wearables: number[] };
 export type WardrobeEvent = {
@@ -12,7 +12,7 @@ export type WardrobeEvent = {
 export type Wearer = { gotchiId: string; equippedAt: number };
 
 async function gql<T>(query: string, variables: Record<string, unknown>): Promise<T> {
-  const res = await fetch(CORE_SUBGRAPH, {
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, variables }),

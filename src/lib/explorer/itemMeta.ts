@@ -1,5 +1,5 @@
 import wearablesData from "../../../data/wearables.json";
-import { CORE_SUBGRAPH } from "@/lib/subgraph";
+import { CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { getSlotName, getWearableRarityTier, getWearableSlots } from "./wearableTypes";
 
 /** Display metadata for any Baazaar ERC1155 type id (wearable / consumable / schematic). */
@@ -95,7 +95,7 @@ export function fetchItemMetaMap(): Promise<Map<number, ItemMeta>> {
     remote = (async () => {
       const map = new Map(localMeta);
       try {
-        const res = await fetch(CORE_SUBGRAPH, {
+        const res = await coreSubgraphFetch(CORE_SUBGRAPH, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

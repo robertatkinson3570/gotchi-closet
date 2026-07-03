@@ -1,6 +1,6 @@
 import { formatUnits } from "viem";
 
-import { CORE_SUBGRAPH as BAAZAAR_SUBGRAPH_URL } from "@/lib/subgraph";
+import { CORE_SUBGRAPH as BAAZAAR_SUBGRAPH_URL, coreSubgraphFetch } from "@/lib/subgraph";
 
 export type BaazaarPriceMap = Record<
   number,
@@ -57,7 +57,7 @@ async function fetchAllListings(): Promise<ERC1155Listing[]> {
   let hasMore = true;
 
   while (hasMore) {
-    const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
+    const response = await coreSubgraphFetch(BAAZAAR_SUBGRAPH_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

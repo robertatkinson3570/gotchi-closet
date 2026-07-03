@@ -1,4 +1,4 @@
-import { CORE_SUBGRAPH } from "@/lib/subgraph";
+import { CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 
 /** A wallet's balance of a single wearable, for the "Top holders" section. */
 export type HolderRow = { owner: string; balance: number };
@@ -19,7 +19,7 @@ const TOP_HOLDERS_QUERY = `
 
 /** Top 10 wallets holding a wearable, ordered by balance descending. */
 export async function fetchTopHolders(wearableId: number): Promise<HolderRow[]> {
-  const res = await fetch(CORE_SUBGRAPH, {
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -44,7 +44,7 @@ const OWNED_BALANCES_QUERY = `
 
 /** Every wearable (and its balance) a wallet currently holds. */
 export async function fetchOwnedWearableBalances(owner: string): Promise<Map<number, number>> {
-  const res = await fetch(CORE_SUBGRAPH, {
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

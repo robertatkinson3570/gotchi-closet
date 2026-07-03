@@ -3,7 +3,7 @@
  * Community ask (Discord general-chat 2026-06-29): "is there even a way to
  * see a kinship leaderboard?" — this module answers it with one query.
  */
-import { CORE_SUBGRAPH } from "@/lib/subgraph";
+import { CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 
 export type LeaderboardSort = "kinship" | "experience";
 export const LEADERBOARD_PAGE_SIZE = 100;
@@ -27,7 +27,7 @@ export function buildLeaderboardQuery(sort: LeaderboardSort, first: number, skip
 
 export async function fetchLeaderboard(sort: LeaderboardSort, page: number): Promise<LeaderboardRow[]> {
   const query = buildLeaderboardQuery(sort, LEADERBOARD_PAGE_SIZE, page * LEADERBOARD_PAGE_SIZE);
-  const res = await fetch(CORE_SUBGRAPH, {
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query }),

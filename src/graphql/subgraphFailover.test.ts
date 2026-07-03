@@ -145,4 +145,29 @@ describe("routing subscription (isOnBackup / subscribeRouting)", () => {
     expect(mod.isOnBackup()).toBe(true);
     expect(listener).not.toHaveBeenCalled();
   });
+
+  it("failoverFetch reroutes core requests to the active (backup) URL after failover", async () => {
+    blocks.set(P, null);
+    blocks.set(B, 2000);
+    await mod.refreshActiveUrl();
+    expect(mod.isOnBackup()).toBe(true);
+
+    await mod.failoverFetch(P, { method: "POST" });
+    const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+    const calls = fetchMock.mock.calls;
+    expect(String(calls[calls.length - 1][0])).toBe(B);
+  });
+
+  it("failoverFetch passes non-core subgraph URLs through untouched", async () => {
+    const GBM = "https://api.goldsky.com/api/public/x/subgraphs/aavegotchi-gbm-baazaar-base/prod/gn";
+    blocks.set(P, null);
+    blocks.set(B, 2000);
+    blocks.set(GBM, 3000);
+    await mod.refreshActiveUrl(); // on backup now
+
+    await mod.failoverFetch(GBM, { method: "POST" });
+    const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+    const calls = fetchMock.mock.calls;
+    expect(String(calls[calls.length - 1][0])).toBe(GBM); // NOT rerouted to the core backup
+  });
 });

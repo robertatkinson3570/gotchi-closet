@@ -157,11 +157,25 @@ export function startHealthPolling(intervalMs = 45_000): void {
 }
 
 /**
- * urql-compatible fetch: hit the active endpoint; on a network/HTTP error, retry
- * the alternate once. `input` (urql's configured url) is ignored in favour of the
- * health-selected active URL.
+ * Is this request for the CORE subgraph (the only one with a backup mirror)?
+ * Matches the env-configured endpoints plus any URL naming the core deployment,
+ * so the check holds across env overrides (drills) and the gateway URL (which
+ * embeds a subgraph ID instead of the deployment name).
  */
-export const failoverFetch: typeof fetch = async (_input, init) => {
+const isCoreUrl = (url: string) =>
+  url === PRIMARY || (BACKUP !== "" && url === BACKUP) || url.includes("aavegotchi-core-base");
+
+/**
+ * urql-compatible fetch for CORE subgraph requests: hit the health-selected
+ * active endpoint; on a network/HTTP error, retry the alternate once. Requests
+ * for OTHER subgraphs (GBM/SVG/gotchiverse/XP — no backup exists) pass through
+ * to plain fetch untouched, so this is safe to use in shared helpers that take
+ * a URL parameter.
+ */
+export const failoverFetch: typeof fetch = async (input, init) => {
+  const requested =
+    typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  if (requested && !isCoreUrl(requested)) return fetch(input, init);
   const other = activeUrl === PRIMARY ? BACKUP : PRIMARY;
   try {
     const res = await fetch(activeUrl, init);

@@ -1,7 +1,11 @@
 type EnvKey = keyof ImportMetaEnv | string;
 
+// `import.meta.env` only exists under Vite. This module is also evaluated by the
+// Express server via tsx (e.g. server/dao/quorum.ts -> src/lib/subgraph.ts ->
+// subgraphFailover -> here), where every access must degrade to the defaults
+// instead of crashing the boot.
 function readEnv(key: EnvKey) {
-  return import.meta.env[key as keyof ImportMetaEnv];
+  return import.meta.env?.[key as keyof ImportMetaEnv];
 }
 
 function resolveEnv(
@@ -13,10 +17,10 @@ function resolveEnv(
   const value = raw ?? "";
   if (!value) {
     if (options?.required) {
-      if (import.meta.env.PROD) {
+      if (import.meta.env?.PROD) {
         throw new Error(`[env] Missing required variable: ${key}`);
       }
-      if (import.meta.env.DEV) {
+      if (import.meta.env?.DEV) {
         console.warn(`[env] Missing required variable: ${key}`);
       }
     }
@@ -65,7 +69,7 @@ export const env = {
   // VITE_COMPANION_API_URL if the hostname differs.
   companionApiUrl: resolveEnv(
     "VITE_COMPANION_API_URL",
-    import.meta.env.PROD ? "https://api.gotchicloset.com" : ""
+    import.meta.env?.PROD ? "https://api.gotchicloset.com" : ""
   ),
   // Wallet that receives GHST premium payments for the companion. Defaults to the
   // GotchiCloset operator wallet (same as the lending fee address).

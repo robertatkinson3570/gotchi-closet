@@ -1,4 +1,4 @@
-import { CORE_SUBGRAPH } from "@/lib/subgraph";
+import { CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 
 export type PriceHistory = { pricesGhst: number[]; timesTraded: number };
 export type PriceHistoryKind = "gotchi" | "portal" | "parcel";
@@ -13,7 +13,7 @@ const ENTITY_BY_KIND: Record<PriceHistoryKind, string> = {
 export async function fetchPriceHistory(kind: PriceHistoryKind, tokenId: string): Promise<PriceHistory | null> {
   const entity = ENTITY_BY_KIND[kind];
   const q = `query($id: ID!){ ${entity}(id: $id){ historicalPrices timesTraded } }`;
-  const res = await fetch(CORE_SUBGRAPH, {
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query: q, variables: { id: tokenId } }),

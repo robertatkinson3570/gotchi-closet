@@ -9,7 +9,7 @@ import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { shortAddress as short } from "@/lib/format";
 import { CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE, WEARABLE_DIAMOND_BASE, FORGE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE } from "@/lib/lending/contracts";
-import { GBM_SUBGRAPH } from "@/lib/subgraph";
+import { GBM_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "@/components/explorer/AssetImage";
 import { fetchItemMetaMap, itemMetaSync, GUARDIAN_SKIN_NAMES, RARITY_COLORS, type ItemMeta } from "@/lib/explorer/itemMeta";
@@ -107,7 +107,7 @@ function metaName(s: Row, meta?: ItemMeta): string | undefined {
 }
 
 async function gql(url: string, query: string) {
-  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query }) });
+  const res = await coreSubgraphFetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query }) });
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");
   return json.data;

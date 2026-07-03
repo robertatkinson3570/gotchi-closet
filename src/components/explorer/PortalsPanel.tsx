@@ -4,7 +4,7 @@ import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi
 import { Aperture, Loader2, X, CheckCircle2, XCircle, Sparkles } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
-import { CORE_SUBGRAPH } from "@/lib/subgraph";
+import { CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { InlineSvg } from "./InlineSvg";
 
@@ -23,7 +23,7 @@ type Portal = { id: string; status: number };
 
 async function fetchPortals(owner: string): Promise<Portal[]> {
   const query = `query($owner: String!){ aavegotchis(first: 100, where: { owner: $owner, status_lt: 3 }){ id status } }`;
-  const res = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query, variables: { owner } }) });
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query, variables: { owner } }) });
   const json = await res.json();
   return (json.data?.aavegotchis ?? []).map((a: any) => ({ id: a.id, status: Number(a.status) })).sort((a: Portal, b: Portal) => b.status - a.status);
 }

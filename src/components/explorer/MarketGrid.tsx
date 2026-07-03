@@ -10,7 +10,7 @@ import { ParcelDetailModal } from "@/components/lending/ParcelDetailModal";
 import { useMarketplaceBuy, type BuyParams } from "@/hooks/useMarketplaceBuy";
 import { useToast } from "@/ui/use-toast";
 import { CORE_SUBGRAPH_URL } from "@/lib/lending/contracts";
-import { GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
+import { GOTCHIVERSE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "./AssetImage";
 import { PortalImage } from "./PortalImage";
 import { FakeGotchiImage } from "./GotchiSvgById";
@@ -36,7 +36,7 @@ async function fetchListings(kind: "erc721" | "erc1155", category: number, token
     kind === "erc721"
       ? `{ erc721Listings(first: 1000, where: { ${where721} }, orderBy: timeCreated, orderDirection: desc){ id tokenId priceInWei timeCreated category } }`
       : `{ erc1155Listings(first: 1000, where: { ${where1155} }, orderBy: timeCreated, orderDirection: desc){ id erc1155TypeId priceInWei quantity timeCreated category } }`;
-  const res = await fetch(CORE_SUBGRAPH_URL, {
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query }),
@@ -114,7 +114,7 @@ type PortalMeta = { hauntId: string; status: string; topRarity?: number };
 async function fetchPortalMeta(tokenIds: string[]): Promise<Record<string, PortalMeta>> {
   if (tokenIds.length === 0) return {};
   const query = `query($ids: [ID!]){ portals(first: 1000, where: { id_in: $ids }){ id hauntId status options { baseRarityScore } } }`;
-  const res = await fetch(CORE_SUBGRAPH_URL, {
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, variables: { ids: tokenIds } }),
@@ -134,7 +134,7 @@ type FakeMeta = { name: string; artist: string; editions?: number };
 async function fetchFakeMeta(tokenIds: string[]): Promise<Record<string, FakeMeta>> {
   if (tokenIds.length === 0) return {};
   const query = `query($ids: [BigInt!]){ fakeGotchiNFTTokens(first: 1000, where: { identifier_in: $ids }){ identifier name artistName editions } }`;
-  const res = await fetch(CORE_SUBGRAPH_URL, {
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, variables: { ids: tokenIds } }),
@@ -154,7 +154,7 @@ type LastSold = { priceWei: string; time: number };
 async function fetchLastSold(tokenIds: string[], categories: number[]): Promise<Record<string, LastSold>> {
   if (tokenIds.length === 0) return {};
   const query = `query($ids: [String!]){ erc721Listings(first: 1000, where: { tokenId_in: $ids, category_in: [${categories.join(", ")}], timePurchased_gt: "0" }, orderBy: timePurchased, orderDirection: desc){ tokenId priceInWei timePurchased } }`;
-  const res = await fetch(CORE_SUBGRAPH_URL, {
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, variables: { ids: tokenIds } }),

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Coins, Sparkles, Wallet } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { GHST_TOKEN_BASE, ALCHEMICA_TOKENS_BASE, ERC20_ABI } from "@/lib/lending/contracts";
-import { CORE_SUBGRAPH } from "@/lib/subgraph";
+import { CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { qk } from "@/lib/queryKeys";
 import { portfolioFloorGhst, weiToGhst } from "@/lib/portfolio";
 import { fetchOwnedWearableBalances } from "@/lib/explorer/wearableHolders";
@@ -46,7 +46,7 @@ export function OwnedOverview() {
     staleTime: 60_000,
     queryFn: async (): Promise<string | null> => {
       const q = `{ erc721Listings(first:1, where:{ category:3, cancelled:false, timePurchased:"0" }, orderBy:priceInWei, orderDirection:asc){ priceInWei } }`;
-      const res = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+      const res = await coreSubgraphFetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
       const j = await res.json();
       return j.data?.erc721Listings?.[0]?.priceInWei ?? null;
     },
@@ -59,7 +59,7 @@ export function OwnedOverview() {
     staleTime: 60_000,
     queryFn: async (): Promise<number> => {
       const q = `{ user(id:"${address!.toLowerCase()}"){ gotchisOwned(first:1000){ id } gotchisLentOut } }`;
-      const res = await fetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+      const res = await coreSubgraphFetch(CORE_SUBGRAPH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
       const j = await res.json();
       const u = j.data?.user;
       return (u?.gotchisOwned?.length ?? 0) + (u?.gotchisLentOut?.length ?? 0);

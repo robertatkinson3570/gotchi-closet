@@ -7,7 +7,7 @@
 
 import type { Gotchi } from "@/types";
 
-import { CORE_SUBGRAPH as BAAZAAR_SUBGRAPH_URL } from "@/lib/subgraph";
+import { CORE_SUBGRAPH as BAAZAAR_SUBGRAPH_URL, coreSubgraphFetch } from "@/lib/subgraph";
 
 // Entity names (adjust if schema differs)
 const LISTING_ENTITY = "erc721Listings";
@@ -149,7 +149,7 @@ export async function fetchBaazaarListings(
     }
   `;
 
-  const response = await fetch(BAAZAAR_SUBGRAPH_URL, {
+  const response = await coreSubgraphFetch(BAAZAAR_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

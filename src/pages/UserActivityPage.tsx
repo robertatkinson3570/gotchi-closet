@@ -8,7 +8,7 @@ import { siteUrl } from "@/lib/site";
 import { shortAddress as short } from "@/lib/format";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE, GBM_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE, WEARABLE_DIAMOND_BASE, FORGE_DIAMOND_BASE, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
-import { CORE_SUBGRAPH, GBM_SUBGRAPH, GOTCHIVERSE_SUBGRAPH } from "@/lib/subgraph";
+import { CORE_SUBGRAPH, GBM_SUBGRAPH, GOTCHIVERSE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "@/components/explorer/AssetImage";
@@ -63,7 +63,7 @@ function ago(unix: number): string {
   return v === "just now" ? v : s < 0 ? `in ${v}` : `${v} ago`;
 }
 async function gql(url: string, query: string, variables?: any) {
-  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query, variables }) });
+  const res = await coreSubgraphFetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query, variables }) });
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");
   return json.data;

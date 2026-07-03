@@ -7,7 +7,7 @@ import { GotchiSvgById } from "@/components/explorer/GotchiSvgById";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { env } from "@/lib/env";
 import { useSealedTokens } from "@/state/useSealedTokens";
-import { CORE_SUBGRAPH } from "@/lib/subgraph";
+import { CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 
 // ABI for SoulSeal.seal(...), the owner submits this from their own wallet to
 // anchor the soul on Base. The contract verifies the attestor signature AND that
@@ -317,7 +317,7 @@ export function SoulCertificate({ tokenId, onClose }: SoulCertificateProps) {
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch(CORE_SUBGRAPH, {
+        const r = await coreSubgraphFetch(CORE_SUBGRAPH, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query: `{ user(id:"${address.toLowerCase()}"){ gotchisBorrowed } }` }),

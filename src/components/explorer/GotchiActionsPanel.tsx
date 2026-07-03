@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { coreSubgraphFetch } from "@/lib/subgraph";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw, Clock, Lock, FlaskConical, Stamp, Gavel } from "lucide-react";
@@ -123,7 +124,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
       const q = `{ aavegotchi(id:"${gotchiId}"){ hauntId level experience kinship baseRarityScore withSetsRarityScore equippedSetName lastInteracted createdAt }
         listing: erc721Listings(first:1, where:{ tokenId:"${gotchiId}", category:3, cancelled:false, timePurchased:"0" }){ id priceInWei }
         offer: erc721BuyOrders(first:1, where:{ erc721TokenId:"${gotchiId}", category:3, canceled:false }, orderBy:priceInWei, orderDirection:desc){ id priceInWei buyer } }`;
-      const res = await fetch(CORE_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+      const res = await coreSubgraphFetch(CORE_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
       const j = await res.json();
       return j.data ?? null;
     },
@@ -159,7 +160,7 @@ export function GotchiManageModal({ gotchi, onClose }: { gotchi: ManageGotchi; o
     setStatus({ kind: "busy", label: "Finding your listing…" });
     try {
       const q = `query($t:String!,$s:String!){ erc721Listings(first:1, where:{ tokenId:$t, seller:$s, category:${BAAZAAR_CATEGORY.AAVEGOTCHI}, cancelled:false, timePurchased:"0" }){ id } }`;
-      const res = await fetch(CORE_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q, variables: { t: gotchiId, s: address.toLowerCase() } }) });
+      const res = await coreSubgraphFetch(CORE_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q, variables: { t: gotchiId, s: address.toLowerCase() } }) });
       const json = await res.json();
       const lid = json.data?.erc721Listings?.[0]?.id;
       if (!lid) return setStatus({ kind: "err", label: "No open listing found for this gotchi" });
@@ -514,7 +515,7 @@ function EndRentalBody({ gotchiId }: { gotchiId: string }) {
     staleTime: 30_000,
     queryFn: async () => {
       const q = `{ gotchiLendings(first:1, where:{ gotchiTokenId:"${gotchiId}", completed:false, cancelled:false }){ timeAgreed period borrower splitOwner splitBorrower splitOther upfrontCost } }`;
-      const res = await fetch(CORE_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+      const res = await coreSubgraphFetch(CORE_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
       const j = await res.json();
       return j.data?.gotchiLendings?.[0] ?? null;
     },
