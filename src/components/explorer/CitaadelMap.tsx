@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Crosshair, Loader2, Search, X } from "lucide-react";
 import { CORE_SUBGRAPH, GBM_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { REALM_DIAMOND_BASE } from "@/lib/lending/contracts";
+import { env } from "@/lib/env";
 import { BuyButton } from "@/components/explorer/BuyButton";
 import { shortenAddress } from "@/lib/address";
 
@@ -75,7 +76,10 @@ export function CitaadelMap() {
     staleTime: 60 * 60_000,
     gcTime: 2 * 60 * 60_000,
     queryFn: async (): Promise<MapPayload> => {
-      const r = await fetch("/api/map/parcels");
+      // Same origin rule as the companion/steward APIs: Vercel serves the SPA
+      // only, so in prod the express routes live on api.gotchicloset.com; in
+      // local dev the base is empty and the Vite proxy handles /api.
+      const r = await fetch(`${env.companionApiUrl}/api/map/parcels`);
       if (!r.ok) throw new Error(`map data HTTP ${r.status}`);
       return r.json();
     },
