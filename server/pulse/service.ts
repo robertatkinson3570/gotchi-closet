@@ -3,10 +3,12 @@
  * snapshots, and an in-memory payload cache. Quorum-style: /api/pulse serves
  * 202 while the first backfill runs, then always the cached payload.
  */
-import { addDays, bucketSales, dayKey, dayStartTs } from "../../src/lib/pulse/aggregate";
+import { addDays, bucketClaims, bucketSales, dayKey, dayStartTs, summarizeEngagement } from "../../src/lib/pulse/aggregate";
 import { buildPulsePayload, type PulsePayload } from "../../src/lib/pulse/payload";
 import { getAllSeries, getMeta, setMeta, upsertMetrics } from "./store";
-import { fetchLlamaDaily, fetchSales1155, fetchSales721, fetchSalesGbm, fetchSnapshots } from "./sources";
+import {
+  fetchClaims, fetchEngagementScan, fetchLlamaDaily, fetchSales1155, fetchSales721, fetchSalesGbm, fetchSnapshots,
+} from "./sources";
 
 /** Day-aligned start of history. Predates Base Baazaar activity; earlier pages are empty. */
 const BACKFILL_START_TS = Math.floor(Date.UTC(2024, 11, 1) / 1000); // 2024-12-01T00:00Z
@@ -39,13 +41,28 @@ async function backfill(): Promise<void> {
   console.log("[pulse] backfill complete");
 }
 
+/** Phase 2 (engagement) backfill: daily summons history. Runs once, additively —
+ * existing deployments with a v1 pulse.db pick it up on next boot. */
+async function backfillEngagement(): Promise<void> {
+  console.log("[pulse] engagement backfill starting");
+  const endTs = Math.floor(Date.now() / 1000);
+  upsertMetrics(bucketClaims(await fetchClaims(BACKFILL_START_TS - 1, endTs)));
+  upsertMetrics(summarizeEngagement(await fetchEngagementScan(), endTs));
+  setMeta("backfilled_engagement", "1");
+  rebuildPayload();
+  console.log("[pulse] engagement backfill complete");
+}
+
 /** Re-settle the last 3 full days (late GBM claims etc.) + today's snapshots. */
 export async function nightlyRefresh(): Promise<void> {
-  const today = dayKey(Math.floor(Date.now() / 1000));
+  const now = Math.floor(Date.now() / 1000);
+  const today = dayKey(now);
   const startTs = dayStartTs(addDays(today, -3)) - 1;
   await ingestSales(startTs);
   upsertMetrics(await fetchLlamaDaily(dayStartTs(addDays(today, -7))));
   upsertMetrics(await fetchSnapshots());
+  upsertMetrics(bucketClaims(await fetchClaims(startTs, now)));
+  upsertMetrics(summarizeEngagement(await fetchEngagementScan(), now));
   rebuildPayload();
   console.log("[pulse] nightly refresh complete");
 }
@@ -55,10 +72,15 @@ export function ensureStarted(): void {
   if (payload || building) return;
   if (getMeta("backfilled")) {
     rebuildPayload();
+    // v1 DBs lack engagement history — top it up in the background, non-blocking.
+    if (!getMeta("backfilled_engagement")) {
+      backfillEngagement().catch((err) => console.error("[pulse] engagement backfill failed:", err));
+    }
     return;
   }
   building = true;
   backfill()
+    .then(() => backfillEngagement())
     .catch((err) => console.error("[pulse] backfill failed:", err))
     .finally(() => {
       building = false;

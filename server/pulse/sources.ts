@@ -7,7 +7,7 @@ import { createPublicClient, fallback, http, erc20Abi, formatEther } from "viem"
 import { base } from "viem/chains";
 import { subgraphFetch } from "../aavegotchi/subgraphFetch";
 import { GBM_SUBGRAPH } from "../../src/lib/subgraph";
-import { dayKey, type MetricRow, type SaleCat, type SaleRow } from "../../src/lib/pulse/aggregate";
+import { dayKey, type EngagementRow, type MetricRow, type SaleCat, type SaleRow } from "../../src/lib/pulse/aggregate";
 
 const GHST = "0xcD2F22236DD9Dfe2356D7C543161D4d260FD9BcB" as const;
 const RPC_URLS = ["https://mainnet.base.org", "https://base.llamarpc.com", "https://base.drpc.org"];
@@ -96,6 +96,38 @@ export async function fetchSalesGbm(startTs: number, endTs: number): Promise<Sal
       seller: r.seller ?? "",
     }));
   });
+}
+
+/** Summon timestamps (claimedTime, unix seconds) for claimed gotchis in [startTs, endTs). */
+export async function fetchClaims(startTs: number, endTs: number): Promise<number[]> {
+  const out: number[] = [];
+  let cursor = startTs;
+  for (let i = 0; i < MAX_PAGES; i++) {
+    const d = await gql(
+      `{ aavegotchis(first: ${PAGE}, where: { status: 3, claimedTime_gt: "${cursor}", claimedTime_lt: "${endTs}" }, orderBy: claimedTime, orderDirection: asc) { claimedTime } }`
+    );
+    const batch: { claimedTime: string }[] = d?.aavegotchis ?? [];
+    for (const r of batch) out.push(Number(r.claimedTime));
+    if (batch.length < PAGE) break;
+    cursor = Number(batch[batch.length - 1].claimedTime);
+  }
+  return out;
+}
+
+/** Full scan of claimed gotchis: kinship + lastInteracted for the engagement snapshot. */
+export async function fetchEngagementScan(): Promise<EngagementRow[]> {
+  const out: EngagementRow[] = [];
+  let cursor = "";
+  for (let i = 0; i < MAX_PAGES; i++) {
+    const d = await gql(
+      `{ aavegotchis(first: ${PAGE}, where: { status: 3, id_gt: "${cursor}" }, orderBy: id) { id kinship lastInteracted } }`
+    );
+    const batch: { id: string; kinship: string; lastInteracted: string }[] = d?.aavegotchis ?? [];
+    for (const r of batch) out.push({ kinship: Number(r.kinship), lastInteracted: Number(r.lastInteracted) });
+    if (batch.length < PAGE) break;
+    cursor = batch[batch.length - 1].id;
+  }
+  return out;
 }
 
 /** Daily GHST/USD from DefiLlama, chunked ≤500 days per request. */

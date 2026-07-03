@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  addDays, bucketSales, computeDelta, dayKey, dayStartTs, levelAt, pctChange, sumRange,
+  addDays, bucketClaims, bucketSales, computeDelta, dayKey, dayStartTs, levelAt, pctChange,
+  summarizeEngagement, sumRange,
   type PulsePoint, type SaleRow,
 } from "./aggregate";
 
@@ -46,6 +47,40 @@ describe("bucketSales", () => {
   });
   it("emits days in ascending order", () => {
     expect(out[0].day <= out[out.length - 1].day).toBe(true);
+  });
+});
+
+describe("bucketClaims", () => {
+  it("counts summons per UTC day", () => {
+    const out = bucketClaims([ts(2026, 6, 1), ts(2026, 6, 1), ts(2026, 6, 3)]);
+    expect(out).toEqual([
+      { day: "2026-06-01", metric: "gotchis_summoned", value: 2 },
+      { day: "2026-06-03", metric: "gotchis_summoned", value: 1 },
+    ]);
+  });
+});
+
+describe("summarizeEngagement", () => {
+  it("computes totals, petted windows, and kinship stats for one day", () => {
+    const now = ts(2026, 6, 10, 12);
+    const rows = [
+      { kinship: 100, lastInteracted: now - 3600 },        // petted 1h ago
+      { kinship: 300, lastInteracted: now - 3 * 86400 },   // 3d ago → 7d only
+      { kinship: 50, lastInteracted: now - 30 * 86400 },   // stale
+      { kinship: 200, lastInteracted: now - 3600 },        // petted
+    ];
+    const out = summarizeEngagement(rows, now);
+    const get = (m: string) => out.find((r) => r.metric === m)?.value;
+    expect(out.every((r) => r.day === "2026-06-10")).toBe(true);
+    expect(get("gotchis_total")).toBe(4);
+    expect(get("gotchis_petted_24h")).toBe(2);
+    expect(get("gotchis_petted_7d")).toBe(3);
+    expect(get("kinship_avg")).toBeCloseTo((100 + 300 + 50 + 200) / 4);
+    expect(get("kinship_median")).toBe(150); // even count → mean of middle two (100, 200)
+  });
+
+  it("returns empty for no gotchis", () => {
+    expect(summarizeEngagement([], ts(2026, 6, 10))).toEqual([]);
   });
 });
 

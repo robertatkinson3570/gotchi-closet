@@ -55,4 +55,21 @@ describe("buildPulsePayload", () => {
     expect(p.verdicts.length).toBeGreaterThan(0);
     expect(p.updatedAt).toBe(UPDATED_AT);
   });
+
+  it("zero-fills gaps in flow series so charts never interpolate quiet days", () => {
+    const gappy = buildPulsePayload(
+      { gotchis_summoned: [{ day: "2026-06-27", value: 2 }] },
+      UPDATED_AT // endDay 2026-07-02 → filled through 2026-07-01
+    );
+    expect(gappy.series.gotchis_summoned).toEqual([
+      { day: "2026-06-27", value: 2 },
+      { day: "2026-06-28", value: 0 },
+      { day: "2026-06-29", value: 0 },
+      { day: "2026-06-30", value: 0 },
+      { day: "2026-07-01", value: 0 },
+    ]);
+    // Level series are never zero-filled — gaps carry the last value instead.
+    const level = buildPulsePayload({ ghst_holders: [{ day: "2026-06-27", value: 5 }] }, UPDATED_AT);
+    expect(level.series.ghst_holders).toEqual([{ day: "2026-06-27", value: 5 }]);
+  });
 });

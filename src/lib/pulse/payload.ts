@@ -20,12 +20,34 @@ export type PulsePayload = {
 const FLOW_METRICS = new Set([
   "sales_volume_ghst", "sales_volume_usd", "sales_count", "sales_buyers", "sales_sellers",
   "sales_ghst_gotchis", "sales_ghst_parcels", "sales_ghst_wearables", "sales_ghst_other",
+  "gotchis_summoned",
 ]);
 
+/**
+ * Flow series store rows only for days with activity; a chart would interpolate
+ * across the holes. Zero means zero — fill every missing day through the last
+ * complete day (yesterday relative to endDay) so quiet spells render honestly.
+ */
+function zeroFillDaily(s: PulsePoint[], endDay: string): PulsePoint[] {
+  if (s.length === 0) return s;
+  const lastComplete = addDays(endDay, -1);
+  const lastDay = s[s.length - 1].day > lastComplete ? s[s.length - 1].day : lastComplete;
+  const byDay = new Map(s.map((p) => [p.day, p.value]));
+  const out: PulsePoint[] = [];
+  for (let d = s[0].day; d <= lastDay; d = addDays(d, 1)) {
+    out.push({ day: d, value: byDay.get(d) ?? 0 });
+  }
+  return out;
+}
+
 export function buildPulsePayload(stored: SeriesMap, updatedAt: number): PulsePayload {
+  const endDayForFill = dayKey(Math.floor(updatedAt / 1000));
   const series: SeriesMap = { ...stored };
+  for (const key of Object.keys(series)) {
+    if (FLOW_METRICS.has(key)) series[key] = zeroFillDaily(series[key], endDayForFill);
+  }
   const price = stored.ghst_price_usd ?? [];
-  const vol = stored.sales_volume_ghst ?? [];
+  const vol = series.sales_volume_ghst ?? [];
 
   // Derived series. Historical USD uses that day's stored price, never spot.
   series.sales_volume_usd = vol.map((p) => ({ day: p.day, value: p.value * (levelAt(price, p.day) ?? 0) }));
@@ -61,6 +83,7 @@ export function buildPulsePayload(stored: SeriesMap, updatedAt: number): PulsePa
     sales_volume_usd_30d: sumRange(series.sales_volume_usd ?? [], from30, endDay),
     sales_count_30d: sumRange(series.sales_count ?? [], from30, endDay),
     sales_buyers_30d: sumRange(series.sales_buyers ?? [], from30, endDay),
+    gotchis_summoned_30d: sumRange(series.gotchis_summoned ?? [], from30, endDay),
   };
 
   return { updatedAt, series, latest, deltas, windows, verdicts: evaluateVerdicts(series, endDay), trackingSince };

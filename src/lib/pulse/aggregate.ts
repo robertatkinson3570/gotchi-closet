@@ -60,6 +60,51 @@ export function bucketSales(rows: SaleRow[]): MetricRow[] {
   return out;
 }
 
+/** Counts gotchi summons (claimedTime unix seconds) per UTC day. */
+export function bucketClaims(claimTimes: number[]): MetricRow[] {
+  const days = new Map<string, number>();
+  for (const t of claimTimes) {
+    if (!(t > 0)) continue;
+    const day = dayKey(t);
+    days.set(day, (days.get(day) ?? 0) + 1);
+  }
+  return [...days.entries()]
+    .sort((x, y) => (x[0] < y[0] ? -1 : 1))
+    .map(([day, value]) => ({ day, metric: "gotchis_summoned", value }));
+}
+
+export type EngagementRow = { kinship: number; lastInteracted: number };
+
+/**
+ * Today's engagement snapshot from a full gotchi scan: population, petted
+ * within 24h/7d, and kinship average/median. All rows share today's day key.
+ */
+export function summarizeEngagement(rows: EngagementRow[], nowTs: number): MetricRow[] {
+  if (rows.length === 0) return [];
+  const day = dayKey(nowTs);
+  let petted24h = 0;
+  let petted7d = 0;
+  let kinshipSum = 0;
+  const kinships: number[] = [];
+  for (const r of rows) {
+    if (r.lastInteracted >= nowTs - 86400) petted24h += 1;
+    if (r.lastInteracted >= nowTs - 7 * 86400) petted7d += 1;
+    kinshipSum += r.kinship;
+    kinships.push(r.kinship);
+  }
+  kinships.sort((a, b) => a - b);
+  const mid = kinships.length / 2;
+  const median =
+    kinships.length % 2 === 1 ? kinships[Math.floor(mid)] : (kinships[mid - 1] + kinships[mid]) / 2;
+  return [
+    { day, metric: "gotchis_total", value: rows.length },
+    { day, metric: "gotchis_petted_24h", value: petted24h },
+    { day, metric: "gotchis_petted_7d", value: petted7d },
+    { day, metric: "kinship_avg", value: kinshipSum / rows.length },
+    { day, metric: "kinship_median", value: median },
+  ];
+}
+
 export function pctChange(cur: number, prev: number): number | null {
   if (!(prev > 0)) return null;
   return ((cur - prev) / prev) * 100;

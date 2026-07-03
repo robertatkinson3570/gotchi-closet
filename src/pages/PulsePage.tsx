@@ -234,6 +234,35 @@ export default function PulsePage() {
             <RealityLever verdicts={p.verdicts} keys={["sales-volume", "buyers"]} />
           </GlowCard>
 
+          {/* Engagement section */}
+          <GlowCard accent="bg-[hsl(var(--ecto))]/12" className="p-5 mt-4">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-3">Gotchis summoned / day (portals claimed on Base)</h2>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={slice("gotchis_summoned")} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+                  <defs>
+                    <linearGradient id="summons-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--ecto))" stopOpacity={0.45} />
+                      <stop offset="100%" stopColor="hsl(var(--ecto))" stopOpacity={0.04} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" vertical={false} />
+                  <XAxis dataKey="day" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} minTickGap={40} />
+                  <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={36} allowDecimals={false} />
+                  <Tooltip formatter={(v) => [`${Number(v)} summoned`, "gotchis"]} contentStyle={TOOLTIP_STYLE} />
+                  <Area type="monotone" dataKey="value" stroke="hsl(var(--ecto))" fill="url(#summons-fill)" strokeWidth={2} dot={false} isAnimationActive={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+              <Accruing label="Gotchis (claimed)" value={p.latest.gotchis_total} since={p.trackingSince.gotchis_total} fmt={(v) => v.toLocaleString()} />
+              <Accruing label="Petted last 24h" value={p.latest.gotchis_petted_24h} since={p.trackingSince.gotchis_petted_24h} fmt={(v) => v.toLocaleString()} />
+              <Accruing label="Petted last 7d" value={p.latest.gotchis_petted_7d} since={p.trackingSince.gotchis_petted_7d} fmt={(v) => v.toLocaleString()} />
+              <Accruing label="Kinship avg / median" value={p.latest.kinship_avg} since={p.trackingSince.kinship_avg} fmt={(v) => `${Math.round(v)} / ${Math.round(p.latest.kinship_median ?? 0)}`} />
+            </div>
+            <RealityLever verdicts={p.verdicts} keys={["summons", "petting"]} />
+          </GlowCard>
+
           {/* GHST section */}
           <GlowCard accent="bg-[hsl(var(--cyan))]/12" className="p-5 mt-4">
             <h2 className="text-sm font-semibold text-muted-foreground mb-3">GHST price (USD)</h2>
@@ -268,6 +297,7 @@ export default function PulsePage() {
             <div className="mt-3 space-y-2 text-xs text-muted-foreground">
               <p>Sales: settled Baazaar ERC721/ERC1155 listings + settled GBM auctions on Base (Goldsky subgraphs), bucketed by UTC day. ERC1155 volume is price × quantity. Historical USD uses that day's GHST price (DefiLlama), never today's.</p>
               <p>"Unique buyers" windows sum daily unique addresses (an address active on N days counts N times). Supply via Base RPC; holders via Blockscout; floor = cheapest active gotchi listing. Supply, holders and floor accrue forward from the tracking-since date — no history exists before it.</p>
+              <p>Engagement: summons = portals claimed on Base by claim timestamp (backfilled). Petting, population and kinship stats come from a nightly full scan of claimed gotchis (kinship + last-interacted) and accrue forward from their tracking-since date.</p>
               <p className="font-semibold text-foreground">Verdict rules (computed, transparent):</p>
               <ul className="list-disc pl-5 space-y-1">
                 {p.verdicts.map((v) => (<li key={v.key}><span className="font-medium text-foreground">{v.label}:</span> {v.ruleText}</li>))}
