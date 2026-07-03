@@ -82,6 +82,11 @@ counted, not deduped — 2 needed means balance ≥ 2 or two sources.
 
 - `SaveOutfitButton` (new, small) rendered in the editor card's action column,
   visible only when eligible + dirty. Label: "Save on-chain".
+- **Obvious but not obtrusive:** the button occupies reserved space in the action
+  column (no layout shift when it appears), styled with the page's accent
+  gradient so it clearly stands out from the ghost icon buttons around it, with a
+  brief one-time attention pulse when it first becomes eligible. No banners, no
+  floating overlays, nothing that moves or covers existing controls.
 - Click → compact confirm popover listing the exact steps (buy prices, steal
   warnings, respec fee note, tx count), then a one-line progress indicator
   ("Step 2/4 — removing Santa Hat from #1234…"), then success/error line.
