@@ -15,8 +15,9 @@ export function PulseVideoHero() {
   });
   if (!data) return null;
 
-  const src = mediaUrl(data.videoUrl)!;
   const poster = mediaUrl(data.posterUrl) ?? undefined;
+  // No poster image: load the frame at 0.5s as the thumbnail instead of a black box.
+  const src = poster ? mediaUrl(data.videoUrl)! : `${mediaUrl(data.videoUrl)!}#t=0.5`;
 
   return (
     <div className="relative mb-6 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-muted/10 to-muted/30 ring-1 ring-primary/5">
@@ -28,7 +29,7 @@ export function PulseVideoHero() {
             poster={poster}
             controls
             playsInline
-            preload="none"
+            preload="metadata"
             className="aspect-[9/16] h-full w-full object-contain"
           />
         </div>

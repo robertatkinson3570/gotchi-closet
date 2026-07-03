@@ -18,8 +18,10 @@ export interface AdminActions {
 export function MegaphoneVideoCard({ v, admin }: { v: VideoPublic; admin?: AdminActions }) {
   const [copied, setCopied] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const src = mediaUrl(v.videoUrl)!;
   const poster = mediaUrl(v.posterUrl) ?? undefined;
+  // With no poster image, append a media fragment so the browser loads and paints the
+  // frame at 0.5s as the thumbnail instead of a black box.
+  const src = poster ? mediaUrl(v.videoUrl)! : `${mediaUrl(v.videoUrl)!}#t=0.5`;
 
   async function copyCaption() {
     await navigator.clipboard.writeText(v.caption || v.title);
@@ -38,7 +40,7 @@ export function MegaphoneVideoCard({ v, admin }: { v: VideoPublic; admin?: Admin
             poster={poster}
             controls
             playsInline
-            preload="none"
+            preload="metadata"
             className="h-full w-full object-contain"
           />
           {v.pinnedPulse && (
