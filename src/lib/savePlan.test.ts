@@ -78,7 +78,7 @@ describe("planSave (spec: save classifier)", () => {
     const p = planSave(base({
       desiredSlots: [7, 0, 0, 0, 0, 0, 0, 0],
       walletBalances: { 7: 1 },
-      respec: { targetBase: [50, 40, 30, 20], birthBase: [48, 40, 30, 20], respecCount: 0 },
+      respec: { targetBase: [50, 40, 30, 20], birthBase: [48, 40, 30, 20], respecCount: 0, usedSkillPoints: 2, availableSkillPoints: 0 },
     }));
     expect(p.steps.map((s) => s.kind)).toEqual(["resetSkillPoints", "spendSkillPoints", "equip"]);
     const spend = p.steps.find((s) => s.kind === "spendSkillPoints") as any;
@@ -87,9 +87,46 @@ describe("planSave (spec: save classifier)", () => {
 
   it("respec with target === birth skips the spend step", () => {
     const p = planSave(base({
-      respec: { targetBase: [48, 40, 30, 20], birthBase: [48, 40, 30, 20], respecCount: 1 },
+      respec: { targetBase: [48, 40, 30, 20], birthBase: [48, 40, 30, 20], respecCount: 1, usedSkillPoints: 3, availableSkillPoints: 0 },
     }));
     expect(p.steps.map((s) => s.kind)).toEqual(["resetSkillPoints"]);
+  });
+
+  // C-1: respec pool validation — the chain reverts spendSkillPoints when the
+  // allocation exceeds refunded + unspent points, so the plan must block first
+  // (otherwise reset succeeds, spend reverts, gotchi is stripped + fee burned).
+  it("respec exceeding the pool → blocked plan with respec-pool reason, no steps", () => {
+    const p = planSave(base({
+      desiredSlots: [7, 0, 0, 0, 0, 0, 0, 0],
+      walletBalances: { 7: 1 },
+      respec: { targetBase: [52, 40, 30, 20], birthBase: [48, 40, 30, 20], respecCount: 0, usedSkillPoints: 2, availableSkillPoints: 1 },
+    }));
+    expect(p.blocked).toEqual([{ reason: "respec-pool", needed: 4, available: 3 }]);
+    expect(p.steps).toEqual([]);
+  });
+
+  it("respec with usedSkillPoints === 0 skips the reset step (nothing to refund)", () => {
+    const p = planSave(base({
+      respec: { targetBase: [50, 40, 30, 20], birthBase: [48, 40, 30, 20], respecCount: 0, usedSkillPoints: 0, availableSkillPoints: 5 },
+    }));
+    expect(p.steps.map((s) => s.kind)).toEqual(["spendSkillPoints"]);
+    const spend = p.steps[0] as any;
+    expect(spend.values).toEqual([2, 0, 0, 0]);
+  });
+
+  it("respec spending exactly the pool passes", () => {
+    const p = planSave(base({
+      respec: { targetBase: [52, 40, 30, 20], birthBase: [48, 40, 30, 20], respecCount: 0, usedSkillPoints: 2, availableSkillPoints: 2 },
+    }));
+    expect(p.blocked).toEqual([]);
+    expect(p.steps.map((s) => s.kind)).toEqual(["resetSkillPoints", "spendSkillPoints"]);
+  });
+
+  it("respec with used=0 and zero allocation → no respec steps at all", () => {
+    const p = planSave(base({
+      respec: { targetBase: [48, 40, 30, 20], birthBase: [48, 40, 30, 20], respecCount: 0, usedSkillPoints: 0, availableSkillPoints: 5 },
+    }));
+    expect(p.steps).toEqual([]);
   });
 
   it("unobtainable wearable blocks the whole plan (no partial save)", () => {
@@ -103,7 +140,7 @@ describe("planSave (spec: save classifier)", () => {
       desiredSlots: [7, 8, 0, 0, 0, 0, 0, 0],
       ownedGotchis: [{ gotchiId: "200", equippedWearables: [8, 0, 0, 0, 0, 0, 0, 0], locked: false }],
       listingsByWearable: { 7: { listingId: "555", priceInWei: "5" } },
-      respec: { targetBase: [50, 40, 30, 20], birthBase: [48, 40, 30, 20], respecCount: 2 },
+      respec: { targetBase: [50, 40, 30, 20], birthBase: [48, 40, 30, 20], respecCount: 2, usedSkillPoints: 2, availableSkillPoints: 0 },
     }));
     expect(p.steps.map((s) => s.kind)).toEqual(["buy", "resetSkillPoints", "spendSkillPoints", "unequip", "equip"]);
   });

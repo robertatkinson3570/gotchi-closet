@@ -11,14 +11,24 @@ export type SavePlanInput = {
   currentSlots: number[];   // length 8, on-chain state of the target
   walletBalances: Record<number, number>;
   ownedGotchis: { gotchiId: string; equippedWearables: number[]; locked: boolean }[];
-  respec: { targetBase: number[]; birthBase: number[]; respecCount: number } | null;
+  respec: {
+    targetBase: number[];
+    birthBase: number[];
+    respecCount: number;
+    usedSkillPoints: number;      // points refunded by resetSkillPoints
+    availableSkillPoints: number; // unspent on-chain points
+  } | null;
   listingsByWearable: Record<number, { listingId: string; priceInWei: string }>;
 };
+
+export type SaveBlocked =
+  | { reason: "unobtainable"; wearableId: number }
+  | { reason: "respec-pool"; needed: number; available: number };
 
 export type SavePlan = {
   steps: SaveStep[];
   warnings: { wearableId: number; fromGotchiId: string }[];
-  blocked: { wearableId: number; reason: "unobtainable" }[];
+  blocked: SaveBlocked[];
   totalBuyCostWei: bigint;
 };
 
@@ -80,6 +90,24 @@ export function planSave(input: SavePlanInput): SavePlan {
     if (remaining > 0) blocked.push({ wearableId: id, reason: "unobtainable" });
   }
 
+  // C-1: respec pool validation. spendSkillPoints reverts on-chain when the
+  // allocation exceeds refunded (usedSkillPoints) + unspent (availableSkillPoints)
+  // points — and by then resetSkillPoints has already succeeded, leaving the
+  // gotchi stripped of its spec with the respec fee burned. Block up front.
+  if (input.respec) {
+    const needed = input.respec.targetBase.reduce(
+      (sum, t, i) =>
+        sum + Math.abs((Number(t) || 0) - (Number(input.respec!.birthBase[i]) || 0)),
+      0
+    );
+    const available =
+      (Number(input.respec.usedSkillPoints) || 0) +
+      (Number(input.respec.availableSkillPoints) || 0);
+    if (needed > available) {
+      blocked.push({ reason: "respec-pool", needed, available });
+    }
+  }
+
   if (blocked.length > 0) {
     return { steps: [], warnings, blocked, totalBuyCostWei: 0n };
   }
@@ -87,7 +115,11 @@ export function planSave(input: SavePlanInput): SavePlan {
   const steps: SaveStep[] = [...buys];
 
   if (input.respec) {
-    steps.push({ kind: "resetSkillPoints" });
+    // usedSkillPoints === 0 → nothing to refund: resetSkillPoints would burn a
+    // fee for no effect, so spend alone suffices.
+    if ((Number(input.respec.usedSkillPoints) || 0) > 0) {
+      steps.push({ kind: "resetSkillPoints" });
+    }
     const values = input.respec.targetBase.map(
       (t, i) => (Number(t) || 0) - (Number(input.respec!.birthBase[i]) || 0)
     );

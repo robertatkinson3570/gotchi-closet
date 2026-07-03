@@ -10,6 +10,7 @@ import { useSaveOutfit, type SaveProgress } from "@/hooks/useSaveOutfit";
 import { useCheapestWearableListings } from "@/lib/hooks/useCheapestWearableListings";
 import { useWalletItemBalances } from "@/lib/hooks/useWalletItemBalances";
 import { getRespecBaseTraits } from "@/lib/respec";
+import { useAvailableSkillPoints } from "@/lib/hooks/useAvailableSkillPoints";
 import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 
@@ -151,12 +152,27 @@ export function SaveOutfitButton(props: {
     query: { enabled: open && !!respecTarget && isNumericId, staleTime: 30_000 },
   });
 
+  // C-1: the respec pool = refunded (usedSkillPoints, from the subgraph gotchi)
+  // + unspent on-chain points. planSave blocks over-pool allocations so a
+  // doomed reset→spend sequence never reaches the wallet.
+  const usedSkillPoints = useMemo(() => {
+    const g = gotchis.find((gg) => gg.id === storeId);
+    return Number(g?.usedSkillPoints) || 0;
+  }, [gotchis, storeId]);
+  const availableSkillPoints = useAvailableSkillPoints(gotchiId, open && !!respecTarget);
+
   const respec = useMemo(
     () =>
-      respecTarget && birthBase && respecCountData != null
-        ? { targetBase: respecTarget, birthBase, respecCount: Number(respecCountData) }
+      respecTarget && birthBase && respecCountData != null && availableSkillPoints != null
+        ? {
+            targetBase: respecTarget,
+            birthBase,
+            respecCount: Number(respecCountData),
+            usedSkillPoints,
+            availableSkillPoints,
+          }
         : null,
-    [respecTarget, birthBase, respecCountData]
+    [respecTarget, birthBase, respecCountData, usedSkillPoints, availableSkillPoints]
   );
 
   // Ids not coverable by wallet + steal → they need a Baazaar listing.
@@ -171,7 +187,7 @@ export function SaveOutfitButton(props: {
       respec: null,
       listingsByWearable: {},
     });
-    return pre.blocked.map((b) => b.wearableId);
+    return pre.blocked.flatMap((b) => (b.reason === "unobtainable" ? [b.wearableId] : []));
   }, [open, walletQuery.data, gotchiId, desired8, current8, walletBalances, ownedGotchis]);
 
   const listingsQuery = useCheapestWearableListings(missingIds, open && !!walletQuery.data);
@@ -360,11 +376,18 @@ function SavePopoverBody(props: {
       <div className="font-semibold text-sm">Save on-chain</div>
       {blocked ? (
         <div className="text-rose-400">
-          {plan.blocked.map((b) => (
-            <div key={b.wearableId}>
-              You don't own {nameOf(b.wearableId)} and it isn't listed on the Baazaar.
-            </div>
-          ))}
+          {plan.blocked.map((b, i) =>
+            b.reason === "respec-pool" ? (
+              <div key={`respec-pool-${i}`}>
+                Respec needs {b.needed} point{b.needed === 1 ? "" : "s"} but only {b.available}{" "}
+                {b.available === 1 ? "is" : "are"} available.
+              </div>
+            ) : (
+              <div key={b.wearableId}>
+                You don't own {nameOf(b.wearableId)} and it isn't listed on the Baazaar.
+              </div>
+            )
+          )}
         </div>
       ) : plan.steps.length === 0 ? (
         <div className="text-muted-foreground">Nothing to save — outfit matches the chain.</div>
