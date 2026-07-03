@@ -206,7 +206,8 @@ export const useAppStore = create<AppState>((set, get) => ({
               .toString(36)
               .slice(2, 8)}`,
             baseGotchi: gotchi,
-            equippedBySlot: [...initialWearables],
+            // equippedBySlot contract: length 8 (subgraph arrays may be 16).
+            equippedBySlot: [...initialWearables].slice(0, 8),
           },
         ],
       };
@@ -233,10 +234,15 @@ export const useAppStore = create<AppState>((set, get) => ({
               ...inst,
               baseGotchi: {
                 ...inst.baseGotchi,
+                // Full array as passed in (length 16); equippedBySlot below
+                // keeps the length-8 contract. (I-3)
                 equippedWearables: [...equippedWearables],
                 ...(newBaseTraits ? { numericTraits: [...newBaseTraits] } : {}),
-                // Post-respec the subgraph-precomputed traits are stale until reindex:
-                ...(newBaseTraits ? { modifiedNumericTraits: undefined, withSetsNumericTraits: undefined } : {}),
+                // A rebase means the on-chain outfit changed by definition, so
+                // the subgraph-precomputed traits are ALWAYS stale until
+                // reindex — not just after a respec. (I-3)
+                modifiedNumericTraits: undefined,
+                withSetsNumericTraits: undefined,
               },
               equippedBySlot: [...equippedWearables].slice(0, 8),
             }
@@ -368,7 +374,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({
       editorInstances: state.editorInstances.map((item) =>
         item.instanceId === instanceId
-          ? { ...item, equippedBySlot: [...instance.baseGotchi.equippedWearables] }
+          ? // equippedBySlot contract: length 8 (subgraph arrays may be 16).
+            { ...item, equippedBySlot: [...instance.baseGotchi.equippedWearables].slice(0, 8) }
           : item
       ),
     });

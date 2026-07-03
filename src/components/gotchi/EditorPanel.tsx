@@ -159,9 +159,12 @@ export function EditorPanel() {
       ) : (
         <div className="space-y-2 p-1">
           {editorInstances.map((instance) => {
-            const sameOutfit =
-              instance.equippedBySlot.length === instance.baseGotchi.equippedWearables.length &&
-              instance.equippedBySlot.every((id, idx) => id === instance.baseGotchi.equippedWearables[idx]);
+            // equippedBySlot holds the 8 real slots while the subgraph's
+            // equippedWearables may be length 16 (upper slots always 0) —
+            // compare the first 8 with empty-slot normalization. (I-3)
+            const sameOutfit = instance.equippedBySlot
+              .slice(0, 8)
+              .every((id, idx) => (id || 0) === (instance.baseGotchi.equippedWearables[idx] || 0));
             // A committed respec target changes the base traits, so the
             // subgraph's precomputed traits no longer apply (audit H5).
             const committedTarget = committedRespecTargets[instance.instanceId];
