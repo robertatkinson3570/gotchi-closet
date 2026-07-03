@@ -4,14 +4,45 @@ Branch: **`feat/steward-aa`** (off `main`; `main` carries the live Path 2). Phas
 steward run **zero-click**: it pets / channels / claims on a schedule via an EIP-7702 + ERC-7579
 scoped session key, **the player pays their own gas, and the operator pays $0 in vendor fees.**
 
-## Status (as of this handoff)
-- ✅ **Code complete** — integration on the free stack, paid `@rhinestone/sdk` removed.
-  typecheck 0 · lint 0 · 42 steward unit tests pass.
-- ✅ **Preflight green on both chains** (`node scripts/preflight-aa.mjs`) — every module deployed
-  on Base Sepolia AND Base mainnet; encoders compute; viem `signAuthorization` present; Alto boots.
-- ⏳ **Funded testnet proof pending** — needs the two `.env.testnet` wallets faucet-funded, then
-  `scripts/verify-aa-sepolia.mjs`. This is the "it works on-chain" milestone.
-- ⏳ **Mainnet go-live** — after the proof (steps below).
+## Status (2026-07-03 — ON-CHAIN PROVEN on Base mainnet)
+- ✅ **Code complete** — free stack, paid `@rhinestone/sdk` removed. tsc 0 · lint 0 · 637 tests pass.
+- ✅ **Preflight green on both chains** (`node scripts/preflight-aa.mjs`).
+- ✅ **PROVEN end-to-end.** `scripts/verify-aa-direct.mjs` (bundler-free; submits the session userOp
+  straight to the EntryPoint) passes all four checks against a faithful Base-mainnet anvil fork:
+  IN-SCOPE userOp executes (`userOpSuccess:true`), OWNER-PAYS (owner EOA balance drops), OUT-OF-SCOPE
+  selector REJECTED, OUT-OF-SCOPE target REJECTED. Live-mainnet tx hashes for the one-time attestation
+  and the owner-paid 7702 setup: attest `0xa00dece8369ff75b64a85ffae9e145a918db88466a4e766702762614244c83d5`,
+  setup `0x376f0faa410a6ef0bfe6af329e0e03c404a34e03fa5417a4390dff4f5a2241da` (both status 1).
+
+### Three bugs found + fixed to get here (all on Base mainnet, all in the real client `aaClient.ts`)
+1. **7702 authorization was a silent no-op** — the owner both signs the authorization AND sends the
+   setup tx, so the auth nonce must be `current+1`. Fix: `signAuthorization({ …, executor: "self" })`.
+   Symptom: setup "succeeds" but leaves NO code at the EOA (`eth_getCode` == 0x) and costs ~0 gas.
+2. **GS203 (Safe "invalid owner")** — setup passed the EOA itself as the Safe owner, but on a 7702
+   account the Safe lives at that same address (`owner == address(this)`). Fix: Safe native owner =
+   burn address `0x…dEaD` (threshold 1); real auth runs through the 7579 validators, native owner is
+   vestigial (strictly more locked-down).
+3. **GS000 → `InsufficientAttestations()`** — the ERC-7484 Registry check during module install fails
+   because **SmartSessions is NOT attested by Rhinestone on Base** (the OwnableValidator IS). Fix:
+   the operator self-attests SmartSessions once (reusing Rhinestone's module schema
+   `0x93d46fcca4ef7d66a413c7bde08bb1ff14bacbd04c4069bb24cd7c21729d7bf1`); accounts then trust
+   `[Rhinestone (=ownable), STEWARD_ATTESTER (=SmartSessions)]` threshold 1 (ascending order).
+
+### One-time operator setup (required before go-live, done once on Base mainnet)
+- **Self-attest SmartSessions.** With the operator attester key funded on Base:
+  `cast send 0x000000000069E2a187AEFFb852bF3cCdC95151B2 "attest(bytes32,(address,uint48,bytes,uint256[]))" \
+   0x93d46fcca4ef7d66a413c7bde08bb1ff14bacbd04c4069bb24cd7c21729d7bf1 "(0x00000000008bDABA73cD9815d79069c247Eb4bDA,0,0x,[1])" --private-key <ATTESTER> --rpc-url https://mainnet.base.org`
+  (already done from `0x74B1be1bbced1eb31f58BE6562C3340fe941e027` — the current default `STEWARD_ATTESTER`).
+- **Set `VITE_STEWARD_ATTESTER`** to that attester address if you rotate off the default.
+
+### Proof harness
+- `scripts/verify-aa-direct.mjs` — the authoritative proof (bundler-free). `RPC_URL=<fork|mainnet>`,
+  keys in `.env.testnet`. Fund the fork attester via `anvil_setBalance` (script auto-detects localhost).
+- `scripts/verify-aa-mainnet.mjs` — same but via the Alto bundler (real bundler path). NOTE: Alto's gas
+  estimator can't parse anvil-fork simulation responses ("Failed to find raw revert bytes") — use it
+  against real Base RPC, or use the direct harness on a fork.
+- Debugging tip that cracked GS000: run a reverting setup tx against an anvil fork and `cast run <tx>`
+  — the full call trace exposes the inner custom error that GS000/GS200 masks.
 
 ## Architecture (the free, self-hostable stack)
 - **Account:** the owner's EOA, EIP-7702-delegated to the **Safe 1.4.1 singleton** with the

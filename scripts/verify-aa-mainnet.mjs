@@ -1,23 +1,22 @@
 // scripts/verify-aa-mainnet.mjs
-// Phase 1 MAINNET PROOF (pennies, funded from the pet relayer via the one-off GH workflow):
-// runs the full free-stack flow on Base MAINNET end-to-end and, unlike the sepolia harness,
-// also proves the CUSTODY boundary:
-//   1) EIP-7702 setup tx (owner-paid): delegate EOA -> Safe singleton + addSafe7579 installing
-//      ownable + smart-sessions validators with a scoped session PRE-ENABLED.
-//   2) IN-SCOPE session-signed userOp executes — and the owner EOA's balance drops by the gas
-//      cost (OWNER-PAYS proof; the bundler executor is reimbursed in-protocol).
-//   3) OUT-OF-SCOPE selector (same target) is REJECTED.
-//   4) OUT-OF-SCOPE target (allowed selector) is REJECTED.
+// Phase 1 PROOF on Base MAINNET (or an anvil fork of it — set RPC_URL/BUNDLER_URL). Proves the
+// whole free-stack hands-off flow end to end AND the custody boundary:
+//   0) SELF-ATTEST: SmartSessions is NOT attested by Rhinestone on Base, so our own attester
+//      attests it once (reusing Rhinestone's module schema). Accounts then trust
+//      [Rhinestone (=ownable), ourAttester (=SmartSessions)] with threshold 1.
+//   1) EIP-7702 setup tx (owner-paid, executor:'self'): delegate EOA -> Safe singleton +
+//      addSafe7579 installing ownable + smart-sessions validators, session pre-enabled. Safe
+//      native owner = burn address (NOT the account itself -> avoids GS203).
+//   2) IN-SCOPE session userOp executes; owner EOA balance drops (OWNER-PAYS).
+//   3) OUT-OF-SCOPE selector rejected. 4) OUT-OF-SCOPE target rejected.
 //
-// Requires: .env.testnet keys funded on Base mainnet (~0.0035 each) and a running Alto at
-// BUNDLER_URL pointed at Base mainnet.
-// Run:  BUNDLER_URL=http://localhost:4337 node scripts/verify-aa-mainnet.mjs
+// Env: RPC_URL (default https://mainnet.base.org), BUNDLER_URL (Alto), keys in .env.testnet
+//      (TESTNET_OWNER_KEY = the player; TESTNET_EXECUTOR_KEY = our attester, must be funded).
 import { readFileSync } from "node:fs";
 import {
-  getSmartSessionsValidator, getOwnableValidator, getPermissionId,
-  OWNABLE_VALIDATOR_ADDRESS, encodeValidationData, getSudoPolicy,
-  RHINESTONE_ATTESTER_ADDRESS,
-  encodeSmartSessionSignature, encodeValidatorNonce, getAccount,
+  getSmartSessionsValidator, getOwnableValidator, getPermissionId, SMART_SESSIONS_ADDRESS,
+  OWNABLE_VALIDATOR_ADDRESS, encodeValidationData, getSudoPolicy, RHINESTONE_ATTESTER_ADDRESS,
+  REGISTRY_ADDRESS, encodeSmartSessionSignature, encodeValidatorNonce, getAccount,
   getOwnableValidatorMockSignature, SmartSessionMode,
 } from "@rhinestone/module-sdk";
 import { base } from "viem/chains";
@@ -36,8 +35,9 @@ const SAFE_SINGLETON = "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762";
 const SAFE7579_MODULE = "0x7579EE8307284F293B1927136486880611F20002";
 const SAFE7579_LAUNCHPAD = "0x7579011aB74c46090561ea277Ba79D510c6C00ff";
 const SAFE_NATIVE_OWNER = "0x000000000000000000000000000000000000dEaD"; // vestigial; not the account itself (GS203)
-// Harmless in-scope target: the fresh proof executor EOA (no code on mainnet — a bare call no-ops).
-const DUMMY_TARGET = "0x74B1be1bbced1eb31f58BE6562C3340fe941e027";
+// Rhinestone's module schema on Base (reused for our SmartSessions attestation).
+const MODULE_SCHEMA = "0x93d46fcca4ef7d66a413c7bde08bb1ff14bacbd04c4069bb24cd7c21729d7bf1";
+const DUMMY_TARGET = "0x74B1be1bbced1eb31f58BE6562C3340fe941e027"; // in-scope action target (no code -> no-op)
 
 function envFile() {
   const out = {};
@@ -46,21 +46,41 @@ function envFile() {
   }
   return out;
 }
+const sortAddrs = (a) => [...a].sort((x, y) => (x.toLowerCase() < y.toLowerCase() ? -1 : 1));
 
 async function main() {
   const e = envFile();
-  const rpcUrl = process.env.MAINNET_RPC_URL || "https://mainnet.base.org";
+  const rpcUrl = process.env.RPC_URL || "https://mainnet.base.org";
   const bundlerUrl = process.env.BUNDLER_URL;
-  if (!bundlerUrl) throw new Error("set BUNDLER_URL (your running Alto on Base mainnet)");
-  if (!e.TESTNET_OWNER_KEY) throw new Error("missing TESTNET_OWNER_KEY in .env.testnet");
+  if (!bundlerUrl) throw new Error("set BUNDLER_URL (your running Alto)");
+  if (!e.TESTNET_OWNER_KEY || !e.TESTNET_EXECUTOR_KEY) throw new Error("need TESTNET_OWNER_KEY + TESTNET_EXECUTOR_KEY in .env.testnet");
 
-  const publicClient = createPublicClient({ chain: base, transport: http(rpcUrl) });
+  const t = http(rpcUrl);
+  const publicClient = createPublicClient({ chain: base, transport: t });
   const owner = privateKeyToAccount(e.TESTNET_OWNER_KEY);
-  const walletClient = createWalletClient({ account: owner, chain: base, transport: http(rpcUrl) });
+  const attester = privateKeyToAccount(e.TESTNET_EXECUTOR_KEY); // our own attester for SmartSessions
+  const ownerWallet = createWalletClient({ account: owner, chain: base, transport: t });
+  const attWallet = createWalletClient({ account: attester, chain: base, transport: t });
 
-  const bal = await publicClient.getBalance({ address: owner.address });
-  console.log("owner:", owner.address, "balance:", formatEther(bal), "ETH");
-  if (bal === 0n) throw new Error("owner has 0 mainnet ETH — run the steward-fund-proof workflow first");
+  console.log("owner:", owner.address, formatEther(await publicClient.getBalance({ address: owner.address })), "ETH");
+  console.log("attester:", attester.address);
+
+  // --- step 0: ensure SmartSessions is attested by our attester (one-time, global per module) ---
+  const checkAbi = parseAbi(["function check(address module,address[] attesters,uint256 threshold) view"]);
+  let ssAttested = true;
+  try { await publicClient.readContract({ address: REGISTRY_ADDRESS, abi: checkAbi, functionName: "check", args: [SMART_SESSIONS_ADDRESS, [attester.address], 1n] }); }
+  catch { ssAttested = false; }
+  if (!ssAttested) {
+    console.log("0) self-attesting SmartSessions (one-time)…");
+    const h = await attWallet.writeContract({
+      address: REGISTRY_ADDRESS,
+      abi: parseAbi(["function attest(bytes32 schemaUID,(address moduleAddr,uint48 expirationTime,bytes data,uint256[] moduleTypes) request)"]),
+      functionName: "attest",
+      args: [MODULE_SCHEMA, { moduleAddr: SMART_SESSIONS_ADDRESS, expirationTime: 0, data: "0x", moduleTypes: [1n] }],
+    });
+    await publicClient.waitForTransactionReceipt({ hash: h });
+    console.log("   attest tx:", h);
+  } else console.log("0) SmartSessions already attested by our attester ✓");
 
   const ownableValidator = getOwnableValidator({ owners: [owner.address], threshold: 1 });
   const sessionPk = generatePrivateKey();
@@ -76,28 +96,26 @@ async function main() {
     permitERC4337Paymaster: false,
   };
   const smartSessions = getSmartSessionsValidator({ sessions: [session] });
+  // ownable is attested by Rhinestone; SmartSessions by our attester. Trust both, threshold 1.
+  const attesters = sortAddrs([RHINESTONE_ATTESTER_ADDRESS, attester.address]);
 
-  console.log("1) sending EIP-7702 setup tx (owner-paid)…");
-  // executor: "self" — the owner EOA both signs this authorization AND sends the setup tx, so
-  // the authorization nonce must be current+1 (the tx consumes the current nonce first).
-  // Without it the authorization is silently rejected and the EOA is never delegated.
-  const authorization = await walletClient.signAuthorization({ account: owner, contractAddress: SAFE_SINGLETON, executor: "self" });
-  const setupHash = await walletClient.writeContract({
+  console.log("1) EIP-7702 setup tx (owner-paid)…");
+  const authorization = await ownerWallet.signAuthorization({ account: owner, contractAddress: SAFE_SINGLETON, executor: "self" });
+  const setupHash = await ownerWallet.writeContract({
     address: owner.address,
-    abi: parseAbi(["function setup(address[] calldata _owners,uint256 _threshold,address to,bytes calldata data,address fallbackHandler,address paymentToken,uint256 payment, address paymentReceiver) external"]),
+    abi: parseAbi(["function setup(address[] _owners,uint256 _threshold,address to,bytes data,address fallbackHandler,address paymentToken,uint256 payment,address paymentReceiver)"]),
     functionName: "setup",
     args: [
       [SAFE_NATIVE_OWNER], 1n, SAFE7579_LAUNCHPAD,
       encodeFunctionData({
         abi: parseAbi([
           "struct ModuleInit {address module;bytes initData;}",
-          "function addSafe7579(address safe7579,ModuleInit[] calldata validators,ModuleInit[] calldata executors,ModuleInit[] calldata fallbacks, ModuleInit[] calldata hooks,address[] calldata attesters,uint8 threshold) external",
+          "function addSafe7579(address safe7579,ModuleInit[] validators,ModuleInit[] executors,ModuleInit[] fallbacks,ModuleInit[] hooks,address[] attesters,uint8 threshold)",
         ]),
         functionName: "addSafe7579",
         args: [SAFE7579_MODULE,
           [{ module: ownableValidator.address, initData: ownableValidator.initData }, { module: smartSessions.address, initData: smartSessions.initData }],
-          // Mainnet: the real Rhinestone attester only (mock attester is testnet-only).
-          [], [], [], [RHINESTONE_ATTESTER_ADDRESS], 1],
+          [], [], [], attesters, 1],
       }),
       SAFE7579_MODULE, zeroAddress, 0n, zeroAddress,
     ],
@@ -112,61 +130,46 @@ async function main() {
     safe4337ModuleAddress: SAFE7579_MODULE, erc7579LaunchpadAddress: SAFE7579_LAUNCHPAD,
   });
   const smartAccountClient = createSmartAccountClient({
-    account: safeAccount, chain: base, bundlerTransport: http(bundlerUrl),
+    account: safeAccount, chain: base, bundlerTransport: http(bundlerUrl, { timeout: 180_000 }),
     userOperation: { estimateFeesPerGas: async () => publicClient.estimateFeesPerGas() },
   }).extend(erc7579Actions());
 
-  // Shared: build, session-sign, and submit ONE userOp for the given call.
   async function sessionUserOp(call) {
     const nonce = await getAccountNonce(publicClient, {
       address: safeAccount.address, entryPointAddress: entryPoint07Address,
       key: encodeValidatorNonce({ account: getAccount({ address: safeAccount.address, type: "safe" }), validator: smartSessions }),
     });
     const details = { mode: SmartSessionMode.USE, permissionId: getPermissionId({ session }), signature: getOwnableValidatorMockSignature({ threshold: 1 }) };
-    const userOp = await smartAccountClient.prepareUserOperation({
-      account: safeAccount, calls: [call], nonce, signature: encodeSmartSessionSignature(details),
-    });
+    const userOp = await smartAccountClient.prepareUserOperation({ account: safeAccount, calls: [call], nonce, signature: encodeSmartSessionSignature(details) });
     const hash = getUserOperationHash({ chainId: base.id, entryPointAddress: entryPoint07Address, entryPointVersion: "0.7", userOperation: userOp });
     details.signature = await sessionOwner.signMessage({ message: { raw: hash } });
     userOp.signature = encodeSmartSessionSignature(details);
-    const userOpHash = await smartAccountClient.sendUserOperation(userOp);
-    return smartAccountClient.waitForUserOperationReceipt({ hash: userOpHash });
+    const uoHash = await smartAccountClient.sendUserOperation(userOp);
+    return smartAccountClient.waitForUserOperationReceipt({ hash: uoHash });
   }
 
   const results = [];
-
-  console.log("2) IN-SCOPE session userOp (allowed target+selector)…");
+  console.log("2) IN-SCOPE session userOp…");
   const before = await publicClient.getBalance({ address: owner.address });
   try {
-    const receipt = await sessionUserOp({ to: DUMMY_TARGET, value: 0n, data: "0x00000000" });
+    const r = await sessionUserOp({ to: DUMMY_TARGET, value: 0n, data: "0x00000000" });
     const after = await publicClient.getBalance({ address: owner.address });
-    results.push({ name: "IN-SCOPE call executes via scoped session key", pass: receipt.success, detail: `tx=${receipt.receipt.transactionHash}` });
-    results.push({ name: "OWNER-PAYS: owner EOA balance dropped by the userOp gas", pass: after < before, detail: `Δ=${formatEther(before - after)} ETH` });
-  } catch (err) {
-    results.push({ name: "IN-SCOPE call executes via scoped session key", pass: false, detail: String(err?.shortMessage || err?.message).slice(0, 300) });
-  }
+    results.push({ n: "IN-SCOPE call executes via scoped session key", pass: r.success, d: `tx=${r.receipt.transactionHash}` });
+    results.push({ n: "OWNER-PAYS: owner EOA balance dropped by userOp gas", pass: after < before, d: `Δ=${formatEther(before - after)} ETH` });
+  } catch (err) { results.push({ n: "IN-SCOPE call executes", pass: false, d: String(err?.shortMessage || err?.message).slice(0, 200) }); }
 
-  console.log("3) OUT-OF-SCOPE selector (must be rejected)…");
-  try {
-    await sessionUserOp({ to: DUMMY_TARGET, value: 0n, data: "0x11111111" });
-    results.push({ name: "OUT-OF-SCOPE selector REJECTED", pass: false, detail: "!!! executed — scope NOT enforced. DO NOT SHIP." });
-  } catch (err) {
-    results.push({ name: "OUT-OF-SCOPE selector REJECTED", pass: true, detail: `rejected: ${String(err?.shortMessage || err?.message).slice(0, 160)}` });
-  }
+  console.log("3) OUT-OF-SCOPE selector (must reject)…");
+  try { await sessionUserOp({ to: DUMMY_TARGET, value: 0n, data: "0x11111111" }); results.push({ n: "OUT-OF-SCOPE selector REJECTED", pass: false, d: "!!! executed — scope NOT enforced" }); }
+  catch (err) { results.push({ n: "OUT-OF-SCOPE selector REJECTED", pass: true, d: `rejected: ${String(err?.shortMessage || err?.message).slice(0, 100)}` }); }
 
-  console.log("4) OUT-OF-SCOPE target (must be rejected)…");
-  try {
-    await sessionUserOp({ to: owner.address, value: 0n, data: "0x00000000" });
-    results.push({ name: "OUT-OF-SCOPE target REJECTED", pass: false, detail: "!!! executed — target pinning NOT enforced. DO NOT SHIP." });
-  } catch (err) {
-    results.push({ name: "OUT-OF-SCOPE target REJECTED", pass: true, detail: `rejected: ${String(err?.shortMessage || err?.message).slice(0, 160)}` });
-  }
+  console.log("4) OUT-OF-SCOPE target (must reject)…");
+  try { await sessionUserOp({ to: owner.address, value: 0n, data: "0x00000000" }); results.push({ n: "OUT-OF-SCOPE target REJECTED", pass: false, d: "!!! executed — target pinning NOT enforced" }); }
+  catch (err) { results.push({ n: "OUT-OF-SCOPE target REJECTED", pass: true, d: `rejected: ${String(err?.shortMessage || err?.message).slice(0, 100)}` }); }
 
   console.log("\n================ RESULTS ================");
-  for (const r of results) console.log(`${r.pass ? "PASS" : "FAIL"}  ${r.name}\n      ${r.detail}`);
+  for (const r of results) console.log(`${r.pass ? "PASS" : "FAIL"}  ${r.n}\n      ${r.d}`);
   const all = results.every((r) => r.pass);
-  console.log(all ? "\nPROOF PASSED on Base MAINNET — scope enforced, owner pays, machinery works." : "\nPROOF FAILED — do NOT enable automation.");
+  console.log(all ? "\nPROOF PASSED — 7702 + scoped session + owner-pays work; out-of-scope rejected." : "\nPROOF FAILED.");
   process.exit(all ? 0 : 1);
 }
-
 main().catch((err) => { console.error("\nPROOF CRASHED:", err?.shortMessage || err?.message || err); process.exit(1); });

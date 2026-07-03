@@ -47,6 +47,12 @@ const SAFE7579_MODULE = "0x7579EE8307284F293B1927136486880611F20002" as Address;
 const SAFE7579_LAUNCHPAD = "0x7579011aB74c46090561ea277Ba79D510c6C00ff" as Address;
 // Vestigial Safe native owner (see setup() below): burn address, not the account itself.
 const SAFE_NATIVE_OWNER = "0x000000000000000000000000000000000000dEaD" as Address;
+// Operator's own attester that has attested the SmartSessions module on Base (one-time).
+// Configurable so the operator can rotate; defaults to the deployed steward attester.
+const STEWARD_ATTESTER = ((import.meta.env.VITE_STEWARD_ATTESTER as string | undefined) || "0x74B1be1bbced1eb31f58BE6562C3340fe941e027") as Address;
+// Registry requires ascending order.
+const STEWARD_ATTESTERS = [RHINESTONE_ATTESTER_ADDRESS as Address, STEWARD_ATTESTER]
+  .sort((a, b) => (a.toLowerCase() < b.toLowerCase() ? -1 : 1));
 
 const rpc = () => env.baseRpcUrl || "https://mainnet.base.org";
 
@@ -124,7 +130,11 @@ export async function issueSessionKey(
             { module: smartSessions.address, initData: smartSessions.initData },
           ],
           [], [], [],
-          [RHINESTONE_ATTESTER_ADDRESS],
+          // Registry attesters (threshold 1). Rhinestone attests the OwnableValidator on Base,
+          // but NOT the SmartSessions module — so the operator self-attests SmartSessions once
+          // (see docs/steward/PHASE1-HANDOFF.md) and we trust both: ownable←Rhinestone,
+          // SmartSessions←our attester. Ascending order is required by the registry.
+          STEWARD_ATTESTERS,
           1,
         ],
       }),
