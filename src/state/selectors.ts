@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useAppStore } from "./useAppStore";
 import { computeBRSBreakdown } from "@/lib/rarity";
 import type { Wearable, Gotchi, EditorInstance } from "@/types";
-import { computeLockedWearableAllocations } from "@/lib/lockedBuilds";
+import { computeLockedWearableAllocations, type LockedOverride } from "@/lib/lockedBuilds";
 
 export type WearableCounts = Record<number, number>;
 
@@ -68,25 +68,50 @@ export function computeAvailCountsWithLocked(
   return avail;
 }
 
+/**
+ * Pure composition behind useWearableInventory (extracted for node-env tests).
+ *
+ * Manual gotchis are preview-only (audit H7): their equipped items are NOT
+ * owned by the viewer, so they never enter ownedCounts — the param is accepted
+ * (and deliberately ignored) to pin that contract in tests. Their editor
+ * instances still consume availability through `editorInstances`.
+ */
+export function computeWearableInventory(state: {
+  gotchis: Gotchi[];
+  manualGotchis?: Gotchi[];
+  editorInstances: EditorInstance[];
+  lockedById: Record<string, boolean>;
+  overridesById: Record<string, LockedOverride>;
+  walletItemCounts: WearableCounts;
+}) {
+  // Owned = wallet gotchis' equipped + wallet-held balances (audit H4/H7).
+  // walletItemCounts is category-filtered at the producer (DressPage).
+  const ownedCounts = computeOwnedCounts(state.gotchis, state.walletItemCounts);
+  const usedCounts = computeUsedCounts(state.editorInstances);
+  const lockedAllocations = computeLockedWearableAllocations(state.overridesById, state.lockedById);
+  const availCounts = computeAvailCounts(ownedCounts, usedCounts);
+  const availCountsWithLocked = computeAvailCountsWithLocked(ownedCounts, usedCounts, lockedAllocations);
+  return { ownedCounts, usedCounts, availCounts, lockedAllocations, availCountsWithLocked };
+}
+
 export function useWearableInventory() {
   const gotchis = useAppStore((state) => state.gotchis);
-  const manualGotchis = useAppStore((state) => state.manualGotchis);
   const editorInstances = useAppStore((state) => state.editorInstances);
   const lockedById = useAppStore((state) => state.lockedById);
   const overridesById = useAppStore((state) => state.overridesById);
   const walletItemCounts = useAppStore((state) => state.walletItemCounts);
 
-  return useMemo(() => {
-    // Combine wallet gotchis and manual gotchis for owned counts.
-    // walletItemCounts is category-filtered at the producer (DressPage).
-    const allGotchis = [...gotchis, ...manualGotchis];
-    const ownedCounts = computeOwnedCounts(allGotchis, walletItemCounts);
-    const usedCounts = computeUsedCounts(editorInstances);
-    const lockedAllocations = computeLockedWearableAllocations(overridesById, lockedById);
-    const availCounts = computeAvailCounts(ownedCounts, usedCounts);
-    const availCountsWithLocked = computeAvailCountsWithLocked(ownedCounts, usedCounts, lockedAllocations);
-    return { ownedCounts, usedCounts, availCounts, lockedAllocations, availCountsWithLocked };
-  }, [gotchis, manualGotchis, editorInstances, lockedById, overridesById, walletItemCounts]);
+  return useMemo(
+    () =>
+      computeWearableInventory({
+        gotchis,
+        editorInstances,
+        lockedById,
+        overridesById,
+        walletItemCounts,
+      }),
+    [gotchis, editorInstances, lockedById, overridesById, walletItemCounts]
+  );
 }
 
 export function useWearablesById() {
