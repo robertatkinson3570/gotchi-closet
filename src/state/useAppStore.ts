@@ -128,7 +128,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setLoadedAddress: (address) => {
     set({ loadedAddress: address });
     if (address) {
-      const data = loadLockedBuilds(BASE_CHAIN_ID, address);
+      const data = loadLockedBuilds(BASE_CHAIN_ID);
       set({ lockedById: data.lockedById, overridesById: data.overridesById });
     } else {
       set({ lockedById: {}, overridesById: {} });
@@ -139,18 +139,21 @@ export const useAppStore = create<AppState>((set, get) => ({
     const state = get();
     // Never clean/persist against an empty list — the DressPage mount reset
     // (setGotchis([])) and transient loading states must not wipe saved locks.
+    // Trade-off: this means stale locks for a fully-emptied wallet persist as
+    // inert data until a non-empty load arrives to clean them — never wrongly
+    // deleting a lock beats eventually cleaning one up.
     if (!state.loadedAddress || gotchis.length === 0) return;
     const keepIds = new Set([
-      ...gotchis.map((gg) => gg.id),
+      ...gotchis.map((g) => g.id),
       // Manual gotchis are lockable (toggleLockSet supports them) — keep theirs.
-      ...state.manualGotchis.map((gg) => gg.id),
+      ...state.manualGotchis.map((g) => g.id),
     ]);
     const cleaned = cleanupStaleLockedBuilds(
       { version: 1, lockedById: state.lockedById, overridesById: state.overridesById },
       keepIds
     );
     set({ lockedById: cleaned.lockedById, overridesById: cleaned.overridesById });
-    saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, cleaned);
+    saveLockedBuilds(BASE_CHAIN_ID, cleaned);
   },
   addManualGotchi: (gotchi) =>
     set((state) => {
@@ -331,7 +334,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const newOverridesById = { ...state.overridesById, [gotchiId]: override };
     set({ lockedById: newLockedById, overridesById: newOverridesById });
     if (state.loadedAddress) {
-      saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, {
+      saveLockedBuilds(BASE_CHAIN_ID, {
         version: 1,
         lockedById: newLockedById,
         overridesById: newOverridesById,
@@ -347,7 +350,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     delete newOverridesById[gotchiId];
     set({ lockedById: newLockedById, overridesById: newOverridesById });
     if (state.loadedAddress) {
-      saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, {
+      saveLockedBuilds(BASE_CHAIN_ID, {
         version: 1,
         lockedById: newLockedById,
         overridesById: newOverridesById,
@@ -358,7 +361,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   loadLockedBuildsFromStorage: () => {
     const state = get();
     if (!state.loadedAddress) return;
-    const data = loadLockedBuilds(BASE_CHAIN_ID, state.loadedAddress);
+    const data = loadLockedBuilds(BASE_CHAIN_ID);
     set({ lockedById: data.lockedById, overridesById: data.overridesById });
   },
 
@@ -466,7 +469,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     
     set({ lockedById: newLockedById, overridesById: newOverridesById });
     if (state.loadedAddress) {
-      saveLockedBuilds(BASE_CHAIN_ID, state.loadedAddress, {
+      saveLockedBuilds(BASE_CHAIN_ID, {
         version: 1,
         lockedById: newLockedById,
         overridesById: newOverridesById,
