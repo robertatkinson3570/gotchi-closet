@@ -44,6 +44,36 @@ export const FORGE_ABI = [
 // Rarity-score-modifier values that map to geode token ids (common…godlike).
 export const GEODE_RSM = [1, 2, 5, 10, 20, 50] as const;
 
+// GLTR farm diamond on Base (GAX FarmFacet). All selectors verified live via
+// diamond loupe 2026-07-02: pending/deposited/harvest/batchHarvest/deposit/
+// withdraw/poolInfo/poolBalance/currentRewardPerBlock/decayPeriod.
+export const GLTR_FARM_BASE = "0xaB449DcA14413a6ae0bcea9Ea210B57aCe280d2c" as const;
+
+export const GLTR_FARM_ABI = [
+  { name: "poolLength", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { name: "poolInfo", type: "function", stateMutability: "view", inputs: [{ type: "uint256" }], outputs: [{ name: "lpToken", type: "address" }, { name: "allocPoint", type: "uint256" }, { name: "lastRewardBlock", type: "uint256" }, { name: "accERC20PerShare", type: "uint256" }] },
+  { name: "poolBalance", type: "function", stateMutability: "view", inputs: [{ type: "uint256" }], outputs: [{ type: "uint256" }] },
+  { name: "totalAllocPoint", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { name: "currentRewardPerBlock", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { name: "pending", type: "function", stateMutability: "view", inputs: [{ type: "uint256" }, { type: "address" }], outputs: [{ type: "uint256" }] },
+  { name: "deposited", type: "function", stateMutability: "view", inputs: [{ type: "uint256" }, { type: "address" }], outputs: [{ type: "uint256" }] },
+  { name: "deposit", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_pid", type: "uint256" }, { name: "_amount", type: "uint256" }], outputs: [] },
+  { name: "withdraw", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_pid", type: "uint256" }, { name: "_amount", type: "uint256" }], outputs: [] },
+  { name: "harvest", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_pid", type: "uint256" }], outputs: [] },
+  { name: "batchHarvest", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_pids", type: "uint256[]" }], outputs: [] },
+] as const;
+
+// Farm pools in pid order (verified poolInfo(0..5) on-chain — same LP set the
+// dapp config lists). Pair label = what the LP wraps.
+export const GLTR_POOLS = [
+  { pid: 0, name: "GHST–FUD", lp: "0xeae2fB93e291C2eB69195851813DE24f97f1ce71" as const },
+  { pid: 1, name: "GHST–FOMO", lp: "0x62ab7d558A011237F8a57ac0F97601A764e85b88" as const },
+  { pid: 2, name: "GHST–ALPHA", lp: "0x0Ba2A49aedf9A409DBB0272db7CDF98aEb1E1837" as const },
+  { pid: 3, name: "GHST–KEK", lp: "0x699B4eb36b95cDF62c74f6322AaA140E7958Dc9f" as const },
+  { pid: 4, name: "GHST–WETH", lp: "0x0DFb9Cb66A18468850d6216fCc691aa20ad1e091" as const },
+  { pid: 5, name: "GHST–GLTR", lp: "0xa83b31D701633b8EdCfba55B93dDBC202D8A4621" as const },
+] as const;
+
 // Alchemica ERC-20s on Base, indexed in the same order the RealmFacet uses
 // when emitting `AlchemicaClaimed` events (FUD=0, FOMO=1, ALPHA=2, KEK=3).
 export const ALCHEMICA_TOKENS_BASE = [

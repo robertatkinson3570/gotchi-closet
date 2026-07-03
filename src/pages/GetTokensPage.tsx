@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowLeftRight, Coins, CreditCard, ExternalLink, Sparkles } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
+import { SwapCard } from "@/components/swap/SwapCard";
 
 const GHST = "0xcD2F22236DD9Dfe2356D7C543161D4d260FD9BcB";
 const USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
@@ -76,6 +77,12 @@ export default function GetTokensPage() {
       </div>
 
       <p className="text-xs text-muted-foreground text-center mb-3">{intro}</p>
+      {tab === "swap" && (
+        <div className="mb-4">
+          <SwapCard />
+          <div className="text-[10px] text-muted-foreground text-center mt-2">Or use an external venue:</div>
+        </div>
+      )}
       <div className="space-y-2.5">
         {providers.map((p) => <ProviderCard key={p.name} p={p} />)}
       </div>

@@ -11,6 +11,7 @@ import soulRoutes from "./routes/soul";
 import arenaRoutes from "./routes/arena";
 import mcpBillingRoutes from "./routes/mcpBilling";
 import daoRoutes from "./routes/dao";
+import mapRoutes from "./routes/map";
 import { stewardRouter } from "./routes/steward";
 import { wispMcpHttpHandler } from "./mcp/http";
 import { getDebugStats } from "./aavegotchi/serverSvgService";
@@ -93,6 +94,8 @@ export function createApp() {
   app.use("/api/steward", stewardRouter);
   // DAO-wide votable VP ("live quorum") — public, cached server-side.
   app.use("/api/dao", daoRoutes);
+  // Citaadel map — all REALM parcels, cached hourly server-side.
+  app.use("/api/map", mapRoutes);
   // Keyed, rate-limited MCP protocol endpoint for external customers (POST only).
   // Distinct from /api/mcp (billing REST). Plan limits enforced in mcp/http.ts.
   app.post("/mcp", wispMcpHttpHandler);

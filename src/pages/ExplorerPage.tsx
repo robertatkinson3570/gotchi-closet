@@ -20,6 +20,7 @@ import { getActiveFilterCount } from "@/lib/explorer/filters";
 import { defaultBaazaarSort } from "@/lib/explorer/sorts";
 import type { AssetType } from "@/lib/explorer/wearableTypes";
 import { MarketGrid } from "@/components/explorer/MarketGrid";
+import { CitaadelMap } from "@/components/explorer/CitaadelMap";
 import { AuctionGrid } from "@/components/explorer/AuctionGrid";
 import { GotchiManageModal, type ManageGotchi } from "@/components/explorer/GotchiActionsPanel";
 import { OwnedOverview } from "@/components/explorer/OwnedOverview";
@@ -39,6 +40,12 @@ import { useSealedTokens } from "@/state/useSealedTokens";
 
 const ADD_LISTING_ABI = [
   { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_category", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
+] as const;
+
+// Verified on Base via diamond loupe: safeBatchTransferFrom lives on facet
+// 0x517e…5670 — all selected gotchis move in ONE transaction.
+const BATCH_TRANSFER_ABI = [
+  { name: "safeBatchTransferFrom", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_from", type: "address" }, { name: "_to", type: "address" }, { name: "_tokenIds", type: "uint256[]" }, { name: "_data", type: "bytes" }], outputs: [] },
 ] as const;
 
 export type ViewMode = "cards" | "family";
@@ -89,9 +96,13 @@ export default function ExplorerPage() {
   const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
   const [selectMode, setSelectMode] = useState(false);
+  const [parcelView, setParcelView] = useState<"grid" | "map">("grid");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<"list" | "send">("list");
   const [bulkPrice, setBulkPrice] = useState("");
+  const [bulkRecipient, setBulkRecipient] = useState("");
   const [listing, setListing] = useState<{ done: number; total: number } | null>(null);
+  const [sending, setSending] = useState(false);
 
   const toggleSel = (gid: string) =>
     setSelected((s) => { const n = new Set(s); if (n.has(gid)) n.delete(gid); else n.add(gid); return n; });
@@ -117,6 +128,29 @@ export default function ExplorerPage() {
     }
     toast({ title: "Bulk list complete", description: `Listed ${ok}/${ids.length}${failed ? `, ${failed} failed` : ""} at ${price} GHST.` });
     setListing(null); setSelected(new Set()); setSelectMode(false);
+  };
+
+  // Send every selected gotchi to one recipient — a single safeBatchTransferFrom
+  // signature (verified on the Base diamond), not one tx per gotchi.
+  const doBulkTransfer = async () => {
+    const to = bulkRecipient.trim();
+    if (!publicClient || !connectedAddress || selected.size === 0) return;
+    if (!/^0x[a-fA-F0-9]{40}$/.test(to)) { toast({ title: "Invalid recipient", description: "Enter a 0x wallet address on Base.", variant: "destructive" }); return; }
+    if (to.toLowerCase() === connectedAddress.toLowerCase()) { toast({ title: "That's your own wallet", variant: "destructive" }); return; }
+    const lent = [...selected].filter((id) => rentalSets?.lentOut.has(id));
+    if (lent.length > 0) { toast({ title: "Lent-out gotchis can't move", description: `Deselect #${lent.join(", #")} — they're in active rentals.`, variant: "destructive" }); return; }
+    setSending(true);
+    try {
+      const ids = [...selected].map((id) => BigInt(id));
+      const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: BATCH_TRANSFER_ABI, functionName: "safeBatchTransferFrom", args: [connectedAddress as `0x${string}`, to as `0x${string}`, ids, "0x"] });
+      await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+      toast({ title: "Transfer complete", description: `Sent ${ids.length} gotchi${ids.length > 1 ? "s" : ""} to ${to.slice(0, 6)}…${to.slice(-4)}.` });
+      setSelected(new Set()); setSelectMode(false); setBulkRecipient("");
+    } catch (e) {
+      toast({ title: "Transfer failed", description: parseRevert(e).slice(0, 140), variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
   };
 
   // Lent-out / borrowed gotchi ids for the connected user, to badge owned cards.
@@ -481,6 +515,25 @@ export default function ExplorerPage() {
                   ? <OwnedMarketGrid itemKind={assetType as "item" | "installation" | "parcel" | "tile" | "forge" | "fakegotchi" | "portal" | "fakecard" | "guardian"} />
                   : <div className="text-center py-12 text-muted-foreground text-sm">An owned view for this collection isn't available yet — it has no on-chain enumeration. Use the Baazaar tab to browse listings.</div>;
               }
+              // Parcels get a second lens: the full Citaadel map with market overlays.
+              if (assetType === "parcel") {
+                return (
+                  <div>
+                    <div className="flex items-center gap-1 px-2 md:px-3 pt-2">
+                      {(["grid", "map"] as const).map((v) => (
+                        <button
+                          key={v}
+                          onClick={() => setParcelView(v)}
+                          className={`h-7 px-3 rounded-full text-[11px] font-semibold capitalize transition-colors ${parcelView === v ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                        >
+                          {v === "grid" ? "Listings" : "Citaadel map"}
+                        </button>
+                      ))}
+                    </div>
+                    {parcelView === "map" ? <CitaadelMap /> : <MarketGrid {...MARKET_TABS[assetType]} />}
+                  </div>
+                );
+              }
               return <MarketGrid {...MARKET_TABS[assetType]} />;
             })()
           ) : assetType === "auction" ? (
@@ -562,18 +615,33 @@ export default function ExplorerPage() {
       )}
 
       {mode === "mine" && assetType === "gotchi" && !selectMode && (
-        <button onClick={() => setSelectMode(true)} className="fixed bottom-3 right-3 z-40 inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-emerald-600 text-white text-sm font-semibold shadow-lg hover:bg-emerald-700">
-          <Tag className="w-4 h-4" /> List for sale
+        <button onClick={() => setSelectMode(true)} className="fixed bottom-3 right-3 z-40 inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-emerald-600 text-white text-sm font-semibold shadow-lg hover:bg-emerald-700 hover:shadow-glow-sm transition-all">
+          <Tag className="w-4 h-4" /> List / Send
         </button>
       )}
 
       {mode === "mine" && assetType === "gotchi" && selectMode && (
-        <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full border border-border bg-background/95 backdrop-blur px-4 py-2 shadow-lg">
-          <span className="text-xs font-semibold">{selected.size} selected</span>
-          <input type="number" value={bulkPrice} onChange={(e) => setBulkPrice(e.target.value)} placeholder="Price each (GHST)" className="h-8 w-36 rounded border border-border bg-background px-2 text-xs" />
-          <button disabled={!!listing || !(Number(bulkPrice) > 0) || selected.size === 0} onClick={doBulkList} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-emerald-600 text-white text-xs font-semibold disabled:opacity-50">
-            {listing ? (<><Loader2 className="w-4 h-4 animate-spin" /> Listing {listing.done}/{listing.total}…</>) : (<><Tag className="w-4 h-4" /> List {selected.size}</>)}
-          </button>
+        <div className="fixed bottom-3 inset-x-3 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-40 flex flex-wrap items-center justify-center gap-2 rounded-2xl sm:rounded-full border border-border bg-background/95 backdrop-blur px-3 sm:px-4 py-2 shadow-xl">
+          <span className="text-xs font-semibold whitespace-nowrap">{selected.size} selected</span>
+          <div className="flex items-center rounded-full border border-border/60 p-0.5">
+            <button onClick={() => setBulkAction("list")} className={`h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${bulkAction === "list" ? "bg-emerald-600 text-white" : "text-muted-foreground hover:text-foreground"}`}>List</button>
+            <button onClick={() => setBulkAction("send")} className={`h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${bulkAction === "send" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>Send</button>
+          </div>
+          {bulkAction === "list" ? (
+            <>
+              <input type="number" value={bulkPrice} onChange={(e) => setBulkPrice(e.target.value)} placeholder="Price each (GHST)" className="h-8 w-32 sm:w-36 rounded border border-border bg-background px-2 text-xs" />
+              <button disabled={!!listing || !(Number(bulkPrice) > 0) || selected.size === 0} onClick={doBulkList} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-emerald-600 text-white text-xs font-semibold disabled:opacity-50">
+                {listing ? (<><Loader2 className="w-4 h-4 animate-spin" /> Listing {listing.done}/{listing.total}…</>) : (<><Tag className="w-4 h-4" /> List {selected.size}</>)}
+              </button>
+            </>
+          ) : (
+            <>
+              <input value={bulkRecipient} onChange={(e) => setBulkRecipient(e.target.value)} placeholder="Recipient 0x…" spellCheck={false} className="h-8 w-44 sm:w-56 rounded border border-border bg-background px-2 text-xs font-mono" />
+              <button disabled={sending || selected.size === 0 || !/^0x[a-fA-F0-9]{40}$/.test(bulkRecipient.trim())} onClick={doBulkTransfer} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50">
+                {sending ? (<><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>) : (<>Send {selected.size} — 1 tx</>)}
+              </button>
+            </>
+          )}
           <button onClick={() => { setSelectMode(false); setSelected(new Set()); }} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
         </div>
       )}
