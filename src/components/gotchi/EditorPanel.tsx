@@ -144,10 +144,19 @@ export function EditorPanel() {
       ) : (
         <div className="space-y-2 p-1">
           {editorInstances.map((instance) => {
-            const isBaseEquipment =
+            const sameOutfit =
               instance.equippedBySlot.length === instance.baseGotchi.equippedWearables.length &&
               instance.equippedBySlot.every((id, idx) => id === instance.baseGotchi.equippedWearables[idx]);
-            
+            // A committed respec target changes the base traits, so the
+            // subgraph's precomputed traits no longer apply (audit H5).
+            const committedTarget = committedRespecTargets[instance.instanceId];
+            const isBaseEquipment = sameOutfit && !committedTarget;
+            // Base traits the card should reflect: the committed respec target
+            // (4 editable traits) + the original eye traits.
+            const effectiveBaseTraits = committedTarget
+              ? [...committedTarget, ...instance.baseGotchi.numericTraits.slice(4)]
+              : instance.baseGotchi.numericTraits;
+
             const {
               finalTraits,
               traitBase,
@@ -160,7 +169,7 @@ export function EditorPanel() {
               wearableDelta,
               setTraitModsDelta,
             } = computeInstanceTraits({
-              baseTraits: instance.baseGotchi.numericTraits,
+              baseTraits: effectiveBaseTraits,
               modifiedNumericTraits: isBaseEquipment ? instance.baseGotchi.modifiedNumericTraits : undefined,
               withSetsNumericTraits: isBaseEquipment ? instance.baseGotchi.withSetsNumericTraits : undefined,
               equippedBySlot: instance.equippedBySlot,
@@ -334,7 +343,10 @@ export function EditorPanel() {
                         <div className="min-w-0 md:max-w-[200px]">
                           <GotchiCard
                             gotchi={instance.baseGotchi}
-                            traitBase={instance.baseGotchi.baseRarityScore ?? traitBase}
+                            // With a committed respec target, the subgraph's
+                            // baseRarityScore is stale — use the locally
+                            // computed score from the target base (audit H5).
+                            traitBase={committedTarget ? traitBase : instance.baseGotchi.baseRarityScore ?? traitBase}
                             traitWithMods={traitWithMods}
                             wearableFlat={wearableFlat}
                             setFlatBrs={setFlatBrs}
@@ -345,7 +357,7 @@ export function EditorPanel() {
                             showImage={false}
                             showRespec
                             respecResetKey={instance.instanceId}
-                            baseTraits={instance.baseGotchi.numericTraits}
+                            baseTraits={effectiveBaseTraits}
                             wearableDelta={wearableDelta}
                             setDelta={setTraitModsDelta}
                             enableSetFilter
@@ -535,6 +547,19 @@ export function EditorPanel() {
               }));
 
               updateEditorInstance(instance.instanceId, result.equippedWearables);
+
+              if (result.respecAllocated) {
+                // Mommy's allocation is relative to the CURRENT base traits.
+                // Committing the absolute target lets the card, Lock&Set and
+                // Save all agree on the post-respec base (audit H5).
+                const target = instance.baseGotchi.numericTraits
+                  .slice(0, 4)
+                  .map((v, i) => (Number(v) || 0) + (result.respecAllocated![i] || 0));
+                setCommittedRespecTargets((prev) => ({
+                  ...prev,
+                  [instance.instanceId]: target,
+                }));
+              }
             }}
             onNoImprovement={() => {
               setMommyStatusMessage({ instanceId: instance.instanceId, message: "Already optimized for this goal." });
