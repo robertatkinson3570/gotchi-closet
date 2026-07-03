@@ -1,0 +1,13 @@
+{
+  "videoId": "fixture-salealert",
+  "gotchiId": "0",
+  "name": "TEST GHOST",
+  "svg": "<svg viewBox=\"0 0 64 64\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M16 56 V24 a16 16 0 0 1 32 0 V56 l-6-5 -5 5 -5-5 -5 5 -5-5 z\" fill=\"#e6e6fa\" stroke=\"#b847ff\" stroke-width=\"2\"/><circle cx=\"26\" cy=\"26\" r=\"3\" fill=\"#150b2e\"/><circle cx=\"38\" cy=\"26\" r=\"3\" fill=\"#150b2e\"/></svg>",
+  "priceGhst": 12500,
+  "priceUsd": 8125.5,
+  "traits": [99, 12, 50, 44, 10, 91],
+  "brs": 542,
+  "buyerShort": "0xBEEF…1234",
+  "sellerShort": "0xCAFE…5678",
+  "whenText": "TODAY"
+}
