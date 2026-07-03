@@ -1,8 +1,10 @@
 # One-off, manually-triggered: move a small proof budget from the steward pet relayer
-# (STEWARD_PET_RELAYER_KEY — funded 2026-06-24, 0.01 ETH on Base mainnet) to the two
-# throwaway proof wallets whose keys live in the local gitignored .env.testnet. Runs on the
-# self-hosted VPS runner so the key never leaves GitHub-secret/VPS custody; only tx hashes
-# are logged. Destinations are HARDCODED — no dispatch inputs, nothing to tamper with.
+# (STEWARD_PET_RELAYER_KEY, Base mainnet) to the two throwaway proof wallets whose keys live
+# in the local gitignored .env.testnet. Runs on the self-hosted VPS runner so the key never
+# leaves GitHub-secret/VPS custody; only tx hashes are logged. Destinations are HARDCODED —
+# no dispatch inputs, nothing to tamper with.
+# 2026-07-03: destinations replaced — the original pair was leaked in a public commit
+# (229d051) and swept by bots the moment it was funded. These are FRESH, never-committed keys.
 name: Steward proof funding (one-off)
 
 on:
@@ -17,7 +19,7 @@ jobs:
     runs-on: [self-hosted, gotchicloset-vps]
     timeout-minutes: 10
     steps:
-      - name: Send 0.0035 ETH x2 from relayer to proof wallets (Base mainnet)
+      - name: Send 0.0012 ETH x2 from relayer to proof wallets (Base mainnet)
         env:
           KEY: ${{ secrets.STEWARD_PET_RELAYER_KEY }}
         run: |
@@ -34,12 +36,12 @@ jobs:
           const rpc = "https://mainnet.base.org";
           const pub = createPublicClient({ chain: base, transport: http(rpc) });
           const wallet = createWalletClient({ account, chain: base, transport: http(rpc) });
-          // The two proof wallets (.env.testnet EXECUTOR + OWNER). Hardcoded on purpose.
+          // The two FRESH proof wallets (local-only .env.testnet EXECUTOR + OWNER, 2026-07-03).
           const DESTS = [
-            "0x8551e2919146eC24f20267bff3d92A9c3743Bd6d",
-            "0x1216f072e243025bf7623A360e64423A56779D8a",
+            "0x74B1be1bbced1eb31f58BE6562C3340fe941e027",
+            "0x977AB61BFaD895B4b42c219bC4de7123e61AA41F",
           ];
-          const AMT = parseEther("0.0035");
+          const AMT = parseEther("0.0012");
           console.log("relayer:", account.address, "start balance:", formatEther(await pub.getBalance({ address: account.address })), "ETH");
           for (const to of DESTS) {
             const hash = await wallet.sendTransaction({ to, value: AMT });
