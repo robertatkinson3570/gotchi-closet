@@ -1,0 +1,26 @@
+{
+  "videoId": "fixture-fitreveal",
+  "gotchiId": "0",
+  "name": "TEST GHOST",
+  "nakedSvg": "<svg viewBox=\"0 0 64 64\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M16 56 V24 a16 16 0 0 1 32 0 V56 l-6-5 -5 5 -5-5 -5 5 -5-5 z\" fill=\"#e6e6fa\" stroke=\"#b847ff\" stroke-width=\"2\"/><circle cx=\"26\" cy=\"26\" r=\"3\" fill=\"#150b2e\"/><circle cx=\"38\" cy=\"26\" r=\"3\" fill=\"#150b2e\"/></svg>",
+  "nakedBrs": 480,
+  "steps": [
+    {
+      "svg": "<svg viewBox=\"0 0 64 64\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M16 56 V24 a16 16 0 0 1 32 0 V56 l-6-5 -5 5 -5-5 -5 5 -5-5 z\" fill=\"#e6e6fa\" stroke=\"#b847ff\" stroke-width=\"2\"/><rect x=\"20\" y=\"12\" width=\"24\" height=\"8\" fill=\"#ffd747\"/><circle cx=\"26\" cy=\"26\" r=\"3\" fill=\"#150b2e\"/><circle cx=\"38\" cy=\"26\" r=\"3\" fill=\"#150b2e\"/></svg>",
+      "wearableId": 1,
+      "wearableName": "Test Hat",
+      "slotLabel": "HEAD",
+      "brs": 495
+    },
+    {
+      "svg": "<svg viewBox=\"0 0 64 64\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M16 56 V24 a16 16 0 0 1 32 0 V56 l-6-5 -5 5 -5-5 -5 5 -5-5 z\" fill=\"#e6e6fa\" stroke=\"#b847ff\" stroke-width=\"2\"/><rect x=\"20\" y=\"12\" width=\"24\" height=\"8\" fill=\"#ffd747\"/><rect x=\"22\" y=\"34\" width=\"20\" height=\"12\" fill=\"#47ffea\"/><circle cx=\"26\" cy=\"26\" r=\"3\" fill=\"#150b2e\"/><circle cx=\"38\" cy=\"26\" r=\"3\" fill=\"#150b2e\"/></svg>",
+      "wearableId": 2,
+      "wearableName": "Test Shirt",
+      "slotLabel": "BODY",
+      "brs": 512
+    }
+  ],
+  "finalBrs": 542,
+  "setName": "Test Set",
+  "setBonusBrs": 5
+}
