@@ -8,6 +8,8 @@ import {
 import { Button } from "@/ui/button";
 import { SLOT_NAMES } from "@/lib/constants";
 import { useAppStore } from "@/state/useAppStore";
+import { useWearableInventory } from "@/state/selectors";
+import { useToast } from "@/ui/use-toast";
 import type { Wearable } from "@/types";
 
 interface EquipModalProps {
@@ -21,6 +23,8 @@ export function EquipModal({ wearable, open, onOpenChange }: EquipModalProps) {
   const activeInstanceId = useAppStore(
     (state) => state.editorInstances[0]?.instanceId
   );
+  const { ownedCounts } = useWearableInventory();
+  const { toast } = useToast();
 
   if (!wearable) return null;
 
@@ -30,7 +34,15 @@ export function EquipModal({ wearable, open, onOpenChange }: EquipModalProps) {
 
   const handleEquip = (slotIndex: number) => {
     if (!activeInstanceId) return;
-    equipWearable(activeInstanceId, wearable.id, slotIndex);
+    const equipped = equipWearable(activeInstanceId, wearable.id, slotIndex);
+    if (!equipped) {
+      toast({
+        title: "Not enough copies",
+        description: `You only own ${ownedCounts[wearable.id] || 0} of ${wearable.name}`,
+        variant: "destructive",
+      });
+      return;
+    }
     onOpenChange(false);
   };
 

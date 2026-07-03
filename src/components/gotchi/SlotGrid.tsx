@@ -1,7 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SlotCard } from "./SlotCard";
 import { useAppStore } from "@/state/useAppStore";
-import { useWearablesById } from "@/state/selectors";
+import { useWearablesById, useWearableInventory } from "@/state/selectors";
 import { useToast } from "@/ui/use-toast";
 import type { Wearable } from "@/types";
 import type { DragEventHandler } from "react";
@@ -56,6 +56,7 @@ function SlotDropTarget({
   });
   const equipWearable = useAppStore((state) => state.equipWearable);
   const wearablesById = useWearablesById();
+  const { ownedCounts } = useWearableInventory();
   const { toast } = useToast();
 
   const handleDrop: DragEventHandler<HTMLDivElement> = (event) => {
@@ -86,7 +87,15 @@ function SlotDropTarget({
       return;
     }
 
-    equipWearable(instanceId, wearableId, slotIndex);
+    const equipped = equipWearable(instanceId, wearableId, slotIndex);
+    if (!equipped) {
+      toast({
+        title: "Not enough copies",
+        description: `You only own ${ownedCounts[wearableId] || 0} of ${wearableData.name}`,
+        variant: "destructive",
+      });
+      return;
+    }
     toast({
       title: "Equipped",
       description: `${wearableData.name} equipped`,

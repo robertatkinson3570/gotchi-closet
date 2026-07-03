@@ -7,6 +7,9 @@ import {
   saveLockedBuilds,
   cleanupStaleLockedBuilds,
 } from "@/lib/lockedBuilds";
+// Circular with ./selectors (which imports this store) — safe: both sides only
+// reference the other's exports at call time, never during module init.
+import { computeOwnedCounts } from "./selectors";
 
 const BASE_CHAIN_ID = 8453;
 
@@ -66,7 +69,10 @@ interface AppState {
   setLoadingWearables: (loading: boolean) => void;
   setLoadingSets: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  equipWearable: (instanceId: string, wearableId: number, slotIndex: number) => void;
+  /** Equips into the instance's slot. Returns false (no-op) when the user owns
+   * N > 0 copies and all N are already placed elsewhere (audit M4); wearables
+   * owned 0 of equip freely — pure simulation mode. */
+  equipWearable: (instanceId: string, wearableId: number, slotIndex: number) => boolean;
   unequipSlot: (instanceId: string, slotIndex: number) => void;
   stripAllWearables: (instanceId: string) => void;
   restoreOriginalWearables: (instanceId: string) => void;
@@ -238,7 +244,30 @@ export const useAppStore = create<AppState>((set, get) => ({
     const instance = state.editorInstances.find(
       (item) => item.instanceId === instanceId
     );
-    if (!instance) return;
+    if (!instance) return false;
+
+    // Ownership enforcement (audit M4): if the user owns N > 0 copies, at most
+    // N may be placed across all editor instances. Moving a copy within this
+    // instance (its old slot gets vacated by this same call) doesn't count.
+    // owned === 0 stays freely equippable: pure simulation mode (the Save
+    // feature classifies those as buy/blocked).
+    const owned =
+      computeOwnedCounts(state.gotchis, state.walletItemCounts)[wearableId] || 0;
+    if (owned > 0) {
+      let usedElsewhere = 0;
+      for (const inst of state.editorInstances) {
+        for (let i = 0; i < inst.equippedBySlot.length; i++) {
+          if (inst.equippedBySlot[i] !== wearableId) continue;
+          const vacatedByThisCall =
+            inst.instanceId === instanceId &&
+            // same-instance occurrences are cleared by the loop below…
+            !((i === 4 || i === 5) && (slotIndex === 4 || slotIndex === 5) && i !== slotIndex);
+            // …EXCEPT the other hand slot, which is deliberately kept (dual-wield).
+          if (!vacatedByThisCall) usedElsewhere += 1;
+        }
+      }
+      if (usedElsewhere + 1 > owned) return false;
+    }
 
     const equippedBySlot = [...instance.equippedBySlot];
     const isHandSlot = slotIndex === 4 || slotIndex === 5;
@@ -261,6 +290,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           : item
       ),
     });
+    return true;
   },
 
   unequipSlot: (instanceId, slotIndex) => {

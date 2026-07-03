@@ -20,7 +20,7 @@ import { fetchAllWearables, fetchAllWearableSets } from "@/graphql/fetchers";
 import { cacheGet, cacheSet, cacheIsStale, CACHE_KEYS } from "@/lib/cache";
 import { normalizeAddress } from "@/lib/address";
 import { useToast } from "@/ui/use-toast";
-import { useWearablesById } from "@/state/selectors";
+import { useWearablesById, useWearableInventory } from "@/state/selectors";
 import type { Wearable, Gotchi } from "@/types";
 import { useAddressState } from "@/lib/addressState";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
@@ -72,6 +72,7 @@ export default function DressPage() {
   const wearables = useAppStore((state) => state.wearables);
 
   const wearablesById = useWearablesById();
+  const { ownedCounts } = useWearableInventory();
 
   useEffect(() => {
     setMultiWallets(loadMultiWallets());
@@ -289,7 +290,16 @@ export default function DressPage() {
         return;
       }
 
-      equipWearable(instanceId, wearableId, slotIndex);
+      const equipped = equipWearable(instanceId, wearableId, slotIndex);
+      if (!equipped) {
+        toast({
+          title: "Not enough copies",
+          description: `You only own ${ownedCounts[wearableId] || 0} of ${wearable.name}`,
+          variant: "destructive",
+        });
+        setActiveWearable(null);
+        return;
+      }
       toast({
         title: "Equipped",
         description: `${wearable.name} equipped`,
