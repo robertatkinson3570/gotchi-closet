@@ -18,6 +18,8 @@ const BACKFILL_START_TS = Math.floor(Date.UTC(2024, 11, 1) / 1000); // 2024-12-0
 
 let payload: PulsePayload | null = null;
 let building = false;
+/** Set when the store is unusable (e.g. unwritable data dir) — pulse serves 202 forever instead of crashing the API. */
+let disabled = false;
 
 function rebuildPayload(): void {
   payload = buildPulsePayload(getAllSeries(), Date.now());
@@ -95,11 +97,18 @@ export async function nightlyRefresh(): Promise<void> {
 
 /** Boot entry: instant payload from disk when backfilled; else background backfill. */
 export function ensureStarted(): void {
-  if (payload || building) return;
-  if (getMeta("backfilled")) {
-    rebuildPayload();
-    // Older DBs lack the newer families — top up in the background, non-blocking.
-    topUpBackfills().catch((err) => console.error("[pulse] top-up backfill failed:", err));
+  if (payload || building || disabled) return;
+  try {
+    if (getMeta("backfilled")) {
+      rebuildPayload();
+      // Older DBs lack the newer families — top up in the background, non-blocking.
+      topUpBackfills().catch((err) => console.error("[pulse] top-up backfill failed:", err));
+      return;
+    }
+  } catch (err) {
+    // Never let pulse storage take the whole API down (e.g. EACCES on ./data).
+    disabled = true;
+    console.error("[pulse] store unavailable — pulse disabled:", err);
     return;
   }
   building = true;

@@ -10,7 +10,13 @@ import type { MetricRow, PulsePoint } from "../../src/lib/pulse/aggregate";
 let db: Database.Database | null = null;
 
 function dbPath(): string {
-  return process.env.PULSE_DB_PATH || path.resolve("./data/pulse.db");
+  if (process.env.PULSE_DB_PATH) return process.env.PULSE_DB_PATH;
+  // Prod fallback: share the writable volume the companion DB lives on — the
+  // container user cannot write the default ./data under /app (EACCES).
+  if (process.env.COMPANION_DB_PATH) {
+    return path.join(path.dirname(process.env.COMPANION_DB_PATH), "pulse.db");
+  }
+  return path.resolve("./data/pulse.db");
 }
 
 /** Close and discard the current connection. Used by tests between runs. */
