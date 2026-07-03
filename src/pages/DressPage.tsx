@@ -183,7 +183,11 @@ export default function DressPage() {
       lastToastedError.current = null;
       setError(null);
     }
-    if (!isLoadingGotchis) {
+    // I-2: on partial wallet failure (one query errored) combinedGotchis only
+    // holds the surviving wallets — committing it would wipe locks and let the
+    // prune effect drop editor instances for gotchis that still exist. Keep
+    // the store's previous list until every query settles cleanly.
+    if (!isLoadingGotchis && !gotchiError) {
       setGotchis(combinedGotchis);
     }
   }, [
@@ -199,17 +203,18 @@ export default function DressPage() {
   ]);
 
   // Prune editor instances whose base gotchi has disappeared (wallet removed,
-  // gotchi transferred/rented away) — but only after a settled, non-empty
-  // load; otherwise a transient empty/loading state would wipe every
-  // instance (mirrors the C1 guard). (audit M9)
+  // gotchi transferred/rented away) — but only after a settled, non-empty,
+  // error-free load; otherwise a transient empty/loading/partial-failure
+  // state would wipe instances that still exist (mirrors the C1 guard).
+  // (audit M9, I-2)
   useEffect(() => {
-    if (isLoadingGotchis || combinedGotchis.length === 0) return;
+    if (isLoadingGotchis || combinedGotchis.length === 0 || gotchiError) return;
     const valid = new Set([...combinedGotchis.map((gg) => gg.id), ...manualGotchis.map((gg) => gg.id)]);
     const { editorInstances, removeEditorInstance } = useAppStore.getState();
     for (const inst of editorInstances) {
       if (!valid.has(inst.baseGotchi.id)) removeEditorInstance(inst.instanceId);
     }
-  }, [combinedGotchis, isLoadingGotchis, manualGotchis]);
+  }, [combinedGotchis, isLoadingGotchis, manualGotchis, gotchiError]);
 
   useEffect(() => {
     if (!connectedOwner && multiWallets.length === 0) {
