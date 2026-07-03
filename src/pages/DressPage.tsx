@@ -24,6 +24,7 @@ import { useWearablesById } from "@/state/selectors";
 import type { Wearable, Gotchi } from "@/types";
 import { useAddressState } from "@/lib/addressState";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
+import { useWalletItemBalances } from "@/lib/hooks/useWalletItemBalances";
 import { WalletHeader } from "@/components/wallet/WalletHeader";
 import { loadMultiWallets, removeWallet } from "@/lib/multiWallet";
 import { CatwalkModal } from "@/components/catwalk/CatwalkModal";
@@ -65,8 +66,10 @@ export default function DressPage() {
     setLoadingSets,
     setError,
     equipWearable,
+    setWalletItemCounts,
   } = useAppStore();
   const appError = useAppStore((state) => state.error);
+  const wearables = useAppStore((state) => state.wearables);
 
   const wearablesById = useWearablesById();
 
@@ -126,6 +129,32 @@ export default function DressPage() {
     setLoadedAddress(ownersKey || null);
     setGotchis([]);
   }, [ownersKey, setGotchis, setLoadedAddress]);
+
+  // Wallet-held (unequipped) wearables join the owned inventory (audit H4).
+  const walletList = useMemo(
+    () => [connectedOwner, ...multiWallets].filter((w): w is string => !!w),
+    [connectedOwner, multiWallets]
+  );
+  const { data: walletItems } = useWalletItemBalances(walletList);
+  // Raw itemBalances includes consumables/badges — keep only real wearables
+  // (category 0) before the map enters the store.
+  const filteredWalletItems = useMemo(() => {
+    const out: Record<number, number> = {};
+    if (!walletItems) return out;
+    const wearableIds = new Set<number>();
+    for (const w of wearables) {
+      if (w.category === 0) wearableIds.add(w.id);
+    }
+    for (const [idStr, count] of Object.entries(walletItems)) {
+      const id = Number(idStr);
+      if (wearableIds.has(id)) out[id] = count;
+    }
+    return out;
+  }, [walletItems, wearables]);
+
+  useEffect(() => {
+    setWalletItemCounts(filteredWalletItems);
+  }, [filteredWalletItems, setWalletItemCounts]);
 
   useEffect(() => {
     setLoadingGotchis(isLoadingGotchis);

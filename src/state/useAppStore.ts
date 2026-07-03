@@ -35,6 +35,10 @@ interface AppState {
   lockedById: Record<string, boolean>;
   overridesById: Record<string, LockedOverride>;
 
+  // Wallet-held (unequipped) wearable balances across the loaded wallets,
+  // already filtered to category-0 wearables by the producer (audit H4).
+  walletItemCounts: Record<number, number>;
+
   // Loading & Errors
   loadingGotchis: boolean;
   loadingWearables: boolean;
@@ -56,6 +60,7 @@ interface AppState {
   setBaazaarPrices: (prices: BaazaarPriceMap) => void;
   setBaazaarLoading: (loading: boolean) => void;
   setBaazaarError: (error: string | null) => void;
+  setWalletItemCounts: (counts: Record<number, number>) => void;
   setFilters: (filters: Partial<WearableFilters>) => void;
   setLoadingGotchis: (loading: boolean) => void;
   setLoadingWearables: (loading: boolean) => void;
@@ -120,6 +125,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   filters: initialFilters,
   lockedById: {},
   overridesById: {},
+  walletItemCounts: {},
   loadingGotchis: false,
   loadingWearables: false,
   loadingSets: false,
@@ -211,6 +217,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setBaazaarPrices: (prices) => set({ baazaarPrices: prices }),
   setBaazaarLoading: (loading) => set({ baazaarLoading: loading }),
   setBaazaarError: (error) => set({ baazaarError: error }),
+  setWalletItemCounts: (counts) => set({ walletItemCounts: counts }),
   setFilters: (filters) =>
     set((state) => {
       const newFilters = { ...state.filters, ...filters };

@@ -6,8 +6,18 @@ import { computeLockedWearableAllocations } from "@/lib/lockedBuilds";
 
 export type WearableCounts = Record<number, number>;
 
-export function computeOwnedCounts(gotchis: Gotchi[]): WearableCounts {
-  const counts: WearableCounts = {};
+/**
+ * Owned = wallet-held ERC1155 balances (audit H4) + wearables equipped on the
+ * given gotchis. Equipped items are NOT included in on-chain `itemBalances`,
+ * so the two sources are added, never maxed. `walletItemCounts` must already
+ * be filtered to actual wearables (category 0) by the producer — the raw
+ * itemBalances read includes consumables/badges.
+ */
+export function computeOwnedCounts(
+  gotchis: Gotchi[],
+  walletItemCounts: WearableCounts = {}
+): WearableCounts {
+  const counts: WearableCounts = { ...walletItemCounts };
   for (const gotchi of gotchis) {
     for (const wearableId of gotchi.equippedWearables) {
       if (wearableId !== 0) {
@@ -64,17 +74,19 @@ export function useWearableInventory() {
   const editorInstances = useAppStore((state) => state.editorInstances);
   const lockedById = useAppStore((state) => state.lockedById);
   const overridesById = useAppStore((state) => state.overridesById);
-  
+  const walletItemCounts = useAppStore((state) => state.walletItemCounts);
+
   return useMemo(() => {
-    // Combine wallet gotchis and manual gotchis for owned counts
+    // Combine wallet gotchis and manual gotchis for owned counts.
+    // walletItemCounts is category-filtered at the producer (DressPage).
     const allGotchis = [...gotchis, ...manualGotchis];
-    const ownedCounts = computeOwnedCounts(allGotchis);
+    const ownedCounts = computeOwnedCounts(allGotchis, walletItemCounts);
     const usedCounts = computeUsedCounts(editorInstances);
     const lockedAllocations = computeLockedWearableAllocations(overridesById, lockedById);
     const availCounts = computeAvailCounts(ownedCounts, usedCounts);
     const availCountsWithLocked = computeAvailCountsWithLocked(ownedCounts, usedCounts, lockedAllocations);
     return { ownedCounts, usedCounts, availCounts, lockedAllocations, availCountsWithLocked };
-  }, [gotchis, manualGotchis, editorInstances, lockedById, overridesById]);
+  }, [gotchis, manualGotchis, editorInstances, lockedById, overridesById, walletItemCounts]);
 }
 
 export function useWearablesById() {
