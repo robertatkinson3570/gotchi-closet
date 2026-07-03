@@ -37,6 +37,15 @@ describe("birth baseline integrity (audit M1 + eye slice)", () => {
     expect(simBase[5]).toBe(80);
     expect(simBase.slice(0, 4)).toEqual([6, 6, 7, 8]);
   });
+
+  it("preserves eye traits with a larger multi-trait allocation", () => {
+    const { simBase } = computeSimTraits({
+      baseTraits: [1, 2, 3, 4, 90, 80],
+      respecBaseTraits: [10, 20, 30, 40, 90, 80],
+      allocated: [3, 2, 0, 5],
+    });
+    expect(simBase).toEqual([13, 22, 30, 45, 90, 80]);
+  });
 });
 
 describe("computeSimTraits", () => {
