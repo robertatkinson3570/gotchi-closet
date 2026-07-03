@@ -2,6 +2,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { SlotCard } from "./SlotCard";
 import { useAppStore } from "@/state/useAppStore";
 import { useWearablesById, useWearableInventory } from "@/state/selectors";
+import { canEquipInSlot } from "@/lib/equipRules";
 import { useToast } from "@/ui/use-toast";
 import type { Wearable } from "@/types";
 import type { DragEventHandler } from "react";
@@ -67,18 +68,7 @@ function SlotDropTarget({
     const wearableData = wearablesById.get(wearableId);
     if (!wearableData) return;
 
-    const handPlacement = wearableData.handPlacement || "none";
-    const isLeftHand = slotIndex === 4;
-    const isRightHand = slotIndex === 5;
-    const isHandSlot = isLeftHand || isRightHand;
-    const matchesHand = !isHandSlot
-      ? true
-      : handPlacement === "either" ||
-        (handPlacement === "left" && isLeftHand) ||
-        (handPlacement === "right" && isRightHand) ||
-        (handPlacement === "none" && wearableData.slotPositions[slotIndex]);
-
-    if (!wearableData.slotPositions[slotIndex] || !matchesHand) {
+    if (!canEquipInSlot(wearableData, slotIndex)) {
       toast({
         title: "Invalid Slot",
         description: `${wearableData.name} cannot be equipped in that slot`,

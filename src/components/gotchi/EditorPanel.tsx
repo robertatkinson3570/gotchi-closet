@@ -9,6 +9,8 @@ import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import type { LockedOverride } from "@/lib/lockedBuilds";
 import { MommyDressModal } from "./MommyDressModal";
 import type { AutoDressResult, AutoDressOptions } from "@/lib/autoDressEngine";
+import { assignSetSlots } from "@/lib/equipRules";
+import { useToast } from "@/ui/use-toast";
 import type { Wearable } from "@/types";
 
 function normalizeEquipped(equipped: number[]): number[] {
@@ -34,6 +36,7 @@ export function EditorPanel() {
   const toggleLockSet = useAppStore((state) => state.toggleLockSet);
   const updateEditorInstance = useAppStore((state) => state.updateEditorInstance);
   const { availCountsWithLocked } = useWearableInventory();
+  const { toast } = useToast();
   const [mommyModalInstanceId, setMommyModalInstanceId] = useState<string | null>(null);
   const [mommyResult, setMommyResult] = useState<Record<string, AutoDressResult>>({});
   const [mommyOptions, setMommyOptions] = useState<Record<string, AutoDressOptions>>({});
@@ -51,20 +54,36 @@ export function EditorPanel() {
   const applySetToInstance = useCallback(
     (instanceId: string) => {
       if (!activeSet) return;
-      for (const wearableId of activeSet.wearableIds) {
-        const wearable = wearablesById.get(wearableId);
-        if (!wearable) continue;
-        let slotIndex = wearable.slotPositions.findIndex((allowed) => allowed);
-        if (slotIndex === -1) continue;
-        if (wearable.handPlacement === "left" && wearable.slotPositions[4]) {
-          slotIndex = 4;
-        } else if (wearable.handPlacement === "right" && wearable.slotPositions[5]) {
-          slotIndex = 5;
+      // Shared slot rules (audit H6): two either-hand pieces land in left AND
+      // right instead of fighting over the left hand.
+      const pieces = activeSet.wearableIds
+        .map((id) => wearablesById.get(id))
+        .filter(Boolean) as Wearable[];
+      const skipped: string[] = [
+        ...activeSet.wearableIds
+          .filter((id) => !wearablesById.get(id))
+          .map((id) => `#${id}`),
+      ];
+      const placements = assignSetSlots(pieces);
+      const placedIds = new Set(placements.map((p) => p.wearableId));
+      for (const piece of pieces) {
+        if (!placedIds.has(piece.id)) skipped.push(piece.name); // unplaceable
+      }
+      for (const { wearableId, slot } of placements) {
+        // equipWearable also enforces owned-copy counts (audit M4).
+        if (!equipWearable(instanceId, wearableId, slot)) {
+          skipped.push(wearablesById.get(wearableId)?.name || `#${wearableId}`);
         }
-        equipWearable(instanceId, wearableId, slotIndex);
+      }
+      if (skipped.length > 0) {
+        toast({
+          title: "Set partially applied",
+          description: `Could not equip: ${skipped.join(", ")}`,
+          variant: "destructive",
+        });
       }
     },
-    [activeSet, wearablesById, equipWearable]
+    [activeSet, wearablesById, equipWearable, toast]
   );
 
   const getTraitDirections = useCallback((traits: number[]) => {

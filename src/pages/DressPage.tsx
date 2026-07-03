@@ -21,6 +21,7 @@ import { cacheGet, cacheSet, cacheIsStale, CACHE_KEYS } from "@/lib/cache";
 import { normalizeAddress } from "@/lib/address";
 import { useToast } from "@/ui/use-toast";
 import { useWearablesById, useWearableInventory } from "@/state/selectors";
+import { canEquipInSlot } from "@/lib/equipRules";
 import type { Wearable, Gotchi } from "@/types";
 import { useAddressState } from "@/lib/addressState";
 import { useGotchisByOwner } from "@/lib/hooks/useGotchisByOwner";
@@ -270,17 +271,7 @@ export default function DressPage() {
         return;
       }
 
-      const handPlacement = wearable.handPlacement || "none";
-      const isLeftHand = slotIndex === 4;
-      const isRightHand = slotIndex === 5;
-      const isHandSlot = isLeftHand || isRightHand;
-      const matchesHand = !isHandSlot
-        ? true
-        : handPlacement === "either" ||
-          (handPlacement === "left" && isLeftHand) ||
-          (handPlacement === "right" && isRightHand) ||
-          (handPlacement === "none" && wearable.slotPositions[slotIndex]);
-      if (!wearable.slotPositions[slotIndex] || !matchesHand) {
+      if (!canEquipInSlot(wearable, slotIndex)) {
         toast({
           title: "Invalid Slot",
           description: `${wearable.name} cannot be equipped in that slot`,
