@@ -111,8 +111,8 @@ export default function MegaphonePage() {
             </span>
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Auto-generated Aavegotchi videos from live on-chain data, rendered at near-zero cost. Grab a clip and
-            post it anywhere you like, X, Telegram, YouTube. The distribution engine is off-the-shelf, this is the content half, working.
+            Aavegotchi content, auto-generated from live on-chain data or uploaded by you, then queued out to
+            X, Telegram and YouTube. Contributors and events drop clips in, the engine handles distribution to the accounts we choose. Near-zero cost.
           </p>
         </div>
       </div>
