@@ -34,7 +34,9 @@ export function postizConfigured(): boolean {
 
 function base(): string {
   const url = process.env.POSTIZ_URL || "https://postiz.sitecrawliq.com";
-  return `${url.replace(/\/$/, "")}/public/v1`;
+  // Self-hosted Postiz serves the public API under /api/public/v1 (verified live);
+  // the bare /public/v1 path 307-redirects to /auth.
+  return `${url.replace(/\/$/, "")}/api/public/v1`;
 }
 
 function authHeaders(): Record<string, string> {
@@ -126,9 +128,17 @@ function extractPostId(data: unknown): string | null {
   return null;
 }
 
-/** Fetch a post (or the recent list) to read status + the live released URL. */
+/**
+ * Fetch recent posts to read status + the live released URL. The API requires an ISO
+ * startDate/endDate window (400s without it) and returns { posts: [...] } where each post
+ * has { id, state, releaseURL }. We look back 14 days, ahead 2.
+ */
 export async function getPosts(): Promise<Record<string, unknown>[]> {
-  const res = await fetch(`${base()}/posts`, { headers: authHeaders() });
+  const now = Date.now();
+  const startDate = new Date(now - 14 * 86_400_000).toISOString();
+  const endDate = new Date(now + 2 * 86_400_000).toISOString();
+  const qs = `?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&display=all`;
+  const res = await fetch(`${base()}/posts${qs}`, { headers: authHeaders() });
   const data = await ok<unknown>(res, "get-posts");
   if (Array.isArray(data)) return data as Record<string, unknown>[];
   const d = data as { posts?: unknown[] };
