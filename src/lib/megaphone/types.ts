@@ -40,7 +40,7 @@ export interface VideoRow {
   created_at: number;
 }
 
-export type TweetStatus = "draft" | "scheduled" | "posted" | "rejected";
+export type TweetStatus = "draft" | "scheduled" | "posted" | "failed" | "rejected";
 export const TWEET_SOURCES = ["builds", "data", "app", "ecosystem"] as const;
 export type TweetSource = (typeof TWEET_SOURCES)[number];
 

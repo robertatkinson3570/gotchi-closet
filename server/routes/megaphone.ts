@@ -22,11 +22,10 @@ import {
   ingestTweets,
   listPublicTweets,
   listTweets,
-  markTweetPosted,
+  markTweetPending,
   nextScheduleSlot,
   recentTweetTexts,
   scheduleTweetRow,
-  setTweetPostId,
   setTweetStatus,
 } from "../megaphone/tweets";
 import type { TweetStatus } from "../../src/lib/megaphone/types";
@@ -317,8 +316,8 @@ router.post("/tweets/:id/post", async (req, res) => {
   try {
     const full = tweet.link ? `${tweet.text}\n\n${tweet.link}` : tweet.text;
     const { postId } = await postTweetToX(full);
-    markTweetPosted(id, null, postId);
-    if (postId) setTweetPostId(id, postId);
+    // Pending until the cron confirms Postiz actually published to X (or failed).
+    markTweetPending(id, postId, Date.now());
     res.json({ ok: true });
   } catch (e) {
     res.status(502).json({ error: (e as Error).message });

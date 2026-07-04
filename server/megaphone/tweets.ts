@@ -90,14 +90,23 @@ export function editTweet(id: number, text: string): void {
   getDb().prepare(`UPDATE tweets SET text=?, hash=? WHERE id=?`).run(t, tweetHash(t), id);
 }
 
-export function markTweetPosted(id: number, externalUrl: string | null, postizId: string | null): void {
+/** Mark posted once Postiz actually published (must have a real live URL). */
+export function markTweetPosted(id: number, externalUrl: string): void {
   getDb()
-    .prepare(`UPDATE tweets SET status='posted', external_url=?, postiz_post_id=?, posted_at=? WHERE id=?`)
-    .run(externalUrl, postizId, Date.now(), id);
+    .prepare(`UPDATE tweets SET status='posted', external_url=?, posted_at=? WHERE id=?`)
+    .run(externalUrl, Date.now(), id);
 }
 
-export function setTweetPostId(id: number, postizId: string): void {
-  getDb().prepare(`UPDATE tweets SET postiz_post_id=? WHERE id=?`).run(postizId, id);
+/** Postiz accepted the post but hasn't confirmed yet — pending publish. */
+export function markTweetPending(id: number, postizId: string | null, scheduledFor: number | null): void {
+  getDb()
+    .prepare(`UPDATE tweets SET status='scheduled', postiz_post_id=?, scheduled_for=? WHERE id=?`)
+    .run(postizId, scheduledFor, id);
+}
+
+/** Postiz reported the publish failed (e.g. X token bad). Retryable from the UI. */
+export function markTweetFailed(id: number): void {
+  getDb().prepare(`UPDATE tweets SET status='failed' WHERE id=?`).run(id);
 }
 
 /** Recent tweet texts (any status) so the generator can avoid repeating itself. */
@@ -108,10 +117,11 @@ export function recentTweetTexts(limit = 200): string[] {
   return rows.map((r) => r.text);
 }
 
-/** Posted tweets that have a postiz id but no live URL yet — the cron reconciles these. */
+/** Tweets Postiz has accepted but not yet confirmed (scheduled/pending, or legacy posted with
+ *  no URL). The cron checks each and flips it to posted (with the live URL) or failed. */
 export function pendingTweetPosts(): { id: number; postiz_post_id: string }[] {
   return getDb()
-    .prepare(`SELECT id, postiz_post_id FROM tweets WHERE status='posted' AND postiz_post_id IS NOT NULL AND external_url IS NULL`)
+    .prepare(`SELECT id, postiz_post_id FROM tweets WHERE status IN ('scheduled','posted') AND postiz_post_id IS NOT NULL AND external_url IS NULL`)
     .all() as { id: number; postiz_post_id: string }[];
 }
 

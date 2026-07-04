@@ -65,6 +65,7 @@ function TweetCard({ t, sig, refetch }: { t: TweetPublic; sig: Sig | null; refet
             <span className="inline-flex items-center gap-1 text-[11px] text-[hsl(var(--gold))]"><CalendarClock className="h-3 w-3" /> {agoOrIn(t.scheduledFor, true)}</span>
           )}
           {t.status === "posted" && <span className="inline-flex items-center gap-1 text-[11px] text-[hsl(var(--ecto))]"><Clock className="h-3 w-3" /> {agoOrIn(t.postedAt, false)}</span>}
+          {t.status === "failed" && <span className="text-[11px] font-semibold text-[hsl(var(--red))]">failed on 𝕏</span>}
           {sig && t.status === "draft" && <span className="text-[11px] text-muted-foreground">{agoOrIn(t.createdAt, false)}</span>}
           <span className={`ml-auto text-[11px] tabular-nums ${over ? "text-[hsl(var(--red))]" : "text-muted-foreground"}`}>{len}/280</span>
         </div>
@@ -83,6 +84,13 @@ function TweetCard({ t, sig, refetch }: { t: TweetPublic; sig: Sig | null; refet
             </a>
           ) : t.status === "scheduled" ? (
             <span className="text-xs text-muted-foreground">queued for 𝕏 {agoOrIn(t.scheduledFor, true)}</span>
+          ) : t.status === "failed" ? (
+            sig ? (
+              <>
+                <span className="text-xs text-[hsl(var(--red))]">X rejected this. reconnect X in Postiz, then retry.</span>
+                <Button size="sm" variant="secondary" disabled={busy !== null} onClick={() => act("retry", () => setTweetStatus(t.id, "draft", sig), "Back to drafts")}>Retry</Button>
+              </>
+            ) : null
           ) : canAct ? (
             editing ? (
               <>
@@ -119,6 +127,7 @@ export function TweetsTab({ sig }: { sig: Sig | null }) {
         { key: "draft", label: "Drafts" },
         { key: "scheduled", label: "Scheduled" },
         { key: "posted", label: "Posted" },
+        { key: "failed", label: "Failed" },
         { key: "all", label: "All" },
       ]
     : [];

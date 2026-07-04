@@ -4,7 +4,7 @@
 // read-only against Postiz — it never creates posts, so it can never cause a repeat.
 import cron from "node-cron";
 import { markDistributionPosted, pendingDistributionRows } from "./store";
-import { pendingTweetPosts, setTweetUrl } from "./tweets";
+import { markTweetFailed, markTweetPosted, pendingTweetPosts } from "./tweets";
 import { getPosts, postizConfigured } from "./postiz";
 
 let started = false;
@@ -46,8 +46,11 @@ async function reconcile(): Promise<void> {
   }
   for (const t of pendingTweets) {
     const post = byId.get(t.postiz_post_id);
-    const url = post ? releaseUrl(post) : null;
-    if (url) setTweetUrl(t.id, url);
+    if (!post) continue;
+    const state = String(post.state ?? post.status ?? "").toUpperCase();
+    const url = releaseUrl(post);
+    if (state === "PUBLISHED" && url) markTweetPosted(t.id, url);
+    else if (state === "ERROR") markTweetFailed(t.id);
   }
 }
 
