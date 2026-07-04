@@ -14,11 +14,11 @@ import { HERMES_TOOLS, HERMES_NAV_ROUTES, HERMES_ACTION_DIRECTIVE } from "../com
 import {
   appendMessage, getRecentMessages, getFacts, upsertFact,
   isPremiumActive, getEntitlement, addCredits, burnCredit, getCredits,
-  getActions,
+  getActions, setGoal, getGoals,
 } from "../companion/db";
 import { verifyGhstPayment } from "../lending/verifyPayment";
 import { creditPackForGhst, expectedWeiForPack } from "../companion/pricing";
-import { premiumSignatureValid } from "../companion/auth";
+import { premiumSignatureValid, actionSignatureValid } from "../companion/auth";
 import { soulDepthSnapshot } from "../soul/snapshot";
 
 const router = Router();
@@ -236,6 +236,27 @@ router.get("/history/:tokenId/:wallet", (req, res) => {
   if (!wallet.startsWith("0x")) return res.status(400).json({ error: "wallet (0x) required" });
   const messages = getRecentMessages(wallet, tokenId, 30).map((m) => ({ role: m.role, content: m.content }));
   res.json({ messages });
+});
+
+// Standing autonomous goals. Listing is public (read-only); setting one requires the 24h
+// action signature — an enabled goal authorizes autonomous gas spend on capped upkeep, so
+// it must be owner-signed (same gate the Hermes "Act" path uses).
+router.get("/goals/:wallet", (req, res) => {
+  const wallet = String(req.params.wallet);
+  if (!wallet.startsWith("0x")) return res.status(400).json({ error: "wallet (0x) required" });
+  res.json({ goals: getGoals(wallet) });
+});
+router.post("/goals", async (req, res) => {
+  const b = req.body ?? {};
+  const wallet = String(b.wallet ?? "").toLowerCase();
+  const tokenId = String(b.tokenId ?? "");
+  const goal = String(b.goal ?? "");
+  if (!wallet.startsWith("0x") || !tokenId || !goal) return res.status(400).json({ error: "wallet, tokenId, goal required" });
+  if (!(await actionSignatureValid(wallet, Number(b.actionSignedAt), String(b.actionSignature ?? "")))) {
+    return res.status(401).json({ error: "owner signature required" });
+  }
+  setGoal(wallet, tokenId, goal, b.enabled !== false);
+  res.json({ ok: true, goals: getGoals(wallet) });
 });
 
 export default router;

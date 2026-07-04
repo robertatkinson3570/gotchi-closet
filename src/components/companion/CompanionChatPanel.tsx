@@ -6,7 +6,7 @@ import { stewardApi } from "@/lib/steward/api";
 import { useCompanionGotchis } from "./useCompanionGotchis";
 import { useCompanion } from "@/state/useCompanion";
 import { buildPersonality } from "@/lib/companion/personality";
-import { postChat, getPremium, getHistory } from "@/lib/companion/api";
+import { postChat, getPremium, getHistory, getGoals, setGoal } from "@/lib/companion/api";
 import { PersonalityCard } from "./PersonalityCard";
 import { SoulDepthMeter } from "./SoulDepthMeter";
 import { GoPremium } from "./GoPremium";
@@ -32,7 +32,16 @@ export function CompanionChatPanel() {
   const [tab, setTab] = useState<"chat" | "global">("chat");
   const [premium, setPremium] = useState(false);
   const [credits, setCredits] = useState(0);
+  const [autoCollect, setAutoCollect] = useState(false);
+  const [goalBusy, setGoalBusy] = useState(false);
   useEffect(() => { if (address) getPremium(address).then((s) => { setPremium(s.active); setCredits(s.credits); }).catch(() => {}); }, [address]);
+  // Reflect the standing "keep_emptied" goal for the selected gotchi in the auto-collect toggle.
+  useEffect(() => {
+    if (!address || !selectedTokenId) { setAutoCollect(false); return; }
+    getGoals(address)
+      .then((gs) => setAutoCollect(gs.some((g) => g.tokenId === selectedTokenId && g.goal === "keep_emptied" && g.enabled)))
+      .catch(() => {});
+  }, [address, selectedTokenId]);
   // Restore past conversation for this gotchi + owner (persists across browser close).
   useEffect(() => {
     if (address && selectedTokenId) getHistory(selectedTokenId, address).then(setMessages).catch(() => {});
@@ -144,6 +153,27 @@ export function CompanionChatPanel() {
     }
   }
 
+  // Toggle the standing "keep_emptied" goal. Enabling it authorizes autonomous gas spend, so it
+  // needs the same 24h owner signature the Act path uses. Dormant until delegated signing is live.
+  async function toggleAutoCollect() {
+    if (!address || !selectedTokenId || goalBusy) return;
+    const next = !autoCollect;
+    setGoalBusy(true);
+    try {
+      const actionAuth = await ensureActionAuth();
+      if (!actionAuth) return;
+      const r = await setGoal(address, selectedTokenId, "keep_emptied", next, actionAuth);
+      if (r.ok) {
+        setAutoCollect(next);
+        setMessages((m) => [...m, { role: "assistant", content: next
+          ? "auto-collect on — once hands-free signing is live I'll keep your reservoirs emptied for you 👻"
+          : "auto-collect off — I'll wait for you to say the word 👻" }]);
+      }
+    } catch { /* ignore — user likely declined the signature */ } finally {
+      setGoalBusy(false);
+    }
+  }
+
   async function send() {
     const text = draft.trim();
     if (!text || !selectedTokenId || !address || busy) return;
@@ -223,6 +253,22 @@ export function CompanionChatPanel() {
             {profile && <PersonalityCard profile={profile} />}
             {selectedTokenId && <SoulDepthMeter tokenId={selectedTokenId} />}
             {credits > 0 && <div className="px-3 pt-1 text-[10px] text-fuchsia-200/60">⚡ {credits.toLocaleString()} premium credits</div>}
+            {selectedTokenId && (
+              <div className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-1.5">
+                <span className="text-[11px] text-white/60" title="When hands-free signing is live, I'll keep this gotchi's reservoirs emptied on my own.">
+                  🤖 Auto-collect
+                </span>
+                <button
+                  onClick={toggleAutoCollect}
+                  disabled={goalBusy || !address}
+                  aria-pressed={autoCollect}
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition disabled:opacity-40 ${
+                    autoCollect ? "bg-emerald-500/30 text-emerald-100" : "bg-white/10 text-white/50 hover:text-white"}`}
+                >
+                  {autoCollect ? "on" : "off"}
+                </button>
+              </div>
+            )}
             {env.companionPremiumEnabled && profile && (!premium || credits < 200) && <GoPremium onActivated={() => getPremium(address!).then((s) => { setPremium(s.active); setCredits(s.credits); }).catch(() => {})} />}
             {script.map((line, i) => (
               <div key={`script-${i}`} className="max-w-[85%] whitespace-pre-wrap rounded-2xl bg-white/10 px-3 py-1.5 text-sm text-white/90">{line}</div>
