@@ -9,7 +9,7 @@ contract GasTank {
 
     mapping(address => uint256) public balanceOf; // owner => escrowed wei
     mapping(address => bool) public isOperator;    // relayer allowlist (admin-managed)
-    mapping(address => uint256) public capPerRun;  // owner => max reimbursement per run (0 = no cap)
+    mapping(address => uint256) public capPerRun;  // owner => max reimbursement per run (0 = paused; a positive cap is REQUIRED to run)
 
     event OperatorSet(address indexed operator, bool allowed);
     event CapSet(address indexed owner, uint256 cap);
@@ -76,6 +76,9 @@ contract GasTank {
         external nonReentrant
     {
         require(isOperator[msg.sender], "not operator");
+        require(calls.length > 0, "empty");
+        uint256 cap = capPerRun[owner];
+        require(cap != 0, "cap not set"); // owner must set a per-run ceiling; 0 = paused
         uint256 gasStart = gasleft();
         for (uint256 i = 0; i < calls.length; i++) {
             require(calls[i].data.length >= 4, "bad calldata");
@@ -87,13 +90,13 @@ contract GasTank {
         // Metered gas is a strict SUBSET of the whole tx's gas (excludes intrinsic +
         // calldata + this transfer), so reimbursement is always <= what the operator
         // actually paid — profit is impossible by construction.
-        uint256 cost = (gasStart - gasleft()) * tx.gasprice;
-        uint256 cap = capPerRun[owner];
-        if (cap != 0 && cost > cap) cost = cap;
+        uint256 gasUsed = gasStart - gasleft();
+        uint256 cost = gasUsed * tx.gasprice;
+        if (cost > cap) cost = cap;
         if (cost > balanceOf[owner]) cost = balanceOf[owner];
         balanceOf[owner] -= cost;
         (bool paid, ) = msg.sender.call{value: cost}("");
         require(paid, "reimburse failed");
-        emit Reimbursed(owner, msg.sender, gasStart - gasleft(), cost, pet, channel, claim);
+        emit Reimbursed(owner, msg.sender, gasUsed, cost, pet, channel, claim);
     }
 }

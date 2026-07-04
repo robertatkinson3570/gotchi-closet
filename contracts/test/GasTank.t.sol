@@ -39,6 +39,7 @@ contract GasTankTest is Test {
         tank = new GasTank(address(aaveMock), address(realmMock));
         tank.setOperator(operator, true);
         vm.deal(owner, 10 ether);
+        vm.prank(owner); tank.setCapPerRun(1 ether);
     }
 
     function test_deposit_creditsBalance() public {
@@ -195,14 +196,34 @@ contract GasTankTest is Test {
         vm.assume(deposit > 0);
         vm.deal(owner, uint256(deposit));
         vm.prank(owner); tank.deposit{value: deposit}();
-        if (cap != 0) { vm.prank(owner); tank.setCapPerRun(cap); }
+        vm.assume(cap > 0);
+        vm.prank(owner); tank.setCapPerRun(cap);
         GasTank.Call[] memory calls = new GasTank.Call[](1);
         calls[0] = _call(address(aaveMock), 0x22c67519);
         vm.txGasPrice(1 gwei);
         vm.prank(operator, operator);
         tank.run(owner, calls, 1, 0, 0);
         uint256 charged = uint256(deposit) - tank.balanceOf(owner);
-        if (cap != 0) assertLe(charged, cap);
+        assertLe(charged, cap);
         assertLe(charged, uint256(deposit));
+    }
+
+    function test_run_revertsWhenNoCapSet() public {
+        address noCap = address(0x9999);
+        vm.deal(noCap, 1 ether);
+        vm.prank(noCap); tank.deposit{value: 1 ether}();
+        GasTank.Call[] memory calls = new GasTank.Call[](1);
+        calls[0] = _call(address(aaveMock), 0x22c67519);
+        vm.prank(operator, operator);
+        vm.expectRevert(bytes("cap not set"));
+        tank.run(noCap, calls, 1, 0, 0);
+    }
+
+    function test_run_revertsOnEmptyCalls() public {
+        vm.prank(owner); tank.deposit{value: 1 ether}();
+        GasTank.Call[] memory calls = new GasTank.Call[](0);
+        vm.prank(operator, operator);
+        vm.expectRevert(bytes("empty"));
+        tank.run(owner, calls, 0, 0, 0);
     }
 }
