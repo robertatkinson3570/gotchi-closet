@@ -15,7 +15,7 @@ import { HERMES_TOOLS, HERMES_READ_TOOLS, HERMES_NAV_ROUTES, HERMES_ACTION_DIREC
 import {
   appendMessage, getRecentMessages, getFacts, upsertFact,
   isPremiumActive, getEntitlement, addCredits, burnCredit, getCredits,
-  getActions, setGoal, getGoals,
+  getActions, setGoal, getGoals, hasCredits,
 } from "../companion/db";
 import { verifyGhstPayment } from "../lending/verifyPayment";
 import { creditPackForGhst, expectedWeiForPack } from "../companion/pricing";
@@ -264,6 +264,15 @@ router.get("/history/:tokenId/:wallet", (req, res) => {
   if (!wallet.startsWith("0x")) return res.status(400).json({ error: "wallet (0x) required" });
   const messages = getRecentMessages(wallet, tokenId, 30).map((m) => ({ role: m.role, content: m.content }));
   res.json({ messages });
+});
+
+// Recent on-chain actions Hermes took for this gotchi+owner (newest-last). Powers the
+// "while you were away…" report when the client sees autonomous auto-upkeep entries.
+router.get("/actions/:wallet/:tokenId", (req, res) => {
+  const wallet = String(req.params.wallet);
+  const tokenId = String(req.params.tokenId);
+  if (!wallet.startsWith("0x")) return res.status(400).json({ error: "wallet (0x) required" });
+  res.json({ actions: getActions(wallet, tokenId, 10) });
 });
 
 // Standing autonomous goals. Listing is public (read-only); setting one requires the 24h

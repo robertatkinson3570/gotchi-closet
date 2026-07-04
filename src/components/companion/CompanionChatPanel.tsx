@@ -6,7 +6,7 @@ import { stewardApi } from "@/lib/steward/api";
 import { useCompanionGotchis } from "./useCompanionGotchis";
 import { useCompanion } from "@/state/useCompanion";
 import { buildPersonality } from "@/lib/companion/personality";
-import { postChat, getPremium, getHistory, getGoals, setGoal } from "@/lib/companion/api";
+import { postChat, getPremium, getHistory, getGoals, setGoal, getRecentActions } from "@/lib/companion/api";
 import { PersonalityCard } from "./PersonalityCard";
 import { SoulDepthMeter } from "./SoulDepthMeter";
 import { GoPremium } from "./GoPremium";
@@ -70,6 +70,22 @@ export function CompanionChatPanel() {
       setMessages((m) => [...m, { role: "assistant", content: `👋 you've got ${bits} ready — say "collect" and I'll take care of it 👻` }]);
     }).catch(() => {});
   }, [address]);
+  // "While you were away…" — if the autonomous cron ran upkeep for this gotchi since the owner
+  // last looked, greet with what Hermes did on its own. Tracks a per-gotchi last-seen action ts
+  // so it reports each batch once. (Dormant until delegated signing is live and a wallet enrolls.)
+  useEffect(() => {
+    if (!address || !selectedTokenId) return;
+    const key = `companion.lastAction.${address.toLowerCase()}.${selectedTokenId}`;
+    getRecentActions(address, selectedTokenId).then((actions) => {
+      const seen = Number(localStorage.getItem(key) || 0);
+      const fresh = actions.filter((a) => a.kind === "auto-upkeep" && a.ts > seen);
+      if (!fresh.length) return;
+      try { localStorage.setItem(key, String(Math.max(...actions.map((a) => a.ts)))); } catch { /* ignore */ }
+      const n = fresh.length;
+      setMessages((m) => [...m, { role: "assistant", content: `👻 while you were away I ran upkeep ${n} time${n === 1 ? "" : "s"} for you — reservoirs emptied, gotchis tended.` }]);
+    }).catch(() => {});
+  }, [address, selectedTokenId]);
+
   const endRef = useRef<HTMLDivElement>(null);
 
   const gotchi = useMemo(() => gotchis.find((g) => g.id === selectedTokenId) ?? null, [gotchis, selectedTokenId]);

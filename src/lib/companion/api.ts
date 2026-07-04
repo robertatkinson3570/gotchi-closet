@@ -42,6 +42,21 @@ export async function getHistory(tokenId: string, wallet: string): Promise<ChatM
   }
 }
 
+export interface CompanionAction { kind: string; detail: string; txHash: string | null; ts: number; }
+
+// Recent on-chain actions Hermes took for this gotchi+owner (newest-last). Used for the
+// "while you were away…" report when autonomous auto-upkeep ran between visits.
+export async function getRecentActions(wallet: string, tokenId: string): Promise<CompanionAction[]> {
+  try {
+    const res = await fetch(`${BASE}/api/companion/actions/${wallet}/${tokenId}`);
+    if (!res.ok) return [];
+    const json = await res.json();
+    return Array.isArray(json?.actions) ? json.actions : [];
+  } catch {
+    return [];
+  }
+}
+
 export interface Goal { wallet: string; tokenId: string; goal: string; enabled: boolean; }
 
 export async function getGoals(wallet: string): Promise<Goal[]> {
