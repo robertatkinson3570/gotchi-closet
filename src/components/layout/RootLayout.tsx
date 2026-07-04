@@ -4,7 +4,7 @@ import { useAccount, useDisconnect, usePublicClient, useReadContract } from "wag
 import { useQuery } from "@tanstack/react-query";
 import { Menu } from "@headlessui/react";
 import { Loader2 } from "lucide-react";
-import { Coins, Search, Shirt, MapPin, Activity, Flame, Droplets, Landmark, Receipt, Bot, Copy, LogOut, Ghost, Trophy, HeartPulse, Gamepad2, Megaphone } from "lucide-react";
+import { Coins, Search, Shirt, MapPin, Activity, Flame, Droplets, Landmark, Receipt, Bot, Copy, LogOut, Ghost, Trophy, HeartPulse, Gamepad2, Megaphone, Menu as MenuIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { GHST_TOKEN_BASE, ERC20_ABI } from "@/lib/lending/contracts";
 import { BASE_CHAIN_ID } from "@/lib/chains";
@@ -141,6 +141,52 @@ function WalletChip() {
   );
 }
 
+/**
+ * Mobile-only nav: the full NAV list (plus "My activity" when connected)
+ * collapsed into a labeled dropdown. Shown below md, where the inline icon
+ * row is hidden because it would wrap past the fixed-height header.
+ */
+function MobileNav({ pathname, showMyActivity }: { pathname: string; showMyActivity: boolean }) {
+  return (
+    <Menu as="div" className="relative md:hidden">
+      <Menu.Button
+        title="Menu"
+        className="inline-flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-muted/60"
+      >
+        <MenuIcon className="h-5 w-5" />
+      </Menu.Button>
+      <Menu.Items className="absolute right-0 mt-2 w-64 max-h-[70vh] overflow-y-auto rounded-xl border bg-background shadow-xl p-1.5 text-sm z-50">
+        {NAV.map(({ to, title, icon: Icon }) => (
+          <Menu.Item key={to}>
+            {() => (
+              <Link
+                to={to}
+                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-muted/60 ${isActive(pathname, to) ? "bg-primary/15 text-primary font-medium" : ""}`}
+              >
+                <Icon className="w-4 h-4 shrink-0 text-muted-foreground" />
+                <span className="truncate">{title}</span>
+              </Link>
+            )}
+          </Menu.Item>
+        ))}
+        {showMyActivity && (
+          <Menu.Item>
+            {() => (
+              <Link
+                to="/me/activity"
+                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-muted/60 ${pathname.startsWith("/me/activity") || pathname.startsWith("/u/") ? "bg-primary/15 text-primary font-medium" : ""}`}
+              >
+                <Receipt className="w-4 h-4 shrink-0 text-muted-foreground" />
+                <span className="truncate">My activity</span>
+              </Link>
+            )}
+          </Menu.Item>
+        )}
+      </Menu.Items>
+    </Menu>
+  );
+}
+
 export function RootLayout() {
   const location = useLocation();
   const { address, isConnected } = useAccount();
@@ -156,26 +202,32 @@ export function RootLayout() {
             <img src="/logo.png" alt="GotchiCloset" className="h-12 w-12 object-contain -my-2" />
             <div className="text-xl font-heading tracking-tight truncate gradient-text hidden sm:block">GotchiCloset</div>
           </Link>
-          <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap justify-end">
-            {NAV.map(({ to, title, icon: Icon }) => (
-              <Link key={to} to={to}>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className={`h-8 px-2 ${isActive(location.pathname, to) ? "bg-primary/15 text-primary shadow-glow-sm" : ""}`}
-                  title={title}
-                >
-                  <Icon className="h-4 w-4" />
-                </Button>
-              </Link>
-            ))}
-            {isConnected && address && (
-              <Link to="/me/activity" title="My activity — listings, offers, bids, auctions, sales">
-                <Button size="sm" variant="ghost" className={`h-8 px-2 ${location.pathname.startsWith("/me/activity") || location.pathname.startsWith("/u/") ? "bg-primary/15 text-primary shadow-glow-sm" : ""}`}>
-                  <Receipt className="h-4 w-4" />
-                </Button>
-              </Link>
-            )}
+          <div className="flex items-center gap-0.5 sm:gap-1 justify-end min-w-0">
+            {/* Desktop: full inline icon row. Hidden on mobile where 12+ icons
+                would wrap past the 56px header and get clipped (unreachable). */}
+            <div className="hidden md:flex items-center gap-0.5 sm:gap-1 flex-wrap justify-end">
+              {NAV.map(({ to, title, icon: Icon }) => (
+                <Link key={to} to={to}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={`h-8 px-2 ${isActive(location.pathname, to) ? "bg-primary/15 text-primary shadow-glow-sm" : ""}`}
+                    title={title}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </Button>
+                </Link>
+              ))}
+              {isConnected && address && (
+                <Link to="/me/activity" title="My activity — listings, offers, bids, auctions, sales">
+                  <Button size="sm" variant="ghost" className={`h-8 px-2 ${location.pathname.startsWith("/me/activity") || location.pathname.startsWith("/u/") ? "bg-primary/15 text-primary shadow-glow-sm" : ""}`}>
+                    <Receipt className="h-4 w-4" />
+                  </Button>
+                </Link>
+              )}
+            </div>
+            {/* Mobile: same links collapsed into a labeled dropdown so they all stay reachable. */}
+            <MobileNav pathname={location.pathname} showMyActivity={isConnected && !!address} />
             <FailoverPill />
             <GhstTicker />
             <div className="ml-0.5">
