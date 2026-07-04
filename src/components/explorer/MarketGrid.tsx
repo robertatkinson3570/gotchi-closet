@@ -11,7 +11,7 @@ import { useMarketplaceBuy, type BuyParams } from "@/hooks/useMarketplaceBuy";
 import { useToast } from "@/ui/use-toast";
 import { CORE_SUBGRAPH_URL } from "@/lib/lending/contracts";
 import { GOTCHIVERSE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
-import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "./AssetImage";
+import { AssetImage, itemImageCandidates, forgeImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "./AssetImage";
 import { PortalImage } from "./PortalImage";
 import { PortalOptionsGrid } from "./PortalOptionsGrid";
 import { FakeGotchiImage } from "./GotchiSvgById";
@@ -50,16 +50,10 @@ async function fetchListings(kind: "erc721" | "erc1155", category: number, token
   return (json.data?.erc1155Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.erc1155TypeId, priceWei: l.priceInWei, quantity: Number(l.quantity) || 1, created: Number(l.timeCreated) || 0, category: Number(l.category) }));
 }
 
-// Forge items span categories 7-11; each maps to a type icon on the dapp CDN.
-// Category values verified against live Base listings/purchases 2026-07-01:
-// 7 alloy, 8 SCHEMATIC (wearable-id token → wearable art), 9 geode,
-// 10 ESSENCE, 11 core. (8/10 were swapped here before.)
-const FORGE_TYPE_IMG: Record<number, string> = {
-  7: "https://dapp.aavegotchi.com/brand/icons/forge/alloy.svg",
-  9: "https://dapp.aavegotchi.com/brand/icons/forge/geodes.svg",
-  10: "https://dapp.aavegotchi.com/brand/icons/forge/essence.svg",
-  11: "https://dapp.aavegotchi.com/brand/icons/forge/cores.svg",
-};
+// Forge items span Baazaar categories 7-11 (verified against live Base
+// listings/purchases 2026-07-01): 7 alloy, 8 schematic, 9 geode, 10 essence,
+// 11 core. Per-item art comes from forgeImageCandidates (keyed by tokenId);
+// this map only drives the type label.
 const FORGE_TYPE_NAME: Record<number, string> = { 7: "Alloy", 8: "Schematic", 9: "Geode", 10: "Essence", 11: "Core" };
 
 // Installation functional categories (installationType enum on the diamond).
@@ -463,11 +457,9 @@ export function MarketGrid({
                 ) : itemKind === "fakegotchi" || itemKind === "fakecard" ? (
                   <FakeGotchiImage id={l.tokenId} className="max-h-16 max-w-16 object-contain rounded" fallback={<Palette className="w-6 h-6 text-fuchsia-400/70" />} />
                 ) : itemKind === "forge" ? (
-                  l.category === 8 ? (
-                    <AssetImage candidates={itemImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-16 max-w-16 object-contain" />
-                  ) : (
-                    <AssetImage candidates={[FORGE_TYPE_IMG[l.category ?? -1]].filter(Boolean)} alt={FORGE_TYPE_NAME[l.category ?? -1] ?? `#${l.tokenId}`} className="max-h-14 max-w-14 object-contain" />
-                  )
+                  // Per-item forge art (schematic blueprint / alloy / essence /
+                  // geode / core), matching the dapp — not the wearable icon.
+                  <AssetImage candidates={forgeImageCandidates(l.tokenId)} alt={FORGE_TYPE_NAME[l.category ?? -1] ?? `#${l.tokenId}`} className="max-h-16 max-w-16 object-contain" />
                 ) : itemKind === "guardian" ? (
                   <AssetImage candidates={["https://dapp.aavegotchi.com/brand/iconsv2/categories/guardian-skins.png"]} alt={`Guardian skin #${l.tokenId}`} className="max-h-14 max-w-14 object-contain" />
                 ) : (
@@ -582,7 +574,7 @@ export function MarketGrid({
                 {itemKind === "portal" ? <PortalImage tokenId={detail.tokenId} />
                   : itemKind === "installation" ? <AssetImage candidates={installationImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} />
                   : itemKind === "tile" ? <AssetImage candidates={tileImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} />
-                  : itemKind === "forge" ? <AssetImage candidates={detail.category === 8 ? itemImageCandidates(detail.tokenId) : [FORGE_TYPE_IMG[detail.category ?? -1]].filter(Boolean)} alt={`#${detail.tokenId}`} />
+                  : itemKind === "forge" ? <AssetImage candidates={forgeImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} />
                   : itemKind === "fakegotchi" || itemKind === "fakecard" ? <FakeGotchiImage id={detail.tokenId} className="max-h-36 max-w-36 object-contain rounded" fallback={<Palette className="w-10 h-10 text-fuchsia-400/70" />} />
                   : itemKind === "guardian" ? <AssetImage candidates={["https://dapp.aavegotchi.com/brand/iconsv2/categories/guardian-skins.png"]} alt={`#${detail.tokenId}`} />
                   : <AssetImage candidates={itemImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} />}

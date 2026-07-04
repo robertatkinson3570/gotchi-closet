@@ -7,7 +7,7 @@ import { AAVEGOTCHI_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, REALM_DIAMOND_BASE,
 import { GOTCHIVERSE_SUBGRAPH, CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
-import { AssetImage, itemImageCandidates, installationImageCandidates, parcelImageCandidates, tileImageCandidates } from "./AssetImage";
+import { AssetImage, itemImageCandidates, forgeImageCandidates, installationImageCandidates, parcelImageCandidates, tileImageCandidates } from "./AssetImage";
 import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
 import { CreateAuctionButton } from "./CreateAuctionButton";
 import { RecentSales } from "./RecentSales";
@@ -125,8 +125,11 @@ function imgFor(kind: OwnedKind, id: string) {
   if (kind === "parcel") return parcelImageCandidates(id);
   if (kind === "tile") return tileImageCandidates(id);
   if (kind === "wearable") return getWearableIconUrlCandidates(Number(id));
-  // forge / fakegotchi / portal / fakecard / guardian have no shared brand-SVG
-  // endpoint here; AssetImage falls back to the tile background + #id label.
+  // Forge items use a dedicated /brand/forge scheme (schematic/alloy/essence/
+  // geode/core art) keyed by rarity+slot, not the wearable /items/{id} path.
+  if (kind === "forge") return forgeImageCandidates(id);
+  // fakegotchi / portal / fakecard / guardian have no shared brand-SVG endpoint
+  // here; AssetImage falls back to the tile background + #id label.
   if (kind === "fakegotchi" || kind === "portal" || kind === "fakecard" || kind === "guardian") return [] as string[];
   return itemImageCandidates(id);
 }
