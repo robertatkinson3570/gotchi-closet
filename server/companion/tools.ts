@@ -9,6 +9,16 @@ export const HERMES_NAV_ROUTES = [
   "/lending", "/forge", "/staking", "/dao", "/leaderboard", "/games", "/megaphone",
 ] as const;
 
+// Prepended to the persona when tools are offered, so Hermes ACTS or GUIDES instead of
+// describing manual steps. The goal is an intuitive companion that just does the thing —
+// or takes the owner exactly where it happens.
+export const HERMES_ACTION_DIRECTIVE =
+  "You can ACT for your owner with tools — ALWAYS prefer calling a tool over explaining manual steps. " +
+  "If they ask to channel, pet, claim, farm, or do upkeep (their gotchis or parcels), CALL run_upkeep for the current gotchi. " +
+  "If they want to swap, see deals, rent, browse, check stats, or go where a thing happens, CALL navigate to the right page " +
+  "(/steward upkeep, /get-tokens swap, /baazaar market, /lending rent, /explorer browse, /pulse stats). " +
+  "Be intuitive: do it for them, or take them straight there — never just describe the steps.";
+
 export const HERMES_TOOLS = [
   {
     type: "function",

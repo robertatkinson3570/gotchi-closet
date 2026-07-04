@@ -6,7 +6,7 @@ import { templateReply } from "../../src/lib/companion/templates";
 import { assembleMessages } from "../../src/lib/companion/chatPrompt";
 import { fetchGotchiState } from "../companion/gotchiState";
 import { complete, completeWithTools } from "../companion/llmProvider";
-import { HERMES_TOOLS, HERMES_NAV_ROUTES } from "../companion/tools";
+import { HERMES_TOOLS, HERMES_NAV_ROUTES, HERMES_ACTION_DIRECTIVE } from "../companion/tools";
 import { runUpkeep } from "../companion/actions";
 import { listEnrollments } from "../steward/db";
 import { runOne } from "../steward/cron";
@@ -114,7 +114,9 @@ router.post("/chat", async (req, res) => {
       /\b(channel|pet|petting|claim|upkeep|farm|swap|go to|goto|open|navigate|take me|bring me|show me|steward|baazaar|bazaar|marketplace|lending|rent|forge|staking|dao|leaderboard|pulse|get.?tokens|alchemica)\b/i.test(
         masked
       );
-    const turn = wantsTool ? await completeWithTools(systemPrompt, messages, HERMES_TOOLS, tier) : null;
+    const turn = wantsTool
+      ? await completeWithTools(`${systemPrompt}\n\n${HERMES_ACTION_DIRECTIVE}`, messages, HERMES_TOOLS, tier)
+      : null;
 
     // Hermes wants to ACT — run the owner's due Steward upkeep (channel/pet/claim), VPS-side.
     if (turn?.toolCall?.name === "run_upkeep") {
