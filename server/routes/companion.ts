@@ -10,7 +10,8 @@ import { fetchBaazaarDeals } from "../companion/baazaar";
 import { fetchDaoSummary } from "../companion/dao";
 import { fetchEstateStatus } from "../companion/estate";
 import { complete, completeWithTools } from "../companion/llmProvider";
-import { HERMES_TOOLS, HERMES_NAV_ROUTES, HERMES_ACTION_DIRECTIVE } from "../companion/tools";
+import { runAgentLoop } from "../companion/agentLoop";
+import { HERMES_TOOLS, HERMES_READ_TOOLS, HERMES_NAV_ROUTES, HERMES_ACTION_DIRECTIVE } from "../companion/tools";
 import {
   appendMessage, getRecentMessages, getFacts, upsertFact,
   isPremiumActive, getEntitlement, addCredits, burnCredit, getCredits,
@@ -142,14 +143,41 @@ router.post("/chat", async (req, res) => {
       return res.json({ reply: r, prepareUpkeep: true, navigate: "/lending/lands", tier });
     }
 
-    const turn = wantsTool
-      ? await completeWithTools(`${systemPrompt}\n\n${HERMES_ACTION_DIRECTIVE}`, messages, HERMES_TOOLS, tier)
-      : null;
+    // Multi-step tool loop: when the message reads like an action/nav intent, let Hermes chain
+    // read tools (check state) before it acts or answers. run_upkeep/navigate are TERMINAL — the
+    // client executes them — so dispatch records the directive and we return it after the loop.
+    // The loop is bounded (maxSteps) so it can never run away.
+    let terminal: { name: string; args: Record<string, any> } | null = null;
+    let loopText: string | null = null;
+    if (wantsTool) {
+      const dispatch = async (name: string, args: Record<string, any>): Promise<string> => {
+        if (name === "run_upkeep" || name === "navigate") {
+          if (!terminal) terminal = { name, args };
+          return "acknowledged"; // terminal — handled after the loop ends
+        }
+        switch (name) {
+          case "get_estate": return (await fetchEstateStatus(wallet)) ?? "nothing's due right now.";
+          case "get_holdings": return (await fetchHoldingsSummary(wallet)) ?? "couldn't read your holdings just now.";
+          case "get_deals": return (await fetchBaazaarDeals()) ?? "no notable deals right now.";
+          case "get_dao": return (await fetchDaoSummary()) ?? "no live proposals right now.";
+          default: return "(unknown tool)";
+        }
+      };
+      loopText = await runAgentLoop(
+        `${systemPrompt}\n\n${HERMES_ACTION_DIRECTIVE}`,
+        messages,
+        [...HERMES_TOOLS, ...HERMES_READ_TOOLS],
+        completeWithTools,
+        dispatch,
+        4,
+        tier
+      );
+    }
 
     // Hermes wants to ACT — channel/pet/claim right here. "Prepare + sign": the client fetches
     // the owner's due upkeep and their OWN wallet sends it (works today, no Steward enrollment).
     // The client reports when nothing is ready (cooldowns still ticking).
-    if (turn?.toolCall?.name === "run_upkeep") {
+    if (terminal?.name === "run_upkeep") {
       if (String(state.owner).toLowerCase() !== wallet) {
         const r = screenOutbound("that gotchi isn't in your wallet — i can only act for its owner 👻");
         persist(r);
@@ -162,17 +190,17 @@ router.post("/chat", async (req, res) => {
     }
 
     // Hermes wants to NAVIGATE the owner to a page (client performs the route change).
-    if (turn?.toolCall?.name === "navigate") {
-      const path = String(turn.toolCall.args.path ?? "");
+    if (terminal?.name === "navigate") {
+      const path = String(terminal.args.path ?? "");
       const allowed = (HERMES_NAV_ROUTES as readonly string[]).includes(path);
       const r = screenOutbound(allowed ? "taking you there now 👻" : "i can't open that page, fren");
       persist(r);
       return res.json({ reply: r, navigate: allowed ? path : undefined, tier });
     }
 
-    // Normal chat reply — the proven plain-completion path, also the fallback when a tool turn
+    // Normal chat reply — the proven plain-completion path, also the fallback when the tool loop
     // produced no usable text (so chat never collapses to the template on a stray tool call).
-    const text = turn?.text ?? (await complete(systemPrompt, messages, tier));
+    const text = loopText && loopText !== "…" ? loopText : (await complete(systemPrompt, messages, tier));
     const reply = screenOutbound(text ?? templateReply({ profile, message: masked, deflected: false }));
     if (tier === "premium" && text) burnCredit(wallet);
     persist(reply);
