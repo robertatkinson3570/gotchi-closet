@@ -6,34 +6,14 @@ import { ERC20_ABI } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
+import { NATIVE, fetchLifiQuote, executeLifiSwap, fmtUnits, type Token, type Quote } from "@/lib/swap/lifi";
 
-// LiFi aggregates every Base DEX and returns a ready-to-send tx. Direct
-// Aerodrome pools were verified too thin (100 USDC -> 5.8 GHST); the
-// aggregator quote returns the true market rate.
-const LIFI_QUOTE = "https://li.quest/v1/quote";
-const NATIVE = "0x0000000000000000000000000000000000000000";
-
-type Token = { symbol: string; address: string; decimals: number };
 const GHST: Token = { symbol: "GHST", address: "0xcD2F22236DD9Dfe2356D7C543161D4d260FD9BcB", decimals: 18 };
 const PAY_TOKENS: Token[] = [
   { symbol: "ETH", address: NATIVE, decimals: 18 },
   { symbol: "USDC", address: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913", decimals: 6 },
   { symbol: "WETH", address: "0x4200000000000000000000000000000000000006", decimals: 18 },
 ];
-
-type Quote = {
-  toAmount: bigint;
-  toAmountMin: bigint;
-  approvalAddress: `0x${string}`;
-  tx: { to: `0x${string}`; data: `0x${string}`; value: bigint };
-  gasUsd: string | null;
-  tool: string;
-};
-
-function fmtUnits(v: bigint, decimals: number, dp = 4): string {
-  const n = Number(v) / 10 ** decimals;
-  return n.toLocaleString(undefined, { maximumFractionDigits: n >= 1000 ? 2 : dp });
-}
 
 function TokenBadge({ t }: { t: Token }) {
   return (
@@ -88,32 +68,16 @@ export function SwapCard() {
     setQuoting(true);
     const t = setTimeout(async () => {
       try {
-        const params = new URLSearchParams({
-          fromChain: String(BASE_CHAIN_ID),
-          toChain: String(BASE_CHAIN_ID),
+        const q = await fetchLifiQuote({
           fromToken: fromToken.address,
           toToken: toToken.address,
-          fromAmount: amountWei.toString(),
+          fromAmountWei: amountWei,
           fromAddress: address ?? "0x0000000000000000000000000000000000000001",
-          slippage: "0.005",
         });
-        const r = await fetch(`${LIFI_QUOTE}?${params}`);
-        const j = await r.json();
         if (cancelled) return;
-        if (!r.ok || !j?.transactionRequest) {
-          setQuoteError(j?.message ?? "No route found");
-          return;
-        }
-        setQuote({
-          toAmount: BigInt(j.estimate.toAmount),
-          toAmountMin: BigInt(j.estimate.toAmountMin),
-          approvalAddress: j.estimate.approvalAddress,
-          tx: { to: j.transactionRequest.to, data: j.transactionRequest.data, value: BigInt(j.transactionRequest.value ?? 0) },
-          gasUsd: j.estimate.gasCosts?.[0]?.amountUSD ?? null,
-          tool: j.toolDetails?.name ?? j.tool ?? "aggregator",
-        });
-      } catch {
-        if (!cancelled) setQuoteError("Quote failed — try again");
+        setQuote(q);
+      } catch (e: any) {
+        if (!cancelled) setQuoteError(e?.message ?? "Quote failed — try again");
       } finally {
         if (!cancelled) setQuoting(false);
       }
@@ -125,20 +89,7 @@ export function SwapCard() {
     if (!quote || !address || !publicClient) return;
     setSwapping(true);
     try {
-      if (fromToken.address !== NATIVE) {
-        const allowance = (await publicClient.readContract({
-          address: fromToken.address as `0x${string}`,
-          abi: ERC20_ABI,
-          functionName: "allowance",
-          args: [address, quote.approvalAddress],
-        })) as bigint;
-        if (allowance < amountWei) {
-          const h = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: fromToken.address as `0x${string}`, abi: ERC20_ABI, functionName: "approve", args: [quote.approvalAddress, amountWei] });
-          await publicClient.waitForTransactionReceipt({ hash: h, confirmations: 1 });
-        }
-      }
-      const hash = await sendTransactionAsync({ chainId: BASE_CHAIN_ID, to: quote.tx.to, data: quote.tx.data, value: quote.tx.value });
-      await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+      await executeLifiSwap({ quote, fromToken, amountWei, address, publicClient, writeContractAsync, sendTransactionAsync });
       toast({ title: "Swap complete", description: `Received ~${fmtUnits(quote.toAmount, toToken.decimals)} ${toToken.symbol}.` });
       setAmount("");
       setQuote(null);
