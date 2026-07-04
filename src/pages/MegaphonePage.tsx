@@ -10,6 +10,7 @@ import { adminMessage } from "@/lib/megaphone/auth";
 import { TEMPLATES, type Template } from "@/lib/megaphone/types";
 import {
   checkAdmin,
+  getPostizStatus,
   deleteVideo as apiDelete,
   listAllAdmin,
   listVideos,
@@ -39,6 +40,8 @@ export default function MegaphonePage() {
     if (address) checkAdmin(address).then(setAdmin);
     else { setAdmin(false); setManage(false); }
   }, [address]);
+
+  const postizQ = useQuery({ queryKey: ["megaphone", "postiz-status"], queryFn: getPostizStatus, enabled: admin, staleTime: 60_000 });
 
   const publicQ = useQuery({
     queryKey: ["megaphone", "public"],
@@ -137,6 +140,19 @@ export default function MegaphonePage() {
           ))}
         </div>
         <div className="ml-auto flex items-center gap-2">
+          {admin && (
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                postizQ.data
+                  ? "border-[hsl(var(--ecto))]/40 bg-[hsl(var(--ecto))]/10 text-[hsl(var(--ecto))]"
+                  : "border-amber-500/40 bg-amber-500/10 text-amber-400"
+              }`}
+              title={postizQ.data ? "Social distribution is armed" : "Set POSTIZ_URL + POSTIZ_API_KEY to enable"}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${postizQ.data ? "bg-[hsl(var(--ecto))]" : "bg-amber-400"}`} />
+              Postiz {postizQ.data ? "connected" : "not configured"}
+            </span>
+          )}
           {admin && !manage && (
             <Button size="sm" variant="secondary" className="gap-1.5" onClick={enterManage}>
               <ShieldCheck className="h-4 w-4" /> Manage

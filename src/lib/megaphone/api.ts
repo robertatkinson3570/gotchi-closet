@@ -32,6 +32,13 @@ export async function pulseHero(): Promise<VideoPublic | null> {
   return (await r.json()).video ?? null;
 }
 
+/** Whether social distribution is armed (Postiz env present on the server). */
+export async function getPostizStatus(): Promise<boolean> {
+  const r = await fetch(`${base()}/api/megaphone/postiz/status`);
+  if (!r.ok) return false;
+  return (await r.json()).configured === true;
+}
+
 export async function checkAdmin(wallet: string): Promise<boolean> {
   const r = await fetch(`${base()}/api/megaphone/is-admin?wallet=${wallet}`);
   if (!r.ok) return false;

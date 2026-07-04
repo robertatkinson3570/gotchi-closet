@@ -40,6 +40,12 @@ router.get("/pulse-hero", (_req, res) => {
   res.json({ video: pinnedPulseVideo() });
 });
 
+// Whether social distribution is armed (Postiz env present). Just a boolean — safe to expose;
+// the client only renders the resulting chip for admins.
+router.get("/postiz/status", (_req, res) => {
+  res.json({ configured: postizConfigured() });
+});
+
 // Cosmetic helper — the client uses it to decide whether to render the admin controls.
 router.get("/is-admin", (req, res) => {
   const wallet = String(req.query.wallet || "");
