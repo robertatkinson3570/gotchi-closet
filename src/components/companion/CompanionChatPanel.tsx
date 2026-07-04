@@ -38,6 +38,29 @@ export function CompanionChatPanel() {
     if (address && selectedTokenId) getHistory(selectedTokenId, address).then(setMessages).catch(() => {});
     else setMessages([]);
   }, [address, selectedTokenId]);
+
+  // Proactive nudge: when the panel opens, if upkeep is due, Hermes greets with it. Throttled to
+  // once per 30 min per wallet so it isn't spammy and doesn't hammer the chain snapshot.
+  const nudgedRef = useRef(false);
+  useEffect(() => {
+    if (nudgedRef.current || !address) return;
+    nudgedRef.current = true;
+    try {
+      const key = `companion.nudge.${address.toLowerCase()}`;
+      if (Date.now() - Number(localStorage.getItem(key) || 0) < 30 * 60 * 1000) return;
+      localStorage.setItem(key, String(Date.now()));
+    } catch { /* ignore */ }
+    stewardApi.upkeep(address).then((plan) => {
+      const { pet, channel, claim } = plan.summary;
+      if (!channel && !claim && !pet) return;
+      const bits = [
+        channel ? `${channel} to channel` : "",
+        claim ? `${claim} reservoir${claim === 1 ? "" : "s"} to empty` : "",
+        pet ? `${pet} to pet` : "",
+      ].filter(Boolean).join(", ");
+      setMessages((m) => [...m, { role: "assistant", content: `👋 you've got ${bits} ready — say "collect" and I'll take care of it 👻` }]);
+    }).catch(() => {});
+  }, [address]);
   const endRef = useRef<HTMLDivElement>(null);
 
   const gotchi = useMemo(() => gotchis.find((g) => g.id === selectedTokenId) ?? null, [gotchis, selectedTokenId]);

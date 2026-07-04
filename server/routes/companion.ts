@@ -8,6 +8,7 @@ import { fetchGotchiState } from "../companion/gotchiState";
 import { fetchHoldingsSummary } from "../companion/holdings";
 import { fetchBaazaarDeals } from "../companion/baazaar";
 import { fetchDaoSummary } from "../companion/dao";
+import { fetchEstateStatus } from "../companion/estate";
 import { complete, completeWithTools } from "../companion/llmProvider";
 import { HERMES_TOOLS, HERMES_NAV_ROUTES, HERMES_ACTION_DIRECTIVE } from "../companion/tools";
 import {
@@ -93,8 +94,11 @@ router.post("/chat", async (req, res) => {
     // "what proposals are live / governance / voting" → answer from live Snapshot data.
     const asksDao = /\b(proposals?|governance|agip|voting|vote on|snapshot)\b/i.test(masked);
     const daoInfo = asksDao ? await fetchDaoSummary() : null;
+    // "what needs doing / anything ready / what's due" → report due upkeep (read, don't act).
+    const asksEstate = /\b(needs doing|anything (ready|due|to collect)|what.?s (due|ready)|estate status|due yet)\b/i.test(masked);
+    const estate = asksEstate ? await fetchEstateStatus(wallet) : null;
     const messages = assembleMessages({
-      facts: [...getFacts(wallet, tokenId), ...actionLines, ...(holdings ? [holdings] : []), ...(deals ? [deals] : []), ...(daoInfo ? [daoInfo] : [])],
+      facts: [...getFacts(wallet, tokenId), ...actionLines, ...(holdings ? [holdings] : []), ...(deals ? [deals] : []), ...(daoInfo ? [daoInfo] : []), ...(estate ? [estate] : [])],
       lore: retrieveLore(masked),
       history: getRecentMessages(wallet, tokenId, 20).map((m) => ({ role: m.role, content: m.content })),
       userMessage: masked,
@@ -120,7 +124,7 @@ router.post("/chat", async (req, res) => {
 
     // Only offer tools when the message reads like an action/navigation intent — llama over-calls
     // tools on ordinary questions, which would break normal conversation. Plain chat skips tools.
-    const wantsTool = !asksDeals && !asksDao &&
+    const wantsTool = !asksDeals && !asksDao && !asksEstate &&
       /\b(channel|pet|petting|claim|collect|harvest|empty|drain|parcel|parcels|upkeep|farm|swap|go to|goto|open|navigate|take me|bring me|show me|baazaar|bazaar|marketplace|lending|rent|forge|staking|dao|leaderboard|pulse|activity|get.?tokens|alchemica)\b/i.test(
         masked
       );
