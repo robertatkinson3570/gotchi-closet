@@ -6,6 +6,7 @@ import { templateReply } from "../../src/lib/companion/templates";
 import { assembleMessages } from "../../src/lib/companion/chatPrompt";
 import { fetchGotchiState } from "../companion/gotchiState";
 import { fetchHoldingsSummary } from "../companion/holdings";
+import { fetchBaazaarDeals } from "../companion/baazaar";
 import { complete, completeWithTools } from "../companion/llmProvider";
 import { HERMES_TOOLS, HERMES_NAV_ROUTES, HERMES_ACTION_DIRECTIVE } from "../companion/tools";
 import {
@@ -85,8 +86,11 @@ router.post("/chat", async (req, res) => {
     // Hermes answers from real data instead of guessing.
     const asksHoldings = /\b(wallet|holdings?|portfolio|own|owned|how many|my gotchis)\b/i.test(masked);
     const holdings = asksHoldings ? await fetchHoldingsSummary(wallet) : null;
+    // "what deals / cheapest / floor" → answer from real Baazaar listings, not just navigate.
+    const asksDeals = /\b(deals?|cheapest|floor|for sale|listings?|good buy|price)\b/i.test(masked);
+    const deals = asksDeals ? await fetchBaazaarDeals() : null;
     const messages = assembleMessages({
-      facts: [...getFacts(wallet, tokenId), ...actionLines, ...(holdings ? [holdings] : [])],
+      facts: [...getFacts(wallet, tokenId), ...actionLines, ...(holdings ? [holdings] : []), ...(deals ? [deals] : [])],
       lore: retrieveLore(masked),
       history: getRecentMessages(wallet, tokenId, 20).map((m) => ({ role: m.role, content: m.content })),
       userMessage: masked,
@@ -112,8 +116,8 @@ router.post("/chat", async (req, res) => {
 
     // Only offer tools when the message reads like an action/navigation intent — llama over-calls
     // tools on ordinary questions, which would break normal conversation. Plain chat skips tools.
-    const wantsTool =
-      /\b(channel|pet|petting|claim|collect|harvest|empty|drain|parcel|parcels|upkeep|farm|swap|go to|goto|open|navigate|take me|bring me|show me|steward|baazaar|bazaar|marketplace|deals?|lending|rent|forge|staking|dao|leaderboard|pulse|activity|get.?tokens|alchemica)\b/i.test(
+    const wantsTool = !asksDeals &&
+      /\b(channel|pet|petting|claim|collect|harvest|empty|drain|parcel|parcels|upkeep|farm|swap|go to|goto|open|navigate|take me|bring me|show me|baazaar|bazaar|marketplace|lending|rent|forge|staking|dao|leaderboard|pulse|activity|get.?tokens|alchemica)\b/i.test(
         masked
       );
     const turn = wantsTool
