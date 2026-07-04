@@ -3,6 +3,7 @@ import { ArrowLeftRight, Coins, CreditCard, ExternalLink, Sparkles } from "lucid
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { SwapCard } from "@/components/swap/SwapCard";
+import { AlchemicaSwapCard } from "@/components/swap/AlchemicaSwapCard";
 
 const GHST = "0xcD2F22236DD9Dfe2356D7C543161D4d260FD9BcB";
 const USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
@@ -79,6 +80,7 @@ export default function GetTokensPage() {
       <p className="text-xs text-muted-foreground text-center mb-3">{intro}</p>
       {tab === "swap" && (
         <div className="mb-4">
+          <AlchemicaSwapCard />
           <SwapCard />
           <div className="text-[10px] text-muted-foreground text-center mt-2">Or use an external venue:</div>
         </div>
