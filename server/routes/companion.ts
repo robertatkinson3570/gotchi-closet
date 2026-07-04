@@ -5,7 +5,7 @@ import { filterInbound, screenOutbound } from "../../src/lib/companion/contentFi
 import { templateReply } from "../../src/lib/companion/templates";
 import { assembleMessages } from "../../src/lib/companion/chatPrompt";
 import { fetchGotchiState } from "../companion/gotchiState";
-import { completeWithTools } from "../companion/llmProvider";
+import { complete, completeWithTools } from "../companion/llmProvider";
 import { HERMES_TOOLS, HERMES_NAV_ROUTES } from "../companion/tools";
 import { runUpkeep } from "../companion/actions";
 import { listEnrollments } from "../steward/db";
@@ -108,7 +108,13 @@ router.post("/chat", async (req, res) => {
       }
     };
 
-    const turn = await completeWithTools(systemPrompt, messages, HERMES_TOOLS, tier);
+    // Only offer tools when the message reads like an action/navigation intent — llama over-calls
+    // tools on ordinary questions, which would break normal conversation. Plain chat skips tools.
+    const wantsTool =
+      /\b(channel|pet|petting|claim|upkeep|farm|swap|go to|goto|open|navigate|take me|bring me|show me|steward|baazaar|bazaar|marketplace|lending|rent|forge|staking|dao|leaderboard|pulse|get.?tokens|alchemica)\b/i.test(
+        masked
+      );
+    const turn = wantsTool ? await completeWithTools(systemPrompt, messages, HERMES_TOOLS, tier) : null;
 
     // Hermes wants to ACT — run the owner's due Steward upkeep (channel/pet/claim), VPS-side.
     if (turn?.toolCall?.name === "run_upkeep") {
@@ -153,9 +159,11 @@ router.post("/chat", async (req, res) => {
       return res.json({ reply: r, navigate: allowed ? path : undefined, tier });
     }
 
-    // No tool call — normal chat reply.
-    const reply = screenOutbound(turn?.text ?? templateReply({ profile, message: masked, deflected: false }));
-    if (tier === "premium" && turn?.text) burnCredit(wallet);
+    // Normal chat reply — the proven plain-completion path, also the fallback when a tool turn
+    // produced no usable text (so chat never collapses to the template on a stray tool call).
+    const text = turn?.text ?? (await complete(systemPrompt, messages, tier));
+    const reply = screenOutbound(text ?? templateReply({ profile, message: masked, deflected: false }));
+    if (tier === "premium" && text) burnCredit(wallet);
     persist(reply);
     remember();
     res.json({ reply, deflected: false, tier });
