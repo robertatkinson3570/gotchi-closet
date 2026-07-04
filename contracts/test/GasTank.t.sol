@@ -9,6 +9,22 @@ contract MockDiamond {
     fallback() external payable { calls++; }
 }
 
+contract Reenter {
+    GasTank tank; address aave;
+    constructor(GasTank _tank, address _aave) { tank = _tank; aave = _aave; }
+    function attack(address owner) external {
+        GasTank.Call[] memory calls = new GasTank.Call[](1);
+        calls[0] = GasTank.Call({ target: aave, data: abi.encodePacked(bytes4(0x22c67519)) });
+        tank.run(owner, calls, 1, 0, 0);
+    }
+    receive() external payable {
+        // re-enter during reimbursement transfer
+        GasTank.Call[] memory calls = new GasTank.Call[](1);
+        calls[0] = GasTank.Call({ target: aave, data: abi.encodePacked(bytes4(0x22c67519)) });
+        tank.run(msg.sender, calls, 1, 0, 0);
+    }
+}
+
 contract GasTankTest is Test {
     GasTank tank;
     address owner = address(0x1111);
@@ -163,5 +179,30 @@ contract GasTankTest is Test {
         bool found;
         for (uint256 i = 0; i < logs.length; i++) if (logs[i].topics[0] == sig) found = true;
         assertTrue(found, "Reimbursed event not emitted");
+    }
+
+    function test_run_reentrancyGuardBlocksNestedRun() public {
+        // A malicious operator contract that tries to re-enter run() during reimbursement.
+        Reenter attacker = new Reenter(tank, address(aaveMock));
+        tank.setOperator(address(attacker), true);
+        vm.prank(owner); tank.deposit{value: 1 ether}();
+        vm.txGasPrice(1 gwei);
+        vm.expectRevert(); // nested run reverts on the reentrancy guard
+        attacker.attack(owner);
+    }
+
+    function testFuzz_neverReimbursesMoreThanCapOrBalance(uint96 deposit, uint96 cap) public {
+        vm.assume(deposit > 0);
+        vm.deal(owner, uint256(deposit));
+        vm.prank(owner); tank.deposit{value: deposit}();
+        if (cap != 0) { vm.prank(owner); tank.setCapPerRun(cap); }
+        GasTank.Call[] memory calls = new GasTank.Call[](1);
+        calls[0] = _call(address(aaveMock), 0x22c67519);
+        vm.txGasPrice(1 gwei);
+        vm.prank(operator, operator);
+        tank.run(owner, calls, 1, 0, 0);
+        uint256 charged = uint256(deposit) - tank.balanceOf(owner);
+        if (cap != 0) assertLe(charged, cap);
+        assertLe(charged, uint256(deposit));
     }
 }
