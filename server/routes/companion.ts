@@ -5,6 +5,7 @@ import { filterInbound, screenOutbound } from "../../src/lib/companion/contentFi
 import { templateReply } from "../../src/lib/companion/templates";
 import { assembleMessages } from "../../src/lib/companion/chatPrompt";
 import { fetchGotchiState } from "../companion/gotchiState";
+import { fetchHoldingsSummary } from "../companion/holdings";
 import { complete, completeWithTools } from "../companion/llmProvider";
 import { HERMES_TOOLS, HERMES_NAV_ROUTES, HERMES_ACTION_DIRECTIVE } from "../companion/tools";
 import {
@@ -80,8 +81,12 @@ router.post("/chat", async (req, res) => {
     const actionLines = getActions(wallet, tokenId, 5).map(
       (a) => `You did ${a.kind} for the owner${a.txHash ? ` (tx ${a.txHash.slice(0, 10)}…)` : ""}`
     );
+    // When the owner asks about their wallet/holdings, fetch what they own from the subgraph so
+    // Hermes answers from real data instead of guessing.
+    const asksHoldings = /\b(wallet|holdings?|portfolio|own|owned|how many|my gotchis)\b/i.test(masked);
+    const holdings = asksHoldings ? await fetchHoldingsSummary(wallet) : null;
     const messages = assembleMessages({
-      facts: [...getFacts(wallet, tokenId), ...actionLines],
+      facts: [...getFacts(wallet, tokenId), ...actionLines, ...(holdings ? [holdings] : [])],
       lore: retrieveLore(masked),
       history: getRecentMessages(wallet, tokenId, 20).map((m) => ({ role: m.role, content: m.content })),
       userMessage: masked,
