@@ -89,7 +89,10 @@ async function buildSoulContext(tokenId: string) {
   doc.pastLives = storedDoc?.pastLives ?? [];
 
   const kinship = state.kinship ?? 0;
-  const xp = (state.level ?? 0) * 1000;
+  // Soul gains experience from ENGAGEMENT too — every exchange with the owner counts, capped
+  // so idle chatter can't dominate the on-chain gotchi level. ~500 msgs ≈ +20k xp.
+  const engagementXp = Math.min(msgs.length, 500) * 40;
+  const xp = (state.level ?? 0) * 1000 + engagementXp;
   const depth = buildDepth(doc, { kinship, xp });
   const hash = computeSoulHash(doc) as `0x${string}`;
 

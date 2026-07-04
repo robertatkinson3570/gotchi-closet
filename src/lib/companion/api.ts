@@ -8,6 +8,7 @@ export interface ChatResponse {
   needsActionAuth?: boolean;
   action?: { ok: boolean; reason?: string; txHash?: string; detail?: string };
   navigate?: string;
+  prepareUpkeep?: boolean;
 }
 
 // Companion routes live on the Express server (VPS in prod). `companionApiUrl` is

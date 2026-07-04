@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAccount, useSignMessage } from "wagmi";
+import { useAccount, useSignMessage, useWalletClient } from "wagmi";
+import { stewardApi } from "@/lib/steward/api";
 import { useCompanionGotchis } from "./useCompanionGotchis";
 import { useCompanion } from "@/state/useCompanion";
 import { buildPersonality } from "@/lib/companion/personality";
@@ -20,6 +21,7 @@ import type { ChatMessage } from "@/lib/companion/types";
 export function CompanionChatPanel() {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
+  const { data: walletClient } = useWalletClient();
   const navigate = useNavigate();
   const gotchis = useCompanionGotchis();
   const { selectedTokenId, setOpen, setRoastOpen, script, clearScript } = useCompanion();
@@ -95,6 +97,30 @@ export function CompanionChatPanel() {
     return auth;
   }
 
+  // Prepare + sign: fetch the owner's due upkeep and send it from their OWN wallet, right in
+  // chat. Works today without Steward enrollment. Reports when nothing is ready.
+  async function runPrepareUpkeep() {
+    if (!address || !walletClient) return;
+    try {
+      const plan = await stewardApi.upkeep(address);
+      if (!plan.calls.length) {
+        setMessages((m) => [...m, { role: "assistant", content: "nothing's ready to collect yet — your parcels are still on cooldown 👻" }]);
+        return;
+      }
+      const n = plan.calls.length;
+      setMessages((m) => [...m, { role: "assistant", content: `found alchemica to collect (${plan.summary.channel} channel, ${plan.summary.claim} claim) — approve ${n} tx${n > 1 ? "s" : ""} in your wallet…` }]);
+      let sent = 0;
+      for (const call of plan.calls) {
+        await walletClient.sendTransaction({ to: call.to, data: call.data });
+        sent++;
+      }
+      setMessages((m) => [...m, { role: "assistant", content: `collected ✅ (${sent} tx${sent > 1 ? "s" : ""}) — your alchemica's on the way 👻` }]);
+    } catch (e: any) {
+      const cancelled = /reject|denied|user/i.test(String(e?.message || e));
+      setMessages((m) => [...m, { role: "assistant", content: cancelled ? "no worries — cancelled 👻" : "couldn't send that just now — try again in a sec" }]);
+    }
+  }
+
   async function send() {
     const text = draft.trim();
     if (!text || !selectedTokenId || !address || busy) return;
@@ -115,6 +141,8 @@ export function CompanionChatPanel() {
       setMessages((m) => [...m, { role: "assistant", content: res.reply }]);
       // Hermes can take the owner to where a thing happens.
       if (res.navigate) { setOpen(false); navigate(res.navigate); }
+      // …or channel/claim right here from the owner's own wallet.
+      if (res.prepareUpkeep) await runPrepareUpkeep();
     } catch {
       setMessages((m) => [...m, { role: "assistant", content: "the ether glitched 👻 try again in a sec" }]);
     } finally {

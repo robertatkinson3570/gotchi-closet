@@ -7,17 +7,14 @@ import { assembleMessages } from "../../src/lib/companion/chatPrompt";
 import { fetchGotchiState } from "../companion/gotchiState";
 import { complete, completeWithTools } from "../companion/llmProvider";
 import { HERMES_TOOLS, HERMES_NAV_ROUTES, HERMES_ACTION_DIRECTIVE } from "../companion/tools";
-import { runUpkeep } from "../companion/actions";
-import { listEnrollments } from "../steward/db";
-import { runOne } from "../steward/cron";
 import {
   appendMessage, getRecentMessages, getFacts, upsertFact,
-  isPremiumActive, getEntitlement, addCredits, burnCredit, getCredits, hasCredits,
-  getActions, logAction,
+  isPremiumActive, getEntitlement, addCredits, burnCredit, getCredits,
+  getActions,
 } from "../companion/db";
 import { verifyGhstPayment } from "../lending/verifyPayment";
 import { creditPackForGhst, expectedWeiForPack } from "../companion/pricing";
-import { premiumSignatureValid, actionSignatureValid } from "../companion/auth";
+import { premiumSignatureValid } from "../companion/auth";
 import { soulDepthSnapshot } from "../soul/snapshot";
 
 const router = Router();
@@ -111,45 +108,25 @@ router.post("/chat", async (req, res) => {
     // Only offer tools when the message reads like an action/navigation intent — llama over-calls
     // tools on ordinary questions, which would break normal conversation. Plain chat skips tools.
     const wantsTool =
-      /\b(channel|pet|petting|claim|upkeep|farm|swap|go to|goto|open|navigate|take me|bring me|show me|steward|baazaar|bazaar|marketplace|lending|rent|forge|staking|dao|leaderboard|pulse|get.?tokens|alchemica)\b/i.test(
+      /\b(channel|pet|petting|claim|collect|harvest|empty|drain|parcel|parcels|upkeep|farm|swap|go to|goto|open|navigate|take me|bring me|show me|steward|baazaar|bazaar|marketplace|deals?|lending|rent|forge|staking|dao|leaderboard|pulse|activity|get.?tokens|alchemica)\b/i.test(
         masked
       );
     const turn = wantsTool
       ? await completeWithTools(`${systemPrompt}\n\n${HERMES_ACTION_DIRECTIVE}`, messages, HERMES_TOOLS, tier)
       : null;
 
-    // Hermes wants to ACT — run the owner's due Steward upkeep (channel/pet/claim), VPS-side.
+    // Hermes wants to ACT — channel/pet/claim right here. "Prepare + sign": the client fetches
+    // the owner's due upkeep and their OWN wallet sends it (works today, no Steward enrollment).
+    // The client reports when nothing is ready (cooldowns still ticking).
     if (turn?.toolCall?.name === "run_upkeep") {
-      const actTokenId = String(turn.toolCall.args.tokenId ?? tokenId);
-      const sigOk = await actionSignatureValid(
-        wallet, Number(body.actionSignedAt), String(body.actionSignature ?? "")
-      );
-      if (!sigOk) {
-        const r = screenOutbound("sign once to let me act on-chain for you, fren 👻");
-        persist(r);
-        return res.json({ reply: r, needsActionAuth: true, tier });
-      }
       if (String(state.owner).toLowerCase() !== wallet) {
         const r = screenOutbound("that gotchi isn't in your wallet — i can only act for its owner 👻");
         persist(r);
         return res.json({ reply: r, deflected: false, tier });
       }
-      const result = await runUpkeep(wallet, actTokenId, {
-        listEnrollments, runOne, hasCredits, burnCredit, logAction,
-      });
-      const summary = result.ok
-        ? `done — ran your gotchi's upkeep${result.txHash ? ` (tx ${result.txHash.slice(0, 10)}…)` : ""} 👻`
-        : result.reason === "not-enrolled"
-        ? "you haven't enrolled this gotchi in Steward yet — set that up and i can act for you"
-        : result.reason === "no-credits"
-        ? "you're out of credits — top up and i'll get right on it"
-        : result.reason === "no-work"
-        ? "nothing's due right now — cooldowns are still ticking"
-        : "couldn't run it just now — try again in a bit";
-      const r = screenOutbound(summary);
+      const r = screenOutbound("on it — checking your parcels & gotchis… if there's alchemica to collect, approve the transaction in your wallet 👻");
       persist(r);
-      // Take the owner to where it happened.
-      return res.json({ reply: r, action: result, navigate: "/steward", tier });
+      return res.json({ reply: r, prepareUpkeep: true, tier });
     }
 
     // Hermes wants to NAVIGATE the owner to a page (client performs the route change).
