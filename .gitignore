@@ -61,3 +61,10 @@ video/props/
 video/assets-cache/
 video/public/audio/
 video/golden/current/
+
+# Steward bundler executor key (throwaway operator wallet)
+.env.bundler
+
+# Foundry build artifacts
+/out/
+/cache/

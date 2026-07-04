@@ -1,0 +1,10 @@
+# Foundry config for the on-chain contracts (contracts/*.sol). Isolated from the
+# JS/TS app build — forge only compiles Solidity. Run: forge test --root .
+[profile.default]
+src = "contracts"
+test = "contracts/test"
+out = "out"
+libs = ["lib"]
+solc = "0.8.20"
+optimizer = true
+optimizer_runs = 200
