@@ -82,6 +82,35 @@ export async function setStatus(id: number, status: "published" | "hidden", sig:
   if (!r.ok) throw new Error("update failed");
 }
 
+export interface PostizChannel {
+  id: string;
+  name: string;
+  provider: string;
+}
+
+/** Admin: connected Postiz channels (for the per-video distribute picker). */
+export async function listPostizChannels(sig: Sig): Promise<{ configured: boolean; integrations: PostizChannel[] }> {
+  const q = `?wallet=${sig.wallet}&signature=${sig.signature}&signedAt=${sig.signedAt}`;
+  const r = await fetch(`${base()}/api/megaphone/postiz/integrations${q}`);
+  if (!r.ok) return { configured: false, integrations: [] };
+  return r.json();
+}
+
+/** Admin: distribute a video to chosen channels now. */
+export async function distributeNow(
+  id: number,
+  integrationIds: string[],
+  sig: Sig,
+): Promise<{ posted: number; skipped: number; failed: number }> {
+  const r = await fetch(`${base()}/api/megaphone/${id}/distribute`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ integrationIds, ...sig }),
+  });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "distribute failed");
+  return r.json();
+}
+
 export async function deleteVideo(id: number, sig: Sig): Promise<void> {
   const r = await fetch(`${base()}/api/megaphone/${id}/delete`, {
     method: "POST",

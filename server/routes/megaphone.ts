@@ -14,7 +14,7 @@ import {
   setStatus,
 } from "../megaphone/store";
 import { isAdmin, verifyAdminSignature } from "../megaphone/auth";
-import { distributeVideo } from "../megaphone/distribute";
+import { distributeVideo, distributeVideoTo } from "../megaphone/distribute";
 import { listIntegrations, postizConfigured } from "../megaphone/postiz";
 import { isTemplate } from "../../src/lib/megaphone/types";
 
@@ -125,6 +125,27 @@ router.get("/postiz/integrations", async (req, res) => {
   } catch (e) {
     res.status(502).json({ configured: true, error: (e as Error).message, integrations: [] });
   }
+});
+
+// Admin: manually distribute a video to chosen channels now. Works whenever Postiz is
+// configured (independent of the MEGAPHONE_AUTO_DISTRIBUTE auto-on-publish switch). The
+// UNIQUE ledger still prevents any channel from receiving the same video twice.
+router.post("/:id/distribute", async (req, res) => {
+  const id = Number(req.params.id);
+  const { integrationIds, wallet, signature, signedAt } = req.body ?? {};
+  if (!Number.isInteger(id)) return res.status(400).json({ error: "bad id" });
+  if (!Array.isArray(integrationIds) || integrationIds.length === 0) {
+    return res.status(400).json({ error: "no channels selected" });
+  }
+  if (!(await verifyAdminSignature(String(wallet || ""), Number(signedAt), String(signature || "")))) {
+    return res.status(403).json({ error: "not authorized" });
+  }
+  if (!postizConfigured()) return res.status(400).json({ error: "Postiz not configured" });
+  const summary = await distributeVideoTo(
+    id,
+    integrationIds.map((x: unknown) => String(x)),
+  );
+  res.json({ ok: true, ...summary });
 });
 
 // Admin: pin a video as the /pulse hero (single slot).

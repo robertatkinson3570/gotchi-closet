@@ -21,6 +21,7 @@ import type { VideoPublic } from "@/lib/megaphone/types";
 import { MegaphoneMark } from "@/components/megaphone/MegaphoneMark";
 import { MegaphoneVideoCard } from "@/components/megaphone/MegaphoneVideoCard";
 import { PublishDialog } from "@/components/megaphone/PublishDialog";
+import { DistributeDialog } from "@/components/megaphone/DistributeDialog";
 
 const FILTERS: (Template | "All")[] = ["All", ...TEMPLATES];
 
@@ -31,6 +32,7 @@ export default function MegaphonePage() {
   const [admin, setAdmin] = useState(false);
   const [manage, setManage] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [distributeTarget, setDistributeTarget] = useState<VideoPublic | null>(null);
   const [filter, setFilter] = useState<Template | "All">("All");
 
   useEffect(() => {
@@ -175,6 +177,7 @@ export default function MegaphonePage() {
                 manage
                   ? {
                       hidden: false,
+                      onDistribute: (x: VideoPublic) => setDistributeTarget(x),
                       onPin: (x: VideoPublic) => adminAction((s) => apiPin(x.id, s), "Pinned to Pulse"),
                       onToggleHidden: (x: VideoPublic) => adminAction((s) => apiSetStatus(x.id, "hidden", s), "Hidden"),
                       onDelete: (x: VideoPublic) => {
@@ -197,6 +200,15 @@ export default function MegaphonePage() {
             publicQ.refetch();
             if (manage) adminQ.refetch();
           }}
+        />
+      )}
+
+      {distributeTarget && adminSig && (
+        <DistributeDialog
+          video={distributeTarget}
+          sig={adminSig}
+          onClose={() => setDistributeTarget(null)}
+          onDone={() => adminQ.refetch()}
         />
       )}
     </div>

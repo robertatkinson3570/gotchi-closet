@@ -3,7 +3,7 @@
 // (phantom-void gradient + color-matched blur orb), a native player, the caption, and the
 // "grab and amplify" actions — download the MP4 and copy the caption for posting anywhere.
 import { useRef, useState } from "react";
-import { Download, Copy, Check, Pin, EyeOff, Eye, Trash2, ExternalLink } from "lucide-react";
+import { Download, Copy, Check, Pin, EyeOff, Eye, Trash2, ExternalLink, Send } from "lucide-react";
 import type { DistributionPublic, VideoPublic } from "@/lib/megaphone/types";
 import { mediaUrl } from "@/lib/megaphone/api";
 import { Button } from "@/ui/button";
@@ -59,6 +59,7 @@ export interface AdminActions {
   onPin: (v: VideoPublic) => void;
   onToggleHidden: (v: VideoPublic) => void;
   onDelete: (v: VideoPublic) => void;
+  onDistribute: (v: VideoPublic) => void;
   hidden?: boolean;
 }
 
@@ -123,6 +124,9 @@ export function MegaphoneVideoCard({ v, admin }: { v: VideoPublic; admin?: Admin
 
           {admin && (
             <div className="mt-3 flex flex-wrap gap-2 border-t border-white/10 pt-3">
+              <Button size="sm" variant="secondary" className="gap-1.5" onClick={() => admin.onDistribute(v)}>
+                <Send className="h-3.5 w-3.5" /> Distribute
+              </Button>
               <Button size="sm" variant="ghost" className="gap-1.5" onClick={() => admin.onPin(v)}>
                 <Pin className="h-3.5 w-3.5" /> {v.pinnedPulse ? "Pinned" : "Pin to Pulse"}
               </Button>
