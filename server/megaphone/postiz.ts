@@ -74,21 +74,24 @@ export async function uploadMedia(bytes: Buffer, filename: string, mime = "video
   return { id: String(data.id), path: String(data.path) };
 }
 
-/** Provider-specific settings block (the __type + required fields per platform). */
-export function settingsFor(provider: string, opts: { title?: string; tags?: string[] }): Record<string, unknown> {
+// Providers Megaphone can post to with no per-channel config. Others (discord needs a
+// channel id, lemmy/reddit a community, etc.) require extra settings we don't collect, so
+// they're excluded to avoid guaranteed failures.
+export const SUPPORTED_PROVIDERS = new Set(["x", "twitter", "telegram", "youtube"]);
+
+export function isSupportedProvider(provider: string): boolean {
+  return SUPPORTED_PROVIDERS.has(provider.toLowerCase());
+}
+
+/** Provider-specific settings block (the __type + required fields per platform, verified live). */
+export function settingsFor(provider: string, opts: { title?: string }): Record<string, unknown> {
   const p = provider.toLowerCase();
   if (p === "x" || p === "twitter") return { __type: "x", who_can_reply_post: "everyone" };
   if (p === "youtube") {
-    return {
-      __type: "youtube",
-      title: (opts.title ?? "Aavegotchi").slice(0, 95),
-      type: "public",
-      tags: opts.tags ?? ["Aavegotchi", "GHST", "Shorts"],
-      selfDeclaredMadeForKids: false,
-    };
+    // selfDeclaredMadeForKids must be the string "no"; tags shape is finicky so omit it.
+    return { __type: "youtube", title: (opts.title ?? "Aavegotchi").slice(0, 95), type: "public", selfDeclaredMadeForKids: "no" };
   }
   if (p === "telegram") return { __type: "telegram" };
-  // Unknown provider: pass the type through and hope Postiz has defaults.
   return { __type: p };
 }
 

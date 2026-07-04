@@ -13,6 +13,9 @@ const PROVIDER_LABEL: Record<string, string> = {
   x: "𝕏 (Twitter)", twitter: "𝕏 (Twitter)", telegram: "Telegram", youtube: "YouTube", discord: "Discord",
 };
 
+// Providers Megaphone can post to with no extra per-channel config (matches the server).
+const SUPPORTED = new Set(["x", "twitter", "telegram", "youtube"]);
+
 export function DistributeDialog({
   video,
   sig,
@@ -41,8 +44,8 @@ export function DistributeDialog({
       .then((r) => {
         setConfigured(r.configured);
         setChannels(r.integrations);
-        // Preselect channels not yet sent.
-        setSel(new Set(r.integrations.filter((c) => !alreadySent.has(c.id)).map((c) => c.id)));
+        // Preselect supported channels not yet sent.
+        setSel(new Set(r.integrations.filter((c) => SUPPORTED.has(c.provider.toLowerCase()) && !alreadySent.has(c.id)).map((c) => c.id)));
       })
       .catch(() => setConfigured(false))
       .finally(() => setLoading(false));
@@ -104,25 +107,31 @@ export function DistributeDialog({
             <div className="space-y-2">
               {channels.map((c) => {
                 const sent = alreadySent.has(c.id);
+                const supported = SUPPORTED.has(c.provider.toLowerCase());
+                const disabled = sent || !supported;
                 return (
                   <label
                     key={c.id}
                     className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${
-                      sent ? "border-white/5 opacity-60" : "cursor-pointer border-white/10 hover:border-[hsl(var(--spectral))]/50"
+                      disabled ? "border-white/5 opacity-50" : "cursor-pointer border-white/10 hover:border-[hsl(var(--spectral))]/50"
                     }`}
                   >
                     <input
                       type="checkbox"
                       className="accent-[hsl(var(--spectral))]"
-                      disabled={sent}
-                      checked={sent || sel.has(c.id)}
+                      disabled={disabled}
+                      checked={sent || (supported && sel.has(c.id))}
                       onChange={() => toggle(c.id)}
                     />
                     <span className="flex-1">
                       <span className="font-medium">{PROVIDER_LABEL[c.provider.toLowerCase()] ?? c.provider}</span>
                       <span className="ml-2 text-muted-foreground">{c.name}</span>
                     </span>
-                    {sent && <span className="text-[11px] uppercase tracking-wide text-[hsl(var(--cyan))]">sent</span>}
+                    {sent ? (
+                      <span className="text-[11px] uppercase tracking-wide text-[hsl(var(--cyan))]">sent</span>
+                    ) : !supported ? (
+                      <span className="text-[11px] uppercase tracking-wide text-muted-foreground">soon</span>
+                    ) : null}
                   </label>
                 );
               })}

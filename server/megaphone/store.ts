@@ -125,13 +125,26 @@ export function reserveDistribution(input: {
   provider: string;
   scheduledFor: number | null;
 }): number | null {
+  const existing = getDb()
+    .prepare(`SELECT id, status FROM distributions WHERE video_id=? AND integration_id=?`)
+    .get(input.videoId, input.integrationId) as { id: number; status: DistributionStatus } | undefined;
+  if (existing) {
+    // A prior FAILED attempt may be retried; posted/scheduled are never touched (no-repeat).
+    if (existing.status === "failed") {
+      getDb()
+        .prepare(`UPDATE distributions SET status='scheduled', postiz_post_id=NULL, external_url=NULL, posted_at=NULL, scheduled_for=? WHERE id=?`)
+        .run(input.scheduledFor, existing.id);
+      return existing.id;
+    }
+    return null;
+  }
   const info = getDb()
     .prepare(
-      `INSERT OR IGNORE INTO distributions (video_id, integration_id, provider, status, scheduled_for, created_at)
+      `INSERT INTO distributions (video_id, integration_id, provider, status, scheduled_for, created_at)
        VALUES (?, ?, ?, 'scheduled', ?, ?)`
     )
     .run(input.videoId, input.integrationId, input.provider, input.scheduledFor, Date.now());
-  return info.changes > 0 ? Number(info.lastInsertRowid) : null;
+  return Number(info.lastInsertRowid);
 }
 
 export function setDistributionPostId(id: number, postizPostId: string): void {
@@ -269,6 +282,7 @@ export function deleteVideo(id: number): void {
   const row = getRow(id);
   if (!row) return;
   getDb().prepare(`DELETE FROM videos WHERE id=?`).run(id);
+  getDb().prepare(`DELETE FROM distributions WHERE video_id=?`).run(id);
   for (const f of [row.video_file, row.poster_file]) {
     if (!f) continue;
     const p = path.join(mediaDir(), f);

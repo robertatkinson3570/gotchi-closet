@@ -18,6 +18,7 @@ import {
 } from "./store";
 import {
   createPost,
+  isSupportedProvider,
   listIntegrations,
   postizConfigured,
   settingsFor,
@@ -46,6 +47,9 @@ function pickTargets(all: PostizIntegration[]): PostizIntegration[] {
 async function runDistribution(videoId: number, integrations: PostizIntegration[]): Promise<DistributeSummary> {
   const summary: DistributeSummary = { posted: 0, skipped: 0, failed: 0 };
   const video = getRow(videoId);
+  // Only post to providers we have valid settings for (x/telegram/youtube). Others need
+  // per-channel config we don't collect and would fail every time.
+  integrations = integrations.filter((i) => isSupportedProvider(i.provider));
   if (!video || video.status !== "published" || integrations.length === 0) return summary;
 
   const filePath = path.join(mediaDir(), video.video_file);
@@ -78,7 +82,7 @@ async function runDistribution(videoId: number, integrations: PostizIntegration[
           {
             integration: { id: integ.id },
             value: [{ content: video.caption || video.title, image: [media] }],
-            settings: settingsFor(integ.provider, { title: video.title, tags: ["Aavegotchi", "GHST", "gotchi"] }),
+            settings: settingsFor(integ.provider, { title: video.title }),
           },
         ],
       });

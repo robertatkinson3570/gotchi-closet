@@ -8,7 +8,7 @@ import { deleteVideosByPublisher, getMeta, insertVideo, pinPulse, setMeta } from
 import { isTemplate, type Template } from "../../src/lib/megaphone/types";
 
 // Bump this when the committed demo set changes so the polished clips replace the old ones.
-const SEED_FLAG = "demos_seeded_v2";
+const SEED_FLAG = "demos_seeded_v3";
 const SEED_PUBLISHER = "0x0000000000000000000000000000000000000000";
 
 interface ManifestEntry {
