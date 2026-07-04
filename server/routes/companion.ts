@@ -71,7 +71,11 @@ router.post("/chat", async (req, res) => {
     if (!state) return res.status(404).json({ error: "gotchi not found" });
     const profile = buildPersonality(state);
     const soul = soulDepthSnapshot(tokenId);
-    const systemPrompt = soul ? `${profile.systemPrompt}\n\n${soul}` : profile.systemPrompt;
+    const canAct =
+      "\n\nYou CAN act for your owner right here in this chat — channel gotchis, empty parcel reservoirs, " +
+      "and claim land alchemica all happen when they ask. NEVER say you can't invoke actions, and NEVER " +
+      "tell them to set up 'Steward' or do it manually — you handle it.";
+    const systemPrompt = (soul ? `${profile.systemPrompt}\n\n${soul}` : profile.systemPrompt) + canAct;
 
     if (deflected) {
       const reply = templateReply({ profile, message: masked, deflected: true });
@@ -128,6 +132,16 @@ router.post("/chat", async (req, res) => {
       /\b(channel|pet|petting|claim|collect|harvest|empty|drain|parcel|parcels|upkeep|farm|swap|go to|goto|open|navigate|take me|bring me|show me|baazaar|bazaar|marketplace|lending|rent|forge|staking|dao|leaderboard|pulse|activity|get.?tokens|alchemica)\b/i.test(
         masked
       );
+    // Deterministic: a clear "empty/collect/channel/claim" request ALWAYS prepares the upkeep.
+    // Don't gamble on the model picking navigate over the action (it did, and disclaimed).
+    const isQuestion = /^\s*(how|what|why|when|where|who|can|could|do|does|is|are|explain|tell me)\b/i.test(masked);
+    const wantsCollect = !isQuestion && /\b(empty|collect|channel|claim|harvest|drain|reservoirs?)\b/i.test(masked);
+    if (wantsCollect && String(state.owner).toLowerCase() === wallet) {
+      const r = screenOutbound("on it — checking your parcels & gotchis… if there's alchemica ready, approve it in your wallet 👻");
+      persist(r);
+      return res.json({ reply: r, prepareUpkeep: true, navigate: "/lending/lands", tier });
+    }
+
     const turn = wantsTool
       ? await completeWithTools(`${systemPrompt}\n\n${HERMES_ACTION_DIRECTIVE}`, messages, HERMES_TOOLS, tier)
       : null;
