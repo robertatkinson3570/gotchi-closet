@@ -52,4 +52,25 @@ describe("completeWithTools", () => {
     expect(out?.toolCall).toBeNull();
     expect(out?.text).toBe("boo!");
   });
+
+  it("parses a text-form <function=...> call (llama-on-Groq quirk) as a tool call", async () => {
+    vi.stubEnv("GROQ_API_KEY", "test-key");
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: 'sure! <function=navigate>{"path":"/steward"}</function>' } }] }),
+    })) as any);
+    const out = await completeWithTools("sys", [{ role: "user", content: "take me to steward" }], [], "free");
+    expect(out?.toolCall?.name).toBe("navigate");
+    expect(out?.toolCall?.args.path).toBe("/steward");
+  });
+
+  it("strips stray function markup from plain text so it never leaks to the user", async () => {
+    vi.stubEnv("GROQ_API_KEY", "test-key");
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: "hello <function=foo></function> there" } }] }),
+    })) as any);
+    const out = await completeWithTools("sys", [{ role: "user", content: "hi" }], [], "free");
+    expect(out?.text).not.toContain("<function");
+  });
 });

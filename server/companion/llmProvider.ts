@@ -68,13 +68,21 @@ export async function completeWithTools(
     });
     if (!res.ok) return null;
     const msg: any = (await res.json())?.choices?.[0]?.message;
-    const tc = msg?.tool_calls?.[0];
+    let tc = msg?.tool_calls?.[0];
+    // Some models (llama on Groq) emit the call as TEXT — <function=name>{json}</function> —
+    // instead of the structured tool_calls field. Parse that shape as a real tool call.
+    if (!tc && typeof msg?.content === "string") {
+      const m = msg.content.match(/<function=([a-zA-Z_][\w]*)>\s*(\{[\s\S]*?\})\s*<\/function>/);
+      if (m) tc = { id: "text", type: "function", function: { name: m[1], arguments: m[2] } };
+    }
     if (tc?.function?.name) {
       let args: Record<string, any> = {};
       try { args = JSON.parse(tc.function.arguments || "{}"); } catch { args = {}; }
-      return { text: null, toolCall: { id: tc.id, name: tc.function.name, args } };
+      return { text: null, toolCall: { id: tc.id ?? "text", name: tc.function.name, args } };
     }
-    const text = typeof msg?.content === "string" && msg.content.trim() ? msg.content.trim() : null;
+    // Strip any stray function markup so the user never sees raw tool syntax.
+    const raw = typeof msg?.content === "string" ? msg.content.replace(/<function=[\s\S]*?<\/function>/g, "").trim() : "";
+    const text = raw.length ? raw : null;
     return { text, toolCall: null };
   } catch {
     return null;
