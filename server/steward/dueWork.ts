@@ -27,7 +27,16 @@ export interface Chores { pet: boolean; channel: boolean; claim: boolean; }
 export interface ChannelAssignment { parcelId: number; gotchiId: number; lastChanneled: number; }
 export interface WorkPlan { pet: number[]; channel: ChannelAssignment[]; claim: number[]; }
 
-export function computeWork(chores: Chores, snap: ChainSnapshot, now: number): WorkPlan {
+// Channel scope: "allGotchis" (default) rotates every owned gotchi across altars for max yield;
+// "stewardGotchiOnly" restricts channeling to the single enrolled steward gotchi.
+export type ChannelScope = "stewardGotchiOnly" | "allGotchis";
+
+export function computeWork(
+  chores: Chores,
+  snap: ChainSnapshot,
+  now: number,
+  opts?: { channelScope?: ChannelScope; stewardGotchiId?: number },
+): WorkPlan {
   const pet = chores.pet
     ? snap.gotchis.filter((g) => now - g.lastInteracted >= PET_COOLDOWN_SEC).map((g) => g.id)
     : [];
@@ -44,7 +53,11 @@ export function computeWork(chores: Chores, snap: ChainSnapshot, now: number): W
     // Same rotation as Land Management's channel-all: pair the highest-kinship gotchi with the
     // highest-level altar, then the next, until we run out of ready gotchis or parcels.
     const altared = snap.parcels.filter((p) => p.altarLevel > 0).sort((a, b) => b.altarLevel - a.altarLevel);
-    const byKinship = [...snap.gotchis].sort((a, b) => (b.kinship ?? 0) - (a.kinship ?? 0));
+    let byKinship = [...snap.gotchis].sort((a, b) => (b.kinship ?? 0) - (a.kinship ?? 0));
+    if (opts?.channelScope === "stewardGotchiOnly") {
+      // Only the enrolled steward gotchi may channel; everything else (cooldown, rotation) is unchanged.
+      byKinship = byKinship.filter((g) => g.id === opts?.stewardGotchiId);
+    }
     const used = new Set<number>();
     for (const p of altared) {
       const cd = CHANNEL_COOLDOWN_SEC_BY_ALTAR[p.altarLevel] ?? RESERVOIR_COOLDOWN_SEC;

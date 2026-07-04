@@ -81,4 +81,45 @@ describe("computeWork", () => {
       { parcelId: 10, gotchiId: 1, lastChanneled: 0 }, // next altar -> next gotchi
     ]);
   });
+
+  describe("channelScope", () => {
+    function scopeSnap() {
+      return {
+        gotchis: [
+          { id: 1, lastInteracted: 0, lastChanneled: 0, kinship: 100 },
+          { id: 2, lastInteracted: 0, lastChanneled: 0, kinship: 900 },
+        ],
+        parcels: [
+          { id: 10, altarLevel: 3, lastChanneled: 0, lastClaimed: 0, claimable: [0n, 0n, 0n, 0n] },
+          { id: 11, altarLevel: 9, lastChanneled: 0, lastClaimed: 0, claimable: [0n, 0n, 0n, 0n] },
+        ],
+      };
+    }
+
+    it("defaults to all gotchis (both altared parcels get an assignment)", () => {
+      const w = computeWork({ pet: false, channel: true, claim: false }, scopeSnap(), NOW);
+      expect(w.channel).toEqual([
+        { parcelId: 11, gotchiId: 2, lastChanneled: 0 },
+        { parcelId: 10, gotchiId: 1, lastChanneled: 0 },
+      ]);
+    });
+
+    it("channelScope: allGotchis behaves the same as the default", () => {
+      const w = computeWork({ pet: false, channel: true, claim: false }, scopeSnap(), NOW, { channelScope: "allGotchis" });
+      expect(w.channel).toEqual([
+        { parcelId: 11, gotchiId: 2, lastChanneled: 0 },
+        { parcelId: 10, gotchiId: 1, lastChanneled: 0 },
+      ]);
+    });
+
+    it("channelScope: stewardGotchiOnly uses ONLY the steward gotchi on the highest altar", () => {
+      const w = computeWork(
+        { pet: false, channel: true, claim: false },
+        scopeSnap(),
+        NOW,
+        { channelScope: "stewardGotchiOnly", stewardGotchiId: 1 },
+      );
+      expect(w.channel).toEqual([{ parcelId: 11, gotchiId: 1, lastChanneled: 0 }]);
+    });
+  });
 });
