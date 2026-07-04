@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { fetchGotchiState } from "../companion/gotchiState";
-import { getRecentMessages, getFacts } from "../companion/db";
+import { getRecentMessages, getFacts, getActions } from "../companion/db";
 import { newSoulDocument, soulHash as computeSoulHash } from "../soul/soulDoc";
 import { buildDepth } from "../soul/depth";
 import { saveSoulDoc, getSoulDoc } from "../soul/soulStore";
@@ -68,12 +68,23 @@ async function buildSoulContext(tokenId: string) {
   doc.bonding.lastInteractionTs = lastInteractionTs;
   doc.bonding.streak = streak;
   doc.bonding.consistencyHistory = consistencyHistory;
-  doc.memories = facts.map((f) => ({
-    ts: Date.now(),
-    summary: f,
-    privacy: "normal" as const,
-    weight: 1,
-  }));
+  const actions = owner ? await getActions(owner, tokenId, 20) : [];
+  doc.memories = [
+    // Interactions the owner shared (chat facts) — light weight.
+    ...facts.map((f) => ({
+      ts: Date.now(),
+      summary: f,
+      privacy: "normal" as const,
+      weight: 1,
+    })),
+    // Things Hermes DID for the owner — count more toward the soul than idle chat.
+    ...actions.map((a) => ({
+      ts: a.ts,
+      summary: `Did: ${a.detail}`,
+      privacy: "normal" as const,
+      weight: 2,
+    })),
+  ];
   const storedDoc = getSoulDoc(tokenId);
   doc.pastLives = storedDoc?.pastLives ?? [];
 
