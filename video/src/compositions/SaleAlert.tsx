@@ -1,23 +1,36 @@
 import React from "react";
-import {
-  AbsoluteFill,
-  Audio,
-  Sequence,
-  spring,
-  useCurrentFrame,
-  useVideoConfig,
-} from "remotion";
+import { AbsoluteFill, Audio, Sequence, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { AUDIO } from "../audio";
 import { EndCard } from "../components/EndCard";
 import { GradientText } from "../components/GradientText";
 import { GotchiSprite } from "../components/GotchiSprite";
 import { Scene } from "../components/Scene";
 import { StatCounter } from "../components/StatCounter";
-import { TraitChips } from "../components/TraitChips";
+import { TraitBars } from "../components/TraitBars";
 import { theme } from "../theme";
 import type { SaleAlertProps } from "../types";
 
 export const SALE_ALERT_DURATION = 450;
+
+/** Expanding shockwave ring behind the SOLD stamp when it lands. */
+const Burst: React.FC<{ at: number }> = ({ at }) => {
+  const frame = useCurrentFrame();
+  const t = interpolate(frame, [at, at + 26], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  if (t <= 0 || t >= 1) return null;
+  return (
+    <div
+      style={{
+        position: "absolute",
+        width: 360,
+        height: 360,
+        borderRadius: "50%",
+        border: `6px solid ${theme.pink}`,
+        opacity: (1 - t) * 0.8,
+        transform: `scale(${0.4 + t * 2.2})`,
+      }}
+    />
+  );
+};
 
 export const SaleAlert: React.FC<SaleAlertProps> = (p) => {
   const frame = useCurrentFrame();
@@ -29,58 +42,45 @@ export const SaleAlert: React.FC<SaleAlertProps> = (p) => {
       <Sequence from={70} durationInFrames={25}>
         <Audio src={AUDIO.chaching} volume={0.75} />
       </Sequence>
-      <AbsoluteFill style={{ alignItems: "center", padding: 70, gap: 46 }}>
-        <div
-          style={{
-            marginTop: 60,
-            fontSize: 78,
-            fontFamily: theme.fontHeading,
-            color: theme.pink,
-            border: "4px solid hsl(326, 100%, 68%, 0.8)",
-            borderRadius: 20,
-            padding: "18px 44px",
-            transform: `scale(${stamp}) rotate(-6deg)`,
-            boxShadow: "0 0 48px hsl(326, 100%, 68%, 0.5)",
-            ...theme.glow(theme.pink, 20),
-          }}
-        >
-          SOLD
+      <AbsoluteFill style={{ alignItems: "center", padding: 70, gap: 40 }}>
+        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 60, height: 150 }}>
+          <Burst at={10} />
+          <div
+            style={{
+              fontSize: 82,
+              fontFamily: theme.fontHeading,
+              color: theme.pink,
+              border: `4px solid hsl(326, 100%, 68%, 0.85)`,
+              borderRadius: 20,
+              padding: "16px 46px",
+              transform: `scale(${stamp}) rotate(-6deg)`,
+              boxShadow: "0 0 48px hsl(326, 100%, 68%, 0.55)",
+              ...theme.glow(theme.pink, 22),
+            }}
+          >
+            SOLD
+          </div>
         </div>
-        <GotchiSprite svg={p.svg} size={560} />
-        <GradientText fontSize={72} style={{ textAlign: "center" }}>
+        <GotchiSprite svg={p.svg} size={480} />
+        <GradientText fontSize={64} style={{ textAlign: "center" }}>
           {p.name || `Gotchi #${p.gotchiId}`}
         </GradientText>
         <Sequence from={70} layout="none">
-          <StatCounter label="Price" value={p.priceGhst} suffix=" GHST" color={theme.gold} fontSize={96} />
+          <StatCounter label="Price" value={p.priceGhst} suffix=" GHST" color={theme.gold} fontSize={104} />
           {p.priceUsd ? (
-            <div
-              style={{
-                fontSize: 30,
-                color: theme.muted,
-                fontFamily: theme.fontMono,
-                textAlign: "center",
-              }}
-            >
+            <div style={{ fontSize: 30, color: theme.muted, fontFamily: theme.fontMono, textAlign: "center" }}>
               ≈ ${p.priceUsd.toLocaleString("en-US", { maximumFractionDigits: 0 })}
             </div>
           ) : null}
         </Sequence>
         <Sequence from={150} layout="none">
-          <TraitChips traits={p.traits} />
+          <TraitBars traits={p.traits} width={760} delay={0} />
         </Sequence>
-        <Sequence from={210} layout="none">
-          <div
-            style={{
-              fontSize: 26,
-              color: theme.muted,
-              fontFamily: theme.fontMono,
-              textAlign: "center",
-              lineHeight: 2,
-            }}
-          >
+        <Sequence from={230} layout="none">
+          <div style={{ fontSize: 26, color: theme.muted, fontFamily: theme.fontMono, textAlign: "center", lineHeight: 1.9 }}>
             BRS {p.brs} · {p.whenText}
             <br />
-            {p.sellerShort} → {p.buyerShort}
+            {p.sellerShort} <span style={{ color: theme.pink }}>→</span> {p.buyerShort}
           </div>
         </Sequence>
       </AbsoluteFill>
