@@ -47,6 +47,7 @@ jobs:
           MEGAPHONE_AUTO_DISTRIBUTE: ${{ secrets.MEGAPHONE_AUTO_DISTRIBUTE }}
           MEGAPHONE_DISTRIBUTE_INTEGRATIONS: ${{ secrets.MEGAPHONE_DISTRIBUTE_INTEGRATIONS }}
           MEGAPHONE_INGEST_KEY: ${{ secrets.MEGAPHONE_INGEST_KEY }}
+          HERMES_AUTONOMOUS: ${{ secrets.HERMES_AUTONOMOUS }}
         run: |
           set -euo pipefail
           cd /root/gotchicloset
@@ -83,6 +84,10 @@ jobs:
           if [ -n "${MEGAPHONE_DISTRIBUTE_INTEGRATIONS:-}" ]; then set_var MEGAPHONE_DISTRIBUTE_INTEGRATIONS "$MEGAPHONE_DISTRIBUTE_INTEGRATIONS"; echo "MEGAPHONE_DISTRIBUTE_INTEGRATIONS synced"; else echo "no MEGAPHONE_DISTRIBUTE_INTEGRATIONS secret (all channels)"; fi
           # Shared key the local tweet generator uses to push promo-tweet drafts into the review queue.
           if [ -n "${MEGAPHONE_INGEST_KEY:-}" ]; then set_var MEGAPHONE_INGEST_KEY "$MEGAPHONE_INGEST_KEY"; echo "MEGAPHONE_INGEST_KEY synced (len=${#MEGAPHONE_INGEST_KEY})"; else echo "no MEGAPHONE_INGEST_KEY secret (tweet ingest disabled)"; fi
+          # Hermes autonomous cron master switch. Starts the ~30-min pass that runs due upkeep
+          # hands-free for owners who enrolled a Steward session key. Default OFF (unset secret ⇒
+          # not written ⇒ cron disabled). Dormant even when =1 until a wallet actually enrolls.
+          if [ -n "${HERMES_AUTONOMOUS:-}" ]; then set_var HERMES_AUTONOMOUS "$HERMES_AUTONOMOUS"; echo "HERMES_AUTONOMOUS synced ($HERMES_AUTONOMOUS)"; else echo "no HERMES_AUTONOMOUS secret (autonomous cron stays OFF)"; fi
 
       - name: Build + start
         # Isolation guarantee: -p gotchicloset namespaces every container, volume,
