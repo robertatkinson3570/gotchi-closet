@@ -17,6 +17,17 @@ import { execFileSync } from "node:child_process";
 
 const HERE = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
 const ROOT = path.resolve(HERE, "..");
+
+// Load the repo-root .env (gitignored) so a plain `node tweets/generate.mjs` picks up
+// MEGAPHONE_INGEST_KEY + GROQ_API_KEY without exporting anything. Real env vars win.
+try {
+  for (const line of fs.readFileSync(path.join(ROOT, ".env"), "utf8").split("\n")) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+    if (m && process.env[m[1]] === undefined) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "").trim();
+  }
+} catch {
+  /* no .env, fine */
+}
 const API = process.env.MEGAPHONE_API_BASE || "https://api.gotchicloset.com";
 const INGEST_KEY = process.env.MEGAPHONE_INGEST_KEY || "";
 const COUNT = Number(process.env.TWEET_COUNT || 12);
