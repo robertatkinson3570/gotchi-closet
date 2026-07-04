@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAccount, useSignMessage } from "wagmi";
 import { useCompanionGotchis } from "./useCompanionGotchis";
@@ -13,11 +14,13 @@ import { GlobalChatTab } from "./GlobalChatTab";
 import { PoweredByWisp } from "@/components/wisp/PoweredByWisp";
 import { env } from "@/lib/env";
 import { premiumMessage, PREMIUM_SIG_TTL_MS } from "@/lib/companion/premiumAuth";
+import { actionMessage, ACTION_SIG_TTL_MS } from "@/lib/companion/actionAuth";
 import type { ChatMessage } from "@/lib/companion/types";
 
 export function CompanionChatPanel() {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
+  const navigate = useNavigate();
   const gotchis = useCompanionGotchis();
   const { selectedTokenId, setOpen, setRoastOpen, script, clearScript } = useCompanion();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -71,6 +74,27 @@ export function CompanionChatPanel() {
     return auth;
   }
 
+  // Hermes actions (channel/pet/claim) require a 24h wallet signature proving ownership
+  // before the VPS runs them. Sign once, cache, reuse — no popup per action.
+  function cachedActionAuth(): { actionSignature: string; actionSignedAt: number } | undefined {
+    if (!address) return undefined;
+    try {
+      const cached = JSON.parse(localStorage.getItem(`companion.actionSig.${address.toLowerCase()}`) || "null");
+      if (cached?.actionSignature && Date.now() - cached.actionSignedAt < ACTION_SIG_TTL_MS) return cached;
+    } catch { /* ignore */ }
+    return undefined;
+  }
+  async function ensureActionAuth(): Promise<{ actionSignature: string; actionSignedAt: number } | undefined> {
+    if (!address) return undefined;
+    const cached = cachedActionAuth();
+    if (cached) return cached;
+    const signedAt = Date.now();
+    const actionSignature = await signMessageAsync({ message: actionMessage(address, signedAt) });
+    const auth = { actionSignature, actionSignedAt: signedAt };
+    try { localStorage.setItem(`companion.actionSig.${address.toLowerCase()}`, JSON.stringify(auth)); } catch { /* ignore */ }
+    return auth;
+  }
+
   async function send() {
     const text = draft.trim();
     if (!text || !selectedTokenId || !address || busy) return;
@@ -81,8 +105,16 @@ export function CompanionChatPanel() {
     try {
       let auth: { signature: string; signedAt: number } | undefined;
       try { auth = await ensurePremiumAuth(); } catch { auth = undefined; }
-      const res = await postChat(selectedTokenId, address, text, auth);
+      let res = await postChat(selectedTokenId, address, text, auth, cachedActionAuth());
+      // Hermes wants to act but has no valid action signature — sign once, then retry the same message.
+      if (res.needsActionAuth) {
+        let actionAuth: { actionSignature: string; actionSignedAt: number } | undefined;
+        try { actionAuth = await ensureActionAuth(); } catch { actionAuth = undefined; }
+        if (actionAuth) res = await postChat(selectedTokenId, address, text, auth, actionAuth);
+      }
       setMessages((m) => [...m, { role: "assistant", content: res.reply }]);
+      // Hermes can take the owner to where a thing happens.
+      if (res.navigate) { setOpen(false); navigate(res.navigate); }
     } catch {
       setMessages((m) => [...m, { role: "assistant", content: "the ether glitched 👻 try again in a sec" }]);
     } finally {
