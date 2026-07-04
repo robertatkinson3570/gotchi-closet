@@ -4,10 +4,11 @@
 // runs exactly once; after that, admins fully own the library (deletes stay deleted).
 import fs from "node:fs";
 import path from "node:path";
-import { getMeta, insertVideo, pinPulse, setMeta } from "./store";
+import { deleteVideosByPublisher, getMeta, insertVideo, pinPulse, setMeta } from "./store";
 import { isTemplate, type Template } from "../../src/lib/megaphone/types";
 
-const SEED_FLAG = "demos_seeded_v1";
+// Bump this when the committed demo set changes so the polished clips replace the old ones.
+const SEED_FLAG = "demos_seeded_v2";
 const SEED_PUBLISHER = "0x0000000000000000000000000000000000000000";
 
 interface ManifestEntry {
@@ -33,6 +34,9 @@ export function seedDemos(): void {
     if (!fs.existsSync(manifestPath)) return; // nothing to seed
 
     const entries = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as ManifestEntry[];
+    // Replace any prior seed set (published under the seed marker wallet). Real
+    // admin-published videos use a different wallet and are never touched.
+    deleteVideosByPublisher(SEED_PUBLISHER);
     let seeded = 0;
     for (const e of entries) {
       const mp4Path = path.join(dir, e.file);

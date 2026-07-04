@@ -3,7 +3,7 @@
     "file": "pulserecap.mp4",
     "template": "PulseRecap",
     "title": "Aavegotchi Weekly Pulse",
-    "caption": "gm frens. the weekly pulse, auto-generated from live on chain data and rendered in the gotchicloset video engine at basically zero cost.",
+    "caption": "gm frens. the weekly pulse, auto-generated from live on chain data and rendered in the gotchicloset video engine at basically zero cost. volume, sales, buyers and rentals with the 14 day trend on each.",
     "gotchiId": null,
     "durationS": 27,
     "pin": true

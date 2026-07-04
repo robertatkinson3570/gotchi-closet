@@ -275,3 +275,12 @@ export function deleteVideo(id: number): void {
     if (fs.existsSync(p)) fs.rmSync(p);
   }
 }
+
+/** Delete every video published by a given wallet (used to replace the demo seed set). */
+export function deleteVideosByPublisher(publisher: string): number {
+  const rows = getDb()
+    .prepare(`SELECT id FROM videos WHERE published_by=?`)
+    .all(publisher.toLowerCase()) as { id: number }[];
+  for (const r of rows) deleteVideo(r.id);
+  return rows.length;
+}
