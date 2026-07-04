@@ -39,4 +39,18 @@ contract GasTankTest is Test {
         vm.expectRevert(bytes("insufficient"));
         tank.withdraw(2 ether);
     }
+
+    function test_setOperator_onlyAdmin() public {
+        tank.setOperator(operator, true); // test contract deployed tank => is admin
+        assertTrue(tank.isOperator(operator));
+        vm.prank(owner);
+        vm.expectRevert(bytes("not admin"));
+        tank.setOperator(owner, true);
+    }
+
+    function test_setCapPerRun_ownerControlsOwnCap() public {
+        vm.prank(owner);
+        tank.setCapPerRun(0.001 ether);
+        assertEq(tank.capPerRun(owner), 0.001 ether);
+    }
 }

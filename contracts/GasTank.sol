@@ -8,6 +8,23 @@ contract GasTank {
     address public immutable admin;
 
     mapping(address => uint256) public balanceOf; // owner => escrowed wei
+    mapping(address => bool) public isOperator;    // relayer allowlist (admin-managed)
+    mapping(address => uint256) public capPerRun;  // owner => max reimbursement per run (0 = no cap)
+
+    event OperatorSet(address indexed operator, bool allowed);
+    event CapSet(address indexed owner, uint256 cap);
+
+    modifier onlyAdmin() { require(msg.sender == admin, "not admin"); _; }
+
+    function setOperator(address op, bool allowed) external onlyAdmin {
+        isOperator[op] = allowed;
+        emit OperatorSet(op, allowed);
+    }
+
+    function setCapPerRun(uint256 cap) external {
+        capPerRun[msg.sender] = cap;
+        emit CapSet(msg.sender, cap);
+    }
 
     uint256 private _lock;
     modifier nonReentrant() { require(_lock == 0, "reentrant"); _lock = 1; _; _lock = 0; }
