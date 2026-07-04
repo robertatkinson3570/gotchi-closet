@@ -54,6 +54,8 @@ export type PulseStat = {
   value: number;
   unit: string;
   wow: number | null; // week-over-week percent (pulse pctChange), e.g. 12 = +12%
+  spark?: number[]; // recent daily values for the trend sparkline (oldest -> newest)
+  color?: string; // accent hex/hsl for this stat's number + sparkline
 };
 
 export type PulseCameo = { svg: string; name: string; caption: string };

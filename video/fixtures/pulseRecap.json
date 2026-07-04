@@ -2,10 +2,10 @@
   "videoId": "fixture-pulserecap",
   "weekLabel": "JUN 27 – JUL 3",
   "stats": [
-    { "label": "GHST TRADED", "value": 48210, "unit": " GHST", "wow": 12 },
-    { "label": "SALES", "value": 412, "unit": "", "wow": -5 },
-    { "label": "UNIQUE BUYERS", "value": 96, "unit": "", "wow": 30 },
-    { "label": "NEW RENTALS", "value": 233, "unit": "", "wow": null }
+    { "label": "GHST TRADED", "value": 48210, "unit": " GHST", "wow": 12, "spark": [21000, 24500, 19800, 28000, 26500, 31000, 29800, 35200, 33100, 41000, 39500, 44800, 46200, 48210] },
+    { "label": "SALES", "value": 412, "unit": "", "wow": -5, "spark": [520, 498, 505, 470, 455, 462, 430, 445, 421, 438, 415, 402, 418, 412] },
+    { "label": "UNIQUE BUYERS", "value": 96, "unit": "", "wow": 30, "spark": [62, 58, 71, 66, 74, 69, 78, 83, 80, 88, 85, 91, 89, 96] },
+    { "label": "NEW RENTALS", "value": 233, "unit": "", "wow": null, "spark": [180, 195, 172, 210, 205, 225, 218, 240, 233, 228, 245, 236, 250, 233] }
   ],
   "cameos": [
     {

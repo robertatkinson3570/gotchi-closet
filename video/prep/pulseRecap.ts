@@ -23,6 +23,8 @@ async function main() {
     value: Math.round(sumLastDays(pulse.series[key], 7)),
     unit,
     wow: pulse.deltas[key]?.wow ?? null,
+    // Trend sparkline: the last 14 daily values for this metric (oldest -> newest).
+    spark: (pulse.series[key] ?? []).slice(-14).map((pt) => pt.value),
   });
   const stats = [
     stat("sales_volume_ghst", "GHST TRADED", " GHST"),
