@@ -54,4 +54,31 @@ contract GasTank {
         require(ok, "xfer failed");
         emit Withdraw(msg.sender, amount, balanceOf[msg.sender]);
     }
+
+    struct Call { address target; bytes data; }
+
+    bytes4 private constant SEL_INTERACT = 0x22c67519;
+    bytes4 private constant SEL_CHANNEL  = 0x8027870e;
+    bytes4 private constant SEL_CLAIM    = 0xbc6dc2f0;
+
+    function _allowed(address target, bytes4 sel) internal view returns (bool) {
+        if (target == aavegotchiDiamond) return sel == SEL_INTERACT;
+        if (target == realmDiamond) return sel == SEL_CHANNEL || sel == SEL_CLAIM;
+        return false;
+    }
+
+    function run(address owner, Call[] calldata calls, uint16 pet, uint16 channel, uint16 claim)
+        external nonReentrant
+    {
+        require(isOperator[msg.sender], "not operator");
+        for (uint256 i = 0; i < calls.length; i++) {
+            require(calls[i].data.length >= 4, "bad calldata");
+            bytes4 sel = bytes4(calls[i].data);
+            require(_allowed(calls[i].target, sel), "scope");
+            (bool ok, ) = calls[i].target.call(calls[i].data);
+            require(ok, "action failed");
+        }
+        // reimbursement + event added in Task 5
+        pet; channel; claim; owner; // silence unused warnings until Task 5
+    }
 }
