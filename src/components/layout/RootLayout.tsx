@@ -24,24 +24,27 @@ import { KnowledgeBaseButton } from "@/components/KnowledgeBaseModal";
 import { PoweredByWisp } from "@/components/wisp/PoweredByWisp";
 
 // Every page shows the full nav so all sections are reachable everywhere.
-const NAV: { to: string; title: string; icon: LucideIcon }[] = [
-  { to: "/explorer", title: "Explorer / Baazaar", icon: Search },
-  { to: "/dress", title: "Dress", icon: Shirt },
-  { to: "/activity", title: "Activity", icon: Activity },
-  { to: "/leaderboard", title: "Kinship & XP Leaderboard", icon: Trophy },
-  { to: "/pulse", title: "Pulse — State of the Aavegotchiverse", icon: HeartPulse },
-  { to: "/games", title: "Game Center — community games & tools", icon: Gamepad2 },
-  { to: "/megaphone", title: "Megaphone — auto-generated gotchi videos", icon: Megaphone },
-  { to: "/forge", title: "Forge", icon: Flame },
-  { to: "/staking", title: "GLTR Staking", icon: Droplets },
-  { to: "/lending", title: "Lending", icon: Coins },
-  { to: "/lending/lands", title: "Land Management", icon: MapPin },
+// `title` = long descriptive tooltip on the desktop icon row; `label` = the
+// short name shown in the mobile dropdown (kept to one word/short phrase so it
+// never runs off a phone screen).
+const NAV: { to: string; title: string; label: string; icon: LucideIcon }[] = [
+  { to: "/explorer", title: "Explorer / Baazaar", label: "Explorer", icon: Search },
+  { to: "/dress", title: "Dress", label: "Dress", icon: Shirt },
+  { to: "/activity", title: "Activity", label: "Activity", icon: Activity },
+  { to: "/leaderboard", title: "Kinship & XP Leaderboard", label: "Leaderboard", icon: Trophy },
+  { to: "/pulse", title: "Pulse — State of the Aavegotchiverse", label: "Pulse", icon: HeartPulse },
+  { to: "/games", title: "Game Center — community games & tools", label: "Games", icon: Gamepad2 },
+  { to: "/megaphone", title: "Megaphone — auto-generated gotchi videos", label: "Megaphone", icon: Megaphone },
+  { to: "/forge", title: "Forge", label: "Forge", icon: Flame },
+  { to: "/staking", title: "GLTR Staking", label: "Staking", icon: Droplets },
+  { to: "/lending", title: "Lending", label: "Lending", icon: Coins },
+  { to: "/lending/lands", title: "Land Management", label: "Lands", icon: MapPin },
   // Steward is hidden from the nav while we vet it (no one stumbles into it). The /steward
   // route still works by direct URL; set VITE_STEWARD_NAV=1 to reveal the menu option again.
   ...(import.meta.env.VITE_STEWARD_NAV === "1"
-    ? [{ to: "/steward", title: "Steward — put your gotchis to work", icon: Bot }]
+    ? [{ to: "/steward", title: "Steward — put your gotchis to work", label: "Steward", icon: Bot }]
     : []),
-  { to: "/dao", title: "DAO & Community", icon: Landmark },
+  { to: "/dao", title: "DAO & Community", label: "DAO", icon: Landmark },
 ];
 
 function isActive(pathname: string, to: string): boolean {
@@ -148,15 +151,19 @@ function WalletChip() {
  */
 function MobileNav({ pathname, showMyActivity }: { pathname: string; showMyActivity: boolean }) {
   return (
-    <Menu as="div" className="relative md:hidden">
+    <Menu as="div" className="md:hidden">
       <Menu.Button
         title="Menu"
         className="inline-flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-muted/60"
       >
         <MenuIcon className="h-5 w-5" />
       </Menu.Button>
-      <Menu.Items className="absolute right-0 mt-2 w-64 max-h-[70vh] overflow-y-auto rounded-xl border bg-background shadow-xl p-1.5 text-sm z-50">
-        {NAV.map(({ to, title, icon: Icon }) => (
+      {/* Anchored to the header's inner container (position:relative), not the
+          hamburger button — the button sits mid-row, so anchoring to it pushed
+          the panel off the left edge. top-full/right-0 keeps it top-right and
+          fully on-screen, and it stays put with the sticky header on scroll. */}
+      <Menu.Items className="absolute top-full right-3 md:right-4 mt-1 w-44 max-w-[calc(100vw-1.5rem)] max-h-[75vh] overflow-y-auto rounded-xl border bg-background shadow-xl p-1.5 text-sm z-50">
+        {NAV.map(({ to, label, icon: Icon }) => (
           <Menu.Item key={to}>
             {() => (
               <Link
@@ -164,7 +171,7 @@ function MobileNav({ pathname, showMyActivity }: { pathname: string; showMyActiv
                 className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-muted/60 ${isActive(pathname, to) ? "bg-primary/15 text-primary font-medium" : ""}`}
               >
                 <Icon className="w-4 h-4 shrink-0 text-muted-foreground" />
-                <span className="truncate">{title}</span>
+                <span>{label}</span>
               </Link>
             )}
           </Menu.Item>
@@ -177,7 +184,7 @@ function MobileNav({ pathname, showMyActivity }: { pathname: string; showMyActiv
                 className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-muted/60 ${pathname.startsWith("/me/activity") || pathname.startsWith("/u/") ? "bg-primary/15 text-primary font-medium" : ""}`}
               >
                 <Receipt className="w-4 h-4 shrink-0 text-muted-foreground" />
-                <span className="truncate">My activity</span>
+                <span>My activity</span>
               </Link>
             )}
           </Menu.Item>
@@ -197,7 +204,7 @@ export function RootLayout() {
     <div className="min-h-screen flex flex-col">
       <Gv2Banner />
       <header className="h-14 w-full glass-nav sticky top-0 z-30">
-        <div className="flex h-14 items-center justify-between px-3 md:px-4 gap-3">
+        <div className="relative flex h-14 items-center justify-between px-3 md:px-4 gap-3">
           <Link to="/" className="flex items-center gap-1.5 min-w-0 hover:opacity-90 transition-opacity">
             <img src="/logo.png" alt="GotchiCloset" className="h-12 w-12 object-contain -my-2" />
             <div className="text-xl font-heading tracking-tight truncate gradient-text hidden sm:block">GotchiCloset</div>
