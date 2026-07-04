@@ -163,3 +163,20 @@ export async function postTweet(id: number, sig: Sig): Promise<void> {
   });
   if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "post failed");
 }
+
+export async function scheduleTweet(id: number, sig: Sig): Promise<{ scheduledFor: number }> {
+  const r = await fetch(`${base()}/api/megaphone/tweets/${id}/schedule`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(sig),
+  });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "schedule failed");
+  return r.json();
+}
+
+/** Public: posted + scheduled tweets, no wallet needed. */
+export async function listPublicTweets(): Promise<TweetPublic[]> {
+  const r = await fetch(`${base()}/api/megaphone/tweets/public`);
+  if (!r.ok) return [];
+  return (await r.json()).tweets;
+}

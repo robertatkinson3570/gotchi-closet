@@ -87,11 +87,18 @@ export function getDb(): Database.Database {
       status         TEXT NOT NULL DEFAULT 'draft',
       external_url   TEXT,
       postiz_post_id TEXT,
+      scheduled_for  INTEGER,
       created_at     INTEGER NOT NULL,
       posted_at      INTEGER
     );
     CREATE INDEX IF NOT EXISTS idx_tweets_status ON tweets(status, created_at);
   `);
+  // Migrate tweets tables created before scheduled_for existed.
+  try {
+    db.exec(`ALTER TABLE tweets ADD COLUMN scheduled_for INTEGER`);
+  } catch {
+    /* column already exists */
+  }
   return db;
 }
 

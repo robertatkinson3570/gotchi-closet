@@ -67,21 +67,32 @@ async function liveData() {
   }
 }
 
-// Community builds from the local Discord KB (best-effort; skipped if unavailable).
+// Governance/social/media links are NOT builds — a proposal or a tweet link should never be
+// shouted out as "someone's tool". Only real project/app links qualify.
+const NON_BUILD_URL = /(vote\.aavegotchi|snapshot\.org|\/proposal\/|governance|x\.com|twitter\.com|discord\.(gg|com)|t\.me\/|tenor\.|giphy\.|youtu\.?be|medium\.com|mirror\.xyz)/i;
+
+// Community builds from the local Discord KB (best-effort; skipped if unavailable). Returns
+// {line, url} where url is a genuine build link. Aggressively filtered — a bad shout-out
+// about someone else's project is worse than none.
 function kbBuilds() {
   if (process.env.TWEET_KB === "0") return [];
   const kb = path.join(ROOT, "tools", "gotchi-kb", "kb.mjs");
   if (!fs.existsSync(kb)) return [];
   try {
-    const out = execFileSync("node", [kb, "ask", "building OR built OR shipped OR launched OR made a", "--limit", "40"], {
+    const out = execFileSync("node", [kb, "ask", "built OR shipped OR launched OR made a OR check out my OR working on", "--limit", "50"], {
       encoding: "utf8",
       timeout: 60000,
     });
-    // Keep lines that carry a URL — those are the "someone shipped a thing" signals.
     return out
       .split("\n")
-      .filter((l) => /https?:\/\//.test(l) && /\b(built|building|shipped|launched|made|created|tool|dashboard|game)\b/i.test(l))
-      .slice(0, 12);
+      .filter((l) => /\b(built|building|shipped|launched|made|created|working on|check out my|check out this|dashboard|tool|app|site)\b/i.test(l))
+      .map((l) => {
+        const urls = (l.match(/https?:\/\/\S+/g) || []).filter((u) => !NON_BUILD_URL.test(u));
+        if (!urls.length) return null; // no legit project link -> skip
+        return { text: l.replace(/https?:\/\/\S+/g, "").replace(/\s+/g, " ").trim().slice(0, 240), url: urls[0] };
+      })
+      .filter(Boolean)
+      .slice(0, 8);
   } catch {
     return [];
   }
@@ -93,13 +104,24 @@ function buildPrompt({ recent, data, builds }) {
     ? `Live data you may reference (only if it makes a good tweet): GHST ~$${data.ghstUsd?.toFixed?.(3) ?? "?"}, 30d volume ${Math.round(data.vol30d || 0).toLocaleString()} GHST, ${data.buyers30d || 0} buyers, ${data.sales30d || 0} sales, ${data.summoned30d || 0} gotchis summoned. Link data tweets to ${feat.site}/pulse.`
     : "No live data available this run.";
   const buildLines = builds.length
-    ? `Community builds spotted in the Aavegotchi Discord (write supportive shout-outs, include their link, never overclaim):\n${builds.join("\n")}`
-    : "No community builds available this run; skip the builds source.";
+    ? `Community builds from the Aavegotchi Discord. For a "builds" tweet you MUST follow these rules exactly:
+- Use ONLY the message text below. Do NOT invent numbers, counts, features, or claims that aren't literally stated.
+- Set "link" to the exact url given for that build, nothing else. Never attach a different link.
+- If a message is vague or you're unsure what it does, SKIP it (don't force a builds tweet).
+- Keep it a genuine, humble shout-out. Better to skip than to misrepresent someone's work.
+${builds.map((b, i) => `${i + 1}. text: "${b.text}" | url: ${b.url}`).join("\n")}`
+    : "No community builds available this run; skip the builds source entirely (do not invent one).";
   const avoid = recent.length ? `Do NOT repeat or closely paraphrase any of these ${recent.length} already-used tweets:\n${recent.slice(0, 120).map((t) => `• ${t}`).join("\n")}` : "";
 
-  return `You write short promo tweets for GotchiCloset (@${feat.handle}), a free community-built Aavegotchi app on Base, and to hype Aavegotchi itself.
+  const examples = (feat.goodExamples || []).map((e) => `- ${e}`).join("\n");
+  return `You write GOOD promo tweets for GotchiCloset (@${feat.handle}), a free community-built Aavegotchi app on Base, and to hype Aavegotchi itself. These go on the real @${feat.handle} account, so quality matters. Weak one-line slogans are unacceptable.
 
 Produce EXACTLY ${COUNT} tweets as a JSON array. Each item: {"text": string, "source": "app"|"data"|"ecosystem"|"builds", "link": string|null}.
+
+Each tweet MUST be 2-3 full sentences formatted like a real tweet (hook, then the concrete value, then a soft nudge). NOT a single slogan line. NO em dashes anywhere.
+
+Examples of the quality bar (match this energy and structure, do not copy them):
+${examples}
 
 Spread them across sources: mostly "app" (promote specific GotchiCloset features from the list), a couple "data", a couple "ecosystem" (hype Aavegotchi/GHST/Base generally), and "builds" only if community builds are provided.
 
@@ -156,10 +178,14 @@ async function main() {
   const builds = kbBuilds();
   console.log(`sources: ${recent.length} recent to avoid, data=${!!data}, builds=${builds.length}`);
   const tweets = await callLLM(buildPrompt({ recent, data, builds }));
+  const sentences = (s) => (s.match(/[.!?](\s|$)/g) || []).length;
   const clean = tweets
     .filter((t) => t && typeof t.text === "string" && t.text.trim())
-    .map((t) => ({ text: t.text.trim(), source: t.source || "app", link: t.link || null }));
-  console.log(`generated ${clean.length} tweets`);
+    // Belt-and-suspenders: strip any em/en dashes the model slips in.
+    .map((t) => ({ text: t.text.replace(/\s*[—–]\s*/g, ", ").trim(), source: t.source || "app", link: t.link || null }))
+    // Drop weak one-liners (too short or single-sentence).
+    .filter((t) => t.text.length >= 70 && sentences(t.text) >= 2);
+  console.log(`generated ${clean.length} tweets (after quality filter)`);
 
   const r = await fetch(`${API}/api/megaphone/tweets/ingest`, {
     method: "POST",

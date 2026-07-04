@@ -15,6 +15,7 @@ interface TweetRow {
   status: TweetStatus;
   external_url: string | null;
   postiz_post_id: string | null;
+  scheduled_for: number | null;
   created_at: number;
   posted_at: number | null;
 }
@@ -37,6 +38,7 @@ function toPublic(r: TweetRow): TweetPublic {
     link: r.link,
     status: r.status,
     externalUrl: r.external_url,
+    scheduledFor: r.scheduled_for,
     createdAt: r.created_at,
     postedAt: r.posted_at,
   };
@@ -115,4 +117,43 @@ export function pendingTweetPosts(): { id: number; postiz_post_id: string }[] {
 
 export function setTweetUrl(id: number, url: string): void {
   getDb().prepare(`UPDATE tweets SET external_url=? WHERE id=?`).run(url, id);
+}
+
+// --- Scheduling: at most 5 tweets a day, spread across fixed UTC slots ---
+const SLOTS_UTC = [14, 16, 18, 20, 22]; // 5 slots => hard cap of 5/day
+
+function takenSlotTimes(): Set<number> {
+  const rows = getDb()
+    .prepare(`SELECT scheduled_for FROM tweets WHERE scheduled_for IS NOT NULL AND status IN ('scheduled','posted')`)
+    .all() as { scheduled_for: number }[];
+  return new Set(rows.map((r) => r.scheduled_for));
+}
+
+/** Earliest free future slot. Because there are exactly 5 slots/day, this enforces <=5/day. */
+export function nextScheduleSlot(now = Date.now()): number {
+  const taken = takenSlotTimes();
+  for (let day = 0; day < 90; day++) {
+    const base = new Date(now);
+    base.setUTCHours(0, 0, 0, 0);
+    base.setUTCDate(base.getUTCDate() + day);
+    for (const h of SLOTS_UTC) {
+      const t = base.getTime() + h * 3_600_000;
+      if (t > now + 5 * 60_000 && !taken.has(t)) return t;
+    }
+  }
+  return now + 3_600_000;
+}
+
+export function scheduleTweetRow(id: number, when: number, postizId: string | null): void {
+  getDb()
+    .prepare(`UPDATE tweets SET status='scheduled', scheduled_for=?, postiz_post_id=? WHERE id=?`)
+    .run(when, postizId, id);
+}
+
+/** Public: what's live or on the way (posted + scheduled). No auth needed to view. */
+export function listPublicTweets(): TweetPublic[] {
+  const rows = getDb()
+    .prepare(`SELECT * FROM tweets WHERE status IN ('posted','scheduled') ORDER BY COALESCE(posted_at, scheduled_for) DESC`)
+    .all() as TweetRow[];
+  return rows.map(toPublic);
 }

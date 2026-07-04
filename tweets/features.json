@@ -40,10 +40,18 @@
     "SEO-grade reference library for every trait, wearable and set"
   ],
   "voiceRules": [
-    "casual, gotchi-native, a little playful. lowercase gm energy is fine.",
-    "no em dashes. no hashtag spam (0-2 max). 1 emoji max, often none.",
-    "under 260 chars so a link fits. never salesy or corporate.",
-    "each tweet must be different from every prior tweet. vary the angle, opener, and structure.",
-    "when tweeting about a community build, be supportive and never overclaim what it does."
+    "write 2-3 real sentences formatted like an actual tweet, NOT a one-line slogan. hook first, then the concrete value or detail, then a soft nudge to go try it.",
+    "ABSOLUTELY NO EM DASHES ( — ). none. use periods and commas only.",
+    "confident and gotchi-native, a little playful, never corporate or salesy. lowercase gm energy is welcome.",
+    "0 hashtags almost always (1 max). at most 1 emoji, usually none.",
+    "the whole tweet including the link stays under 280 chars.",
+    "make each tweet genuinely distinct from the others AND from the already-used list. vary the hook, the sentence structure, and the angle hard. no template feeling.",
+    "be specific and concrete about what the feature actually does, don't be vague or generic.",
+    "for a community build, state only what the message literally says, never invent numbers or features."
+  ],
+  "goodExamples": [
+    "your gotchis have been sitting naked long enough. GotchiCloset's dress room lets you drag on wearables and full sets across 3 wallets and see the look instantly. no connect needed to browse. gotchicloset.com/dress",
+    "most people guess at their gotchi's best loadout. the Wardrobe Lab actually solves it, suggesting wearable combos to max your traits and BRS. still an early preview but it already beats eyeballing it. gotchicloset.com/wardrobe-lab",
+    "is the Aavegotchiverse healthy right now? Pulse gives you the honest read, daily volume, buyers and GHST with plain health verdicts, not vibes. worth a daily glance. gotchicloset.com/pulse"
   ]
 }

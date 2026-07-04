@@ -78,10 +78,6 @@ export default function MegaphonePage() {
     if (await signAdmin()) setManage(true);
   }
 
-  async function openTweets() {
-    if (await signAdmin()) setContentMode("tweets");
-  }
-
   async function adminAction(fn: (sig: Sig) => Promise<void>, okMsg: string) {
     if (!adminSig) return;
     try {
@@ -134,27 +130,28 @@ export default function MegaphonePage() {
         </div>
       </div>
 
-      {/* Videos / Tweets toggle (admin only) */}
-      {admin && (
-        <div className="mt-6 flex gap-1.5">
-          {(["videos", "tweets"] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => (m === "tweets" ? openTweets() : setContentMode("videos"))}
-              className={`rounded-full border px-4 py-1.5 text-xs font-semibold capitalize transition-colors ${
-                contentMode === m
-                  ? "border-[hsl(var(--spectral))]/60 bg-[hsl(var(--spectral))]/15 text-foreground"
-                  : "border-white/10 bg-white/5 text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Videos / Tweets toggle (public) */}
+      <div className="mt-6 flex items-center gap-1.5">
+        {(["videos", "tweets"] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => setContentMode(m)}
+            className={`rounded-full border px-4 py-1.5 text-xs font-semibold capitalize transition-colors ${
+              contentMode === m
+                ? "border-[hsl(var(--spectral))]/60 bg-[hsl(var(--spectral))]/15 text-foreground"
+                : "border-white/10 bg-white/5 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {m}
+          </button>
+        ))}
+        {contentMode === "tweets" && admin && !adminSig && (
+          <Button size="sm" variant="secondary" className="ml-2" onClick={() => signAdmin()}>Review drafts</Button>
+        )}
+      </div>
 
-      {contentMode === "tweets" && adminSig ? (
-        <TweetsTab sig={adminSig} />
+      {contentMode === "tweets" ? (
+        <TweetsTab sig={adminSig ?? null} />
       ) : (
       <>
       {/* Controls */}

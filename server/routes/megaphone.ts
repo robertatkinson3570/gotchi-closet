@@ -20,9 +20,12 @@ import {
   editTweet,
   getTweet,
   ingestTweets,
+  listPublicTweets,
   listTweets,
   markTweetPosted,
+  nextScheduleSlot,
   recentTweetTexts,
+  scheduleTweetRow,
   setTweetPostId,
   setTweetStatus,
 } from "../megaphone/tweets";
@@ -234,7 +237,36 @@ router.get("/tweets/recent", (req, res) => {
   res.json({ texts: recentTweetTexts(300) });
 });
 
-// Admin: list tweets (optional ?status=draft|approved|posted|rejected).
+// Public: posted + scheduled tweets, no auth (anyone can see what's going out).
+router.get("/tweets/public", (_req, res) => {
+  res.setHeader("Cache-Control", "public, max-age=60");
+  res.json({ tweets: listPublicTweets() });
+});
+
+// Admin: schedule a tweet to X for the next open slot (max 5/day). Postiz publishes it then.
+router.post("/tweets/:id/schedule", async (req, res) => {
+  const id = Number(req.params.id);
+  const { wallet, signature, signedAt } = req.body ?? {};
+  if (!Number.isInteger(id)) return res.status(400).json({ error: "bad id" });
+  if (!(await verifyAdminSignature(String(wallet || ""), Number(signedAt), String(signature || "")))) {
+    return res.status(403).json({ error: "not authorized" });
+  }
+  if (!postizConfigured()) return res.status(400).json({ error: "Postiz not configured" });
+  const tweet = getTweet(id);
+  if (!tweet) return res.status(404).json({ error: "not found" });
+  if (tweet.status === "posted" || tweet.status === "scheduled") return res.status(409).json({ error: `already ${tweet.status}` });
+  const when = nextScheduleSlot();
+  try {
+    const full = tweet.link ? `${tweet.text}\n\n${tweet.link}` : tweet.text;
+    const { postId } = await postTweetToX(full, when);
+    scheduleTweetRow(id, when, postId);
+    res.json({ ok: true, scheduledFor: when });
+  } catch (e) {
+    res.status(502).json({ error: (e as Error).message });
+  }
+});
+
+// Admin: list tweets (optional ?status=draft|scheduled|posted|rejected).
 router.get("/tweets", async (req, res) => {
   const { wallet, signature, signedAt, status } = req.query;
   if (!(await verifyAdminSignature(String(wallet || ""), Number(signedAt), String(signature || "")))) {
@@ -249,7 +281,7 @@ router.post("/tweets/:id/status", async (req, res) => {
   const id = Number(req.params.id);
   const { status, wallet, signature, signedAt } = req.body ?? {};
   if (!Number.isInteger(id)) return res.status(400).json({ error: "bad id" });
-  if (!["draft", "approved", "rejected"].includes(status)) return res.status(400).json({ error: "bad status" });
+  if (!["draft", "rejected"].includes(status)) return res.status(400).json({ error: "bad status" });
   if (!(await verifyAdminSignature(String(wallet || ""), Number(signedAt), String(signature || "")))) {
     return res.status(403).json({ error: "not authorized" });
   }

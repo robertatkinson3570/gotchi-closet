@@ -118,17 +118,21 @@ export async function distributeVideoTo(videoId: number, integrationIds: string[
   return runDistribution(videoId, integrations);
 }
 
-/** Post a text-only promo tweet to the connected X channel. Returns the Postiz post id. */
-export async function postTweetToX(text: string): Promise<{ postId: string | null }> {
+/**
+ * Post a text-only promo tweet to the connected X channel. Pass whenMs to schedule it for a
+ * future time (Postiz publishes it then); omit for "now". Returns the Postiz post id.
+ */
+export async function postTweetToX(text: string, whenMs?: number): Promise<{ postId: string | null }> {
   if (!postizConfigured()) throw new Error("Postiz not configured");
   const x = (await listIntegrations()).find((i) => {
     const p = i.provider.toLowerCase();
     return p === "x" || p === "twitter";
   });
   if (!x) throw new Error("no X channel connected in Postiz");
+  const scheduled = typeof whenMs === "number" && whenMs > Date.now();
   const result = await createPost({
-    type: "now",
-    date: new Date(Date.now() + 60_000).toISOString(),
+    type: scheduled ? "schedule" : "now",
+    date: new Date(scheduled ? whenMs : Date.now() + 60_000).toISOString(),
     posts: [
       {
         integration: { id: x.id },
