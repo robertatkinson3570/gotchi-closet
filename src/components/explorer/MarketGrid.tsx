@@ -13,6 +13,7 @@ import { CORE_SUBGRAPH_URL } from "@/lib/lending/contracts";
 import { GOTCHIVERSE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "./AssetImage";
 import { PortalImage } from "./PortalImage";
+import { PortalOptionsGrid } from "./PortalOptionsGrid";
 import { FakeGotchiImage } from "./GotchiSvgById";
 import { Palette } from "lucide-react";
 import { itemMetaSync, GUARDIAN_SKIN_NAMES } from "@/lib/explorer/itemMeta";
@@ -611,6 +612,7 @@ export function MarketGrid({
               <MakeOfferButton kind={kind} category={(itemKind === "forge" || itemKind === "portal") && detail.category != null ? Number(detail.category) : category} tokenId={detail.tokenId} contractAddress={contract} label={`#${detail.tokenId}`} />
               {itemKind === "portal" && detail.category !== 2 && <p className="text-[11px] text-muted-foreground text-center">A closed portal contains 10 random Aavegotchis. Buy it, then open it to summon and claim one.</p>}
               {itemKind === "portal" && detail.category === 2 && <p className="text-[11px] text-muted-foreground text-center">An open portal shows its 10 summonable Aavegotchis — buy it, then pick and claim one.</p>}
+              {itemKind === "portal" && detail.category === 2 && <PortalOptionsGrid tokenId={detail.tokenId} />}
 
               <RecentSales kind={kind} tokenId={detail.tokenId} />
             </div>
