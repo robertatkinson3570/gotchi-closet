@@ -9,6 +9,8 @@ import { fetchHoldingsSummary } from "../companion/holdings";
 import { fetchBaazaarDeals } from "../companion/baazaar";
 import { fetchDaoSummary } from "../companion/dao";
 import { fetchEstateStatus } from "../companion/estate";
+import { fetchLendingSummary } from "../companion/lending";
+import { detectNav, isHelpIntent, CAPABILITIES_REPLY } from "../companion/intent";
 import { complete, completeWithTools } from "../companion/llmProvider";
 import { runAgentLoop } from "../companion/agentLoop";
 import { HERMES_TOOLS, HERMES_READ_TOOLS, HERMES_NAV_ROUTES, HERMES_ACTION_DIRECTIVE } from "../companion/tools";
@@ -76,13 +78,41 @@ router.post("/chat", async (req, res) => {
       "\n\nYou CAN act for your owner right here in this chat — channel gotchis, empty parcel reservoirs, " +
       "and claim land alchemica all happen when they ask. NEVER say you can't invoke actions, and NEVER " +
       "tell them to set up 'Steward' or do it manually — you handle it.";
-    const systemPrompt = (soul ? `${profile.systemPrompt}\n\n${soul}` : profile.systemPrompt) + canAct;
+    // Present live reads confidently and never fabricate what we didn't fetch (news, etc.).
+    const honesty =
+      "\n\nWhen the context includes live on-chain data (holdings, lendings, deals, proposals, due " +
+      "upkeep), state it directly as the current truth — never say 'I recall' or 'earlier', and never " +
+      "ask permission to look; you already have it. If the owner asks about something you have no live " +
+      "data for (news, announcements, anything not in your context), say plainly you can't pull that " +
+      "live and point them to the official Aavegotchi channels — NEVER invent it.";
+    const systemPrompt = (soul ? `${profile.systemPrompt}\n\n${soul}` : profile.systemPrompt) + canAct + honesty;
+
+    const persist = (r: string) => {
+      appendMessage(wallet, tokenId, "user", masked);
+      appendMessage(wallet, tokenId, "assistant", r);
+    };
 
     if (deflected) {
       const reply = templateReply({ profile, message: masked, deflected: true });
-      appendMessage(wallet, tokenId, "user", masked);
-      appendMessage(wallet, tokenId, "assistant", reply);
+      persist(reply);
       return res.json({ reply, deflected: true });
+    }
+
+    // "what can you do / commands" → a fixed capabilities list. Deterministic so it never
+    // hallucinates or under-sells its own feature set.
+    if (isHelpIntent(masked)) {
+      const r = screenOutbound(CAPABILITIES_REPLY);
+      persist(r);
+      return res.json({ reply: r });
+    }
+
+    // Deterministic navigation: the site is small with a fixed route set, so "take me to X" maps
+    // straight to a route here instead of gambling on the model picking the navigate tool.
+    const navTo = detectNav(masked);
+    if (navTo) {
+      const r = screenOutbound("taking you there 👻");
+      persist(r);
+      return res.json({ reply: r, navigate: navTo });
     }
 
     // Recent actions Hermes took go into context so it remembers what it did for the owner.
@@ -93,6 +123,10 @@ router.post("/chat", async (req, res) => {
     // Hermes answers from real data instead of guessing.
     const asksHoldings = /\b(wallet|holdings?|portfolio|own|owned|how many|my gotchis)\b/i.test(masked);
     const holdings = asksHoldings ? await fetchHoldingsSummary(wallet) : null;
+    // "what am I renting / lending / rented out" → real lending position (own vs rent). Also fetched
+    // for ownership questions so "what do I own" correctly separates owned from rented-out gotchis.
+    const asksLending = /\b(lend\w*|lent|rent\w*|borrow\w*)\b/i.test(masked);
+    const lending = (asksLending || asksHoldings) ? await fetchLendingSummary(wallet) : null;
     // "what deals / cheapest / floor" → answer from real Baazaar listings, not just navigate.
     const asksDeals = /\b(deals?|cheapest|floor|for sale|listings?|good buy|price)\b/i.test(masked);
     const deals = asksDeals ? await fetchBaazaarDeals() : null;
@@ -103,7 +137,7 @@ router.post("/chat", async (req, res) => {
     const asksEstate = /\b(needs doing|anything (ready|due|to collect)|what.?s (due|ready)|estate status|due yet)\b/i.test(masked);
     const estate = asksEstate ? await fetchEstateStatus(wallet) : null;
     const messages = assembleMessages({
-      facts: [...getFacts(wallet, tokenId), ...actionLines, ...(holdings ? [holdings] : []), ...(deals ? [deals] : []), ...(daoInfo ? [daoInfo] : []), ...(estate ? [estate] : [])],
+      facts: [...getFacts(wallet, tokenId), ...actionLines, ...(holdings ? [holdings] : []), ...(lending ? [lending] : []), ...(deals ? [deals] : []), ...(daoInfo ? [daoInfo] : []), ...(estate ? [estate] : [])],
       lore: retrieveLore(masked),
       history: getRecentMessages(wallet, tokenId, 20).map((m) => ({ role: m.role, content: m.content })),
       userMessage: masked,
@@ -115,10 +149,6 @@ router.post("/chat", async (req, res) => {
       (await premiumSignatureValid(wallet, Number(body.signedAt), String(body.signature ?? "")));
     const tier: "free" | "premium" = eligiblePremium ? "premium" : "free";
 
-    const persist = (r: string) => {
-      appendMessage(wallet, tokenId, "user", masked);
-      appendMessage(wallet, tokenId, "assistant", r);
-    };
     const remember = () => {
       const factMatch = masked.match(/\b(i am|i'm|my)\b.{3,80}/i);
       if (factMatch) {
@@ -129,7 +159,7 @@ router.post("/chat", async (req, res) => {
 
     // Only offer tools when the message reads like an action/navigation intent — llama over-calls
     // tools on ordinary questions, which would break normal conversation. Plain chat skips tools.
-    const wantsTool = !asksDeals && !asksDao && !asksEstate &&
+    const wantsTool = !asksDeals && !asksDao && !asksEstate && !asksLending && !asksHoldings &&
       /\b(channel|pet|petting|claim|collect|harvest|empty|drain|parcel|parcels|upkeep|farm|swap|go to|goto|open|navigate|take me|bring me|show me|baazaar|bazaar|marketplace|lending|rent|forge|staking|dao|leaderboard|pulse|activity|get.?tokens|alchemica)\b/i.test(
         masked
       );
