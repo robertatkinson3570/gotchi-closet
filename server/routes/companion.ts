@@ -129,9 +129,10 @@ router.post("/chat", async (req, res) => {
         persist(r);
         return res.json({ reply: r, deflected: false, tier });
       }
-      const r = screenOutbound("on it — checking your parcels & gotchis… if there's alchemica to collect, approve the transaction in your wallet 👻");
+      const r = screenOutbound("on it — checking your parcels & gotchis… if there's alchemica ready, approve the transaction in your wallet 👻");
       persist(r);
-      return res.json({ reply: r, prepareUpkeep: true, tier });
+      // Show them the land page while we collect (prepare+sign keeps the chat open).
+      return res.json({ reply: r, prepareUpkeep: true, navigate: "/lending/lands", tier });
     }
 
     // Hermes wants to NAVIGATE the owner to a page (client performs the route change).

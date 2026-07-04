@@ -275,9 +275,15 @@ export default function ExplorerPage() {
   const appliedScopeRef = useRef(false);
   useEffect(() => {
     if (appliedScopeRef.current) return;
-    if (new URLSearchParams(window.location.search).get("scope") === "owned") {
+    const scope = new URLSearchParams(window.location.search).get("scope");
+    if (scope === "owned") {
       appliedScopeRef.current = true;
       setMode("mine");
+    } else if (scope === "baazaar" || window.location.pathname === "/baazaar") {
+      // The /baazaar route (and Hermes "take me to the baazaar") lands on the marketplace,
+      // not the Owned tab.
+      appliedScopeRef.current = true;
+      setMode("baazaar");
     }
   }, []);
 

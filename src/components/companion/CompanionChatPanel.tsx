@@ -139,10 +139,15 @@ export function CompanionChatPanel() {
         if (actionAuth) res = await postChat(selectedTokenId, address, text, auth, actionAuth);
       }
       setMessages((m) => [...m, { role: "assistant", content: res.reply }]);
-      // Hermes can take the owner to where a thing happens.
-      if (res.navigate) { setOpen(false); navigate(res.navigate); }
-      // …or channel/claim right here from the owner's own wallet.
-      if (res.prepareUpkeep) await runPrepareUpkeep();
+      if (res.prepareUpkeep) {
+        // Show the land page underneath but keep the chat open so they see the collect result.
+        if (res.navigate) navigate(res.navigate);
+        await runPrepareUpkeep();
+      } else if (res.navigate) {
+        // Pure navigation — close the panel and go.
+        setOpen(false);
+        navigate(res.navigate);
+      }
     } catch {
       setMessages((m) => [...m, { role: "assistant", content: "the ether glitched 👻 try again in a sec" }]);
     } finally {
