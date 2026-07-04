@@ -1,16 +1,33 @@
 // server/steward/chain.ts
 // Reads the owner's gotchi + parcel state into a ChainSnapshot for dueWork. Enumeration via
 // the Goldsky subgraphs (same endpoints as src/lib/subgraph.ts); per-id reads via viem.
-import { createPublicClient, http, BaseError, ExecutionRevertedError } from "viem";
+import { createPublicClient, http, fallback, BaseError, ExecutionRevertedError } from "viem";
 import { base } from "viem/chains";
 import { AAVEGOTCHI_DIAMOND, REALM_DIAMOND } from "./abi";
 import type { ChainSnapshot } from "./dueWork";
 import type { Call } from "./encode";
 
-const RPC = process.env.STEWARD_RPC_URL || "https://mainnet.base.org";
+// A wallet with several parcels fires dozens of reservoir/channel eth_calls per snapshot. A single
+// public RPC (mainnet.base.org) 429-rate-limits that burst and the whole upkeep read fails, so the
+// "empty reservoirs" prepare+sign flow dies with "couldn't send". Fix: rotate across a pool of
+// public Base RPCs (viem fallback advances on error) AND batch concurrent reads via multicall so
+// the request count collapses. A keyed STEWARD_RPC_URL, when set, is preferred first.
+const RPC_URLS = [
+  process.env.STEWARD_RPC_URL,
+  "https://mainnet.base.org",
+  "https://base.llamarpc.com",
+  "https://base.drpc.org",
+  "https://base-mainnet.public.blastapi.io",
+  "https://1rpc.io/base",
+  "https://base.meowrpc.com",
+].filter(Boolean) as string[];
 const CORE_SG = "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/aavegotchi-core-base/prod/gn";
 const VERSE_SG = "https://api.goldsky.com/api/public/project_cmh3flagm0001r4p25foufjtt/subgraphs/gotchiverse-base/prod/gn";
-const client = createPublicClient({ chain: base, transport: http(RPC) });
+const client = createPublicClient({
+  chain: base,
+  transport: fallback(RPC_URLS.map((url) => http(url, { retryCount: 2, retryDelay: 300 })), { retryCount: 1 }),
+  batch: { multicall: { wait: 16 } },
+});
 
 const realmAbi = [
   { name: "getAltarId", type: "function", stateMutability: "view", inputs: [{ type: "uint256" }], outputs: [{ type: "uint256" }] },
