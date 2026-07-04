@@ -51,6 +51,12 @@ export function getDb(): Database.Database {
       tx_hash TEXT, ts INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_action_key ON companion_actions(wallet, token_id, id);
+
+    CREATE TABLE IF NOT EXISTS companion_goals (
+      wallet TEXT NOT NULL, token_id TEXT NOT NULL, goal TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 1, updated_at INTEGER NOT NULL,
+      PRIMARY KEY (wallet, token_id, goal)
+    );
   `);
 
   // Idempotent migration: add credits column if it doesn't exist yet.
@@ -213,4 +219,23 @@ export function getActions(wallet: string, tokenId: string, limit = 10): StoredA
      WHERE wallet = ? AND token_id = ? ORDER BY id DESC LIMIT ?`
   ).all(wallet.toLowerCase(), String(tokenId), limit) as StoredAction[];
   return rows.reverse();
+}
+
+// A standing autonomous objective the owner set for a gotchi (e.g. "keep_emptied").
+// Owner-signed (see the goals API) — an enabled goal authorizes the autonomous cron to
+// spend gas on that gotchi's capped pet/channel/claim upkeep.
+export interface Goal { wallet: string; tokenId: string; goal: string; enabled: boolean; }
+export function setGoal(wallet: string, tokenId: string, goal: string, enabled: boolean) {
+  getDb().prepare(
+    `INSERT INTO companion_goals (wallet, token_id, goal, enabled, updated_at) VALUES (?,?,?,?,?)
+     ON CONFLICT(wallet, token_id, goal) DO UPDATE SET enabled = excluded.enabled, updated_at = excluded.updated_at`
+  ).run(wallet.toLowerCase(), String(tokenId), goal, enabled ? 1 : 0, Date.now());
+}
+export function getGoals(wallet: string): Goal[] {
+  return (getDb().prepare(`SELECT wallet, token_id as tokenId, goal, enabled FROM companion_goals WHERE wallet = ?`)
+    .all(wallet.toLowerCase()) as any[]).map((r) => ({ ...r, enabled: !!r.enabled }));
+}
+export function getActiveGoals(): Goal[] {
+  return (getDb().prepare(`SELECT wallet, token_id as tokenId, goal, enabled FROM companion_goals WHERE enabled = 1`)
+    .all() as any[]).map((r) => ({ ...r, enabled: true }));
 }
