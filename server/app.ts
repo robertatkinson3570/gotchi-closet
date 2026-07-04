@@ -22,6 +22,7 @@ import { wispMcpHttpHandler } from "./mcp/http";
 import { getDebugStats } from "./aavegotchi/serverSvgService";
 import { startAutoRenewCron } from "./lending/cron";
 import { startStewardCron } from "./steward/cron";
+import { startHermesAutonomousCron } from "./companion/autonomousCron";
 import { startPulseCron } from "./pulse/cron";
 
 export function createApp() {
@@ -115,6 +116,9 @@ export function createApp() {
   startAutoRenewCron();
   // Boot steward cron (no-op if STEWARD_BUNDLER_URL not set)
   startStewardCron();
+  // Boot Hermes autonomous cron (no-op unless HERMES_AUTONOMOUS=1 AND a wallet enrolled a
+  // Steward session key — dormant until delegated signing is live). SAFETY: pet/channel/claim only.
+  startHermesAutonomousCron();
   // Boot pulse backfill/refresh (backfills data/pulse.db on first run)
   startPulseCron();
   // One-time: publish the committed sample videos so /megaphone + /pulse ship with content.

@@ -19,6 +19,43 @@ export const HERMES_ACTION_DIRECTIVE =
   "(/lending/lands parcels & reservoirs, /get-tokens swap, /baazaar market, /lending rent, /explorer browse, /pulse stats). " +
   "Be intuitive: do it for them, or take them straight there — never just describe the steps.";
 
+// Read tools — answer from live data. Unlike run_upkeep/navigate (terminal, client-executed),
+// these feed a string back into the loop so Hermes can check state before acting or replying.
+export const HERMES_READ_TOOLS = [
+  {
+    type: "function",
+    function: {
+      name: "get_estate",
+      description: "Check what on-chain upkeep is DUE for the owner right now — how many gotchis to pet/channel and how many parcel reservoirs are ready to empty. Read-only; use before deciding whether to act.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_holdings",
+      description: "Look up what the owner holds — their gotchis, wearables, and portfolio — from the subgraph. Read-only.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_deals",
+      description: "Fetch the cheapest current Baazaar listings and best BRS/GHST deals. Read-only.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_dao",
+      description: "Fetch the live Snapshot (aavegotchi.eth) governance proposals. Read-only.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+];
+
 export const HERMES_TOOLS = [
   {
     type: "function",

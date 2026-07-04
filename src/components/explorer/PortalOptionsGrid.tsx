@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Aperture, Loader2 } from "lucide-react";
 import { CORE_SUBGRAPH, PORTAL_SVGS_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
-import { InlineSvg } from "./InlineSvg";
 
 const TRAITS = ["NRG", "AGG", "SPK", "BRN", "EYS", "EYC"];
 
@@ -70,7 +69,22 @@ export function PortalOptionsGrid({ tokenId }: { tokenId: string }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {data.map((o) => (
           <div key={o.index} className="rounded-lg border border-border/40 bg-muted/20 p-2 text-center">
-            <InlineSvg svg={o.svg} className="block aspect-square rounded bg-muted/30 overflow-hidden [&>svg]:w-full [&>svg]:h-full" />
+            {/* Each gotchi SVG carries an inline <style> with SHARED class names
+                (.gotchi-primary, .gotchi-eyeColor, …) but per-gotchi colors.
+                Rendering them inline (innerHTML) makes those rules global and the
+                last one wins — every gotchi bleeds to one palette. An <img> renders
+                each SVG in its own context, so styles stay scoped (and can't run
+                scripts). Same reason ExplorerGrid renders gotchis via <img>. */}
+            {o.svg ? (
+              <img
+                src={`data:image/svg+xml;utf8,${encodeURIComponent(o.svg)}`}
+                alt={`Summon option ${o.index + 1}`}
+                loading="lazy"
+                className="block aspect-square w-full rounded bg-muted/30 object-contain"
+              />
+            ) : (
+              <div className="flex aspect-square w-full items-center justify-center rounded bg-muted/30"><Aperture className="w-6 h-6 text-fuchsia-400/60" /></div>
+            )}
             <div className="mt-1 flex items-center justify-center gap-1 text-[10px] font-semibold">
               <span>BRS {o.brs}</span>
               {COLLATERAL_SYMBOL[o.collateral] && <span className="px-1 rounded bg-muted/60 text-muted-foreground font-normal">{COLLATERAL_SYMBOL[o.collateral]}</span>}

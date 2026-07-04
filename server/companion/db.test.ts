@@ -10,6 +10,7 @@ import {
   grantPremium, getEntitlement, isPremiumActive, closeDb,
   addCredits, burnCredit, getCredits, hasCredits,
   logAction, getActions,
+  setGoal, getGoals, getActiveGoals,
 } from "./db";
 
 beforeEach(() => {
@@ -115,5 +116,22 @@ describe("action memory", () => {
     expect(acts).toHaveLength(2);
     expect(acts[1].detail).toContain("channel:2");
     expect(acts[1].txHash).toBe("0xtx2");
+  });
+});
+
+describe("goals", () => {
+  it("setGoal upserts; getGoals reflects enabled", () => {
+    setGoal("0xAbc", "7", "keep_emptied", true);
+    setGoal("0xAbc", "7", "keep_emptied", true);
+    const gs = getGoals("0xabc");
+    expect(gs).toHaveLength(1);
+    expect(gs[0]).toMatchObject({ tokenId: "7", goal: "keep_emptied", enabled: true });
+  });
+  it("getActiveGoals returns only enabled", () => {
+    setGoal("0xAAA", "1", "keep_emptied", true);
+    setGoal("0xBBB", "2", "keep_emptied", false);
+    const a = getActiveGoals();
+    expect(a.some((g) => g.wallet === "0xaaa")).toBe(true);
+    expect(a.some((g) => g.wallet === "0xbbb")).toBe(false);
   });
 });
