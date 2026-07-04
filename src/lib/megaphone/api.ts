@@ -32,11 +32,12 @@ export async function pulseHero(): Promise<VideoPublic | null> {
   return (await r.json()).video ?? null;
 }
 
-/** Whether social distribution is armed (Postiz env present on the server). */
-export async function getPostizStatus(): Promise<boolean> {
+/** Whether social distribution is armed (Postiz env present) and auto-on-publish is enabled. */
+export async function getPostizStatus(): Promise<{ configured: boolean; auto: boolean }> {
   const r = await fetch(`${base()}/api/megaphone/postiz/status`);
-  if (!r.ok) return false;
-  return (await r.json()).configured === true;
+  if (!r.ok) return { configured: false, auto: false };
+  const j = await r.json();
+  return { configured: j.configured === true, auto: j.auto === true };
 }
 
 export async function checkAdmin(wallet: string): Promise<boolean> {

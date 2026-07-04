@@ -143,14 +143,29 @@ export default function MegaphonePage() {
           {admin && (
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
-                postizQ.data
+                postizQ.data?.configured
                   ? "border-[hsl(var(--ecto))]/40 bg-[hsl(var(--ecto))]/10 text-[hsl(var(--ecto))]"
                   : "border-amber-500/40 bg-amber-500/10 text-amber-400"
               }`}
-              title={postizQ.data ? "Social distribution is armed" : "Set POSTIZ_URL + POSTIZ_API_KEY to enable"}
+              title={
+                postizQ.data?.configured
+                  ? postizQ.data.auto
+                    ? "Connected. New videos auto-post to the allowlisted channels."
+                    : "Connected. Use Distribute to post manually (auto-on-publish is off)."
+                  : "Set POSTIZ_URL + POSTIZ_API_KEY to enable"
+              }
             >
-              <span className={`h-1.5 w-1.5 rounded-full ${postizQ.data ? "bg-[hsl(var(--ecto))]" : "bg-amber-400"}`} />
-              Postiz {postizQ.data ? "connected" : "not configured"}
+              <span className={`h-1.5 w-1.5 rounded-full ${postizQ.data?.configured ? "bg-[hsl(var(--ecto))]" : "bg-amber-400"}`} />
+              Postiz {postizQ.data?.configured ? "connected" : "not configured"}
+              {postizQ.data?.configured && (
+                <span
+                  className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide ${
+                    postizQ.data.auto ? "bg-[hsl(var(--ecto))]/20 text-[hsl(var(--ecto))]" : "bg-white/10 text-muted-foreground"
+                  }`}
+                >
+                  auto {postizQ.data.auto ? "on" : "off"}
+                </span>
+              )}
             </span>
           )}
           {admin && !manage && (

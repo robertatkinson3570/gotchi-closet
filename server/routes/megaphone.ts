@@ -14,7 +14,7 @@ import {
   setStatus,
 } from "../megaphone/store";
 import { isAdmin, verifyAdminSignature } from "../megaphone/auth";
-import { distributeVideo, distributeVideoTo } from "../megaphone/distribute";
+import { autoDistributeEnabled, distributeVideo, distributeVideoTo } from "../megaphone/distribute";
 import { listIntegrations, postizConfigured } from "../megaphone/postiz";
 import { isTemplate } from "../../src/lib/megaphone/types";
 
@@ -43,7 +43,7 @@ router.get("/pulse-hero", (_req, res) => {
 // Whether social distribution is armed (Postiz env present). Just a boolean — safe to expose;
 // the client only renders the resulting chip for admins.
 router.get("/postiz/status", (_req, res) => {
-  res.json({ configured: postizConfigured() });
+  res.json({ configured: postizConfigured(), auto: autoDistributeEnabled() });
 });
 
 // Cosmetic helper — the client uses it to decide whether to render the admin controls.
