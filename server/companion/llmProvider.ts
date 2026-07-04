@@ -1,16 +1,21 @@
 import type { ChatMessage, Tier } from "../../src/lib/companion/types";
 
-interface ProviderCfg { url: string; key: string; model: string; }
+interface ProviderCfg { url: string; key: string; models: string[] }
 
 function cfgFor(tier: Tier): ProviderCfg | null {
   if (tier === "premium") {
     const key = process.env.OPENAI_API_KEY || "";
     if (!key) return null;
-    return { url: "https://api.openai.com/v1/chat/completions", key, model: process.env.OPENAI_MODEL || "gpt-4o-mini" };
+    return { url: "https://api.openai.com/v1/chat/completions", key, models: [process.env.OPENAI_MODEL || "gpt-4o-mini"] };
   }
   const key = process.env.GROQ_API_KEY || "";
   if (!key) return null;
-  return { url: "https://api.groq.com/openai/v1/chat/completions", key, model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile" };
+  // The 70B model has a small 100k tokens/DAY free-tier cap; when it's exhausted every chat 429s
+  // and collapses to the "spirits are quiet" template. Fall back to 8b-instant (a SEPARATE daily
+  // bucket) so chat stays alive — lower quality beats dead. Both share the one Groq key.
+  const primary = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+  const fallback = process.env.GROQ_FALLBACK_MODEL || "llama-3.1-8b-instant";
+  return { url: "https://api.groq.com/openai/v1/chat/completions", key, models: primary === fallback ? [primary] : [primary, fallback] };
 }
 
 export async function complete(
@@ -20,24 +25,27 @@ export async function complete(
 ): Promise<string | null> {
   const cfg = cfgFor(tier);
   if (!cfg) return null;
-  try {
-    const res = await fetch(cfg.url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.key}` },
-      body: JSON.stringify({
-        model: cfg.model,
-        max_tokens: 450,
-        temperature: 0.8,
-        messages: [{ role: "system", content: systemPrompt }, ...messages],
-      }),
-    });
-    if (!res.ok) return null;
-    const json: any = await res.json();
-    const text = json?.choices?.[0]?.message?.content;
-    return typeof text === "string" && text.trim() ? text.trim() : null;
-  } catch {
-    return null;
+  for (const model of cfg.models) {
+    try {
+      const res = await fetch(cfg.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.key}` },
+        body: JSON.stringify({
+          model,
+          max_tokens: 450,
+          temperature: 0.8,
+          messages: [{ role: "system", content: systemPrompt }, ...messages],
+        }),
+      });
+      if (!res.ok) { console.warn(`[llm] complete ${model} !ok ${res.status}`); continue; } // try next model
+      const json: any = await res.json();
+      const text = json?.choices?.[0]?.message?.content;
+      if (typeof text === "string" && text.trim()) return text.trim();
+    } catch (e: any) {
+      console.warn(`[llm] complete ${model} threw: ${e?.message ?? e}`);
+    }
   }
+  return null;
 }
 
 export interface ToolCall { id: string; name: string; args: Record<string, any>; }
@@ -53,12 +61,13 @@ export async function completeWithTools(
 ): Promise<ToolTurn | null> {
   const cfg = cfgFor(tier);
   if (!cfg) return null;
-  try {
+  for (const model of cfg.models) {
+   try {
     const res = await fetch(cfg.url, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.key}` },
       body: JSON.stringify({
-        model: cfg.model,
+        model,
         max_tokens: 450,
         temperature: 0.7,
         tools,
@@ -66,7 +75,7 @@ export async function completeWithTools(
         messages: [{ role: "system", content: systemPrompt }, ...messages],
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) { console.warn(`[llm] tools ${model} !ok ${res.status}`); continue; } // try next model
     const msg: any = (await res.json())?.choices?.[0]?.message;
     let tc = msg?.tool_calls?.[0];
     // Some models (llama on Groq) emit the call as TEXT — <function=name>{json}</function> —
@@ -84,7 +93,9 @@ export async function completeWithTools(
     const raw = typeof msg?.content === "string" ? msg.content.replace(/<function=[\s\S]*?<\/function>/g, "").trim() : "";
     const text = raw.length ? raw : null;
     return { text, toolCall: null };
-  } catch {
-    return null;
+   } catch (e: any) {
+    console.warn(`[llm] tools ${model} threw: ${e?.message ?? e}`);
+   }
   }
+  return null;
 }
