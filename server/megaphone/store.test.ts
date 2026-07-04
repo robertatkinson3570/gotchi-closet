@@ -58,6 +58,28 @@ describe("megaphone store", () => {
     expect(store.listAll().some((x) => x.id === v.id)).toBe(true);
   });
 
+  it("never records the same video+channel twice (no-repeat guard)", () => {
+    const v = store.insertVideo({ title: "Dist", caption: "", template: "PulseRecap", mp4, poster: null, durationS: null, gotchiId: null, publishedBy: "0x1" });
+    expect(store.hasDistribution(v.id, "x-chan")).toBe(false);
+    const first = store.reserveDistribution({ videoId: v.id, integrationId: "x-chan", provider: "x", scheduledFor: null });
+    expect(first).not.toBeNull();
+    expect(store.hasDistribution(v.id, "x-chan")).toBe(true);
+    // second reserve for the same video+channel returns null (already claimed)
+    const second = store.reserveDistribution({ videoId: v.id, integrationId: "x-chan", provider: "x", scheduledFor: null });
+    expect(second).toBeNull();
+    // a different channel is allowed
+    expect(store.reserveDistribution({ videoId: v.id, integrationId: "tg-chan", provider: "telegram", scheduledFor: null })).not.toBeNull();
+
+    store.markDistributionPosted(first!, "https://x.com/user/status/1");
+    const dists = store.distributionsForVideo(v.id);
+    expect(dists).toHaveLength(2);
+    const x = dists.find((d) => d.integrationId === "x-chan")!;
+    expect(x.status).toBe("posted");
+    expect(x.externalUrl).toBe("https://x.com/user/status/1");
+    // the posted video's public projection carries its distributions
+    expect(store.getRow(v.id)).not.toBeNull();
+  });
+
   it("deletes a video and removes its files", () => {
     const v = store.insertVideo({ title: "Delete me", caption: "", template: "Other", mp4, poster, durationS: null, gotchiId: null, publishedBy: "0x1" });
     const file = path.join(store.mediaDir(), `${v.id}.mp4`);

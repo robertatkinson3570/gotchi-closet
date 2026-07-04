@@ -3,10 +3,57 @@
 // (phantom-void gradient + color-matched blur orb), a native player, the caption, and the
 // "grab and amplify" actions — download the MP4 and copy the caption for posting anywhere.
 import { useRef, useState } from "react";
-import { Download, Copy, Check, Pin, EyeOff, Eye, Trash2 } from "lucide-react";
-import type { VideoPublic } from "@/lib/megaphone/types";
+import { Download, Copy, Check, Pin, EyeOff, Eye, Trash2, ExternalLink } from "lucide-react";
+import type { DistributionPublic, VideoPublic } from "@/lib/megaphone/types";
 import { mediaUrl } from "@/lib/megaphone/api";
 import { Button } from "@/ui/button";
+
+const PROVIDER_LABEL: Record<string, string> = {
+  x: "𝕏", twitter: "𝕏", telegram: "Telegram", youtube: "YouTube", discord: "Discord",
+};
+
+function ago(ts: number | null): string {
+  if (!ts) return "";
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+/** "Distributed" strip: where the video was posted, when, with live links. */
+function DistributionStrip({ items }: { items: DistributionPublic[] }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/10 pt-3 text-[11px]">
+      <span className="uppercase tracking-wide text-muted-foreground">Distributed</span>
+      {items.map((d) => {
+        const label = PROVIDER_LABEL[d.provider.toLowerCase()] ?? d.provider;
+        if (d.status === "posted" && d.externalUrl) {
+          return (
+            <a
+              key={d.integrationId}
+              href={d.externalUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-[hsl(var(--cyan))] hover:underline"
+            >
+              {label} <ExternalLink className="h-3 w-3" /> <span className="text-muted-foreground">{ago(d.postedAt)}</span>
+            </a>
+          );
+        }
+        const tone =
+          d.status === "failed" ? "text-[hsl(var(--red))]" : "text-muted-foreground";
+        const word = d.status === "failed" ? "failed" : d.status === "posted" ? ago(d.postedAt) || "posted" : "posting…";
+        return (
+          <span key={d.integrationId} className={`inline-flex items-center gap-1 ${tone}`}>
+            {label} <span className="opacity-70">{word}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 export interface AdminActions {
   onPin: (v: VideoPublic) => void;
@@ -71,6 +118,8 @@ export function MegaphoneVideoCard({ v, admin }: { v: VideoPublic; admin?: Admin
               {copied ? "Copied" : "Caption"}
             </Button>
           </div>
+
+          <DistributionStrip items={v.distributions} />
 
           {admin && (
             <div className="mt-3 flex flex-wrap gap-2 border-t border-white/10 pt-3">

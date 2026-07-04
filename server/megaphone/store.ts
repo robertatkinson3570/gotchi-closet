@@ -6,7 +6,14 @@
 import Database from "better-sqlite3";
 import path from "node:path";
 import fs from "node:fs";
-import type { Template, VideoPublic, VideoRow, VideoStatus } from "../../src/lib/megaphone/types";
+import type {
+  DistributionPublic,
+  DistributionStatus,
+  Template,
+  VideoPublic,
+  VideoRow,
+  VideoStatus,
+} from "../../src/lib/megaphone/types";
 
 let db: Database.Database | null = null;
 
@@ -56,8 +63,103 @@ export function getDb(): Database.Database {
     );
     CREATE INDEX IF NOT EXISTS idx_videos_status ON videos(status, created_at);
     CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS distributions (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      video_id       INTEGER NOT NULL,
+      integration_id TEXT NOT NULL,
+      provider       TEXT NOT NULL,
+      postiz_post_id TEXT,
+      external_url   TEXT,
+      status         TEXT NOT NULL DEFAULT 'scheduled',
+      scheduled_for  INTEGER,
+      posted_at      INTEGER,
+      created_at     INTEGER NOT NULL,
+      UNIQUE(video_id, integration_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_dist_video ON distributions(video_id);
+    CREATE INDEX IF NOT EXISTS idx_dist_status ON distributions(status);
   `);
   return db;
+}
+
+interface DistributionRow {
+  id: number;
+  video_id: number;
+  integration_id: string;
+  provider: string;
+  postiz_post_id: string | null;
+  external_url: string | null;
+  status: DistributionStatus;
+  scheduled_for: number | null;
+  posted_at: number | null;
+  created_at: number;
+}
+
+function distToPublic(r: DistributionRow): DistributionPublic {
+  return {
+    integrationId: r.integration_id,
+    provider: r.provider,
+    status: r.status,
+    externalUrl: r.external_url,
+    scheduledFor: r.scheduled_for,
+    postedAt: r.posted_at,
+  };
+}
+
+/** True once a video has ANY distribution row for a channel — the no-repeat guard. */
+export function hasDistribution(videoId: number, integrationId: string): boolean {
+  const row = getDb()
+    .prepare(`SELECT 1 FROM distributions WHERE video_id=? AND integration_id=? LIMIT 1`)
+    .get(videoId, integrationId);
+  return !!row;
+}
+
+/**
+ * Reserve a distribution slot. INSERT OR IGNORE against the UNIQUE(video_id, integration_id)
+ * constraint makes a repeat structurally impossible even under races. Returns the row id when
+ * this call created it, or null when one already existed (caller must then NOT post).
+ */
+export function reserveDistribution(input: {
+  videoId: number;
+  integrationId: string;
+  provider: string;
+  scheduledFor: number | null;
+}): number | null {
+  const info = getDb()
+    .prepare(
+      `INSERT OR IGNORE INTO distributions (video_id, integration_id, provider, status, scheduled_for, created_at)
+       VALUES (?, ?, ?, 'scheduled', ?, ?)`
+    )
+    .run(input.videoId, input.integrationId, input.provider, input.scheduledFor, Date.now());
+  return info.changes > 0 ? Number(info.lastInsertRowid) : null;
+}
+
+export function setDistributionPostId(id: number, postizPostId: string): void {
+  getDb().prepare(`UPDATE distributions SET postiz_post_id=? WHERE id=?`).run(postizPostId, id);
+}
+
+export function markDistributionPosted(id: number, externalUrl: string | null): void {
+  getDb()
+    .prepare(`UPDATE distributions SET status='posted', external_url=?, posted_at=? WHERE id=?`)
+    .run(externalUrl, Date.now(), id);
+}
+
+export function markDistributionFailed(id: number): void {
+  getDb().prepare(`UPDATE distributions SET status='failed' WHERE id=?`).run(id);
+}
+
+export function distributionsForVideo(videoId: number): DistributionPublic[] {
+  const rows = getDb()
+    .prepare(`SELECT * FROM distributions WHERE video_id=? ORDER BY created_at ASC`)
+    .all(videoId) as DistributionRow[];
+  return rows.map(distToPublic);
+}
+
+/** Scheduled rows that have a Postiz post id but no live URL yet — the cron polls these. */
+export function pendingDistributionRows(): DistributionRow[] {
+  return getDb()
+    .prepare(`SELECT * FROM distributions WHERE status='scheduled' AND postiz_post_id IS NOT NULL`)
+    .all() as DistributionRow[];
 }
 
 export function getMeta(key: string): string | null {
@@ -81,6 +183,7 @@ function toPublic(r: VideoRow): VideoPublic {
     gotchiId: r.gotchi_id,
     pinnedPulse: r.pinned_pulse === 1,
     createdAt: r.created_at,
+    distributions: distributionsForVideo(r.id),
   };
 }
 

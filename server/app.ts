@@ -16,6 +16,7 @@ import pulseRoutes from "./routes/pulse";
 import gamesRoutes from "./routes/games";
 import megaphoneRoutes from "./routes/megaphone";
 import { seedDemos as seedMegaphoneDemos } from "./megaphone/seed";
+import { startMegaphoneCron } from "./megaphone/cron";
 import { stewardRouter } from "./routes/steward";
 import { wispMcpHttpHandler } from "./mcp/http";
 import { getDebugStats } from "./aavegotchi/serverSvgService";
@@ -118,6 +119,8 @@ export function createApp() {
   startPulseCron();
   // One-time: publish the committed sample videos so /megaphone + /pulse ship with content.
   seedMegaphoneDemos();
+  // Megaphone: reconcile social-distribution URLs from Postiz (no-op unless configured).
+  startMegaphoneCron();
 
   return app;
 }

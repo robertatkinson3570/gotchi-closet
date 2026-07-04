@@ -14,6 +14,8 @@ import {
   setStatus,
 } from "../megaphone/store";
 import { isAdmin, verifyAdminSignature } from "../megaphone/auth";
+import { distributeVideo } from "../megaphone/distribute";
+import { listIntegrations, postizConfigured } from "../megaphone/postiz";
 import { isTemplate } from "../../src/lib/megaphone/types";
 
 const router = Router();
@@ -95,6 +97,9 @@ router.post("/publish", publishJson, async (req, res) => {
     gotchiId: typeof gotchiId === "string" && gotchiId ? gotchiId.slice(0, 20) : null,
     publishedBy: wallet,
   });
+  // Auto-distribute to social via Postiz (no-op unless enabled). Fire and forget so the
+  // publish response is instant; the ledger + cron own the result and the no-repeat guard.
+  void distributeVideo(video.id).catch(() => {});
   res.json({ ok: true, video });
 });
 
@@ -105,6 +110,21 @@ router.get("/all", async (req, res) => {
     return res.status(403).json({ error: "not authorized" });
   }
   res.json({ videos: listAll() });
+});
+
+// Admin: verify the Postiz connection + list connected channels (for setup / allowlist ids).
+router.get("/postiz/integrations", async (req, res) => {
+  const { wallet, signature, signedAt } = req.query;
+  if (!(await verifyAdminSignature(String(wallet || ""), Number(signedAt), String(signature || "")))) {
+    return res.status(403).json({ error: "not authorized" });
+  }
+  if (!postizConfigured()) return res.json({ configured: false, integrations: [] });
+  try {
+    const integrations = await listIntegrations();
+    res.json({ configured: true, integrations });
+  } catch (e) {
+    res.status(502).json({ configured: true, error: (e as Error).message, integrations: [] });
+  }
 });
 
 // Admin: pin a video as the /pulse hero (single slot).

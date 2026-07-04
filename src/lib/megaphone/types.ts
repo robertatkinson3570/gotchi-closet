@@ -12,6 +12,18 @@ export function isTemplate(v: unknown): v is Template {
 
 export type VideoStatus = "published" | "hidden";
 
+export type DistributionStatus = "scheduled" | "posted" | "failed";
+
+/** One channel a video was sent to, with its live link once published. */
+export interface DistributionPublic {
+  integrationId: string;
+  provider: string; // "x" | "youtube" | "telegram" | ...
+  status: DistributionStatus;
+  externalUrl: string | null;
+  scheduledFor: number | null;
+  postedAt: number | null;
+}
+
 /** Full DB row (server-internal). File bytes live on disk, not in the row. */
 export interface VideoRow {
   id: number;
@@ -40,4 +52,5 @@ export interface VideoPublic {
   gotchiId: string | null;
   pinnedPulse: boolean;
   createdAt: number;
+  distributions: DistributionPublic[];
 }

@@ -42,6 +42,10 @@ jobs:
           STEWARD_PET_RELAYER_KEY: ${{ secrets.STEWARD_PET_RELAYER_KEY }}
           STEWARD_BUNDLER_EXECUTOR_KEY: ${{ secrets.STEWARD_BUNDLER_EXECUTOR_KEY }}
           SUBGRAPH_URL_BACKUP: ${{ secrets.SUBGRAPH_URL_BACKUP }}
+          POSTIZ_URL: ${{ secrets.POSTIZ_URL }}
+          POSTIZ_API_KEY: ${{ secrets.POSTIZ_API_KEY }}
+          MEGAPHONE_AUTO_DISTRIBUTE: ${{ secrets.MEGAPHONE_AUTO_DISTRIBUTE }}
+          MEGAPHONE_DISTRIBUTE_INTEGRATIONS: ${{ secrets.MEGAPHONE_DISTRIBUTE_INTEGRATIONS }}
         run: |
           set -euo pipefail
           cd /root/gotchicloset
@@ -69,6 +73,13 @@ jobs:
           # handleOps and is reimbursed in-protocol, so it needs only a small Base ETH float. The
           # PLAYER pays the actual userOp gas. Without this the alto container restart-loops.
           if [ -n "${STEWARD_BUNDLER_EXECUTOR_KEY:-}" ]; then set_var STEWARD_BUNDLER_EXECUTOR_KEY "$STEWARD_BUNDLER_EXECUTOR_KEY"; echo "STEWARD_BUNDLER_EXECUTOR_KEY synced (len=${#STEWARD_BUNDLER_EXECUTOR_KEY})"; else echo "no STEWARD_BUNDLER_EXECUTOR_KEY secret"; fi
+          # Megaphone social distribution via self-hosted Postiz. POSTIZ_* activate the client;
+          # MEGAPHONE_AUTO_DISTRIBUTE=1 is the master switch (kept unset until content is polished
+          # and the operator is ready). Nothing posts until BOTH the key and the flag are set.
+          if [ -n "${POSTIZ_URL:-}" ]; then set_var POSTIZ_URL "$POSTIZ_URL"; echo "POSTIZ_URL synced ($POSTIZ_URL)"; else echo "no POSTIZ_URL secret"; fi
+          if [ -n "${POSTIZ_API_KEY:-}" ]; then set_var POSTIZ_API_KEY "$POSTIZ_API_KEY"; echo "POSTIZ_API_KEY synced (len=${#POSTIZ_API_KEY})"; else echo "no POSTIZ_API_KEY secret"; fi
+          if [ -n "${MEGAPHONE_AUTO_DISTRIBUTE:-}" ]; then set_var MEGAPHONE_AUTO_DISTRIBUTE "$MEGAPHONE_AUTO_DISTRIBUTE"; echo "MEGAPHONE_AUTO_DISTRIBUTE synced ($MEGAPHONE_AUTO_DISTRIBUTE)"; else echo "no MEGAPHONE_AUTO_DISTRIBUTE secret (auto-distribute stays OFF)"; fi
+          if [ -n "${MEGAPHONE_DISTRIBUTE_INTEGRATIONS:-}" ]; then set_var MEGAPHONE_DISTRIBUTE_INTEGRATIONS "$MEGAPHONE_DISTRIBUTE_INTEGRATIONS"; echo "MEGAPHONE_DISTRIBUTE_INTEGRATIONS synced"; else echo "no MEGAPHONE_DISTRIBUTE_INTEGRATIONS secret (all channels)"; fi
 
       - name: Build + start
         # Isolation guarantee: -p gotchicloset namespaces every container, volume,
