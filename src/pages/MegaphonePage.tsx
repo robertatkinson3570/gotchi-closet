@@ -23,6 +23,7 @@ import { MegaphoneMark } from "@/components/megaphone/MegaphoneMark";
 import { MegaphoneVideoCard } from "@/components/megaphone/MegaphoneVideoCard";
 import { PublishDialog } from "@/components/megaphone/PublishDialog";
 import { DistributeDialog } from "@/components/megaphone/DistributeDialog";
+import { TweetsTab } from "@/components/megaphone/TweetsTab";
 
 const FILTERS: (Template | "All")[] = ["All", ...TEMPLATES];
 
@@ -35,6 +36,7 @@ export default function MegaphonePage() {
   const [publishing, setPublishing] = useState(false);
   const [distributeTarget, setDistributeTarget] = useState<VideoPublic | null>(null);
   const [filter, setFilter] = useState<Template | "All">("All");
+  const [contentMode, setContentMode] = useState<"videos" | "tweets">("videos");
 
   useEffect(() => {
     if (address) checkAdmin(address).then(setAdmin);
@@ -58,16 +60,26 @@ export default function MegaphonePage() {
     staleTime: 30_000,
   });
 
-  async function enterManage() {
-    if (!address) return;
+  async function signAdmin(): Promise<Sig | null> {
+    if (adminSig) return adminSig;
+    if (!address) return null;
     try {
       const signedAt = Date.now();
       const signature = await signMessageAsync({ message: adminMessage(address, signedAt) });
-      setAdminSig({ wallet: address, signature, signedAt });
-      setManage(true);
+      const sig = { wallet: address, signature, signedAt };
+      setAdminSig(sig);
+      return sig;
     } catch {
-      /* user rejected */
+      return null;
     }
+  }
+
+  async function enterManage() {
+    if (await signAdmin()) setManage(true);
+  }
+
+  async function openTweets() {
+    if (await signAdmin()) setContentMode("tweets");
   }
 
   async function adminAction(fn: (sig: Sig) => Promise<void>, okMsg: string) {
@@ -122,6 +134,29 @@ export default function MegaphonePage() {
         </div>
       </div>
 
+      {/* Videos / Tweets toggle (admin only) */}
+      {admin && (
+        <div className="mt-6 flex gap-1.5">
+          {(["videos", "tweets"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => (m === "tweets" ? openTweets() : setContentMode("videos"))}
+              className={`rounded-full border px-4 py-1.5 text-xs font-semibold capitalize transition-colors ${
+                contentMode === m
+                  ? "border-[hsl(var(--spectral))]/60 bg-[hsl(var(--spectral))]/15 text-foreground"
+                  : "border-white/10 bg-white/5 text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {contentMode === "tweets" && adminSig ? (
+        <TweetsTab sig={adminSig} />
+      ) : (
+      <>
       {/* Controls */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap gap-1.5">
@@ -222,6 +257,8 @@ export default function MegaphonePage() {
             />
           ))}
         </div>
+      )}
+      </>
       )}
 
       {publishing && (

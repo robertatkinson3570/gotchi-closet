@@ -46,6 +46,7 @@ jobs:
           POSTIZ_API_KEY: ${{ secrets.POSTIZ_API_KEY }}
           MEGAPHONE_AUTO_DISTRIBUTE: ${{ secrets.MEGAPHONE_AUTO_DISTRIBUTE }}
           MEGAPHONE_DISTRIBUTE_INTEGRATIONS: ${{ secrets.MEGAPHONE_DISTRIBUTE_INTEGRATIONS }}
+          MEGAPHONE_INGEST_KEY: ${{ secrets.MEGAPHONE_INGEST_KEY }}
         run: |
           set -euo pipefail
           cd /root/gotchicloset
@@ -80,6 +81,8 @@ jobs:
           if [ -n "${POSTIZ_API_KEY:-}" ]; then set_var POSTIZ_API_KEY "$POSTIZ_API_KEY"; echo "POSTIZ_API_KEY synced (len=${#POSTIZ_API_KEY})"; else echo "no POSTIZ_API_KEY secret"; fi
           if [ -n "${MEGAPHONE_AUTO_DISTRIBUTE:-}" ]; then set_var MEGAPHONE_AUTO_DISTRIBUTE "$MEGAPHONE_AUTO_DISTRIBUTE"; echo "MEGAPHONE_AUTO_DISTRIBUTE synced ($MEGAPHONE_AUTO_DISTRIBUTE)"; else echo "no MEGAPHONE_AUTO_DISTRIBUTE secret (auto-distribute stays OFF)"; fi
           if [ -n "${MEGAPHONE_DISTRIBUTE_INTEGRATIONS:-}" ]; then set_var MEGAPHONE_DISTRIBUTE_INTEGRATIONS "$MEGAPHONE_DISTRIBUTE_INTEGRATIONS"; echo "MEGAPHONE_DISTRIBUTE_INTEGRATIONS synced"; else echo "no MEGAPHONE_DISTRIBUTE_INTEGRATIONS secret (all channels)"; fi
+          # Shared key the local tweet generator uses to push promo-tweet drafts into the review queue.
+          if [ -n "${MEGAPHONE_INGEST_KEY:-}" ]; then set_var MEGAPHONE_INGEST_KEY "$MEGAPHONE_INGEST_KEY"; echo "MEGAPHONE_INGEST_KEY synced (len=${#MEGAPHONE_INGEST_KEY})"; else echo "no MEGAPHONE_INGEST_KEY secret (tweet ingest disabled)"; fi
 
       - name: Build + start
         # Isolation guarantee: -p gotchicloset namespaces every container, volume,

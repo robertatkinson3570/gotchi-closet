@@ -1,0 +1,49 @@
+{
+  "site": "https://www.gotchicloset.com",
+  "handle": "GotchiCloset",
+  "note": "Promo angles for the tweet generator. Each feature has a url + hook the LLM turns into varied tweets. Never repeat wording; the generator rotates and dedupes.",
+  "features": [
+    { "name": "Dress / fitting room", "url": "/dress", "hook": "drag-and-drop dressing room, equip wearables and full sets on your gotchis in real time across up to 3 wallets, with a Catwalk mode to show off looks" },
+    { "name": "Wardrobe Lab auto-dress", "url": "/wardrobe-lab", "hook": "an auto-dress optimizer that suggests wearable loadouts to max your traits and BRS. the official dapp has nothing like it. (early preview)" },
+    { "name": "Explorer / Baazaar", "url": "/explorer", "hook": "one explorer for every Aavegotchi asset on Base, gotchis, wearables, parcels, installations, tiles, portals, forge items, plus buy straight from the on-chain Baazaar" },
+    { "name": "Bulk transfer + bulk list", "url": "/explorer", "hook": "select a bunch of gotchis and move them in a single transaction, or stage and list many for rent at once. power-user stuff the official UI makes painful" },
+    { "name": "Pulse", "url": "/pulse", "hook": "State of the Aavegotchiverse, daily GHST + marketplace health metrics with transparent health verdicts (price, volume, buyers, holders). nothing else surfaces this" },
+    { "name": "Kinship & XP Leaderboard", "url": "/leaderboard", "hook": "live kinship and XP leaderboards, see the most loved and most experienced gotchis on Base. the dapp doesn't show this" },
+    { "name": "Steward estate automation", "url": "/steward", "hook": "keep your whole estate maintained in one click, pet every gotchi, channel every parcel, empty every reservoir. fully non-custodial, you pay only your own gas" },
+    { "name": "Talk to your Gotchi (AI)", "url": "/g/", "hook": "chat with an AI persona of any gotchi, built from its real on-chain traits. no wallet needed, fully shareable" },
+    { "name": "Roast Arena", "url": "/arena", "hook": "pit two gotchis head to head in a public roast battle. no wallet, pure shareable chaos" },
+    { "name": "DAO + Live Quorum", "url": "/dao", "hook": "see your total voting power plus a live quorum panel, DAO-wide votable VP vs quorum pulled live from Snapshot, with proposal progress bars" },
+    { "name": "Lending marketplace", "url": "/lending", "hook": "browse Aavegotchi rentals with real filters, BRS-with-wearables, duration, price, channelling, whitelist" },
+    { "name": "Lending analytics", "url": "/lending/analytics", "hook": "full rental analytics, heatmaps, distributions, leaderboards, address drill-downs and a suggested-price tool" },
+    { "name": "Auto-renew rentals", "url": "/lending/me", "hook": "manage your listings and earnings, with hands-off auto-renew so your rentals keep earning" },
+    { "name": "Land Management", "url": "/lending/lands", "hook": "claim, channel, survey and build your Gotchiverse parcels from one panel" },
+    { "name": "Forge", "url": "/forge", "hook": "smelt wearables into Forge materials and claim forged items, all signed in your own wallet" },
+    { "name": "GLTR Staking", "url": "/staking", "hook": "stake LP on Base and earn GLTR to speed up the Forge" },
+    { "name": "Get GHST", "url": "/get-tokens", "hook": "swap, bridge or buy GHST on Base in one place" },
+    { "name": "Game Center", "url": "/games", "hook": "a community directory of Aavegotchi games, tools and dashboards. any gotchi owner can submit their build" },
+    { "name": "Megaphone content engine", "url": "/megaphone", "hook": "auto-generates Aavegotchi videos from live on-chain data and can auto-post them to X, Telegram and YouTube. near-zero cost content engine (prototype)" },
+    { "name": "Soul / SoulSeal", "url": "/soul/verify/", "hook": "seal and verify a gotchi's Soul, a certificate that follows it around the app. a GotchiCloset original" },
+    { "name": "Rarity Score explainer", "url": "/rarity-score", "hook": "understand exactly how rarity score is built from traits, wearables and set bonuses" },
+    { "name": "Sets library", "url": "/sets", "hook": "every wearable set with trait bonuses, requirements, and a live preview on your own gotchi" },
+    { "name": "Wearables encyclopedia", "url": "/wearables", "hook": "every wearable with trait modifiers, slot info and build ideas" },
+    { "name": "Traits guide", "url": "/traits", "hook": "learn what each trait does and which wearables and sets boost it" },
+    { "name": "Marketplace Stats", "url": "/stats", "hook": "settled Baazaar and auction volume across the whole marketplace on Base" },
+    { "name": "Activity feed", "url": "/activity", "hook": "live feed of Baazaar sales, offers and auctions across the marketplace" },
+    { "name": "Multi-wallet + view any address", "url": "/", "hook": "add up to 3 wallets or paste any 0x address and browse, dress and analyze read-only. no connect required" }
+  ],
+  "crossCutting": [
+    "runs on Base, reading live on-chain data for every feature",
+    "free, no fees, community-built. never custodies your assets, everything is signed in your own wallet",
+    "does a pile of things the official dapp doesn't: auto-dress optimizer, pulse health verdicts, kinship + XP leaderboard, live quorum, soul sealing, estate automation, and a content engine",
+    "subgraph failover keeps data live even when the community subgraph degrades",
+    "wallet-free public pages built to share: talk to your gotchi, roast arena",
+    "SEO-grade reference library for every trait, wearable and set"
+  ],
+  "voiceRules": [
+    "casual, gotchi-native, a little playful. lowercase gm energy is fine.",
+    "no em dashes. no hashtag spam (0-2 max). 1 emoji max, often none.",
+    "under 260 chars so a link fits. never salesy or corporate.",
+    "each tweet must be different from every prior tweet. vary the angle, opener, and structure.",
+    "when tweeting about a community build, be supportive and never overclaim what it does."
+  ]
+}

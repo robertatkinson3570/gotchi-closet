@@ -117,3 +117,25 @@ export async function distributeVideoTo(videoId: number, integrationIds: string[
   const integrations = (await listIntegrations()).filter((i) => want.has(i.id));
   return runDistribution(videoId, integrations);
 }
+
+/** Post a text-only promo tweet to the connected X channel. Returns the Postiz post id. */
+export async function postTweetToX(text: string): Promise<{ postId: string | null }> {
+  if (!postizConfigured()) throw new Error("Postiz not configured");
+  const x = (await listIntegrations()).find((i) => {
+    const p = i.provider.toLowerCase();
+    return p === "x" || p === "twitter";
+  });
+  if (!x) throw new Error("no X channel connected in Postiz");
+  const result = await createPost({
+    type: "now",
+    date: new Date(Date.now() + 60_000).toISOString(),
+    posts: [
+      {
+        integration: { id: x.id },
+        value: [{ content: text, image: [] }],
+        settings: settingsFor(x.provider, {}),
+      },
+    ],
+  });
+  return { postId: result.postId };
+}

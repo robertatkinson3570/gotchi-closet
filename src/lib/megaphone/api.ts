@@ -3,7 +3,7 @@
 // public, writes carry an admin wallet signature. Media URLs from the server are relative
 // (/api/megaphone/media/..) so they must be prefixed with the API origin here.
 import { env } from "@/lib/env";
-import type { Template, VideoPublic } from "./types";
+import type { Template, TweetPublic, TweetStatus, VideoPublic } from "./types";
 
 const base = () => env.companionApiUrl || "";
 
@@ -126,4 +126,40 @@ export async function deleteVideo(id: number, sig: Sig): Promise<void> {
     body: JSON.stringify(sig),
   });
   if (!r.ok) throw new Error("delete failed");
+}
+
+// --- Promo tweets ---
+
+export async function listTweetsAdmin(sig: Sig, status?: TweetStatus): Promise<TweetPublic[]> {
+  const q = `?wallet=${sig.wallet}&signature=${sig.signature}&signedAt=${sig.signedAt}${status ? `&status=${status}` : ""}`;
+  const r = await fetch(`${base()}/api/megaphone/tweets${q}`);
+  if (!r.ok) throw new Error("failed to load tweets");
+  return (await r.json()).tweets;
+}
+
+export async function setTweetStatus(id: number, status: TweetStatus, sig: Sig): Promise<void> {
+  const r = await fetch(`${base()}/api/megaphone/tweets/${id}/status`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, ...sig }),
+  });
+  if (!r.ok) throw new Error("update failed");
+}
+
+export async function editTweet(id: number, text: string, sig: Sig): Promise<void> {
+  const r = await fetch(`${base()}/api/megaphone/tweets/${id}/edit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, ...sig }),
+  });
+  if (!r.ok) throw new Error("edit failed");
+}
+
+export async function postTweet(id: number, sig: Sig): Promise<void> {
+  const r = await fetch(`${base()}/api/megaphone/tweets/${id}/post`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(sig),
+  });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "post failed");
 }

@@ -14,8 +14,19 @@ import {
   setStatus,
 } from "../megaphone/store";
 import { isAdmin, verifyAdminSignature } from "../megaphone/auth";
-import { autoDistributeEnabled, distributeVideo, distributeVideoTo } from "../megaphone/distribute";
+import { autoDistributeEnabled, distributeVideo, distributeVideoTo, postTweetToX } from "../megaphone/distribute";
 import { listIntegrations, postizConfigured } from "../megaphone/postiz";
+import {
+  editTweet,
+  getTweet,
+  ingestTweets,
+  listTweets,
+  markTweetPosted,
+  recentTweetTexts,
+  setTweetPostId,
+  setTweetStatus,
+} from "../megaphone/tweets";
+import type { TweetStatus } from "../../src/lib/megaphone/types";
 import { isTemplate } from "../../src/lib/megaphone/types";
 
 const router = Router();
@@ -189,6 +200,97 @@ router.post("/:id/delete", async (req, res) => {
   }
   deleteVideo(id);
   res.json({ ok: true });
+});
+
+// --- Promo tweets --------------------------------------------------------------
+// The local generator pushes candidates with a shared ingest key (no wallet needed for a
+// headless script). Review/approve/post are admin-signed.
+
+function ingestOk(req: express.Request): boolean {
+  const key = process.env.MEGAPHONE_INGEST_KEY;
+  return Boolean(key) && req.get("x-ingest-key") === key;
+}
+
+const ingestJson = express.json({ limit: "1mb" });
+
+// Generator -> push draft candidates. Dedupe by content hash happens in the store.
+router.post("/tweets/ingest", ingestJson, (req, res) => {
+  if (!ingestOk(req)) return res.status(403).json({ error: "bad ingest key" });
+  const candidates = Array.isArray(req.body?.candidates) ? req.body.candidates : [];
+  const clean = candidates
+    .filter((c: unknown) => c && typeof (c as { text?: unknown }).text === "string")
+    .map((c: { text: string; source?: string; link?: string }) => ({
+      text: c.text,
+      source: typeof c.source === "string" ? c.source : "app",
+      link: typeof c.link === "string" ? c.link : null,
+    }));
+  const result = ingestTweets(clean);
+  res.json({ ok: true, ...result });
+});
+
+// Generator -> recent texts so it can avoid repeating itself.
+router.get("/tweets/recent", (req, res) => {
+  if (!ingestOk(req)) return res.status(403).json({ error: "bad ingest key" });
+  res.json({ texts: recentTweetTexts(300) });
+});
+
+// Admin: list tweets (optional ?status=draft|approved|posted|rejected).
+router.get("/tweets", async (req, res) => {
+  const { wallet, signature, signedAt, status } = req.query;
+  if (!(await verifyAdminSignature(String(wallet || ""), Number(signedAt), String(signature || "")))) {
+    return res.status(403).json({ error: "not authorized" });
+  }
+  const s = typeof status === "string" ? (status as TweetStatus) : undefined;
+  res.json({ tweets: listTweets(s) });
+});
+
+// Admin: set status (approve / reject / back to draft).
+router.post("/tweets/:id/status", async (req, res) => {
+  const id = Number(req.params.id);
+  const { status, wallet, signature, signedAt } = req.body ?? {};
+  if (!Number.isInteger(id)) return res.status(400).json({ error: "bad id" });
+  if (!["draft", "approved", "rejected"].includes(status)) return res.status(400).json({ error: "bad status" });
+  if (!(await verifyAdminSignature(String(wallet || ""), Number(signedAt), String(signature || "")))) {
+    return res.status(403).json({ error: "not authorized" });
+  }
+  setTweetStatus(id, status);
+  res.json({ ok: true });
+});
+
+// Admin: edit draft text.
+router.post("/tweets/:id/edit", async (req, res) => {
+  const id = Number(req.params.id);
+  const { text, wallet, signature, signedAt } = req.body ?? {};
+  if (!Number.isInteger(id)) return res.status(400).json({ error: "bad id" });
+  if (typeof text !== "string" || !text.trim()) return res.status(400).json({ error: "empty" });
+  if (!(await verifyAdminSignature(String(wallet || ""), Number(signedAt), String(signature || "")))) {
+    return res.status(403).json({ error: "not authorized" });
+  }
+  editTweet(id, text);
+  res.json({ ok: true });
+});
+
+// Admin: post a tweet to X now (via Postiz).
+router.post("/tweets/:id/post", async (req, res) => {
+  const id = Number(req.params.id);
+  const { wallet, signature, signedAt } = req.body ?? {};
+  if (!Number.isInteger(id)) return res.status(400).json({ error: "bad id" });
+  if (!(await verifyAdminSignature(String(wallet || ""), Number(signedAt), String(signature || "")))) {
+    return res.status(403).json({ error: "not authorized" });
+  }
+  if (!postizConfigured()) return res.status(400).json({ error: "Postiz not configured" });
+  const tweet = getTweet(id);
+  if (!tweet) return res.status(404).json({ error: "not found" });
+  if (tweet.status === "posted") return res.status(409).json({ error: "already posted" });
+  try {
+    const full = tweet.link ? `${tweet.text}\n\n${tweet.link}` : tweet.text;
+    const { postId } = await postTweetToX(full);
+    markTweetPosted(id, null, postId);
+    if (postId) setTweetPostId(id, postId);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(502).json({ error: (e as Error).message });
+  }
 });
 
 export default router;

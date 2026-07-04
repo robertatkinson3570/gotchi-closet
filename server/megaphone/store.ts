@@ -78,6 +78,19 @@ export function getDb(): Database.Database {
     );
     CREATE INDEX IF NOT EXISTS idx_dist_video ON distributions(video_id);
     CREATE INDEX IF NOT EXISTS idx_dist_status ON distributions(status);
+    CREATE TABLE IF NOT EXISTS tweets (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      text           TEXT NOT NULL,
+      source         TEXT NOT NULL,
+      link           TEXT,
+      hash           TEXT NOT NULL UNIQUE,
+      status         TEXT NOT NULL DEFAULT 'draft',
+      external_url   TEXT,
+      postiz_post_id TEXT,
+      created_at     INTEGER NOT NULL,
+      posted_at      INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_tweets_status ON tweets(status, created_at);
   `);
   return db;
 }

@@ -40,6 +40,22 @@ export interface VideoRow {
   created_at: number;
 }
 
+export type TweetStatus = "draft" | "approved" | "posted" | "rejected";
+export const TWEET_SOURCES = ["builds", "data", "app", "ecosystem"] as const;
+export type TweetSource = (typeof TWEET_SOURCES)[number];
+
+/** A generated promo tweet awaiting review / posted. */
+export interface TweetPublic {
+  id: number;
+  text: string;
+  source: string;
+  link: string | null;
+  status: TweetStatus;
+  externalUrl: string | null;
+  createdAt: number;
+  postedAt: number | null;
+}
+
 /** Public projection sent to the browser. */
 export interface VideoPublic {
   id: number;
