@@ -5,14 +5,19 @@ import { filterInbound, screenOutbound } from "../../src/lib/companion/contentFi
 import { templateReply } from "../../src/lib/companion/templates";
 import { assembleMessages } from "../../src/lib/companion/chatPrompt";
 import { fetchGotchiState } from "../companion/gotchiState";
-import { complete } from "../companion/llmProvider";
+import { completeWithTools } from "../companion/llmProvider";
+import { HERMES_TOOLS, HERMES_NAV_ROUTES } from "../companion/tools";
+import { runUpkeep } from "../companion/actions";
+import { listEnrollments } from "../steward/db";
+import { runOne } from "../steward/cron";
 import {
   appendMessage, getRecentMessages, getFacts, upsertFact,
   isPremiumActive, getEntitlement, addCredits, burnCredit, getCredits, hasCredits,
+  getActions, logAction,
 } from "../companion/db";
 import { verifyGhstPayment } from "../lending/verifyPayment";
 import { creditPackForGhst, expectedWeiForPack } from "../companion/pricing";
-import { premiumSignatureValid } from "../companion/auth";
+import { premiumSignatureValid, actionSignatureValid } from "../companion/auth";
 import { soulDepthSnapshot } from "../soul/snapshot";
 
 const router = Router();
@@ -74,47 +79,85 @@ router.post("/chat", async (req, res) => {
       return res.json({ reply, deflected: true });
     }
 
+    // Recent actions Hermes took go into context so it remembers what it did for the owner.
+    const actionLines = getActions(wallet, tokenId, 5).map(
+      (a) => `You did ${a.kind} for the owner${a.txHash ? ` (tx ${a.txHash.slice(0, 10)}…)` : ""}`
+    );
     const messages = assembleMessages({
-      facts: getFacts(wallet, tokenId),
+      facts: [...getFacts(wallet, tokenId), ...actionLines],
       lore: retrieveLore(masked),
       history: getRecentMessages(wallet, tokenId, 20).map((m) => ({ role: m.role, content: m.content })),
       userMessage: masked,
     });
 
-    // Premium (OpenAI) requires BOTH credits remaining AND a fresh wallet
-    // signature, so a spoofed wallet in the body can't spend the operator's key.
+    // Premium (OpenAI) requires BOTH credits remaining AND a fresh wallet signature.
     const eligiblePremium =
       isPremiumActive(wallet) &&
       (await premiumSignatureValid(wallet, Number(body.signedAt), String(body.signature ?? "")));
+    const tier: "free" | "premium" = eligiblePremium ? "premium" : "free";
 
-    let reply: string;
-    let tier: "free" | "premium" = "free";
-
-    if (eligiblePremium) {
-      const premiumText = await complete(systemPrompt, messages, "premium");
-      if (premiumText !== null) {
-        burnCredit(wallet);
-        reply = screenOutbound(premiumText);
-        tier = "premium";
-      } else {
-        // Premium LLM unavailable — fall through to free
-        const freeText = await complete(systemPrompt, messages, "free");
-        reply = screenOutbound(freeText ?? templateReply({ profile, message: masked, deflected: false }));
+    const persist = (r: string) => {
+      appendMessage(wallet, tokenId, "user", masked);
+      appendMessage(wallet, tokenId, "assistant", r);
+    };
+    const remember = () => {
+      const factMatch = masked.match(/\b(i am|i'm|my)\b.{3,80}/i);
+      if (factMatch) {
+        const fact = factMatch[0].trim();
+        if (isSafeFact(fact)) upsertFact(wallet, tokenId, fact);
       }
-    } else {
-      const freeText = await complete(systemPrompt, messages, "free");
-      reply = screenOutbound(freeText ?? templateReply({ profile, message: masked, deflected: false }));
+    };
+
+    const turn = await completeWithTools(systemPrompt, messages, HERMES_TOOLS, tier);
+
+    // Hermes wants to ACT — run the owner's due Steward upkeep (channel/pet/claim), VPS-side.
+    if (turn?.toolCall?.name === "run_upkeep") {
+      const actTokenId = String(turn.toolCall.args.tokenId ?? tokenId);
+      const sigOk = await actionSignatureValid(
+        wallet, Number(body.actionSignedAt), String(body.actionSignature ?? "")
+      );
+      if (!sigOk) {
+        const r = screenOutbound("sign once to let me act on-chain for you, fren 👻");
+        persist(r);
+        return res.json({ reply: r, needsActionAuth: true, tier });
+      }
+      if (String(state.owner).toLowerCase() !== wallet) {
+        const r = screenOutbound("that gotchi isn't in your wallet — i can only act for its owner 👻");
+        persist(r);
+        return res.json({ reply: r, deflected: false, tier });
+      }
+      const result = await runUpkeep(wallet, actTokenId, {
+        listEnrollments, runOne, hasCredits, burnCredit, logAction,
+      });
+      const summary = result.ok
+        ? `done — ran your gotchi's upkeep${result.txHash ? ` (tx ${result.txHash.slice(0, 10)}…)` : ""} 👻`
+        : result.reason === "not-enrolled"
+        ? "you haven't enrolled this gotchi in Steward yet — set that up and i can act for you"
+        : result.reason === "no-credits"
+        ? "you're out of credits — top up and i'll get right on it"
+        : result.reason === "no-work"
+        ? "nothing's due right now — cooldowns are still ticking"
+        : "couldn't run it just now — try again in a bit";
+      const r = screenOutbound(summary);
+      persist(r);
+      // Take the owner to where it happened.
+      return res.json({ reply: r, action: result, navigate: "/steward", tier });
     }
 
-    appendMessage(wallet, tokenId, "user", masked);
-    appendMessage(wallet, tokenId, "assistant", reply);
-
-    const factMatch = masked.match(/\b(i am|i'm|my)\b.{3,80}/i);
-    if (factMatch) {
-      const fact = factMatch[0].trim();
-      if (isSafeFact(fact)) upsertFact(wallet, tokenId, fact);
+    // Hermes wants to NAVIGATE the owner to a page (client performs the route change).
+    if (turn?.toolCall?.name === "navigate") {
+      const path = String(turn.toolCall.args.path ?? "");
+      const allowed = (HERMES_NAV_ROUTES as readonly string[]).includes(path);
+      const r = screenOutbound(allowed ? "taking you there now 👻" : "i can't open that page, fren");
+      persist(r);
+      return res.json({ reply: r, navigate: allowed ? path : undefined, tier });
     }
 
+    // No tool call — normal chat reply.
+    const reply = screenOutbound(turn?.text ?? templateReply({ profile, message: masked, deflected: false }));
+    if (tier === "premium" && turn?.text) burnCredit(wallet);
+    persist(reply);
+    remember();
     res.json({ reply, deflected: false, tier });
   } catch (err: any) {
     res.status(500).json({ error: err?.message ?? String(err) });
