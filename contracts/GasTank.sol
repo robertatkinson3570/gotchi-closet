@@ -31,6 +31,11 @@ contract GasTank {
 
     event Deposit(address indexed owner, uint256 amount, uint256 newBalance);
     event Withdraw(address indexed owner, uint256 amount, uint256 newBalance);
+    event Reimbursed(
+        address indexed owner, address indexed operator,
+        uint256 gasUsed, uint256 weiCharged,
+        uint16 pet, uint16 channel, uint16 claim
+    );
 
     // set in later tasks
     address public immutable aavegotchiDiamond;
@@ -71,6 +76,7 @@ contract GasTank {
         external nonReentrant
     {
         require(isOperator[msg.sender], "not operator");
+        uint256 gasStart = gasleft();
         for (uint256 i = 0; i < calls.length; i++) {
             require(calls[i].data.length >= 4, "bad calldata");
             bytes4 sel = bytes4(calls[i].data);
@@ -78,7 +84,16 @@ contract GasTank {
             (bool ok, ) = calls[i].target.call(calls[i].data);
             require(ok, "action failed");
         }
-        // reimbursement + event added in Task 5
-        pet; channel; claim; owner; // silence unused warnings until Task 5
+        // Metered gas is a strict SUBSET of the whole tx's gas (excludes intrinsic +
+        // calldata + this transfer), so reimbursement is always <= what the operator
+        // actually paid — profit is impossible by construction.
+        uint256 cost = (gasStart - gasleft()) * tx.gasprice;
+        uint256 cap = capPerRun[owner];
+        if (cap != 0 && cost > cap) cost = cap;
+        if (cost > balanceOf[owner]) cost = balanceOf[owner];
+        balanceOf[owner] -= cost;
+        (bool paid, ) = msg.sender.call{value: cost}("");
+        require(paid, "reimburse failed");
+        emit Reimbursed(owner, msg.sender, gasStart - gasleft(), cost, pet, channel, claim);
     }
 }

@@ -113,4 +113,55 @@ contract GasTankTest is Test {
         vm.expectRevert(bytes("not operator"));
         tank.run(owner, calls, 1, 0, 0);
     }
+
+    function test_run_reimbursesOperator_fromOwnerBalance() public {
+        vm.prank(owner); tank.deposit{value: 1 ether}();
+        GasTank.Call[] memory calls = new GasTank.Call[](1);
+        calls[0] = _call(address(aaveMock), 0x22c67519);
+        uint256 opBefore = operator.balance;
+        vm.txGasPrice(1 gwei);
+        vm.prank(operator, operator);
+        tank.run(owner, calls, 1, 0, 0);
+        // owner balance dropped by exactly what the operator received
+        uint256 charged = 1 ether - tank.balanceOf(owner);
+        assertGt(charged, 0);
+        assertEq(operator.balance - opBefore, charged);
+    }
+
+    function test_run_capsReimbursementAtOwnerCap() public {
+        vm.prank(owner); tank.deposit{value: 1 ether}();
+        vm.prank(owner); tank.setCapPerRun(1); // 1 wei cap
+        GasTank.Call[] memory calls = new GasTank.Call[](1);
+        calls[0] = _call(address(aaveMock), 0x22c67519);
+        vm.txGasPrice(1 gwei);
+        vm.prank(operator, operator);
+        tank.run(owner, calls, 1, 0, 0);
+        assertEq(1 ether - tank.balanceOf(owner), 1); // charged exactly the cap
+    }
+
+    function test_run_neverChargesMoreThanBalance() public {
+        vm.prank(owner); tank.deposit{value: 100 wei}(); // tiny balance
+        GasTank.Call[] memory calls = new GasTank.Call[](1);
+        calls[0] = _call(address(aaveMock), 0x22c67519);
+        vm.txGasPrice(1 gwei);
+        vm.prank(operator, operator);
+        tank.run(owner, calls, 1, 0, 0);
+        assertEq(tank.balanceOf(owner), 0); // drained to zero, never negative/underflow
+    }
+
+    function test_run_emitsReimbursedReceipt() public {
+        vm.prank(owner); tank.deposit{value: 1 ether}();
+        GasTank.Call[] memory calls = new GasTank.Call[](1);
+        calls[0] = _call(address(aaveMock), 0x22c67519);
+        vm.txGasPrice(1 gwei);
+        vm.recordLogs();
+        vm.prank(operator, operator);
+        tank.run(owner, calls, 3, 2, 1);
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        // find the Reimbursed event (topic0 = keccak of its signature)
+        bytes32 sig = keccak256("Reimbursed(address,address,uint256,uint256,uint16,uint16,uint16)");
+        bool found;
+        for (uint256 i = 0; i < logs.length; i++) if (logs[i].topics[0] == sig) found = true;
+        assertTrue(found, "Reimbursed event not emitted");
+    }
 }
