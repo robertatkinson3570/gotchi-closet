@@ -9,6 +9,7 @@ import {
   appendMessage, getRecentMessages, upsertFact, getFacts,
   grantPremium, getEntitlement, isPremiumActive, closeDb,
   addCredits, burnCredit, getCredits, hasCredits,
+  logAction, getActions,
 } from "./db";
 
 beforeEach(() => {
@@ -103,5 +104,16 @@ describe("credit ledger", () => {
     addCredits("0x333", 5000, "0xtx33a");
     addCredits("0x333", 5000, "0xtx33b");
     expect(getCredits("0x333")).toBe(10000);
+  });
+});
+
+describe("action memory", () => {
+  it("logAction persists and getActions returns newest-last", () => {
+    logAction("0xAbc", "123", "upkeep", "pet:1 channel:0 claim:0", "0xtx1");
+    logAction("0xAbc", "123", "upkeep", "pet:0 channel:2 claim:0", "0xtx2");
+    const acts = getActions("0xabc", "123", 10);
+    expect(acts).toHaveLength(2);
+    expect(acts[1].detail).toContain("channel:2");
+    expect(acts[1].txHash).toBe("0xtx2");
   });
 });

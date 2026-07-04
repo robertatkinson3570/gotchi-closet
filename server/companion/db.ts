@@ -43,6 +43,14 @@ export function getDb(): Database.Database {
     CREATE TABLE IF NOT EXISTS companion_premium_tx (
       tx_hash TEXT PRIMARY KEY, wallet TEXT NOT NULL, credited_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS companion_actions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      wallet TEXT NOT NULL, token_id TEXT NOT NULL,
+      kind TEXT NOT NULL, detail TEXT NOT NULL,
+      tx_hash TEXT, ts INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_action_key ON companion_actions(wallet, token_id, id);
   `);
 
   // Idempotent migration: add credits column if it doesn't exist yet.
@@ -187,4 +195,22 @@ export function grantPremium(wallet: string, expiresAt: number, txHash: string):
   });
   tx();
   return getEntitlement(w)!;
+}
+
+export interface StoredAction { kind: string; detail: string; txHash: string | null; ts: number; }
+
+/** Records an on-chain action Hermes performed for an owner, so it can recall what it did. */
+export function logAction(wallet: string, tokenId: string, kind: string, detail: string, txHash: string | null) {
+  getDb().prepare(
+    `INSERT INTO companion_actions (wallet, token_id, kind, detail, tx_hash, ts) VALUES (?,?,?,?,?,?)`
+  ).run(wallet.toLowerCase(), String(tokenId), kind, detail, txHash, Date.now());
+}
+
+/** Recent actions for a gotchi+owner, newest-last. */
+export function getActions(wallet: string, tokenId: string, limit = 10): StoredAction[] {
+  const rows = getDb().prepare(
+    `SELECT kind, detail, tx_hash as txHash, ts FROM companion_actions
+     WHERE wallet = ? AND token_id = ? ORDER BY id DESC LIMIT ?`
+  ).all(wallet.toLowerCase(), String(tokenId), limit) as StoredAction[];
+  return rows.reverse();
 }
