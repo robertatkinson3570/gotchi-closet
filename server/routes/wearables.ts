@@ -3,43 +3,6 @@ import { getWearableThumbs, getPlaceholderSvg } from "../aavegotchi/serverSvgSer
 
 const router = Router();
 
-// Single wearable thumbnail (cacheable GET) — parity with the Vercel function at
-// api/wearables/[id]/thumb.ts. Deterministic from (haunt, collateral, traits, id),
-// so it's safe to cache at a CDN (e.g. Cloudflare) if the client is served here.
-router.get("/:id/thumb", async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    const haunt = Number(req.query.haunt);
-    const collateral = String(req.query.collateral || "");
-    const traits = String(req.query.traits || "")
-      .split(",")
-      .map((v) => Number(v))
-      .filter((n) => Number.isFinite(n));
-
-    if (!Number.isFinite(id) || id <= 0) {
-      res.json({ svg: getPlaceholderSvg(`thumb:${req.params.id}`) });
-      return;
-    }
-    if (!Number.isFinite(haunt) || !/^0x[a-fA-F0-9]{40}$/.test(collateral) || traits.length < 6) {
-      res.json({ svg: getPlaceholderSvg(`thumb:${id}`) });
-      return;
-    }
-
-    const thumbs = await getWearableThumbs(
-      { hauntId: haunt, collateral, numericTraits: traits.slice(0, 6) },
-      [id]
-    );
-    res.setHeader("Cache-Control", "public, s-maxage=86400, stale-while-revalidate=604800");
-    res.json({ svg: thumbs[id] || getPlaceholderSvg(`thumb:${id}`) });
-  } catch (error) {
-    console.error("GET /api/wearables/:id/thumb failed", error);
-    res.status(500).json({
-      error: true,
-      message: (error as Error).message || "Failed to fetch wearable thumb",
-    });
-  }
-});
-
 router.post("/thumbs", async (req, res) => {
   try {
     const { hauntId, collateral, numericTraits, wearableIds } = req.body || {};

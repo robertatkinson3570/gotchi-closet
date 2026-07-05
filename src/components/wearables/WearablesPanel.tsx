@@ -142,37 +142,59 @@ export function WearablesPanel() {
     );
     if (missing.length === 0) return;
 
-    // Per-item cacheable GETs: each wearable-on-this-gotchi is a stable CDN cache
-    // entry, so re-opening/filtering the panel serves repeats from the edge instead
-    // of re-hitting RPC. (The render ignores hand slot, so slot data isn't sent.)
-    const traitsParam = encodeURIComponent((baseGotchi.numericTraits || []).join(","));
-    Promise.all(
-      missing.map(async (id): Promise<[number, string]> => {
-        try {
-          const url =
-            `/api/wearables/${id}/thumb` +
-            `?haunt=${encodeURIComponent(String(baseGotchi.hauntId))}` +
-            `&collateral=${encodeURIComponent(String(baseGotchi.collateral))}` +
-            `&traits=${traitsParam}`;
-          const res = await fetchWithTimeout(url, { method: "GET", timeoutMs: 8000 });
-          if (!res || !res.ok) throw new Error(res ? `HTTP ${res.status}` : "no response");
-          const json = await res.json();
-          const svg = json?.svg;
-          if (typeof svg === "string" && svg) return [id, svg];
-          throw new Error("empty svg");
-        } catch {
-          failedThumbsRef.current.add(id);
-          return [id, placeholderSvg(String(id), "wearable")];
+    const slotIndexById: Record<number, number> = {};
+    for (const id of missing) {
+      const wearable = wearables.find((w) => w.id === id);
+      if (!wearable) continue;
+      if (wearable.handPlacement === "left" && wearable.slotPositions[4]) {
+        slotIndexById[id] = 4;
+      } else if (wearable.handPlacement === "right" && wearable.slotPositions[5]) {
+        slotIndexById[id] = 5;
+      } else if (wearable.handPlacement === "either") {
+        slotIndexById[id] = wearable.slotPositions[4] ? 4 : wearable.slotPositions[5] ? 5 : 0;
+      } else {
+        const slotIndex = wearable.slotPositions.findIndex((allowed) => allowed);
+        slotIndexById[id] = slotIndex >= 0 ? slotIndex : 0;
+      }
+    }
+
+    fetchWithTimeout("/api/wearables/thumbs", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        tokenId,
+        hauntId: baseGotchi.hauntId,
+        collateral: baseGotchi.collateral,
+        numericTraits: baseGotchi.numericTraits,
+        wearableIds: missing,
+        slotIndexById,
+      }),
+      timeoutMs: 8000,
+    })
+      .then(async (res) => {
+        if (!res) return null;
+        if (!res.ok) {
+          const errorBody = await res.json().catch(() => ({}));
+          throw new Error(errorBody?.message || `HTTP ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((json) => {
+        if (!json) return;
+        if (json?.thumbs) {
+          setWearableThumbs(json.thumbs);
         }
       })
-    ).then((entries) => {
-      const map: Record<number, string> = {};
-      for (const [id, svg] of entries) map[id] = svg;
-      setWearableThumbs(map);
-      if (entries.every(([id]) => failedThumbsRef.current.has(id))) {
-        setError("Failed to load wearable images");
-      }
-    });
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Failed to load wearable images";
+        setError(message);
+        const placeholders: Record<number, string> = {};
+        for (const id of missing) {
+          failedThumbsRef.current.add(id);
+          placeholders[id] = placeholderSvg(String(id), "wearable");
+        }
+        setWearableThumbs(placeholders);
+      });
   }, [
     editorInstances,
     gotchis,
