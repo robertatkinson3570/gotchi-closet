@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { navView, neighborId, atForwardEdge, adoptedId, type NavView } from "./detailNavCore";
+import { navView, neighborId, atForwardEdge, type NavView } from "./detailNavCore";
 
 export type DetailNavOptions<T> = {
   /** The ordered, currently-filtered list backing the grid. */
@@ -32,13 +32,23 @@ export function useDetailNav<T>({
   const [params, setParams] = useSearchParams();
   const [openId, setOpenId] = useState<string | null>(null);
 
-  // Deep-link entry: adopt the URL's id once, if it targets this asset and is loaded.
+  // Deep-link entry: adopt the URL's id once it targets this asset and is loaded.
+  // If the id isn't in the current page yet, page forward (bounded) until it
+  // appears or the list is exhausted, so a link to an item deep in the list works.
   const adopted = useRef(false);
+  const pageAttempts = useRef(0);
   useEffect(() => {
     if (adopted.current || !urlSync) return;
-    const id = adoptedId(params.get("asset"), params.get("id"), asset, (x) => items.some((it) => getId(it) === x));
-    if (id) { adopted.current = true; setOpenId(id); }
-  }, [params, asset, items, getId, urlSync]);
+    const pAsset = params.get("asset"), pId = params.get("id");
+    if (pAsset !== asset || !pId) return;
+    if (items.some((it) => getId(it) === pId)) {
+      adopted.current = true;
+      setOpenId(pId);
+    } else if (hasMore && onNeedMore && pageAttempts.current < 25) {
+      pageAttempts.current += 1;
+      onNeedMore();
+    }
+  }, [params, asset, items, getId, urlSync, hasMore, onNeedMore]);
 
   const view = navView(items, getId, asset, openId);
 

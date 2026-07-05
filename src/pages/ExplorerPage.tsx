@@ -84,6 +84,11 @@ export default function ExplorerPage() {
   const storeWearables = useAppStore((s) => s.wearables);
   const [assetType, setAssetType] = useState<AssetType>(() => {
     if (typeof window !== "undefined") {
+      // A deep link (?asset=…&id=…) selects its tab directly so the matching grid
+      // mounts and the dialog can auto-open; otherwise fall back to the last tab.
+      const asset = new URLSearchParams(window.location.search).get("asset");
+      const VALID = ["gotchi", "wearable", "item", "parcel", "installation", "tile", "portal", "fakegotchi", "fakecard", "forge", "guardian", "auction"];
+      if (asset && VALID.includes(asset)) return asset as AssetType;
       const saved = localStorage.getItem(ASSET_TYPE_KEY);
       return (saved === "wearable" ? "wearable" : "gotchi") as AssetType;
     }
