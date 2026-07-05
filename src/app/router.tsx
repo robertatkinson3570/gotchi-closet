@@ -1,43 +1,45 @@
-import { lazy } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { RootLayout } from "@/components/layout/RootLayout";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
 
 // Route-based code splitting: each page is its own chunk so the first paint no
-// longer ships the entire app (was a single ~2 MB bundle).
-const HomePage = lazy(() => import("@/pages/HomePage"));
-const DressPage = lazy(() => import("@/pages/DressPage"));
-const WardrobeLabPage = lazy(() => import("@/pages/WardrobeLabPage"));
-const ExplorerPage = lazy(() => import("@/pages/ExplorerPage"));
-const SetsIndexPage = lazy(() => import("@/pages/SetsIndexPage"));
-const SetPage = lazy(() => import("@/pages/SetPage"));
-const TraitsIndexPage = lazy(() => import("@/pages/TraitsIndexPage"));
-const TraitPage = lazy(() => import("@/pages/TraitPage"));
-const RarityScorePage = lazy(() => import("@/pages/RarityScorePage"));
-const WearablesIndexPage = lazy(() => import("@/pages/WearablesIndexPage"));
-const WearablePage = lazy(() => import("@/pages/WearablePage"));
-const GotchiPage = lazy(() => import("@/pages/GotchiPage"));
-const LendingPage = lazy(() => import("@/pages/LendingPage"));
-const LendingAnalyticsPage = lazy(() => import("@/pages/LendingAnalyticsPage"));
-const LendingMePage = lazy(() => import("@/pages/LendingMePage"));
-const LandManagementPage = lazy(() => import("@/pages/LandManagementPage"));
-const WhitelistsPage = lazy(() => import("@/pages/WhitelistsPage"));
-const BulkListPage = lazy(() => import("@/pages/BulkListPage"));
-const ActivityPage = lazy(() => import("@/pages/ActivityPage"));
-const UserActivityPage = lazy(() => import("@/pages/UserActivityPage"));
-const StatsPage = lazy(() => import("@/pages/StatsPage"));
-const PulsePage = lazy(() => import("@/pages/PulsePage"));
-const GameCenterPage = lazy(() => import("@/pages/GameCenterPage"));
-const MegaphonePage = lazy(() => import("@/pages/MegaphonePage"));
-const LeaderboardPage = lazy(() => import("@/pages/LeaderboardPage"));
-const DaoPage = lazy(() => import("@/pages/DaoPage"));
-const GetTokensPage = lazy(() => import("@/pages/GetTokensPage"));
-const ForgePage = lazy(() => import("@/pages/ForgePage"));
-const StakingPage = lazy(() => import("@/pages/StakingPage"));
-const SoulVerifyPage = lazy(() => import("@/pages/SoulVerifyPage"));
-const StewardPage = lazy(() => import("@/pages/StewardPage"));
-const PublicGotchiPage = lazy(() => import("@/pages/PublicGotchiPage"));
-const PublicBattlePage = lazy(() => import("@/pages/PublicBattlePage"));
+// longer ships the entire app (was a single ~2 MB bundle). lazyWithRetry hard-
+// reloads once if a chunk 404s after a redeploy (stale index.html).
+const HomePage = lazyWithRetry(() => import("@/pages/HomePage"));
+const DressPage = lazyWithRetry(() => import("@/pages/DressPage"));
+const WardrobeLabPage = lazyWithRetry(() => import("@/pages/WardrobeLabPage"));
+const ExplorerPage = lazyWithRetry(() => import("@/pages/ExplorerPage"));
+const SetsIndexPage = lazyWithRetry(() => import("@/pages/SetsIndexPage"));
+const SetPage = lazyWithRetry(() => import("@/pages/SetPage"));
+const TraitsIndexPage = lazyWithRetry(() => import("@/pages/TraitsIndexPage"));
+const TraitPage = lazyWithRetry(() => import("@/pages/TraitPage"));
+const RarityScorePage = lazyWithRetry(() => import("@/pages/RarityScorePage"));
+const WearablesIndexPage = lazyWithRetry(() => import("@/pages/WearablesIndexPage"));
+const WearablePage = lazyWithRetry(() => import("@/pages/WearablePage"));
+const GotchiPage = lazyWithRetry(() => import("@/pages/GotchiPage"));
+const LendingPage = lazyWithRetry(() => import("@/pages/LendingPage"));
+const LendingAnalyticsPage = lazyWithRetry(() => import("@/pages/LendingAnalyticsPage"));
+const LendingMePage = lazyWithRetry(() => import("@/pages/LendingMePage"));
+const LandManagementPage = lazyWithRetry(() => import("@/pages/LandManagementPage"));
+const WhitelistsPage = lazyWithRetry(() => import("@/pages/WhitelistsPage"));
+const BulkListPage = lazyWithRetry(() => import("@/pages/BulkListPage"));
+const ActivityPage = lazyWithRetry(() => import("@/pages/ActivityPage"));
+const UserActivityPage = lazyWithRetry(() => import("@/pages/UserActivityPage"));
+const StatsPage = lazyWithRetry(() => import("@/pages/StatsPage"));
+const PulsePage = lazyWithRetry(() => import("@/pages/PulsePage"));
+const GameCenterPage = lazyWithRetry(() => import("@/pages/GameCenterPage"));
+const MegaphonePage = lazyWithRetry(() => import("@/pages/MegaphonePage"));
+const LeaderboardPage = lazyWithRetry(() => import("@/pages/LeaderboardPage"));
+const DaoPage = lazyWithRetry(() => import("@/pages/DaoPage"));
+const GetTokensPage = lazyWithRetry(() => import("@/pages/GetTokensPage"));
+const ForgePage = lazyWithRetry(() => import("@/pages/ForgePage"));
+const StakingPage = lazyWithRetry(() => import("@/pages/StakingPage"));
+const SoulVerifyPage = lazyWithRetry(() => import("@/pages/SoulVerifyPage"));
+const StewardPage = lazyWithRetry(() => import("@/pages/StewardPage"));
+const PublicGotchiPage = lazyWithRetry(() => import("@/pages/PublicGotchiPage"));
+const PublicBattlePage = lazyWithRetry(() => import("@/pages/PublicBattlePage"));
+const AdminPage = lazyWithRetry(() => import("@/pages/AdminPage"));
 
 export const router = createBrowserRouter([
   {
@@ -73,6 +75,7 @@ export const router = createBrowserRouter([
       { path: "forge", element: <ForgePage /> },
       { path: "staking", element: <StakingPage /> },
       { path: "steward", element: <StewardPage /> },
+      { path: "admin", element: <AdminPage /> },
       { path: "soul/verify/:tokenId", element: <SoulVerifyPage /> },
       // Public arena — no wallet required
       { path: "g/:tokenId", element: <PublicGotchiPage /> },
