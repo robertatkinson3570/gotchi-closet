@@ -32,7 +32,7 @@ export async function complete(
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.key}` },
         body: JSON.stringify({
           model,
-          max_tokens: 450,
+          max_tokens: 320,
           temperature: 0.8,
           messages: [{ role: "system", content: systemPrompt }, ...messages],
         }),
@@ -68,7 +68,7 @@ export async function completeWithTools(
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.key}` },
       body: JSON.stringify({
         model,
-        max_tokens: 450,
+        max_tokens: 320,
         temperature: 0.7,
         tools,
         tool_choice: "auto",

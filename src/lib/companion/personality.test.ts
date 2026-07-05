@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { poleFor, intensityFor } from "./personality";
 import { buildPersonality } from "./personality";
+import { SITE_OVERVIEW } from "./knowledge";
 import type { PersonalityInput } from "./types";
 
 const base = (over: Partial<PersonalityInput> = {}): PersonalityInput => ({
@@ -77,6 +78,20 @@ describe("personalityToSystemPrompt", () => {
   it("instructs short, in-character, playful replies", () => {
     const p = buildPersonality(base());
     expect(p.systemPrompt.toLowerCase()).toMatch(/short|brief|concise/);
+    expect(p.systemPrompt.toLowerCase()).toContain("character");
+  });
+});
+
+describe("personalityToSystemPrompt — SITE_OVERVIEW gating (free-tier token trim)", () => {
+  it("includes the site overview by default (unchanged for every existing caller)", () => {
+    const p = buildPersonality(base());
+    expect(p.systemPrompt).toContain(SITE_OVERVIEW);
+  });
+
+  it("omits the site overview when includeSiteOverview is false, but keeps persona + rules", () => {
+    const p = buildPersonality(base(), { includeSiteOverview: false });
+    expect(p.systemPrompt).not.toContain(SITE_OVERVIEW);
+    expect(p.systemPrompt).toContain(UNIVERSAL_BASE_PERSONA);
     expect(p.systemPrompt.toLowerCase()).toContain("character");
   });
 });
