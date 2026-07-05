@@ -81,7 +81,7 @@ export function EventGrid({
 
   return (
     <div className="rounded border border-white/10">
-      <div className="grid grid-cols-[150px_220px_130px_90px_1fr_90px] gap-2 px-3 py-2 text-xs border-b border-white/10 bg-white/5">
+      <div className="grid grid-cols-[150px_360px_130px_90px_1fr_90px] gap-2 px-3 py-2 text-xs border-b border-white/10 bg-white/5">
         {header("created_at", "Time")}
         {header("visitor", "Visitor")}
         {header("ip", "IP")}
@@ -96,11 +96,11 @@ export function EventGrid({
             return (
               <div
                 key={e.id}
-                className="grid grid-cols-[150px_220px_130px_90px_1fr_90px] gap-2 px-3 items-center text-xs border-b border-white/5"
+                className="grid grid-cols-[150px_360px_130px_90px_1fr_90px] gap-2 px-3 items-center text-xs border-b border-white/5"
                 style={{ position: "absolute", top: 0, left: 0, right: 0, height: 34, transform: `translateY(${vi.start}px)` }}
               >
                 <span className="tabular-nums opacity-80">{new Date(e.created_at).toLocaleString()}</span>
-                <span className="truncate font-mono">{visitorLabel(e)}</span>
+                <span className="font-mono whitespace-nowrap" title={visitorLabel(e)}>{visitorLabel(e)}</span>
                 <span className="font-mono opacity-80">{e.ip ?? ""}</span>
                 <span>{e.event_type}</span>
                 <span className="truncate opacity-90">{e.path ?? ""}</span>
