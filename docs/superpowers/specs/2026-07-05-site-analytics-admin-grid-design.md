@@ -98,6 +98,18 @@ All mirror existing feature patterns (`server/games/*`, `src/lib/games/*`).
     visitor: address/anon, last IP, # events, first/last seen).
   - Rows virtualized for large volumes.
 
+### 6. Analytics summary (below the grid)
+Computed client-side from the **currently filtered** event set (respects window +
+filter bar), so it always describes what the grid is showing. No extra backend.
+- **Stat tiles:** Unique visitors · Page views · Wallet connects · Returning
+  visitors (seen on >1 calendar day) · Connect rate (connects ÷ unique visitors).
+- **Page views over time** — sparkline/area, bucketed by hour (24h window) or day
+  (7d/30d).
+- **Top pages** — horizontal bar list of the busiest `path`s with counts.
+- **Top visitors** — short list by event count (wallet or `anon:<short id>`).
+- Charts follow the `dataviz` skill's palette/mark guidance and are theme-aware
+  (light/dark), reusing existing chart styling where present.
+
 ## Security boundary
 
 The page bundle cannot be truly hidden — anyone could load `/admin`'s JS. What
@@ -115,6 +127,8 @@ use. Identical trust model to the existing Game Center admin.
 - `src/lib/analytics/auth.test.ts` — message builder is stable/lowercased.
 - Route test: `POST /track` writes a row + stamps IP; admin `GET`s reject missing/
   bad signatures with `401`.
+- Summary aggregation is a pure function over an event array (unique visitors,
+  page views, connects, returning, time buckets, top pages) — unit-tested directly.
 
 ## Out of scope (YAGNI for v1)
 
