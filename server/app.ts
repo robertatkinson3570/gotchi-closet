@@ -14,6 +14,7 @@ import daoRoutes from "./routes/dao";
 import mapRoutes from "./routes/map";
 import pulseRoutes from "./routes/pulse";
 import gamesRoutes from "./routes/games";
+import analyticsRoutes from "./routes/analytics";
 import megaphoneRoutes from "./routes/megaphone";
 import { seedDemos as seedMegaphoneDemos } from "./megaphone/seed";
 import { startMegaphoneCron } from "./megaphone/cron";
@@ -106,6 +107,7 @@ export function createApp() {
   // Pulse — state-of-the-Aavegotchiverse daily metrics, cached server-side.
   app.use("/api/pulse", pulseRoutes);
   app.use("/api/games", gamesRoutes);
+  app.use("/api/analytics", analyticsRoutes);
   // Megaphone — content-ops: published video library, /pulse hero, admin publish/pin.
   app.use("/api/megaphone", megaphoneRoutes);
   // Keyed, rate-limited MCP protocol endpoint for external customers (POST only).
