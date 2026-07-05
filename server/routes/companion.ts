@@ -139,7 +139,7 @@ router.post("/chat", async (req, res) => {
     const messages = assembleMessages({
       facts: [...getFacts(wallet, tokenId), ...actionLines, ...(holdings ? [holdings] : []), ...(lending ? [lending] : []), ...(deals ? [deals] : []), ...(daoInfo ? [daoInfo] : []), ...(estate ? [estate] : [])],
       lore: retrieveLore(masked),
-      history: getRecentMessages(wallet, tokenId, 20).map((m) => ({ role: m.role, content: m.content })),
+      history: getRecentMessages(wallet, tokenId, 8).map((m) => ({ role: m.role, content: m.content })),
       userMessage: masked,
     });
 
