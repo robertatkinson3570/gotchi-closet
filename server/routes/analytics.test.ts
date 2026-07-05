@@ -60,6 +60,27 @@ describe("POST /track", () => {
     expect(res.status).toBe(204);
   });
 
+  it("accepts a text/plain beacon body (what the browser sendBeacon posts) and records it", async () => {
+    const post = await fetch(`${base}/api/analytics/track`, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ visitorId: "v-beacon", eventType: "pageview", path: "/explorer" }),
+    });
+    expect(post.status).toBe(204);
+
+    // Prove it actually landed (the browser bug was silent loss, not a bad status).
+    const signedAt = Date.now();
+    const signature = await account.signMessage({
+      message: siteAdminMessage(account.address, signedAt),
+    });
+    const read = await fetch(`${base}/api/analytics/events?window=7d`, {
+      headers: { "x-wallet": account.address, "x-signed-at": String(signedAt), "x-signature": signature },
+    });
+    const body = await read.json();
+    expect(body.events).toHaveLength(1);
+    expect(body.events[0].visitor_id).toBe("v-beacon");
+  });
+
   it("rejects an unknown event type with 400", async () => {
     const res = await fetch(`${base}/api/analytics/track`, {
       method: "POST",

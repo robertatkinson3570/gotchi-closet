@@ -1,5 +1,5 @@
 // server/routes/analytics.ts
-import { Router } from "express";
+import { Router, text } from "express";
 import type { Request } from "express";
 import { insertEvent, listEvents, listVisitors, pruneOld } from "../analytics/store";
 import { verifyAdminSignature } from "../analytics/auth";
@@ -33,11 +33,18 @@ async function requireAdmin(req: Request): Promise<boolean> {
   return verifyAdminSignature(wallet, signedAt, signature);
 }
 
-// Public ingest. Fire-and-forget from the client beacon.
-router.post("/track", (req, res) => {
+// Public ingest. Fire-and-forget from the client beacon. The beacon posts as
+// text/plain (CORS-safelisted, no preflight), so parse that body here; the global
+// express.json() still handles an application/json body (e.g. curl / tests), in
+// which case req.body is already the parsed object and text() below no-ops.
+router.post("/track", text({ type: ["text/plain", "application/json"], limit: "16kb" }), (req, res) => {
   if (req.ip && hit("ip:" + req.ip, 300, 600_000)) return res.status(429).end();
 
-  const { visitorId, eventType, path, wallet } = req.body ?? {};
+  let payload: unknown = req.body;
+  if (typeof payload === "string") {
+    try { payload = JSON.parse(payload); } catch { return res.status(400).end(); }
+  }
+  const { visitorId, eventType, path, wallet } = (payload ?? {}) as Record<string, unknown>;
   if (typeof visitorId !== "string" || !visitorId || visitorId.length > 64) return res.status(400).end();
   if (eventType !== "pageview" && eventType !== "connect") return res.status(400).end();
 
