@@ -59,7 +59,10 @@ function kinshipWord(kinship?: number): { word: string; line: TraitLine } {
   return { word: "aloof", line: { emoji: "🤍", label: "Still warming up to you", reason: `kinship ${k}` } };
 }
 
-export function buildPersonality(input: PersonalityInput): PersonalityProfile {
+export function buildPersonality(
+  input: PersonalityInput,
+  opts: { includeSiteOverview?: boolean } = {}
+): PersonalityProfile {
   const equipped = resolveEquippedTraits(input);
   const base = input.numericTraits;
   const traitLines: TraitLine[] = [];
@@ -95,7 +98,7 @@ export function buildPersonality(input: PersonalityInput): PersonalityProfile {
   const archetype = `${stage.word[0].toUpperCase()}${stage.word.slice(1)} ${spk[0].toUpperCase()}${spk.slice(1)} ${brn}`;
 
   const profile: PersonalityProfile = { archetype, toneWords, traitLines, systemPrompt: "" };
-  profile.systemPrompt = personalityToSystemPrompt(input, profile, equipped);
+  profile.systemPrompt = personalityToSystemPrompt(input, profile, equipped, opts.includeSiteOverview ?? true);
   return profile;
 }
 
@@ -109,14 +112,17 @@ export const UNIVERSAL_BASE_PERSONA =
 export function personalityToSystemPrompt(
   input: PersonalityInput,
   profile: PersonalityProfile,
-  equipped: number[]
+  equipped: number[],
+  // SITE_OVERVIEW (~221 tok) is a nav map that only helps on site/how-to messages. The chat route
+  // drops it on pure-social turns to stretch the Groq free-tier token budget; every other caller
+  // keeps it (default true).
+  includeSiteOverview = true
 ): string {
   const voice = profile.traitLines.map((t) => `- ${t.label} (${t.reason})`).join("\n");
   return [
     UNIVERSAL_BASE_PERSONA,
     "",
-    SITE_OVERVIEW,
-    "",
+    ...(includeSiteOverview ? [SITE_OVERVIEW, ""] : []),
     `You are ${input.name}. This is WHO YOU ARE — let it drive your voice, word choice, and energy ` +
       `(show the personality, don't describe it):`,
     voice,

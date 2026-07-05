@@ -70,9 +70,18 @@ router.post("/chat", async (req, res) => {
 
     const { masked, deflected } = filterInbound(rawMessage);
 
+    // Curated how-to/lore snippets for this message (reused below in assembleMessages).
+    const lore = retrieveLore(masked);
+    // The SITE_OVERVIEW nav map (~221 tok) only earns its cost on app/how-to messages. Drop it on
+    // pure-social chat to stretch the Groq free-tier budget. Generous gate — a topical lore hit OR
+    // how-to phrasing keeps it; deterministic nav/help already short-circuit before the LLM anyway.
+    const wantsSite =
+      lore.length > 0 ||
+      /\b(how (do|can|to)|how'?s|where|help|guide|site|app|page|section|tab|nav|menu|button|screen|feature|can i|do i|what can (you|i))\b/i.test(masked);
+
     const state = await fetchGotchiState(tokenId);
     if (!state) return res.status(404).json({ error: "gotchi not found" });
-    const profile = buildPersonality(state);
+    const profile = buildPersonality(state, { includeSiteOverview: wantsSite });
     const soul = soulDepthSnapshot(tokenId);
     const canAct =
       "\n\nYou CAN act for your owner right here in this chat — channel gotchis, empty parcel reservoirs, " +
@@ -138,7 +147,7 @@ router.post("/chat", async (req, res) => {
     const estate = asksEstate ? await fetchEstateStatus(wallet) : null;
     const messages = assembleMessages({
       facts: [...getFacts(wallet, tokenId), ...actionLines, ...(holdings ? [holdings] : []), ...(lending ? [lending] : []), ...(deals ? [deals] : []), ...(daoInfo ? [daoInfo] : []), ...(estate ? [estate] : [])],
-      lore: retrieveLore(masked),
+      lore,
       history: getRecentMessages(wallet, tokenId, 8).map((m) => ({ role: m.role, content: m.content })),
       userMessage: masked,
     });
