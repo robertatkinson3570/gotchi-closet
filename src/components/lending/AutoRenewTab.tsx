@@ -183,7 +183,7 @@ export function AutoRenewTab() {
         <p className="text-xs text-muted-foreground">
           Templates registered with the GotchiCloset auto-renew backend. Subscription billed
           off-chain in GHST (1 GHST/30 days, multi-month discounts). Cron stops the moment
-          your subscription expires — never renews past paid term.
+          your subscription expires, never renews past paid term.
         </p>
         <div className="flex items-center gap-1.5">
           {enabledCount > 0 && (
@@ -350,7 +350,7 @@ export function AutoRenewTab() {
                       {!t.subscription
                         ? "Pay subscription:"
                         : subActive
-                          ? "Expiring soon — extend:"
+                          ? "Expiring soon, extend:"
                           : "Renew:"}
                     </span>
                     {SUBSCRIPTION_TIERS.map((tier) => (

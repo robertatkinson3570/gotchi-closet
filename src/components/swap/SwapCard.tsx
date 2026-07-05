@@ -77,7 +77,7 @@ export function SwapCard() {
         if (cancelled) return;
         setQuote(q);
       } catch (e: any) {
-        if (!cancelled) setQuoteError(e?.message ?? "Quote failed — try again");
+        if (!cancelled) setQuoteError(e?.message ?? "Quote failed, try again");
       } finally {
         if (!cancelled) setQuoting(false);
       }
@@ -157,7 +157,7 @@ export function SwapCard() {
         <div className="text-[10px] text-muted-foreground mb-1">You receive (est.)</div>
         <div className="flex items-center gap-2">
           <div className="flex-1 min-w-0 text-xl font-semibold tabular-nums truncate">
-            {quoting ? <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /> : quote ? fmtUnits(quote.toAmount, toToken.decimals) : "—"}
+            {quoting ? <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /> : quote ? fmtUnits(quote.toAmount, toToken.decimals) : "None"}
           </div>
           {reversed ? (
             <select

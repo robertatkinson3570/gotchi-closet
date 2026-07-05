@@ -161,7 +161,7 @@ export default function PublicGotchiPage() {
         </h1>
         <p className="text-white/50 max-w-sm">
           {notFound
-            ? `Gotchi #${tokenId} hasn't been summoned yet — or has wandered beyond the veil.`
+            ? `Gotchi #${tokenId} hasn't been summoned yet, or has wandered beyond the veil.`
             : "The subgraph ether is disrupted. Try again in a moment."}
         </p>
         <Link
@@ -336,7 +336,7 @@ export default function PublicGotchiPage() {
                 You've hit today's free chat limit 👻
               </p>
               <p className="text-white/50 text-xs mb-4">
-                Connect your wallet to unlock the full companion — unlimited chat, pet, equip, and more.
+                Connect your wallet to unlock the full companion: unlimited chat, pet, equip, and more.
               </p>
               <Link
                 to="/"

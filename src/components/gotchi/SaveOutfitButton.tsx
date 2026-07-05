@@ -401,7 +401,7 @@ function SavePopoverBody(props: {
       <div className="flex items-center gap-2 text-xs">
         <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-400 shrink-0" />
         <span>
-          Step {progress.stepIndex + 1}/{progress.total} — {progress.label}…
+          Step {progress.stepIndex + 1}/{progress.total}: {progress.label}…
         </span>
       </div>
     );
@@ -471,14 +471,14 @@ function SavePopoverBody(props: {
           )}
         </div>
       ) : plan.steps.length === 0 ? (
-        <div className="text-muted-foreground">Nothing to save — outfit matches the chain.</div>
+        <div className="text-muted-foreground">Nothing to save. Outfit matches the chain.</div>
       ) : (
         <>
           <ol className="space-y-1 list-decimal list-inside">
             {plan.steps.map((step, i) => (
               <li key={i} className={step.kind === "unequip" ? "text-amber-400" : ""}>
                 {step.kind === "buy" &&
-                  `Buy ${nameOf(step.wearableId)} — ${ghst(step.priceInWei)} GHST`}
+                  `Buy ${nameOf(step.wearableId)} (${ghst(step.priceInWei)} GHST)`}
                 {step.kind === "resetSkillPoints" && "Reset skill points (respec)"}
                 {step.kind === "spendSkillPoints" && "Spend skill points to the new traits"}
                 {step.kind === "unequip" &&
@@ -489,11 +489,11 @@ function SavePopoverBody(props: {
           </ol>
           {respec && respecCountUnknown ? (
             <div className="text-amber-400">
-              Couldn't read the respec count — a respec fee may apply.
+              Couldn't read the respec count. A respec fee may apply.
             </div>
           ) : respec && respec.respecCount > 0 ? (
             <div className="text-amber-400">
-              Respec #{respec.respecCount + 1} — a fee applies.
+              Respec #{respec.respecCount + 1}. A fee applies.
             </div>
           ) : null}
           {plan.totalBuyCostWei > 0n && (

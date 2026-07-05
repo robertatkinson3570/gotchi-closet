@@ -96,7 +96,7 @@ export function RentAction({ lending, status, onRentSuccess }: Props) {
     return (
       <div className="rounded-lg border border-border/40 bg-muted/20 p-3 text-sm text-muted-foreground inline-flex items-center gap-2">
         <AlertCircle className="w-4 h-4" />
-        This is your own listing — you can't rent your own gotchi. Use the
+        This is your own listing. You can't rent your own gotchi. Use the
         Cancel action instead.
       </div>
     );
@@ -107,7 +107,7 @@ export function RentAction({ lending, status, onRentSuccess }: Props) {
       <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 space-y-2">
         <div className="flex items-center gap-2 text-sm font-medium text-amber-600 dark:text-amber-400">
           <AlertCircle className="w-4 h-4" />
-          Wrong network — switch to Base
+          Wrong network, switch to Base
         </div>
         <button
           type="button"
@@ -126,7 +126,7 @@ export function RentAction({ lending, status, onRentSuccess }: Props) {
     return (
       <div className="rounded-lg border border-green-500/40 bg-green-500/10 p-3 inline-flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium">
         <CheckCircle2 className="w-4 h-4" />
-        Rental confirmed — gotchi is now in your custody
+        Rental confirmed. Gotchi is now in your custody
       </div>
     );
   }

@@ -266,7 +266,7 @@ export function useLandAlchemica(claimerGotchiId?: number, channelGotchiIds: num
       setErrorMsg(parseRevert(lastErr));
     } else if (failed > 0) {
       setStep("error");
-      setErrorMsg(`Claimed ${batches.length - failed}/${batches.length} batches; ${failed} failed (RPC/cooldown) — click again to retry the rest.`);
+      setErrorMsg(`Claimed ${batches.length - failed}/${batches.length} batches; ${failed} failed (RPC/cooldown). Click again to retry the rest.`);
     } else {
       setStep("success");
     }
@@ -360,7 +360,7 @@ export function useLandAlchemica(claimerGotchiId?: number, channelGotchiIds: num
     setChannelDone(ok);
     setChannelStep(ok > 0 ? "success" : "error");
     if (ok === 0 && !rejected) {
-      setErrorMsg("No parcels channeled — every owned gotchi is on cooldown (each gotchi can channel once per cooldown). Try again later.");
+      setErrorMsg("No parcels channeled. Every owned gotchi is on cooldown (each gotchi can channel once per cooldown). Try again later.");
     }
     refetch();
     queryClient.invalidateQueries({ queryKey: qk.landParcelIds(address.toLowerCase()) });

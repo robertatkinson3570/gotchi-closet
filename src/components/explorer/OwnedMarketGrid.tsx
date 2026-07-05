@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { Loader2, Tag, X } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
-import { AAVEGOTCHI_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, REALM_DIAMOND_BASE, TILE_DIAMOND_BASE, FORGE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE, FAKE_CARDS_DIAMOND_BASE, GUARDIAN_SKINS_DIAMOND_BASE, ERC1155_MARKETPLACE_ABI, ERC721_MARKETPLACE_ABI } from "@/lib/lending/contracts";
+import { AAVEGOTCHI_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, REALM_DIAMOND_BASE, TILE_DIAMOND_BASE, FORGE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE, FAKE_CARDS_DIAMOND_BASE, GUARDIAN_SKINS_DIAMOND_BASE, WEARABLE_DIAMOND_BASE, ERC1155_MARKETPLACE_ABI, ERC721_MARKETPLACE_ABI } from "@/lib/lending/contracts";
 import { GOTCHIVERSE_SUBGRAPH, CORE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
@@ -12,7 +12,13 @@ import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
 import { CreateAuctionButton } from "./CreateAuctionButton";
 import { RecentSales } from "./RecentSales";
 import { ParcelDetailModal } from "@/components/lending/ParcelDetailModal";
+import { fetchOwnedListings, type ListedMap } from "./detail/ownedListings";
+import { itemMetaSync } from "@/lib/explorer/itemMeta";
+import { useDetailNav } from "./detail/useDetailNav";
+import { DetailDialogShell } from "./detail/DetailDialogShell";
 import wearablesData from "../../../data/wearables.json";
+
+const fmtGhst = (wei: string) => (Number(wei) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
 type OwnedKind = "item" | "installation" | "parcel" | "tile" | "wearable" | "forge" | "fakegotchi" | "portal" | "fakecard" | "guardian";
 type Owned = { id: string; bal: number };
@@ -144,7 +150,6 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
   const { toast } = useToast();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sort, setSort] = useState<"id-desc" | "id-asc" | "qty-desc">("id-desc");
-  const [detailId, setDetailId] = useState<string | null>(null); // parcel detail open
   const [dPrice, setDPrice] = useState("");
   const [dBusy, setDBusy] = useState<"" | "list" | "cancel">("");
   const [price, setPrice] = useState("");
@@ -156,17 +161,34 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
   // via forgeCategory; all others have a single Baazaar listing category).
   const canList = itemKind === "forge" || LISTING_CATEGORY[itemKind] !== undefined;
   // Whitelisted GBM auction kinds on Base (verified from live auctions). Wearables
-  // and consumable items are NOT GBM-auctionable, so they get no auction button.
+  // ARE auctionable (erc1155) but via the WEARABLE_DIAMOND, not the aavegotchi
+  // diamond that holds itemBalances. Consumable items have no live auctions, so
+  // they stay excluded.
   const auctionKind: "erc721" | "erc1155" | null =
     itemKind === "parcel" || itemKind === "fakegotchi" || itemKind === "portal" ? "erc721"
-    : itemKind === "tile" || itemKind === "installation" || itemKind === "forge" ? "erc1155"
+    : itemKind === "tile" || itemKind === "installation" || itemKind === "forge" || itemKind === "wearable" ? "erc1155"
     : null;
+  // GBM auction category: 4 for every whitelisted non-gotchi asset (verified on Base).
+  const auctionCategory = 4;
+  // Wearables auction on the WEARABLE_DIAMOND; everything else on its own token contract.
+  const auctionContract = itemKind === "wearable" ? WEARABLE_DIAMOND_BASE : tokenContract;
+  // Single Baazaar listing category for this asset (forge spans several per-item,
+  // so its per-token listings aren't enrichable here — bulk-list still works).
+  const listingCategory = itemKind === "forge" ? null : (LISTING_CATEGORY[itemKind] ?? null);
 
   const { data: owned, isLoading, refetch } = useQuery({
     queryKey: ["owned-market", itemKind, address?.toLowerCase()],
     enabled: !!address && !!publicClient,
     staleTime: 30_000,
     queryFn: () => fetchOwned(itemKind, address!.toLowerCase(), publicClient!),
+  });
+
+  // The connected wallet's active listings for these tokens (price + edit/cancel).
+  const { data: listedMap } = useQuery<ListedMap>({
+    queryKey: ["owned-listings", itemKind, address?.toLowerCase()],
+    enabled: !!address && listingCategory != null,
+    staleTime: 30_000,
+    queryFn: () => fetchOwnedListings(erc721 ? "erc721" : "erc1155", address!, listingCategory!, tokenContract),
   });
 
   const toggle = (id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -240,6 +262,38 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
     } catch (e) { toast({ title: "Cancel failed", description: parseRevert(e).slice(0, 140), variant: "destructive" }); } finally { setDBusy(""); }
   };
 
+  // List a single owned token at `dPrice` (erc721 or erc1155), from the detail dialog.
+  const listSingle = async (o: Owned) => {
+    const p = Number(dPrice);
+    if (!publicClient || !address || !(p > 0) || listingCategory == null) return;
+    if (!isOnBase) return toast({ title: "Switch to Base", variant: "destructive" });
+    setDBusy("list");
+    try {
+      const wei = BigInt(Math.round(p * 1e6)) * 10n ** 12n;
+      const approved = (await publicClient.readContract({ address: tokenContract, abi: APPROVAL_ABI, functionName: "isApprovedForAll", args: [address, AAVEGOTCHI_DIAMOND_BASE] })) as boolean;
+      if (!approved) { const ah = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: tokenContract, abi: APPROVAL_ABI, functionName: "setApprovalForAll", args: [AAVEGOTCHI_DIAMOND_BASE, true] }); await publicClient.waitForTransactionReceipt({ hash: ah, confirmations: 1 }); }
+      const hash = erc721
+        ? await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ERC721_MARKETPLACE_ABI, functionName: "addERC721Listing", args: [tokenContract, BigInt(o.id), BigInt(listingCategory), wei] })
+        : await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ERC1155_MARKETPLACE_ABI, functionName: "setERC1155Listing", args: [tokenContract, BigInt(o.id), BigInt(o.bal), BigInt(listingCategory), wei] });
+      await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+      toast({ title: "Listed", description: `#${o.id} listed at ${p} GHST.` }); setDPrice(""); refetch();
+    } catch (e) { toast({ title: "List failed", description: parseRevert(e).slice(0, 140), variant: "destructive" }); } finally { setDBusy(""); }
+  };
+  // Cancel an existing listing by its known id (erc721 or erc1155).
+  const cancelListing = async (listed: { listingId: string }) => {
+    if (!publicClient || !address) return;
+    setDBusy("cancel");
+    try {
+      const hash = erc721
+        ? await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ERC721_MARKETPLACE_ABI, functionName: "cancelERC721Listing", args: [BigInt(listed.listingId)] })
+        : await writeContractAsync({ chainId: BASE_CHAIN_ID, address: AAVEGOTCHI_DIAMOND_BASE, abi: ERC1155_MARKETPLACE_ABI, functionName: "cancelERC1155Listing", args: [BigInt(listed.listingId)] });
+      await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
+      toast({ title: "Listing cancelled" }); refetch();
+    } catch (e) { toast({ title: "Cancel failed", description: parseRevert(e).slice(0, 140), variant: "destructive" }); } finally { setDBusy(""); }
+  };
+  // Edit = cancel the old listing, then re-list at the new price (no single-tx update on Base).
+  const editListing = async (o: Owned, listed: { listingId: string }) => { await cancelListing(listed); await listSingle(o); };
+
   const rows = useMemo(() => {
     const r = [...(owned ?? [])];
     if (sort === "id-asc") r.sort((a, b) => Number(a.id) - Number(b.id));
@@ -247,6 +301,7 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
     else r.sort((a, b) => Number(b.id) - Number(a.id)); // id-desc (default)
     return r;
   }, [owned, sort]);
+  const nav = useDetailNav({ items: rows, getId: (o) => o.id, asset: itemKind });
 
   if (!isConnected) return <div className="text-center py-12 text-muted-foreground text-sm">Connect a wallet to see your {itemKind}s.</div>;
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
@@ -270,29 +325,32 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
               key={o.id}
               className={`group rounded-xl border p-2 space-y-1.5 transition-all ${sel ? "border-emerald-500 ring-2 ring-emerald-500/50 bg-emerald-500/5" : "border-border/40 bg-background/60 hover:border-primary/40"}`}
             >
-              <button type="button" onClick={() => canList && toggle(o.id)} className="w-full text-left space-y-1.5" disabled={!canList}>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-muted-foreground">#{o.id}{o.bal > 1 ? ` ×${o.bal}` : ""}</span>
-                  {canList ? (sel ? <span className="text-emerald-500 text-xs">✓ list</span> : <span className="text-[9px] text-muted-foreground opacity-0 group-hover:opacity-100">tap to list</span>) : <span className="text-[9px] text-muted-foreground">owned</span>}
-                </div>
-                <div className="h-16 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
-                  <AssetImage candidates={imgFor(itemKind, o.id)} alt={`#${o.id}`} className="max-h-14 max-w-14 object-contain" />
-                </div>
+              <button type="button" onClick={() => canList && toggle(o.id)} disabled={!canList} className="w-full flex items-center justify-between text-left">
+                <span className="text-[10px] font-mono text-muted-foreground">#{o.id}{o.bal > 1 ? ` ×${o.bal}` : ""}</span>
+                {canList ? (sel ? <span className="text-emerald-500 text-xs">✓ list</span> : <span className="text-[9px] text-muted-foreground opacity-0 group-hover:opacity-100">tap to list</span>) : <span className="text-[9px] text-muted-foreground">owned</span>}
               </button>
+              <div onClick={() => { nav.openItem(o); setDPrice(""); }} title="View details" className="cursor-pointer h-16 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 hover:from-primary/5 hover:to-primary/15 transition-colors">
+                <AssetImage candidates={imgFor(itemKind, o.id)} alt={`#${o.id}`} className="max-h-14 max-w-14 object-contain" />
+              </div>
+              {itemKind !== "forge" && itemMetaSync(o.id)?.name && (
+                <div className="text-[9px] text-muted-foreground text-center truncate" title={itemMetaSync(o.id)!.name}>{itemMetaSync(o.id)!.name}</div>
+              )}
+              {listingCategory != null && (
+                listedMap?.[o.id]
+                  ? <div className="text-[10px] text-emerald-500 font-semibold text-center">{fmtGhst(listedMap[o.id].priceWei)} GHST</div>
+                  : <div className="text-[9px] text-muted-foreground text-center">Not listed</div>
+              )}
               {auctionKind && (
                 <CreateAuctionButton
                   kind={auctionKind}
-                  category={4}
+                  category={auctionCategory}
                   tokenId={o.id}
-                  contractAddress={tokenContract}
+                  contractAddress={auctionContract}
                   label={`${itemKind} #${o.id}`}
                   maxQuantity={o.bal}
                   compact
                   onCreated={refetch}
                 />
-              )}
-              {itemKind === "parcel" && (
-                <button type="button" onClick={() => { setDetailId(o.id); setDPrice(""); }} className="h-6 w-full rounded bg-primary/10 text-primary hover:bg-primary/20 text-[9px] font-semibold">Details</button>
               )}
             </div>
           );
@@ -310,24 +368,65 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
         </div>
       )}
 
-      {detailId && itemKind === "parcel" && (
+      {nav.open && itemKind === "parcel" && (
         <ParcelDetailModal
-          parcelId={detailId}
-          onClose={() => setDetailId(null)}
+          parcelId={nav.open.id}
+          onClose={() => nav.close()}
+          onPrev={nav.prev} onNext={nav.next} hasPrev={nav.hasPrev} hasNext={nav.hasNext} shareUrl={nav.shareUrl}
           marketPanel={(
             <>
               <div className="text-sm font-semibold">Sell this parcel</div>
               <div className="flex items-center gap-1.5">
                 <input type="number" value={dPrice} onChange={(e) => setDPrice(e.target.value)} placeholder="Price (GHST)" className="h-9 flex-1 min-w-0 rounded border border-border bg-background px-2 text-sm" />
-                <button disabled={dBusy !== "" || !(Number(dPrice) > 0)} onClick={() => listOne(detailId)} className="h-9 px-3 rounded bg-emerald-600 text-white text-sm font-semibold disabled:opacity-50 shrink-0">{dBusy === "list" ? "Listing…" : "List"}</button>
-                <button disabled={dBusy !== ""} onClick={() => cancelOne(detailId)} className="h-9 px-3 rounded border border-border/60 text-sm font-medium text-muted-foreground hover:bg-muted/50 disabled:opacity-50 shrink-0">{dBusy === "cancel" ? "…" : "Cancel"}</button>
+                <button disabled={dBusy !== "" || !(Number(dPrice) > 0)} onClick={() => nav.open && listOne(nav.open.id)} className="h-9 px-3 rounded bg-emerald-600 text-white text-sm font-semibold disabled:opacity-50 shrink-0">{dBusy === "list" ? "Listing…" : "List"}</button>
+                <button disabled={dBusy !== ""} onClick={() => nav.open && cancelOne(nav.open.id)} className="h-9 px-3 rounded border border-border/60 text-sm font-medium text-muted-foreground hover:bg-muted/50 disabled:opacity-50 shrink-0">{dBusy === "cancel" ? "…" : "Cancel"}</button>
               </div>
-              <CreateAuctionButton kind="erc721" category={4} tokenId={detailId} contractAddress={tokenContract} label={`Parcel #${detailId}`} onCreated={refetch} />
-              <RecentSales kind="erc721" tokenId={detailId} />
+              <CreateAuctionButton kind="erc721" category={4} tokenId={nav.open.id} contractAddress={tokenContract} label={`Parcel #${nav.open.id}`} onCreated={refetch} />
+              <RecentSales kind="erc721" tokenId={nav.open.id} />
             </>
           )}
         />
       )}
+
+      {nav.open && itemKind !== "parcel" && (() => {
+        const o = nav.open;
+        const listed = listedMap?.[o.id];
+        const meta = itemKind !== "forge" ? itemMetaSync(o.id) : undefined;
+        return (
+          <DetailDialogShell
+            title={<>{meta?.name ?? itemKind} <span className="text-muted-foreground font-mono text-sm">#{o.id}</span></>}
+            onClose={() => nav.close()} onPrev={nav.prev} onNext={nav.next} hasPrev={nav.hasPrev} hasNext={nav.hasNext} shareUrl={nav.shareUrl}
+            widthClass="w-[min(440px,96vw)]"
+          >
+            <div className="w-32 h-32 mx-auto rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 flex items-center justify-center [&_img]:max-h-28 [&_img]:max-w-28 [&_img]:object-contain">
+              <AssetImage candidates={imgFor(itemKind, o.id)} alt={`#${o.id}`} />
+            </div>
+            {o.bal > 1 && <div className="text-center text-xs text-muted-foreground">You own ×{o.bal}</div>}
+            {listingCategory != null && (
+              <div className="rounded-lg border border-border/60 p-3 space-y-2">
+                <div className="text-sm font-semibold">Your listing</div>
+                {listed ? (
+                  <>
+                    <div className="text-2xl font-bold text-emerald-500 text-center">{fmtGhst(listed.priceWei)} GHST</div>
+                    <div className="flex items-center gap-1.5">
+                      <input type="number" value={dPrice} onChange={(e) => setDPrice(e.target.value)} placeholder="New price (GHST)" className="h-9 flex-1 min-w-0 rounded border border-border bg-background px-2 text-sm" />
+                      <button disabled={dBusy !== "" || !(Number(dPrice) > 0)} onClick={() => editListing(o, listed)} className="h-9 px-3 rounded bg-emerald-600 text-white text-sm font-semibold disabled:opacity-50 shrink-0">{dBusy === "list" ? "Saving…" : "Edit"}</button>
+                      <button disabled={dBusy !== ""} onClick={() => cancelListing(listed)} className="h-9 px-3 rounded border border-border/60 text-sm font-medium text-muted-foreground hover:bg-muted/50 disabled:opacity-50 shrink-0">{dBusy === "cancel" ? "…" : "Cancel"}</button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <input type="number" value={dPrice} onChange={(e) => setDPrice(e.target.value)} placeholder="Price (GHST)" className="h-9 flex-1 min-w-0 rounded border border-border bg-background px-2 text-sm" />
+                    <button disabled={dBusy !== "" || !(Number(dPrice) > 0)} onClick={() => listSingle(o)} className="h-9 px-3 rounded bg-emerald-600 text-white text-sm font-semibold disabled:opacity-50 shrink-0">{dBusy === "list" ? "Listing…" : "List"}</button>
+                  </div>
+                )}
+              </div>
+            )}
+            {auctionKind && <CreateAuctionButton kind={auctionKind} category={auctionCategory} tokenId={o.id} contractAddress={auctionContract} label={`${itemKind} #${o.id}`} maxQuantity={o.bal} onCreated={refetch} />}
+            <RecentSales kind={erc721 ? "erc721" : "erc1155"} tokenId={o.id} />
+          </DetailDialogShell>
+        );
+      })()}
     </div>
   );
 }

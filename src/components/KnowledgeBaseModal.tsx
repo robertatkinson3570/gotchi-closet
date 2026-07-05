@@ -23,7 +23,7 @@ export function KnowledgeBaseButton({ variant = "link", className }: { variant?:
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={triggerCls} title="Guide — how GotchiCloset & Aavegotchi work">
+      <button type="button" onClick={() => setOpen(true)} className={triggerCls} title="Guide: how GotchiCloset & Aavegotchi work">
         <BookOpen className="w-4 h-4" />
         {variant !== "nav" && <span>Guide</span>}
       </button>
@@ -153,7 +153,7 @@ const DIAGRAMS = [
   { id: "overview", label: "Overview", src: "/diagrams/gotchi-closet-architecture.svg", caption: "Client → Backend → On-chain (Base 8453), with subgraphs & diamond addresses" },
   { id: "soulseal", label: "SoulSeal flow", src: "/diagrams/soulseal-flow.svg", caption: "Seal → EIP-712 attestation → on-chain → public verify" },
   { id: "companion", label: "Companion chat", src: "/diagrams/companion-chat.svg", caption: "Free (Groq) vs premium (OpenAI) with auth / rate-limit / ownership gates" },
-  { id: "data", label: "Data model", src: "/diagrams/data-model.svg", caption: "SQLite stores — companion · soul · roast · auto-renew" },
+  { id: "data", label: "Data model", src: "/diagrams/data-model.svg", caption: "SQLite stores: companion · soul · roast · auto-renew" },
   { id: "imports", label: "Frontend modules", src: "/diagrams/frontend-imports.svg", caption: "src/ subsystem import graph (auto-generated)" },
 ] as const;
 
@@ -196,12 +196,12 @@ function ArchitectureView() {
         <img
           key={current.id}
           src={current.src}
-          alt={`GotchiCloset — ${current.label} diagram`}
+          alt={`GotchiCloset · ${current.label} diagram`}
           className={fit ? "w-full h-auto" : "max-w-none"}
         />
       </div>
       <div className="shrink-0 px-4 sm:px-6 py-2 text-[11px] text-muted-foreground border-t border-border/40">
-        Switch to “Actual size” to read addresses / labels, or open full size. Diagrams are static SVGs generated from the codebase — no secrets included.
+        Switch to “Actual size” to read addresses / labels, or open full size. Diagrams are static SVGs generated from the codebase, no secrets included.
       </div>
     </div>
   );

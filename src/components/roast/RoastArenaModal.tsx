@@ -85,7 +85,7 @@ function QueueTab({
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold text-white/80">Your Gotchi #{selectedTokenId}</div>
             <div className="mt-0.5 text-[11px] text-white/40">
-              {inQueue ? "currently in the queue — waiting for challengers" : "not in queue"}
+              {inQueue ? "currently in the queue, waiting for challengers" : "not in queue"}
             </div>
           </div>
           <button
@@ -160,7 +160,7 @@ function BattlesTab({
   if (battles.length === 0) {
     return (
       <div className="py-10 text-center text-sm text-white/30">
-        no battles yet — enter the queue and roast someone
+        no battles yet, enter the queue and roast someone
       </div>
     );
   }
@@ -207,7 +207,7 @@ function LeaderboardTab({
   if (rows.length === 0) {
     return (
       <div className="py-10 text-center text-sm text-white/30">
-        leaderboard is empty — fight for the top spot
+        leaderboard is empty, fight for the top spot
       </div>
     );
   }
@@ -382,7 +382,7 @@ function BattleReplay({
             {/* Score tally */}
             <div className="mb-2 flex items-center justify-center gap-3 text-sm">
               <span className="font-bold text-fuchsia-200">{myScore}</span>
-              <span className="text-white/30">—</span>
+              <span className="text-white/30">-</span>
               <span className="font-bold text-cyan-200">{oppScore}</span>
             </div>
 

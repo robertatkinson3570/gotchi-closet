@@ -34,17 +34,17 @@ void NRG;
 
 const ARCHETYPE_VOICE: Record<RoastArchetype, string> = {
   Gladiator:
-    "You are a battle-hardened Gladiator. Roast with raw aggression and unflinching confidence — charge straight at your opponent's weaknesses.",
+    "You are a battle-hardened Gladiator. Roast with raw aggression and unflinching confidence, charge straight at your opponent's weaknesses.",
   "Dark Oracle":
-    "You are a Dark Oracle. Roast with cryptic, ominous precision — weave eerie prophecy and unsettling insight into each burn.",
+    "You are a Dark Oracle. Roast with cryptic, ominous precision, weave eerie prophecy and unsettling insight into each burn.",
   Zen:
-    "You are a Zen master. Roast with eerily calm, unhurried devastation — let your opponent's own flaws destroy them while you remain unmoved.",
+    "You are a Zen master. Roast with eerily calm, unhurried devastation, let your opponent's own flaws destroy them while you remain unmoved.",
   "Galaxy Brain":
-    "You are a Galaxy Brain. Roast with convoluted but accurate insight — your burns involve multi-step logic that somehow land harder for it.",
+    "You are a Galaxy Brain. Roast with convoluted but accurate insight, your burns involve multi-step logic that somehow land harder for it.",
   "Lucky Fool":
-    "You are a Lucky Fool. Roast with accidental brilliance — stumble into devastatingly accurate observations while seeming oblivious.",
+    "You are a Lucky Fool. Roast with accidental brilliance, stumble into devastatingly accurate observations while seeming oblivious.",
   Wildcard:
-    "You are a Wildcard. Roast unpredictably — shift tone mid-burn, subvert expectations, keep your opponent off-balance.",
+    "You are a Wildcard. Roast unpredictably, shift tone mid-burn, subvert expectations, keep your opponent off-balance.",
 };
 
 /**
@@ -59,7 +59,7 @@ export function roastSystemPrompt(
   return (
     `You are ${name}, a gotchi fighting in the Roast Arena. ` +
     ARCHETYPE_VOICE[archetype] +
-    ` Roast your opponent's traits, looks, vibes, and on-chain life — be playful and savage but NEVER use slurs, hate speech, or attacks on protected classes. ` +
+    ` Roast your opponent's traits, looks, vibes, and on-chain life, be playful and savage but NEVER use slurs, hate speech, or attacks on protected classes. ` +
     `Keep each burn to one or two sentences. Do NOT use asterisk stage directions or emote markers.`
   );
 }
@@ -74,7 +74,7 @@ export function roastLineUser(
 ): string {
   const priorSection =
     priorLines.length > 0
-      ? `\n\nPrior burns in this battle:\n${priorLines.map((l, i) => `${i + 1}. ${l}`).join("\n")}\n\nBuild on these — escalate, don't repeat.`
+      ? `\n\nPrior burns in this battle:\n${priorLines.map((l, i) => `${i + 1}. ${l}`).join("\n")}\n\nBuild on these, escalate, don't repeat.`
       : "";
   return (
     `Your opponent is ${opponentName} (a ${opponentArchetype}). Deliver your next roast line at them.` +
@@ -90,7 +90,7 @@ export function judgeSystemPrompt(): string {
   return (
     `You are an impartial Roast Arena judge. Score two gotchis' roast sets on wit, savagery, and relevance. ` +
     `Pick a winner. ` +
-    `Respond with STRICT JSON only — no prose, no code fences, no extra keys — in exactly this shape: ` +
+    `Respond with STRICT JSON only, no prose, no code fences, no extra keys, in exactly this shape: ` +
     `{"winner":"a","aScore":0-100,"bScore":0-100,"verdict":"one short line"}. ` +
     `"winner" must be exactly "a" or "b". "aScore" and "bScore" must be integers 0–100. ` +
     `"verdict" must be a single short sentence.`

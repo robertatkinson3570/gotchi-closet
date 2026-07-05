@@ -154,7 +154,7 @@ async function fetchBids(addr: string): Promise<Item[]> {
     const ended = Number(au.endsAt) <= now;
     const claimed = !!au.claimed;
     const won = (au.highestBidder ?? "").toLowerCase() === a;
-    const status = au.cancelled ? "Cancelled" : claimed ? "Claimed" : ended ? (won ? "Won — claim" : "Lost") : (won ? "Winning" : "Outbid");
+    const status = au.cancelled ? "Cancelled" : claimed ? "Claimed" : ended ? (won ? "Won · claim" : "Lost") : (won ? "Winning" : "Outbid");
     out.push({
       id: `bid-${au.id}`, refId: au.id, kind, category, contract: (au.contractAddress ?? "").toLowerCase(), tokenId: au.tokenId, quantity: 1,
       priceWei: b.amount ?? "0", counterparty: (au.seller ?? "").toLowerCase(), time: Number(au.endsAt), auctionType: au.type,
@@ -241,7 +241,7 @@ function ItemImg({ it }: { it: Item }) {
 }
 function statusClass(s?: string): string {
   if (s === "Open" || s === "Listed" || s === "Live" || s === "Winning") return "bg-emerald-500/15 text-emerald-500";
-  if (s === "Ended" || s === "Won — claim") return "bg-amber-500/15 text-amber-500";
+  if (s === "Ended" || s === "Won · claim") return "bg-amber-500/15 text-amber-500";
   if (s === "Claimed") return "bg-blue-500/15 text-blue-400";
   return "bg-muted/50 text-muted-foreground";
 }
@@ -300,7 +300,7 @@ export default function UserActivityPage() {
         hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: GBM_DIAMOND_BASE, abi: GBM_MANAGE_ABI, functionName: "cancelAuction", args: [BigInt(it.refId)] });
       }
       await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
-      const labels: Record<string, string> = { cancelListing: "Listing cancelled", cancelOffer: "Offer cancelled — GHST refunded", claim: "Auction claimed", cancelAuction: "Auction cancelled", acceptOffer: "Offer accepted — sold" };
+      const labels: Record<string, string> = { cancelListing: "Listing cancelled", cancelOffer: "Offer cancelled, GHST refunded", claim: "Auction claimed", cancelAuction: "Auction cancelled", acceptOffer: "Offer accepted, sold" };
       toast({ title: labels[it.action] });
       refetch();
     } catch (e) {
@@ -335,7 +335,7 @@ export default function UserActivityPage() {
 
   return (
     <div className="container mx-auto max-w-[1100px] px-4 py-6">
-      <Seo title="My activity — GotchiCloset" description="Your Baazaar listings, offers, bids, auctions, purchases and sales." canonical={siteUrl("/me/activity")} />
+      <Seo title="My activity · GotchiCloset" description="Your Baazaar listings, offers, bids, auctions, purchases and sales." canonical={siteUrl("/me/activity")} />
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h1 className="text-2xl font-bold tracking-tight inline-flex items-center gap-2"><Coins className="w-6 h-6 text-primary" /> {isSelf ? "My activity" : `Activity · ${short(routeAddr)}`}</h1>
         <Link to={`/explorer?owner=${routeAddr ?? ""}`} className="h-8 px-3 inline-flex items-center gap-1.5 rounded-lg border border-border/40 text-xs font-semibold text-muted-foreground hover:bg-muted/40">View assets</Link>
@@ -392,7 +392,7 @@ export default function UserActivityPage() {
                       <td className="px-3 py-1.5 text-right text-emerald-500 font-semibold">{ghst(it.priceWei)} GHST</td>
                       {(tab === "purchases" || tab === "sales" || tab === "auctions" || tab === "bids") && (
                         <td className="px-3 py-1.5 text-muted-foreground">
-                          {it.counterparty && it.counterparty !== ZERO ? <Link to={`/u/${it.counterparty}`} className="font-mono text-primary hover:underline">{short(it.counterparty)}</Link> : "—"}
+                          {it.counterparty && it.counterparty !== ZERO ? <Link to={`/u/${it.counterparty}`} className="font-mono text-primary hover:underline">{short(it.counterparty)}</Link> : "-"}
                         </td>
                       )}
                       <td className="px-3 py-1.5"><span className={`text-[10px] px-1.5 py-0.5 rounded ${statusClass(it.status)}`}>{it.status}</span></td>
@@ -410,7 +410,7 @@ export default function UserActivityPage() {
                               {busy === it.id ? <Loader2 className="w-3 h-3 animate-spin" /> : actionLabel[it.action]}
                             </button>
                           ) : (
-                            <span className="text-muted-foreground/50">—</span>
+                            <span className="text-muted-foreground/50">-</span>
                           )}
                         </td>
                       )}

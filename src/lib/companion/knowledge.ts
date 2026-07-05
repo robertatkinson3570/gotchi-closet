@@ -3,11 +3,11 @@ import { retrieveKB } from "../knowledgeBase";
 // Knowledge the companion draws on. SITE_OVERVIEW is always injected so the gotchi
 // foremost knows what GotchiCloset is and how to help. The tagged snippets below are
 // keyword-retrieved per message for accurate, specific how-to answers. The canonical
-// app knowledge base (../knowledgeBase) is layered in as an ADDITIONAL reference —
+// app knowledge base (../knowledgeBase) is layered in as an ADDITIONAL reference , 
 // it supplements these snippets, it does not replace them.
 
 export const SITE_OVERVIEW =
-  "You live on GotchiCloset — a companion web app for managing Aavegotchis on Base. " +
+  "You live on GotchiCloset, a companion web app for managing Aavegotchis on Base. " +
   "Your FIRST job is to help your owner use this site. Its sections (top nav) are: " +
   "Explorer / Baazaar (browse & search gotchis and wearables, view listings, buy and sell); " +
   "Dress (equip wearables on your gotchis and optimize look, sets, and rarity); " +
@@ -35,7 +35,7 @@ const LORE: LoreSnippet[] = [
   { tags: ["forge", "craft", "smelt", "schematic", "geode"],
     text: "Craft and smelt wearables in the Forge section using alchemica and GHST." },
   { tags: ["pet", "petting", "kinship", "interact", "bond"],
-    text: "Pet your gotchi to raise kinship — interact about once every 12 hours; neglect lowers it. Petting works even while a gotchi is rented out." },
+    text: "Pet your gotchi to raise kinship, interact about once every 12 hours; neglect lowers it. Petting works even while a gotchi is rented out." },
   { tags: ["rarity", "brs", "rarity farming", "score"],
     text: "Base Rarity Score (BRS) sums how far each trait sits from the average; rarer extremes and equipped wearables/sets raise it. You can optimize BRS in the Dress section." },
   { tags: ["trait", "nrg", "agg", "spk", "brn", "energy", "aggression", "spookiness", "brain"],
@@ -45,7 +45,7 @@ const LORE: LoreSnippet[] = [
   { tags: ["collateral", "atoken", "aave", "stake"],
     text: "Every gotchi is backed by an Aave interest-bearing collateral token (an aToken); that staked value is your spirit-force." },
   { tags: ["ghst", "currency", "token"],
-    text: "GHST is the Aavegotchi currency — used in the Baazaar, the Forge, and for summoning." },
+    text: "GHST is the Aavegotchi currency, used in the Baazaar, the Forge, and for summoning." },
 ];
 
 export function retrieveLore(message: string, max = 4): string[] {

@@ -290,7 +290,7 @@ export default function LandManagementPage() {
   return (
     <div className="container mx-auto max-w-[1600px] px-4 py-6">
       <Seo
-        title="Land Management — GotchiCloset"
+        title="Land Management · GotchiCloset"
         description="Manage your Aavegotchi Gotchiverse parcels: claim, channel, survey, and build."
         canonical={siteUrl("/lending/lands")}
       />
@@ -456,21 +456,21 @@ function Row({
   return (
     <tr className="border-t border-border/20 hover:bg-muted/20">
       <td className="px-2 py-1.5 font-mono">#{r.tokenId}</td>
-      <td className="px-2 py-1.5">{r.name || <span className="text-muted-foreground">—</span>}</td>
+      <td className="px-2 py-1.5">{r.name || <span className="text-muted-foreground">-</span>}</td>
       <td className="px-2 py-1.5">{r.district}</td>
       <td className="px-2 py-1.5">{PARCEL_SIZE_LABEL[r.size] ?? `Size ${r.size}`}</td>
-      <td className="px-2 py-1.5">{r.altarLevel > 0 ? `Aaltar L${r.altarLevel}` : "—"}</td>
+      <td className="px-2 py-1.5">{r.altarLevel > 0 ? `Aaltar L${r.altarLevel}` : "-"}</td>
       <td className={`px-2 py-1.5 ${readyIn === 0 ? "text-emerald-500 font-medium" : "text-muted-foreground"}`}>{countdown(readyIn)}</td>
       <td className="px-2 py-1.5 text-muted-foreground">{timeAgo(r.lastChanneled, nowSec)}</td>
       <td className="px-2 py-1.5">{ACCESS_LABEL[r.channelAccess] ?? r.channelAccess}</td>
-      <td className="px-2 py-1.5 text-muted-foreground">{r.altarLevel > 0 ? `${Math.round(cooldownSec / 3600)}h` : "—"}</td>
+      <td className="px-2 py-1.5 text-muted-foreground">{r.altarLevel > 0 ? `${Math.round(cooldownSec / 3600)}h` : "-"}</td>
       <td className="px-2 py-1.5">{ACCESS_LABEL[r.reservoirAccess] ?? r.reservoirAccess}</td>
-      <td className={`px-2 py-1.5 ${reservoirsReady ? "text-emerald-500 font-medium" : "text-muted-foreground"}`}>{reservoirsReady ? "Now" : reservoirReadyIn > 0 ? `in ${countdown(reservoirReadyIn)}` : "—"}</td>
+      <td className={`px-2 py-1.5 ${reservoirsReady ? "text-emerald-500 font-medium" : "text-muted-foreground"}`}>{reservoirsReady ? "Now" : reservoirReadyIn > 0 ? `in ${countdown(reservoirReadyIn)}` : "-"}</td>
       <td className="px-2 py-1.5 text-muted-foreground">{timeAgo(r.lastClaimed, nowSec)}</td>
       <td className="px-2 py-1.5">
         <div className="flex items-center gap-1 justify-end">
           <IconBtn title="Claim reservoir" busy={busy(`claim:${realmId}`)} disabled={disabled || !reservoirsReady} onClick={() => actions.claim(realmId, gotchi)}><HandCoins className="w-3.5 h-3.5" /></IconBtn>
-          <IconBtn title={readyIn > 0 ? "On cooldown" : gotchiBusy ? "Gotchi on cooldown — channel again after it clears or pick another gotchi" : "Channel"} busy={busy(`channel:${realmId}`)} disabled={disabled || readyIn > 0 || gotchiBusy} onClick={() => actions.channel(realmId, gotchi, (gotchiLastChanneled ?? 0n) as bigint)}><Zap className="w-3.5 h-3.5" /></IconBtn>
+          <IconBtn title={readyIn > 0 ? "On cooldown" : gotchiBusy ? "Gotchi on cooldown, channel again after it clears or pick another gotchi" : "Channel"} busy={busy(`channel:${realmId}`)} disabled={disabled || readyIn > 0 || gotchiBusy} onClick={() => actions.channel(realmId, gotchi, (gotchiLastChanneled ?? 0n) as bigint)}><Zap className="w-3.5 h-3.5" /></IconBtn>
           <IconBtn title="Details & build (survey, layout)" onClick={onDetails}><Info className="w-3.5 h-3.5" /></IconBtn>
         </div>
       </td>

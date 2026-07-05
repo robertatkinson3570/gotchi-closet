@@ -57,7 +57,7 @@ export function QuorumPanel({ yourVp }: { yourVp?: number | null }) {
       {isLoading || isBuilding(data) ? (
         <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin text-primary" />
-          Computing votable VP across all holders — first run takes about a minute…
+          Computing votable VP across all holders, first run takes about a minute…
         </div>
       ) : !data ? (
         <p className="text-[11px] text-muted-foreground py-2">
@@ -117,7 +117,7 @@ export function QuorumPanel({ yourVp }: { yourVp?: number | null }) {
                 title={p.note}
                 className="text-[10px] rounded-full border border-dashed border-amber-500/50 text-amber-500 px-2 py-0.5"
               >
-                ◌ {p.label} — no VP yet
+                ◌ {p.label} · no VP yet
               </span>
             ))}
           </div>
@@ -155,7 +155,7 @@ export function QuorumPanel({ yourVp }: { yourVp?: number | null }) {
                 </div>
                 {data.ghst.method === "supply-minus-exclusions" && (
                   <p className="mt-1">
-                    Holder scan unavailable — contract-held GHST beyond the labeled list is
+                    Holder scan unavailable, contract-held GHST beyond the labeled list is
                     currently counted as votable.
                   </p>
                 )}

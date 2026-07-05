@@ -130,7 +130,7 @@ export function ParcelGrid({
             return (
               <div
                 key={idx}
-                title={`${it.name} · #${it.installationId} @ (${it.x},${it.y}) · ${it.w}×${it.h}${removable ? " — click to remove, drag to move" : ""}`}
+                title={`${it.name} · #${it.installationId} @ (${it.x},${it.y}) · ${it.w}×${it.h}${removable ? " · click to remove, drag to move" : ""}`}
                 onClick={removable ? () => onRemove!(it) : undefined}
                 draggable={movable}
                 onDragStart={movable ? () => onMoveExistingStart!(it) : undefined}
@@ -163,7 +163,7 @@ export function ParcelGrid({
           {staged.map((it, i) => (
             <div
               key={`pending-${i}`}
-              title={`${it.name} (staged) @ (${it.x},${it.y}) — drag to move, click to remove`}
+              title={`${it.name} (staged) @ (${it.x},${it.y}) · drag to move, click to remove`}
               draggable={!!onMoveStart}
               onDragStart={onMoveStart ? () => onMoveStart(i) : undefined}
               onClick={onUnstage ? () => onUnstage(i) : undefined}

@@ -207,7 +207,7 @@ export default function ForgePage() {
   if (!isConnected) {
     return (
       <div className="container mx-auto max-w-md px-4 py-16 text-center">
-        <Seo title="Forge — GotchiCloset" description="Smelt and forge Aavegotchi wearables." canonical={siteUrl("/forge")} />
+        <Seo title="Forge · GotchiCloset" description="Smelt and forge Aavegotchi wearables." canonical={siteUrl("/forge")} />
         <Flame className="w-8 h-8 mx-auto mb-2 text-orange-500" />
         <p className="text-sm font-medium mb-3">Connect a wallet to use the Forge</p>
         <ConnectButton />
@@ -217,7 +217,7 @@ export default function ForgePage() {
 
   return (
     <div className="container mx-auto max-w-[1100px] px-4 py-6">
-      <Seo title="Forge — GotchiCloset" description="Smelt wearables into Forge materials and claim forged items." canonical={siteUrl("/forge")} />
+      <Seo title="Forge · GotchiCloset" description="Smelt wearables into Forge materials and claim forged items." canonical={siteUrl("/forge")} />
       <h1 className="text-2xl font-bold tracking-tight inline-flex items-center gap-2 mb-1"><Flame className="w-6 h-6 text-orange-500" /> Forge</h1>
       <p className="text-sm text-muted-foreground mb-5">Smelt unequipped wearables into Forge materials, and claim items you've forged. All actions are signed in your wallet.</p>
 
@@ -234,7 +234,7 @@ export default function ForgePage() {
 
       {forging.length > 0 && (
         <div className="mb-5">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 inline-flex items-center gap-1.5"><Zap className="w-4 h-4 text-amber-500" /> Forging — speed up with GLTR</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 inline-flex items-center gap-1.5"><Zap className="w-4 h-4 text-amber-500" /> Forging: speed up with GLTR</div>
           <div className="flex flex-wrap gap-2">
             {forging.map((f) => (
               <div key={`${f.gotchiId}-${f.itemId}`} className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 flex items-center gap-2">
@@ -296,7 +296,7 @@ export default function ForgePage() {
       <div className="mb-6">
         <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 inline-flex items-center gap-1.5"><Hammer className="w-4 h-4 text-violet-500" /> Forge from schematics</div>
         {schematics.length === 0 ? (
-          <div className="text-sm text-muted-foreground py-4 text-center rounded-lg border border-border/40">No schematics yet — win them from geodes, then forge them into wearables here.</div>
+          <div className="text-sm text-muted-foreground py-4 text-center rounded-lg border border-border/40">No schematics yet, win them from geodes, then forge them into wearables here.</div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
             {schematics.map((s) => (
@@ -336,7 +336,7 @@ export default function ForgePage() {
         {!forgeBal ? (
           <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
         ) : materials.length === 0 ? (
-          <div className="text-sm text-muted-foreground py-4 text-center rounded-lg border border-border/40">No forge materials yet — smelt wearables to earn Alloy, Schematics, Cores & Geodes.</div>
+          <div className="text-sm text-muted-foreground py-4 text-center rounded-lg border border-border/40">No forge materials yet, smelt wearables to earn Alloy, Schematics, Cores & Geodes.</div>
         ) : (
           <div className="flex flex-wrap gap-2">
             {materials.map((m) => {

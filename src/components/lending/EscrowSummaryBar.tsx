@@ -136,7 +136,7 @@ export function EscrowSummaryBar() {
         title: "Mid-rental claim failed",
         description:
           claimMidRental.errorMsg.slice(0, 160) +
-          " — Listing may have been created with empty revenueTokens (closet bug pre-684ae2e). End rental + transferEscrow is the fallback.",
+          ". Listing may have been created with empty revenueTokens (closet bug pre-684ae2e). End rental + transferEscrow is the fallback.",
         variant: "destructive",
       });
     }
@@ -253,7 +253,7 @@ export function EscrowSummaryBar() {
             <div className="text-[10px] mt-0.5">
               <span className="font-medium">Claim mid-rental</span> works only if the
               listing was created with revenueTokens declared (any closet listing made
-              after fix <span className="font-mono">684ae2e</span>). Try the button — alch
+              after fix <span className="font-mono">684ae2e</span>). Try the button, alch
               flows per each listing's <span className="font-mono">splitOwner / splitBorrower</span>.
               If it pays out 0, the listing has empty revenueTokens (legacy bug) and the
               only recovery is to <span className="font-medium">end the rental</span> from
@@ -277,7 +277,7 @@ export function EscrowSummaryBar() {
             title={
               !isOnBase
                 ? "Switch to Base"
-                : "Calls batchClaimGotchiLending — sweeps each gotchi's escrow and splits per the listing's revenueSplit. No need to end rentals."
+                : "Calls batchClaimGotchiLending: sweeps each gotchi's escrow and splits per the listing's revenueSplit. No need to end rentals."
             }
             data-testid="escrow-claim-midrental"
             className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold transition-colors"

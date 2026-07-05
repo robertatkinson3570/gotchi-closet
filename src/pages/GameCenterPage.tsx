@@ -50,8 +50,8 @@ export default function GameCenterPage() {
         <div>
           <h1 className="text-2xl font-bold">Game Center</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            A community directory of Aavegotchi games, tools, and dashboards. Anyone who owns an Aavegotchi can submit —
-            each entry is reviewed before it goes live. Connect your wallet, hit Submit, and add yours. You can edit and
+            A community directory of Aavegotchi games, tools, and dashboards. Anyone who owns an Aavegotchi can submit.
+            Each entry is reviewed before it goes live. Connect your wallet, hit Submit, and add yours. You can edit and
             resubmit your own entries anytime from “My submissions”.
           </p>
         </div>
@@ -83,7 +83,7 @@ export default function GameCenterPage() {
           </div>
 
           {games.length === 0 ? (
-            <p className="mt-10 text-center text-sm text-muted-foreground">Nothing here yet — be the first to submit.</p>
+            <p className="mt-10 text-center text-sm text-muted-foreground">Nothing here yet, be the first to submit.</p>
           ) : (
             <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {games.map((g) => <GameCard key={g.id} game={g} onRemove={admin ? removeGame : undefined} />)}

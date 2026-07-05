@@ -124,7 +124,7 @@ const DAO_ADDRESSES: { chain: string; explorer: string; rows: { label: string; a
 ];
 
 const GOVERNANCE = [
-  { label: "Snapshot — vote on proposals", href: `https://snapshot.org/#/${SNAPSHOT_SPACE}`, icon: Vote },
+  { label: "Snapshot: vote on proposals", href: `https://snapshot.org/#/${SNAPSHOT_SPACE}`, icon: Vote },
   { label: "How to use the DAO / docs", href: "https://docs.aavegotchi.com", icon: BookOpen },
 ];
 const COMMUNITY = [
@@ -134,7 +134,7 @@ const COMMUNITY = [
   { label: "Agents", href: "https://dapp.aavegotchi.com/agents", icon: Bot },
 ];
 
-const num = (v: number | null | undefined) => (v == null ? "—" : v >= 1_000_000 ? `${(v / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 2 })}M` : v >= 1000 ? `${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}K` : v.toLocaleString(undefined, { maximumFractionDigits: 0 }));
+const num = (v: number | null | undefined) => (v == null ? "None" : v >= 1_000_000 ? `${(v / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 2 })}M` : v >= 1000 ? `${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}K` : v.toLocaleString(undefined, { maximumFractionDigits: 0 }));
 
 // ---- Snapshot space stats ----
 function useSpaceStats() {
@@ -283,7 +283,7 @@ export default function DaoPage() {
 
   return (
     <div className="container mx-auto max-w-[1000px] px-4 py-6">
-      <Seo title="AavegotchiDAO — GotchiCloset" description="AavegotchiDAO voting power, treasury and governance on Base, Polygon and Ethereum." canonical={siteUrl("/dao")} />
+      <Seo title="AavegotchiDAO · GotchiCloset" description="AavegotchiDAO voting power, treasury and governance on Base, Polygon and Ethereum." canonical={siteUrl("/dao")} />
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div>

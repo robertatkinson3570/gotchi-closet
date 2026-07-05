@@ -281,7 +281,7 @@ export function EquipWearablesModal({
                       <span onClick={(e) => { e.stopPropagation(); setSlot(slot, 0); }} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center shadow" title="Remove"><X className="w-3 h-3" /></span>
                     )}
                   </button>
-                  <div className="mt-1 text-[9px] text-center leading-tight text-muted-foreground truncate" title={w ? `${w.name} (${traitSummary(w)})` : ""}>{w?.name ?? "—"}</div>
+                  <div className="mt-1 text-[9px] text-center leading-tight text-muted-foreground truncate" title={w ? `${w.name} (${traitSummary(w)})` : ""}>{w?.name ?? "None"}</div>
                   <TraitMods w={w} directions={traitDirections} />
                 </div>
               );

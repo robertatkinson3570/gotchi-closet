@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { coreSubgraphFetch } from "@/lib/subgraph";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
-import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw, Clock, Lock, FlaskConical, Stamp, Gavel } from "lucide-react";
+import { Heart, Pencil, Sparkles, Send, Flame, Loader2, Tag, X, CheckCircle2, XCircle, Shirt, Wallet, RotateCcw, Clock, Lock, FlaskConical, Stamp, Gavel, ChevronLeft, ChevronRight, Link2, Check } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, ESCROW_FACET_ABI, GHST_TOKEN_BASE, LENDING_FACET_ABI } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
@@ -86,7 +86,7 @@ const TRAITS = ["NRG", "AGG", "SPK", "BRN"] as const;
 type Status = { kind: "idle" } | { kind: "busy"; label: string } | { kind: "ok"; label: string } | { kind: "err"; label: string };
 
 /** Large, controlled modal to view + manage a gotchi (opened from the profile). */
-export function GotchiManageModal({ gotchi, onClose, onEquipped }: { gotchi: ManageGotchi; onClose: () => void; onEquipped?: (equipped: number[]) => void }) {
+export function GotchiManageModal({ gotchi, onClose, onEquipped, onPrev, onNext, hasPrev, hasNext, shareUrl }: { gotchi: ManageGotchi; onClose: () => void; onEquipped?: (equipped: number[]) => void; onPrev?: () => void; onNext?: () => void; hasPrev?: boolean; hasNext?: boolean; shareUrl?: string | null }) {
   const { gotchiId, name, hauntId, collateral, numericTraits, equippedWearables, locked, lockReason, listed, readOnly, owner, listingId, listingPriceWei } = gotchi;
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -96,6 +96,25 @@ export function GotchiManageModal({ gotchi, onClose, onEquipped }: { gotchi: Man
 
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [equipOpen, setEquipOpen] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const copyLink = async () => {
+    if (!shareUrl) return;
+    try { await navigator.clipboard.writeText(location.origin + location.pathname + shareUrl); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 1500); } catch { /* clipboard blocked */ }
+  };
+  // Arrow keys page between gotchis; Esc closes. Ignored while typing (rename /
+  // respec inputs) so keystrokes aren't hijacked.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement as HTMLElement | null;
+      const typing = !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
+      if (typing) return;
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowLeft" && hasPrev && onPrev) onPrev();
+      else if (e.key === "ArrowRight" && hasNext && onNext) onNext();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose, onPrev, onNext, hasPrev, hasNext]);
   const [soulOpen, setSoulOpen] = useState(false);
   // Lent-out gotchis are still owned (sealing works); borrowed ones are not —
   // only the owner may seal, so hide the seal entry for borrowed gotchis.
@@ -121,7 +140,7 @@ export function GotchiManageModal({ gotchi, onClose, onEquipped }: { gotchi: Man
     queryKey: ["manage-gotchi-detail", gotchiId],
     staleTime: 30_000,
     queryFn: async () => {
-      const q = `{ aavegotchi(id:"${gotchiId}"){ hauntId level experience kinship baseRarityScore withSetsRarityScore equippedSetName lastInteracted createdAt }
+      const q = `{ aavegotchi(id:"${gotchiId}"){ hauntId level experience kinship baseRarityScore withSetsRarityScore equippedSetName lastInteracted createdAt stakedAmount }
         listing: erc721Listings(first:1, where:{ tokenId:"${gotchiId}", category:3, cancelled:false, timePurchased:"0" }){ id priceInWei }
         offer: erc721BuyOrders(first:1, where:{ erc721TokenId:"${gotchiId}", category:3, canceled:false }, orderBy:priceInWei, orderDirection:desc){ id priceInWei buyer } }`;
       const res = await coreSubgraphFetch(CORE_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
@@ -214,7 +233,18 @@ export function GotchiManageModal({ gotchi, onClose, onEquipped }: { gotchi: Man
         {/* Hero header */}
         <div className="relative overflow-hidden border-b border-border/60">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-fuchsia-500/10 to-transparent" />
-          <button onClick={onClose} className="absolute right-3 top-3 z-10 p-1.5 rounded-lg bg-black/25 hover:bg-black/45 text-white"><X className="w-5 h-5" /></button>
+          <div className="absolute right-3 top-3 z-10 flex items-center gap-1">
+            {shareUrl && (
+              <button onClick={copyLink} title="Copy link to this gotchi" className="p-1.5 rounded-lg bg-black/25 hover:bg-black/45 text-white">{copiedLink ? <Check className="w-5 h-5 text-emerald-400" /> : <Link2 className="w-5 h-5" />}</button>
+            )}
+            {(onPrev || onNext) && (
+              <>
+                <button onClick={onPrev} disabled={!hasPrev} title="Previous (left arrow)" className="p-1.5 rounded-lg bg-black/25 hover:bg-black/45 text-white disabled:opacity-30 disabled:cursor-default"><ChevronLeft className="w-5 h-5" /></button>
+                <button onClick={onNext} disabled={!hasNext} title="Next (right arrow)" className="p-1.5 rounded-lg bg-black/25 hover:bg-black/45 text-white disabled:opacity-30 disabled:cursor-default"><ChevronRight className="w-5 h-5" /></button>
+              </>
+            )}
+            <button onClick={onClose} title="Close (Esc)" className="p-1.5 rounded-lg bg-black/25 hover:bg-black/45 text-white"><X className="w-5 h-5" /></button>
+          </div>
           <div className="relative flex items-center gap-4 p-4">
             <span className="w-24 h-24 rounded-xl bg-black/20 overflow-hidden shrink-0 ring-2 ring-white/15 shadow-lg">
               <GotchiSvg gotchiId={gotchiId} hauntId={hauntId} collateral={collateral} numericTraits={numericTraits} equippedWearables={equippedWearables} mode="preview" useBlobUrl className="w-full h-full object-contain" />
@@ -232,7 +262,7 @@ export function GotchiManageModal({ gotchi, onClose, onEquipped }: { gotchi: Man
         <div className="p-4 space-y-3">
           {!readOnly && locked && (
             <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-[12px] text-amber-700 dark:text-amber-300">
-              This gotchi is {(lockReason || "rented").toLowerCase()} — only <span className="font-semibold">petting</span> is available right now. Channel &amp; claim its alchemica from <span className="font-semibold">Land Management</span>. Other actions unlock when the rental ends.
+              This gotchi is {(lockReason || "rented").toLowerCase()}, only <span className="font-semibold">petting</span> is available right now. Channel &amp; claim its alchemica from <span className="font-semibold">Land Management</span>. Other actions unlock when the rental ends.
             </div>
           )}
 
@@ -253,7 +283,7 @@ export function GotchiManageModal({ gotchi, onClose, onEquipped }: { gotchi: Man
 
           {!readOnly && listed && !locked && (
             <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5 text-[12px] text-emerald-700 dark:text-emerald-400">
-              This gotchi is <span className="font-semibold">listed for sale</span> — only <span className="font-semibold">petting</span> and editing the listing are available. Cancel the listing to unlock other actions.
+              This gotchi is <span className="font-semibold">listed for sale</span>, only <span className="font-semibold">petting</span> and editing the listing are available. Cancel the listing to unlock other actions.
             </div>
           )}
 
@@ -282,6 +312,9 @@ export function GotchiManageModal({ gotchi, onClose, onEquipped }: { gotchi: Man
                   <Stat label="Haunt" value={`H${ag.hauntId}`} />
                   {ageLabel ? <Stat label="Age" value={ageLabel} sub={`~${ageDays}d`} /> : null}
                   {ag.equippedSetName ? <Stat label="Set" value={ag.equippedSetName} /> : null}
+                  <Stat label="GHST pocket" value={((Number(ag.stakedAmount) || 0) / 1e18).toFixed(2)} sub="GHST" />
+                  {/* Spirit Points is not indexed on Base yet; shown as None for dapp parity. */}
+                  <Stat label="Spirit Pts" value="None" />
                   {collateral ? <Stat label="Collateral" value={`${collateral.slice(0, 6)}…${collateral.slice(-4)}`} /> : null}
                   {topOfferWei ? <Stat label="Top offer" value={ghstFmt(topOfferWei)} sub="GHST" /> : null}
                 </div>
@@ -429,7 +462,7 @@ export function GotchiManageModal({ gotchi, onClose, onEquipped }: { gotchi: Man
               </div>
               <button
                 disabled={busy || !/^\d+$/.test(sacrificeTo.trim())}
-                onClick={() => { const toId = sacrificeTo.trim(); if (/^\d+$/.test(toId) && window.confirm(`Sacrifice gotchi #${gotchiId}? IRREVERSIBLE — destroys it, returns staked collateral, and sends its XP to gotchi #${toId}.`)) run("Sacrifice", "decreaseAndDestroy", [id, BigInt(toId)]); }}
+                onClick={() => { const toId = sacrificeTo.trim(); if (/^\d+$/.test(toId) && window.confirm(`Sacrifice gotchi #${gotchiId}? IRREVERSIBLE: destroys it, returns staked collateral, and sends its XP to gotchi #${toId}.`)) run("Sacrifice", "decreaseAndDestroy", [id, BigInt(toId)]); }}
                 className="h-9 w-full rounded bg-red-500/15 text-red-500 border border-red-500/40 text-sm font-semibold disabled:opacity-50"
               >
                 Sacrifice gotchi

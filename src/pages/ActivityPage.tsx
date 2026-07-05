@@ -309,7 +309,7 @@ export default function ActivityPage() {
 
   return (
     <div className="container mx-auto max-w-[1200px] px-4 py-6">
-      <Seo title="Activity — GotchiCloset" description="Recent Baazaar sales, offers and auctions across the Aavegotchi marketplace." canonical={siteUrl("/activity")} />
+      <Seo title="Activity · GotchiCloset" description="Recent Baazaar sales, offers and auctions across the Aavegotchi marketplace." canonical={siteUrl("/activity")} />
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h1 className="text-2xl font-bold tracking-tight inline-flex items-center gap-2"><Activity className="w-6 h-6 text-primary" /> Activity</h1>
         <Link to="/stats" className="h-8 px-3 inline-flex items-center gap-1.5 rounded-lg border border-border/40 text-xs font-semibold text-muted-foreground hover:bg-muted/40"><BarChart3 className="w-3.5 h-3.5" /> Stats</Link>

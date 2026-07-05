@@ -62,7 +62,7 @@ export const VERDICT_DEFS: VerdictDef[] = [
     green: 5,
     yellow: -15,
     ruleText: "GHST/USD today vs 90 days ago. Green ≥ +5%, yellow ≥ −15%, red below.",
-    lever: "Price follows demand for what GHST buys. Real sinks — arena seasons, forge fees, cosmetics — plus visible shipping are the levers that don't lie.",
+    lever: "Price follows demand for what GHST buys. Real sinks (arena seasons, forge fees, cosmetics) plus visible shipping are the levers that don't lie.",
   },
   {
     key: "summons",
@@ -72,7 +72,7 @@ export const VERDICT_DEFS: VerdictDef[] = [
     days: 30,
     green: -10,
     yellow: -40,
-    ruleText: "Portals claimed on Base, last 30 days vs the prior 30. Green ≥ −10%, yellow ≥ −40%, red below. Summons are lumpy — thresholds are wider than sales.",
+    ruleText: "Portals claimed on Base, last 30 days vs the prior 30. Green ≥ −10%, yellow ≥ −40%, red below. Summons are lumpy, thresholds are wider than sales.",
     lever: "Summons follow supply and a reason to summon: haunt drops, portal sales, and gameplay that makes a fresh gotchi worth raising from day one.",
   },
   {
@@ -84,7 +84,7 @@ export const VERDICT_DEFS: VerdictDef[] = [
     green: -2,
     yellow: -10,
     ruleText: "Gotchis petted within the last 7 days, today vs 30 days ago. Green ≥ −2%, yellow ≥ −10%, red below. (Petting lands in large batches, so the 7d window is the stable gauge; the 24h tile shows batch cadence.) Accruing until 30 days of snapshots exist.",
-    lever: "Petting is the ecosystem's heartbeat — the one act with no financial payoff except kinship. Streak rewards and kinship-gated perks are the honest lever.",
+    lever: "Petting is the ecosystem's heartbeat, the one act with no financial payoff except kinship. Streak rewards and kinship-gated perks are the honest lever.",
   },
   {
     key: "lending",
@@ -106,7 +106,7 @@ export const VERDICT_DEFS: VerdictDef[] = [
     green: -2,
     yellow: -15,
     ruleText: "Gotchis that channeled within the last 7 days, today vs 30 days ago. Green ≥ −2%, yellow ≥ −15%, red below. Accruing until 30 days of snapshots exist.",
-    lever: "Channeling only matters if alchemica buys something. Crafting sinks and recipes that consume FUD/FOMO/ALPHA/KEK are the lever — emission without sinks is noise.",
+    lever: "Channeling only matters if alchemica buys something. Crafting sinks and recipes that consume FUD/FOMO/ALPHA/KEK are the lever. Emission without sinks is noise.",
   },
   {
     key: "dao-turnout",
@@ -116,7 +116,7 @@ export const VERDICT_DEFS: VerdictDef[] = [
     days: 90,
     green: -10,
     yellow: -35,
-    ruleText: "Voting power cast on proposals closing in the last 90 days vs the prior 90. Green ≥ −10%, yellow ≥ −35%, red below. Proposals are sparse — 90d windows smooth the lumps.",
+    ruleText: "Voting power cast on proposals closing in the last 90 days vs the prior 90. Green ≥ −10%, yellow ≥ −35%, red below. Proposals are sparse, 90d windows smooth the lumps.",
     lever: "Turnout follows convenience and stakes: delegation, voting from the tools holders already use, and proposals that visibly move the treasury. 7.2M quorum only works if voting is cheap.",
   },
   {

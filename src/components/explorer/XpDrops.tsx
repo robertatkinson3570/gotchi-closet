@@ -58,7 +58,7 @@ export function XpDrops({ gotchiId }: { gotchiId: string }) {
         </div>
       )}
       <div className="text-[10px] text-muted-foreground mt-1">
-        Unclaimed may mean not eligible — eligibility lists live off-chain.
+        Unclaimed may mean not eligible. Eligibility lists live off-chain.
       </div>
     </div>
   );

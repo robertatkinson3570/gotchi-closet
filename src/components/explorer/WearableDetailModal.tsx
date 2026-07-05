@@ -1,5 +1,3 @@
-import { createPortal } from "react-dom";
-import { X } from "lucide-react";
 import type { ExplorerWearable } from "@/lib/explorer/wearableTypes";
 import { getSlotName, getWearableRarityTier } from "@/lib/explorer/wearableTypes";
 import { formatTraitValue } from "@/lib/format";
@@ -11,6 +9,7 @@ import { WornBy } from "./WornBy";
 import { WearableHolders } from "./WearableHolders";
 import { BuyButton } from "./BuyButton";
 import { MakeOfferButton } from "./MakeOfferButton";
+import { DetailDialogShell } from "./detail/DetailDialogShell";
 
 const RARITY_COLORS: Record<string, string> = {
   Godlike: "text-cyan-400", Mythical: "text-pink-400", Legendary: "text-yellow-400",
@@ -20,26 +19,28 @@ const RARITY_COLORS: Record<string, string> = {
 /** Read-only detail view for a wearable: info, trait modifiers, recent sales,
  *  and buy / make-offer actions. Mirrors the gotchi Details modal. */
 export function WearableDetailModal({
-  wearable, listing, onClose,
+  wearable, listing, onClose, onPrev, onNext, hasPrev, hasNext, shareUrl,
 }: {
   wearable: ExplorerWearable;
   listing?: { listingId: string; minPriceWei: bigint; quantity: number };
   onClose: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
+  hasPrev?: boolean;
+  hasNext?: boolean;
+  shareUrl?: string | null;
 }) {
   const rarity = wearable.rarity || getWearableRarityTier(wearable.rarityScoreModifier);
   const slots = wearable.slots || [];
-  const slotLabel = slots.length > 0 ? getSlotName(slots[0]) : "—";
+  const slotLabel = slots.length > 0 ? getSlotName(slots[0]) : "None";
   const mods = wearable.traitModifiers.slice(0, 4);
 
-  return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-3" onClick={onClose}>
-      <div className="w-[min(460px,96vw)] max-h-[92vh] overflow-y-auto rounded-2xl border border-white/10 bg-background shadow-2xl ring-1 ring-primary/10" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 sticky top-0 bg-background z-10">
-          <div className="text-base font-bold truncate">{wearable.name} <span className="text-muted-foreground font-mono text-sm">#{wearable.id}</span></div>
-          <button onClick={onClose} className="p-1.5 rounded hover:bg-muted/50 shrink-0"><X className="w-5 h-5" /></button>
-        </div>
-
-        <div className="p-4 space-y-3">
+  return (
+    <DetailDialogShell
+      title={<>{wearable.name} <span className="text-muted-foreground font-mono text-sm">#{wearable.id}</span></>}
+      onClose={onClose} onPrev={onPrev} onNext={onNext} hasPrev={hasPrev} hasNext={hasNext} shareUrl={shareUrl}
+      widthClass="w-[min(460px,96vw)]"
+    >
           <div className="w-32 h-32 mx-auto rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 flex items-center justify-center [&_img]:max-h-28 [&_img]:max-w-28 [&_img]:object-contain">
             <AssetImage candidates={getWearableIconUrlCandidates(wearable.id)} alt={wearable.name} />
           </div>
@@ -55,7 +56,7 @@ export function WearableDetailModal({
               {["NRG", "AGG", "SPK", "BRN"].map((t, i) => (
                 <div key={t} className={`rounded-md py-1 ${mods[i] ? "bg-purple-500/20" : "bg-muted/30"}`}>
                   <div className="text-[9px] text-muted-foreground">{t}</div>
-                  <div className="text-xs font-semibold tabular-nums">{mods[i] ? formatTraitValue(mods[i]) : "—"}</div>
+                  <div className="text-xs font-semibold tabular-nums">{mods[i] ? formatTraitValue(mods[i]) : "None"}</div>
                 </div>
               ))}
             </div>
@@ -79,9 +80,6 @@ export function WearableDetailModal({
           <WornBy wearableId={wearable.id} />
 
           <RecentSales kind="erc1155" tokenId={String(wearable.id)} />
-        </div>
-      </div>
-    </div>,
-    document.body
+    </DetailDialogShell>
   );
 }

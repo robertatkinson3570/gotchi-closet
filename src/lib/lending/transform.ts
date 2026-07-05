@@ -100,10 +100,10 @@ export function formatPeriod(seconds: number): string {
 }
 
 export function formatGhstPerDay(wei: string, periodSec: number): string {
-  if (!periodSec) return "—";
+  if (!periodSec) return "None";
   const ghst = ghstFromWei(wei);
   const days = periodSec / 86400;
-  if (!days) return "—";
+  if (!days) return "None";
   const perDay = ghst / days;
   if (perDay < 1) return `${perDay.toFixed(2)}/d`;
   if (perDay < 100) return `${perDay.toFixed(1)}/d`;

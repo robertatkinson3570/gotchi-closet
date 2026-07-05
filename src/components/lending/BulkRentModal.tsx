@@ -112,7 +112,7 @@ export function BulkRentModal({ listings, onClose }: Props) {
               renting in bulk = signing one tx per gotchi. We submit them
               sequentially (each waits for the previous to confirm) so your
               wallet popup queue doesn't get jumbled. Stops on the first
-              failure — you can re-open with the remaining selection to retry.
+              failure, you can re-open with the remaining selection to retry.
             </div>
           </div>
 
@@ -233,7 +233,7 @@ export function BulkRentModal({ listings, onClose }: Props) {
                 className="w-full inline-flex items-center justify-center gap-1.5 h-11 rounded-md bg-green-500/15 text-green-600 dark:text-green-400 font-semibold text-sm"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                Done — rented {successCount} of {progress.total}
+                Done: rented {successCount} of {progress.total}
               </button>
             )}
             {progress.done && successCount === 0 && (

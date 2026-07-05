@@ -174,7 +174,7 @@ export function BulkReturnAndSweepModal({ rentals, onClose }: Props) {
         title: "Escrow sweep failed",
         description:
           (sweep.errorMsg?.slice(0, 160) ?? "Tx reverted.") +
-          " — Rentals already ended; you can sweep manually from the escrow bar.",
+          ". Rentals already ended; you can sweep manually from the escrow bar.",
         variant: "destructive",
       });
     }
@@ -302,14 +302,14 @@ export function BulkReturnAndSweepModal({ rentals, onClose }: Props) {
                 : phase === "switch-wallet" && onLenderWallet && balances.length === 0
                 ? "Wallet detected. Loading escrow balances…"
                 : phase === "switch-wallet" && onLenderWallet
-                ? "Wallet detected — click Sweep below to fire the second tx."
+                ? "Wallet detected. Click Sweep below to fire the second tx."
                 : undefined
             }
           />
 
           <PhaseRow
             n={3}
-            title={`Sweep escrow — ${summary || "no balances yet"}`}
+            title={`Sweep escrow: ${summary || "no balances yet"}`}
             state={
               phase === "sweeping"
                 ? "busy"
@@ -354,7 +354,7 @@ export function BulkReturnAndSweepModal({ rentals, onClose }: Props) {
                   !onLenderWallet
                     ? `Switch your wallet to the lender ${lenderAddr.slice(0, 6)}…${lenderAddr.slice(-4)} first.`
                     : balances.length === 0
-                    ? "Loading escrow balances — give it a few seconds, then click."
+                    ? "Loading escrow balances. Give it a few seconds, then click."
                     : !isOnBase
                     ? "Switch your wallet to Base."
                     : "Fire the batchTransferEscrow tx now."
@@ -376,7 +376,7 @@ export function BulkReturnAndSweepModal({ rentals, onClose }: Props) {
                 className="w-full inline-flex items-center justify-center gap-1.5 h-11 rounded-md bg-green-500/15 text-green-600 dark:text-green-400 font-semibold text-sm"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                Done — alch in your wallet
+                Done: alch in your wallet
               </button>
             )}
             {phase === "error" && (

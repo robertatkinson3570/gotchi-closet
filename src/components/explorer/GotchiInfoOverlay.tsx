@@ -31,7 +31,7 @@ function formatTraitMods(mods: number[]): string {
       parts.push(`${val > 0 ? "+" : ""}${val} ${TRAIT_ABBR[i]}`);
     }
   });
-  return parts.length > 0 ? parts.join(", ") : "—";
+  return parts.length > 0 ? parts.join(", ") : "None";
 }
 
 const COLLATERAL_NAMES: Record<string, string> = {

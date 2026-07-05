@@ -322,7 +322,7 @@ export default function BulkListPage() {
   return (
     <div className="container mx-auto max-w-6xl px-4 py-6">
       <Seo
-        title="Bulk list — GotchiCloset"
+        title="Bulk list · GotchiCloset"
         description="Stage and list multiple Aavegotchis for rent in one go."
         canonical={siteUrl("/lending/me/list")}
       />
@@ -858,14 +858,14 @@ function Step3Submit({
           <span className="inline-flex items-center gap-2 text-green-600 dark:text-green-400 font-medium">
             <CheckCircle2 className="w-4 h-4" />
             {multiChunk
-              ? `Done — ${successCount} listings confirmed across ${chunksDone} tx${chunksDone === 1 ? "" : "s"}`
-              : `Done — all ${successCount} listings confirmed in one tx`}
+              ? `Done: ${successCount} listings confirmed across ${chunksDone} tx${chunksDone === 1 ? "" : "s"}`
+              : `Done: all ${successCount} listings confirmed in one tx`}
           </span>
         )}
         {done && errored && (
           <span className="inline-flex items-center gap-2 text-destructive font-medium">
             <XCircle className="w-4 h-4" />
-            Batch {chunkIndex + 1}/{totalChunks} failed — {failCount} listings in this batch did not go through ({successCount} succeeded in earlier batches)
+            Batch {chunkIndex + 1}/{totalChunks} failed: {failCount} listings in this batch did not go through ({successCount} succeeded in earlier batches)
           </span>
         )}
         {!done && submitting && (
@@ -895,7 +895,7 @@ function Step3Submit({
       {skippedRows.length > 0 && (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-xs text-amber-600 dark:text-amber-400">
           <div className="font-medium mb-1">
-            {skippedRows.length} gotchis skipped — owned by a different wallet
+            {skippedRows.length} gotchis skipped, owned by a different wallet
           </div>
           <div className="text-[11px] opacity-80">
             Switch to {Array.from(new Set(skippedRows.map((r) => r.ownerWallet))).map((w) => `${w.slice(0, 6)}…${w.slice(-4)}`).join(", ")} in your wallet, then come back and re-run for those.

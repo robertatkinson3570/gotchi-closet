@@ -67,7 +67,7 @@ export function PetOperatorControl() {
         <HeartHandshake className="w-4 h-4 text-rose-400" /> Pet operator
       </div>
       <div className="rounded-xl border border-border/40 bg-background/60 p-3">
-        <p className="text-[11px] text-muted-foreground mb-2">Let another wallet (a pet bot or friend) pet all your gotchis to keep kinship up. They can only pet — never move or sell.</p>
+        <p className="text-[11px] text-muted-foreground mb-2">Let another wallet (a pet bot or friend) pet all your gotchis to keep kinship up. They can only pet, never move or sell.</p>
         <div className="flex flex-col sm:flex-row gap-2">
           <input
             value={operator}

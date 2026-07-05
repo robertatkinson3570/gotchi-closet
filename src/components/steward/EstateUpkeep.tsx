@@ -51,8 +51,8 @@ export function EstateUpkeep({ owner }: { owner: string }) {
         if (!ALLOWED_PAIRS.has(pair)) throw new Error("Refused an unexpected call (not pet/channel/claim on the Aavegotchi/Realm diamonds).");
         // Stop cleanly if the wallet account or network changed mid-run — the remaining
         // calls were planned for the original account on Base.
-        if ((live.current.address ?? "").toLowerCase() !== startAccount) throw new Error("Wallet account changed — stopped. Rerun from the new account.");
-        if (live.current.chainId !== base.id) throw new Error("Network changed — switch back to Base and rerun.");
+        if ((live.current.address ?? "").toLowerCase() !== startAccount) throw new Error("Wallet account changed, stopped. Rerun from the new account.");
+        if (live.current.chainId !== base.id) throw new Error("Network changed, switch back to Base and rerun.");
         const hash = await walletClient.sendTransaction({ to: c.to, data: c.data, account: walletClient.account, chain: base });
         sent.push(hash); setHashes([...sent]);
         await publicClient.waitForTransactionReceipt({ hash, timeout: 120_000 });
@@ -122,7 +122,7 @@ export function EstateUpkeep({ owner }: { owner: string }) {
         </div>
       )}
       {!busy && progress && progress.done === progress.total && progress.total > 0 && !err && (
-        <p className="mt-2 text-xs text-emerald-300">Done — ran {progress.total} {progress.total === 1 ? "transaction" : "transactions"}. ✨</p>
+        <p className="mt-2 text-xs text-emerald-300">Done: ran {progress.total} {progress.total === 1 ? "transaction" : "transactions"}. ✨</p>
       )}
     </div>
   );

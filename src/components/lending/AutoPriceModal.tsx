@@ -18,7 +18,7 @@ const GOAL_META: Record<AutoPriceGoal, { label: string; icon: React.ReactNode; d
   maximize_revenue: {
     label: "Maximize revenue",
     icon: <TrendingUp className="w-4 h-4" />,
-    desc: "Aim for the top of the band — may sit unrented longer",
+    desc: "Aim for the top of the band, may sit unrented longer",
   },
   balance: {
     label: "Balance",

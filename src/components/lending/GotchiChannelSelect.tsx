@@ -78,7 +78,7 @@ export function GotchiChannelSelect({
             {selected?.name || "Unnamed"} <span className="text-muted-foreground">#{selected && gid(selected)}</span>
           </span>
           <span className="block text-[11px] text-rose-500 inline-flex items-center gap-0.5">
-            <Heart className="w-3 h-3 fill-current" /> {selected?.kinship ?? "—"} kinship
+            <Heart className="w-3 h-3 fill-current" /> {selected?.kinship ?? "-"} kinship
           </span>
         </span>
         <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -105,7 +105,7 @@ export function GotchiChannelSelect({
                     {g.name || "Unnamed"} <span className="text-muted-foreground">#{id}</span>
                   </span>
                   <span className="block text-[11px] text-rose-500 inline-flex items-center gap-0.5">
-                    <Heart className="w-3 h-3 fill-current" /> {g.kinship ?? "—"}
+                    <Heart className="w-3 h-3 fill-current" /> {g.kinship ?? "-"}
                   </span>
                 </span>
                 {isSel && <Check className="w-4 h-4 text-emerald-500 shrink-0" />}

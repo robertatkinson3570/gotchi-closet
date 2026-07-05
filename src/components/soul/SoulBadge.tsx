@@ -43,7 +43,7 @@ export function SoulBadge({ kinship = 0, level = 0, createdAt, size = "sm" }: So
   const ringBorder = size === "md" ? 3 : 2;
   const innerSize = ringSize - ringBorder * 2;
 
-  const tooltipText = `Soul: ${soulLevel} · ${Math.round(score)}/60 (on-chain read — open the companion for full depth)`;
+  const tooltipText = `Soul: ${soulLevel} · ${Math.round(score)}/60 (on-chain read, open the companion for full depth)`;
 
   return (
     <span

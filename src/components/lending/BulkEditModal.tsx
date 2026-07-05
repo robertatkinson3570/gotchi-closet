@@ -205,7 +205,7 @@ export function BulkEditModal({ listings, onClose }: Props) {
         title: "Re-list failed",
         description:
           (add.errorMsg?.slice(0, 140) || "Tx reverted.") +
-          " — Listings were cancelled. Re-list manually from /lending/me.",
+          ". Listings were cancelled. Re-list manually from /lending/me.",
         variant: "destructive",
       });
     }
@@ -274,7 +274,7 @@ export function BulkEditModal({ listings, onClose }: Props) {
 
           {skipped > 0 && (
             <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] text-amber-700 dark:text-amber-400">
-              {skipped} of {listings.length} skipped — owned by a different
+              {skipped} of {listings.length} skipped, owned by a different
               wallet than the connected one. Switch wallets to edit those.
             </div>
           )}
@@ -519,7 +519,7 @@ function PhaseStatus({
   return (
     <div className="space-y-1.5">
       <Step
-        label={`Step 1 — Cancel ${count} listing${count === 1 ? "" : "s"}`}
+        label={`Step 1: Cancel ${count} listing${count === 1 ? "" : "s"}`}
         state={
           cancelStep === "success"
             ? "ok"
@@ -540,7 +540,7 @@ function PhaseStatus({
         }
       />
       <Step
-        label={`Step 2 — Re-list with new terms`}
+        label={`Step 2: Re-list with new terms`}
         state={
           addStep === "success"
             ? "ok"

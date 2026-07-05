@@ -592,7 +592,7 @@ export function EditorPanel() {
                   // the user pressed Apply and nothing happening is a bug.
                   toast({
                     title: "Auto-dress bug",
-                    description: `Wearable ${bad} is not in owned inventory — build rejected.`,
+                    description: `Wearable ${bad} is not in owned inventory. Build rejected.`,
                     variant: "destructive",
                   });
                   return;

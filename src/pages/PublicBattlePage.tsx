@@ -287,7 +287,7 @@ export default function PublicBattlePage() {
             <div className="mt-4 flex justify-center">
               <ShareBar
                 url={`${window.location.origin}/arena/${a}/vs/${b}`}
-                text={`${data.a.name} vs ${data.b.name} — who won this roast battle? 🔥👻`}
+                text={`${data.a.name} vs ${data.b.name}: who won this roast battle? 🔥👻`}
               />
             </div>
 

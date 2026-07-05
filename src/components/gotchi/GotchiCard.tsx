@@ -209,7 +209,7 @@ export function GotchiCard({
                         className="rounded-full border border-[hsl(var(--border))] px-2 py-0.5 text-[10px] text-muted-foreground"
                         title={
                           respec.fetchError
-                            ? "Couldn't load birth traits — respec disabled"
+                            ? "Couldn't load birth traits, respec disabled"
                             : respec.baselinePending
                               ? "Loading birth traits…"
                               : undefined

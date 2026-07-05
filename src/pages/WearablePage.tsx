@@ -102,7 +102,7 @@ export default function WearablePage() {
             ))}
           </div>
           <div className="mt-2 text-xs text-muted-foreground">
-            Rarity: {wearable.rarity || "—"}
+            Rarity: {wearable.rarity || "None"}
           </div>
         </section>
 

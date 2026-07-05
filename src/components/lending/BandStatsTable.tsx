@@ -43,9 +43,9 @@ export function BandStatsTable({ rows, onBandClick }: Props) {
                 }`}
               >
                 <td className="py-1.5 pl-1 font-mono">{r.band}</td>
-                <td className="py-1.5 text-right">{r.count || "—"}</td>
+                <td className="py-1.5 text-right">{r.count || "-"}</td>
                 <td className="py-1.5 text-right text-muted-foreground">
-                  {r.paidCount || "—"}
+                  {r.paidCount || "-"}
                 </td>
                 <Cell value={r.min} />
                 <Cell value={r.p25} />
@@ -67,7 +67,7 @@ export function BandStatsTable({ rows, onBandClick }: Props) {
 }
 
 function Cell({ value, highlight }: { value: number; highlight?: boolean }) {
-  if (!value) return <td className="py-1.5 text-right text-muted-foreground/40">—</td>;
+  if (!value) return <td className="py-1.5 text-right text-muted-foreground/40">-</td>;
   return (
     <td className={`py-1.5 text-right ${highlight ? "font-semibold" : ""}`}>
       {value < 1 ? value.toFixed(2) : Math.round(value).toLocaleString()}

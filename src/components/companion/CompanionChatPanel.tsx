@@ -67,7 +67,7 @@ export function CompanionChatPanel() {
         claim ? `${claim} reservoir${claim === 1 ? "" : "s"} to empty` : "",
         pet ? `${pet} to pet` : "",
       ].filter(Boolean).join(", ");
-      setMessages((m) => [...m, { role: "assistant", content: `👋 you've got ${bits} ready — say "collect" and I'll take care of it 👻` }]);
+      setMessages((m) => [...m, { role: "assistant", content: `👋 you've got ${bits} ready, say "collect" and I'll take care of it 👻` }]);
     }).catch(() => {});
   }, [address]);
   // "While you were away…" — if the autonomous cron ran upkeep for this gotchi since the owner
@@ -82,7 +82,7 @@ export function CompanionChatPanel() {
       if (!fresh.length) return;
       try { localStorage.setItem(key, String(Math.max(...actions.map((a) => a.ts)))); } catch { /* ignore */ }
       const n = fresh.length;
-      setMessages((m) => [...m, { role: "assistant", content: `👻 while you were away I ran upkeep ${n} time${n === 1 ? "" : "s"} for you — reservoirs emptied, gotchis tended.` }]);
+      setMessages((m) => [...m, { role: "assistant", content: `👻 while you were away I ran upkeep ${n} time${n === 1 ? "" : "s"} for you: reservoirs emptied, gotchis tended.` }]);
     }).catch(() => {});
   }, [address, selectedTokenId]);
 
@@ -152,20 +152,20 @@ export function CompanionChatPanel() {
     try {
       const plan = await stewardApi.upkeep(address);
       if (!plan.calls.length) {
-        setMessages((m) => [...m, { role: "assistant", content: "nothing's ready to collect yet — your parcels are still on cooldown 👻" }]);
+        setMessages((m) => [...m, { role: "assistant", content: "nothing's ready to collect yet, your parcels are still on cooldown 👻" }]);
         return;
       }
       const n = plan.calls.length;
-      setMessages((m) => [...m, { role: "assistant", content: `found alchemica to collect (${plan.summary.channel} channel, ${plan.summary.claim} claim) — approve ${n} tx${n > 1 ? "s" : ""} in your wallet…` }]);
+      setMessages((m) => [...m, { role: "assistant", content: `found alchemica to collect (${plan.summary.channel} channel, ${plan.summary.claim} claim): approve ${n} tx${n > 1 ? "s" : ""} in your wallet…` }]);
       let sent = 0;
       for (const call of plan.calls) {
         await walletClient.sendTransaction({ to: call.to, data: call.data });
         sent++;
       }
-      setMessages((m) => [...m, { role: "assistant", content: `collected ✅ (${sent} tx${sent > 1 ? "s" : ""}) — your alchemica's on the way 👻` }]);
+      setMessages((m) => [...m, { role: "assistant", content: `collected ✅ (${sent} tx${sent > 1 ? "s" : ""}), your alchemica's on the way 👻` }]);
     } catch (e: any) {
       const cancelled = /reject|denied|user/i.test(String(e?.message || e));
-      setMessages((m) => [...m, { role: "assistant", content: cancelled ? "no worries — cancelled 👻" : "couldn't send that just now — try again in a sec" }]);
+      setMessages((m) => [...m, { role: "assistant", content: cancelled ? "no worries, cancelled 👻" : "couldn't send that just now, try again in a sec" }]);
     }
   }
 
@@ -182,8 +182,8 @@ export function CompanionChatPanel() {
       if (r.ok) {
         setAutoCollect(next);
         setMessages((m) => [...m, { role: "assistant", content: next
-          ? "auto-collect on — once hands-free signing is live I'll keep your reservoirs emptied for you 👻"
-          : "auto-collect off — I'll wait for you to say the word 👻" }]);
+          ? "auto-collect on, once hands-free signing is live I'll keep your reservoirs emptied for you 👻"
+          : "auto-collect off, I'll wait for you to say the word 👻" }]);
       }
     } catch { /* ignore — user likely declined the signature */ } finally {
       setGoalBusy(false);

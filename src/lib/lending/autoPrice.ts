@@ -184,7 +184,7 @@ export function autoPrice(
       const wide = compsBandWide(lendings, brs);
       if (wide.length >= 3) {
         prices = wide;
-        reasons.push("battler comps thin in cell — used same-band any-duration");
+        reasons.push("battler comps thin in cell, used same-band any-duration");
       } else {
         // Tier 3 — channelling mode (no BRS filter; channelling-allowed only)
         const ch = compsChannelling(lendings, periodSec);
@@ -195,7 +195,7 @@ export function autoPrice(
           goalForCandidate = goal === "maximize_revenue" ? "balance" : "fast_fill";
           reasons.push("no battler comps → channelling-mode (any-BRS, channel=on)");
         } else {
-          reasons.push("very thin comp data — using alch-yield floor only");
+          reasons.push("very thin comp data, using alch-yield floor only");
         }
       }
     }
@@ -265,18 +265,18 @@ export function autoPrice(
 
   if (finalMode === "channelling") {
     notes.push(
-      `No battler-rental comps for this BRS — recommending channelling-renter pricing. Higher lender split (50%) captures more of the alchemica yield.`
+      `No battler-rental comps for this BRS. Recommending channelling-renter pricing. Higher lender split (50%) captures more of the alchemica yield.`
     );
     if (kinship < 50) {
-      notes.push(`Kinship ${kinship} is below baseline — alchemica yield is reduced. Consider petting before listing.`);
+      notes.push(`Kinship ${kinship} is below baseline. Alchemica yield is reduced. Consider petting before listing.`);
     } else if (kinship >= 100) {
       notes.push(`Kinship ${kinship} boosts channelling yield by ~${Math.round((1 + (kinship - 50) * 0.005 - 1) * 100)}%.`);
     }
   } else if (chComp && chComp.premiumPct != null && chComp.premiumPct > 10) {
-    notes.push(`Channelling-on adds ~${Math.round(chComp.premiumPct)}% in this band — leaving it on.`);
+    notes.push(`Channelling-on adds ~${Math.round(chComp.premiumPct)}% in this band, leaving it on.`);
   } else if (!battlerChannellingAllowed) {
     notes.push(
-      `Channelling-off carries a price premium in this band — turning off channelling for max revenue.`
+      `Channelling-off carries a price premium in this band. Turning off channelling for max revenue.`
     );
   }
 

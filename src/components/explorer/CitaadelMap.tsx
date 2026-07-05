@@ -448,7 +448,7 @@ export function CitaadelMap() {
                 <span className="text-muted-foreground">Owner</span>
                 {selected.owner ? (
                   <Link to={`/u/${selected.owner}`} className="text-primary hover:underline font-mono">{shortenAddress(selected.owner)}</Link>
-                ) : <span>—</span>}
+                ) : <span>None</span>}
               </div>
               {selected.auction && (
                 <div className="flex justify-between">

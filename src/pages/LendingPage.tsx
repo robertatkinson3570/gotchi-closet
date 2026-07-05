@@ -139,7 +139,7 @@ export default function LendingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Seo
-        title="Lending Marketplace — GotchiCloset"
+        title="Lending Marketplace · GotchiCloset"
         description="Browse Aavegotchi rental listings on Base. Filter by BRS w/ wearables, duration, price, channelling, and whitelist."
         canonical={siteUrl("/lending")}
       />

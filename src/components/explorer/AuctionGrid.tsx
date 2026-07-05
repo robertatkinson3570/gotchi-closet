@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { shortAddress as short } from "@/lib/format";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
-import { Loader2, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { BASE_CHAIN_ID } from "@/lib/chains";
 import {
   GBM_BAAZAAR_SUBGRAPH_URL,
@@ -30,6 +30,8 @@ import { GotchiExplorerCard } from "./GotchiExplorerCard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { fetchItemMetaMap, itemMetaSync, RARITY_COLORS, type ItemMeta } from "@/lib/explorer/itemMeta";
+import { useDetailNav } from "./detail/useDetailNav";
+import { DetailDialogShell } from "./detail/DetailDialogShell";
 
 // The GBM diamond on Base exposes commitBid with selector 0xd2f699fc:
 // commitBid(auctionId, bidAmount, lastHighestBid, tokenContract, tokenId, amount, signature).
@@ -300,7 +302,6 @@ function AuctionGridInner() {
     return () => clearInterval(id);
   }, []);
 
-  const [detail, setDetail] = useState<Auction | null>(null);
   const [bidValue, setBidValue] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState("all");
@@ -392,6 +393,7 @@ function AuctionGridInner() {
     return sorted;
   }, [liveRows, typeFilter, watchOnly, watchlist, search, sortBy, itemMetaMap, gotchiInfo]);
   const filtersActive = typeFilter !== "all" || watchOnly || search.trim() !== "";
+  const nav = useDetailNav({ items: rows, getId: (a) => a.id, asset: "auction" });
 
   const { data: claimable, refetch: refetchClaim } = useQuery({
     queryKey: ["gbm-claimable", address?.toLowerCase()],
@@ -457,7 +459,7 @@ function AuctionGridInner() {
       const hash = await writeContractAsync({ chainId: BASE_CHAIN_ID, address: GBM_DIAMOND_BASE, abi: GBM_ABI, functionName: "buyNow", args: [BigInt(a.id)] });
       await publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
       toast({ title: "Bought now", description: `Bought ${assetLabel(a)} #${a.tokenId} for ${ghst(a.buyNowPrice)} GHST.` });
-      setDetail(null);
+      nav.close();
       refetch();
     } catch (e) {
       toast({ title: "Buy now failed", description: parseRevert(e).slice(0, 160), variant: "destructive" });
@@ -468,7 +470,7 @@ function AuctionGridInner() {
 
   if (error) return <div className="p-4 text-sm text-destructive">{(error as Error).message}</div>;
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
-  const live = detail ? rows.find((r) => r.id === detail.id) ?? detail : null;
+  const live = nav.open;
   const claimRows = claimable ?? [];
 
   if (liveRows.length === 0 && claimRows.length === 0 && upcoming.length === 0)
@@ -550,7 +552,7 @@ function AuctionGridInner() {
             <button
               key={a.id}
               type="button"
-              onClick={() => { setDetail(a); setBidValue(""); }}
+              onClick={() => { nav.openItem(a); setBidValue(""); }}
               className="text-left rounded-lg border border-border/40 bg-background/60 p-3 space-y-1.5 hover:-translate-y-0.5 hover:ring-1 hover:ring-primary/40 transition-all"
             >
               <div className="flex items-center justify-between gap-1 text-xs">
@@ -639,7 +641,12 @@ function AuctionGridInner() {
           setBidValue={setBidValue}
           onBid={() => placeBid(live)}
           onBuyNow={() => buyItNow(live)}
-          onClose={() => setDetail(null)}
+          onClose={() => nav.close()}
+          onPrev={nav.prev}
+          onNext={nav.next}
+          hasPrev={nav.hasPrev}
+          hasNext={nav.hasNext}
+          shareUrl={nav.shareUrl}
           meta={isItemAuction(live) ? itemMetaMap?.get(Number(live.tokenId)) ?? itemMetaSync(live.tokenId) : undefined}
         />
       )}
@@ -648,10 +655,11 @@ function AuctionGridInner() {
 }
 
 function AuctionDetailModal({
-  a, nowSec, busy, bidValue, setBidValue, onBid, onBuyNow, onClose, meta,
+  a, nowSec, busy, bidValue, setBidValue, onBid, onBuyNow, onClose, onPrev, onNext, hasPrev, hasNext, shareUrl, meta,
 }: {
   a: Auction; nowSec: number; busy: boolean; bidValue: string;
   setBidValue: (v: string) => void; onBid: () => void; onBuyNow: () => void; onClose: () => void;
+  onPrev?: () => void; onNext?: () => void; hasPrev?: boolean; hasNext?: boolean; shareUrl?: string | null;
   meta?: ItemMeta;
 }) {
   const left = a.endsAt - nowSec;
@@ -680,20 +688,18 @@ function AuctionDetailModal({
           {short(addr)}
         </Link>
       ) : (
-        <span className="font-mono text-xs text-muted-foreground">—</span>
+        <span className="font-mono text-xs text-muted-foreground">None</span>
       )}
     </div>
   );
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-3" onClick={onClose}>
-      <div className="w-[min(560px,96vw)] max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 sticky top-0 bg-background z-10">
-          <div className="text-base font-bold truncate pr-2">{meta?.name ?? assetLabel(a)} #{a.tokenId} · Auction</div>
-          <button onClick={onClose} className="p-1.5 rounded hover:bg-muted/50"><X className="w-5 h-5" /></button>
-        </div>
-
-        <div className="p-4 space-y-4">
+    <DetailDialogShell
+      title={<>{meta?.name ?? assetLabel(a)} #{a.tokenId} · Auction</>}
+      onClose={onClose} onPrev={onPrev} onNext={onNext} hasPrev={hasPrev} hasNext={hasNext} shareUrl={shareUrl}
+      widthClass="w-[min(560px,96vw)]"
+    >
+      <div className="space-y-4">
           {isGotchi ? (
             <div className="max-w-[260px] mx-auto"><GotchiAuctionCard tokenId={a.tokenId} /></div>
           ) : (
@@ -753,8 +759,8 @@ function AuctionDetailModal({
                 {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Bidding…</> : "Place bid"}
               </button>
             </div>
-            {bidValue !== "" && !bidValid && <div className="text-[10px] text-red-500">Below the minimum next bid — a lower bid would revert and waste gas.</div>}
-            {inHammer && <div className="text-[10px] text-amber-500">⏱ Hammer time — a bid now extends the auction by ~{Math.round(a.hammerTimeDuration / 60)} min (anti-snipe).</div>}
+            {bidValue !== "" && !bidValid && <div className="text-[10px] text-red-500">Below the minimum next bid. A lower bid would revert and waste gas.</div>}
+            {inHammer && <div className="text-[10px] text-amber-500">⏱ Hammer time: a bid now extends the auction by ~{Math.round(a.hammerTimeDuration / 60)} min (anti-snipe).</div>}
           </div>
 
           {bids && bids.length > 0 && (
@@ -775,9 +781,8 @@ function AuctionDetailModal({
               </div>
             </div>
           )}
-        </div>
       </div>
-    </div>
+    </DetailDialogShell>
   );
 }
 

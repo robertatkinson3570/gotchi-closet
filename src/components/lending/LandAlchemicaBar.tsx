@@ -192,7 +192,7 @@ export function LandAlchemicaBar({
       ) : (
         <div className="rounded border border-emerald-500/20 bg-muted/20 p-2.5 text-xs text-muted-foreground flex items-center gap-1.5">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500/70" />
-          All reservoirs emptied — nothing ready to claim right now
+          All reservoirs emptied. Nothing ready to claim right now
           {reservoirSoonestIn != null && (
             <>
               {" "}· next ready in{" "}
@@ -223,7 +223,7 @@ export function LandAlchemicaBar({
               type="button"
               onClick={() => land.channelAll()}
               disabled={chBusy || !land.isOnBase}
-              title="Channel every ready parcel with your gotchi (needs an unlocked gotchi; one channel per gotchi cooldown — locked/lent gotchis are skipped)"
+              title="Channel every ready parcel with your gotchi (needs an unlocked gotchi; one channel per gotchi cooldown, locked/lent gotchis are skipped)"
               className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-[11px] font-semibold"
             >
               {chBusy ? (

@@ -329,7 +329,7 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
               <span className="text-xs text-muted-foreground self-center">
                 {periodUnit === "days" ? "days" : "hours"}{" "}
                 <span className="text-[10px]">
-                  (max {periodUnit === "days" ? "30 days" : "720 hours"} — protocol cap)
+                  (max {periodUnit === "days" ? "30 days" : "720 hours"}, protocol cap)
                 </span>
               </span>
               {modBRS != null && modBRS > 0 && (
@@ -368,7 +368,7 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
             {Number(upfrontGhst) === 0 && upfrontGhst !== "" && (
               <div className="mt-1.5 rounded border border-amber-500/40 bg-amber-500/5 px-2 py-1 text-[10px] text-amber-700 dark:text-amber-400 inline-flex items-center gap-1">
                 <Info className="w-3 h-3" />
-                You set 0 GHST — borrowers will rent for free (no upfront). Make sure that's intentional.
+                You set 0 GHST, borrowers will rent for free (no upfront). Make sure that's intentional.
               </div>
             )}
           </Section>
@@ -419,7 +419,7 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
               Allow borrower to channel alchemica from realm parcels
             </label>
             <p className="text-[10px] text-muted-foreground mt-1">
-              Recommended on — widens borrower pool. Battler-only borrowers ignore it.
+              Recommended on. Widens borrower pool. Battler-only borrowers ignore it.
             </p>
           </Section>
 
@@ -470,7 +470,7 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
                       Total: {tierFor(subscriptionMonths).priceGhst} GHST · expires in {subscriptionMonths * 30} days
                     </div>
                     <div className="text-muted-foreground mt-0.5">
-                      Paid once via GHST transfer. Cron stops the moment the term ends — no
+                      Paid once via GHST transfer. Cron stops the moment the term ends, no
                       surprise renewals. Extend any time from /lending/me.
                     </div>
                   </div>
@@ -603,7 +603,7 @@ export function ListLendingModal({ gotchiTokenId, gotchiName, originalOwner, mod
                   <div className="text-[10px] text-muted-foreground leading-relaxed">
                     Polling stuck? Check the BaseScan link above. If the tx
                     succeeded, your listing is on-chain regardless of this
-                    modal — close it and refresh /lending. If it reverted,
+                    modal. Close it and refresh /lending. If it reverted,
                     BaseScan will show the revert reason.
                   </div>
                 )}

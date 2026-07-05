@@ -42,7 +42,7 @@ export default function WearablesIndexPage() {
             >
               <div className="font-medium">{wearable.name}</div>
               <div className="text-xs text-muted-foreground">
-                {wearable.rarity || "—"}
+                {wearable.rarity || "None"}
               </div>
             </Link>
           ))}

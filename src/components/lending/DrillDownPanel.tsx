@@ -102,8 +102,8 @@ export function DrillDownPanel({ title, subtitle, lendings, onClose }: Props) {
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
             <Stat label="Lendings" value={stats.total.toString()} />
             <Stat label="Paid open-mkt" value={stats.paidOpenMarket.toString()} />
-            <Stat label="Median GHST" value={stats.median > 0 ? stats.median.toFixed(1) : "—"} />
-            <Stat label="p75 GHST" value={stats.p75 > 0 ? stats.p75.toFixed(1) : "—"} />
+            <Stat label="Median GHST" value={stats.median > 0 ? stats.median.toFixed(1) : "None"} />
+            <Stat label="p75 GHST" value={stats.p75 > 0 ? stats.p75.toFixed(1) : "None"} />
             <Stat label="Channelling" value={`${stats.channellingPct}%`} />
           </div>
 

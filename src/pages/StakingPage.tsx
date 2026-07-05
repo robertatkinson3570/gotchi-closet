@@ -146,14 +146,14 @@ export default function StakingPage() {
 
   return (
     <div className="container mx-auto max-w-[980px] px-4 py-6">
-      <Seo title="GLTR Staking — GotchiCloset" description="Stake Aavegotchi LP tokens on Base and earn GLTR to speed up the Forge." canonical={siteUrl("/staking")} />
+      <Seo title="GLTR Staking · GotchiCloset" description="Stake Aavegotchi LP tokens on Base and earn GLTR to speed up the Forge." canonical={siteUrl("/staking")} />
 
       {/* Hero */}
       <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-fuchsia-500/15 via-purple-500/10 to-background p-5 mb-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight inline-flex items-center gap-2"><Droplets className="w-6 h-6 text-primary" /> GLTR Staking</h1>
-            <p className="text-sm text-muted-foreground mt-1 max-w-[46ch]">Stake Aavegotchi LP tokens to earn GLTR — burn it in the <a href="/forge" className="underline underline-offset-2 hover:text-primary">Forge</a> to skip queue time.</p>
+            <p className="text-sm text-muted-foreground mt-1 max-w-[46ch]">Stake Aavegotchi LP tokens to earn GLTR, burn it in the <a href="/forge" className="underline underline-offset-2 hover:text-primary">Forge</a> to skip queue time.</p>
           </div>
           <div className="flex items-center gap-4 text-right">
             <div>

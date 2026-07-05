@@ -115,10 +115,10 @@ export function AlchemicaSwapCard() {
 
     const total = working.length;
     if (succeeded === total) {
-      toast({ title: "Swap complete", description: `Swapped ${succeeded}/${total} — received ~${fmtUnits(totalGhst, 18)} GHST total.` });
+      toast({ title: "Swap complete", description: `Swapped ${succeeded}/${total}, received ~${fmtUnits(totalGhst, 18)} GHST total.` });
     } else if (succeeded > 0) {
       const failedSymbols = working.filter((r) => r.status === "failed").map((r) => r.token.symbol).join(", ");
-      toast({ title: "Partial swap", description: `Swapped ${succeeded}/${total} — received ~${fmtUnits(totalGhst, 18)} GHST. Failed: ${failedSymbols}.` });
+      toast({ title: "Partial swap", description: `Swapped ${succeeded}/${total}, received ~${fmtUnits(totalGhst, 18)} GHST. Failed: ${failedSymbols}.` });
     } else {
       toast({ title: "Swap failed", description: "None of the alchemica swaps went through.", variant: "destructive" });
     }

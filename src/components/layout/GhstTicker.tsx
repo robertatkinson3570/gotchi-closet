@@ -72,7 +72,7 @@ export function GhstTicker() {
   return (
     <Popover className="relative hidden sm:block">
       <Popover.Button
-        title="GHST price — click for alchemica prices"
+        title="GHST price, click for alchemica prices"
         className="group inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full border border-border/40 bg-background/60 text-[11px] hover:border-primary/40 hover:shadow-glow-sm transition-all"
       >
         <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-fuchsia-500/30 to-purple-500/10 text-[8px] font-black text-primary">G</span>

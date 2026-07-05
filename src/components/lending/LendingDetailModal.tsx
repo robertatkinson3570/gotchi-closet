@@ -284,7 +284,7 @@ function DetailContent({
               }`}
               title={lending.channellingAllowed
                 ? "Borrower may channel alchemica from realm parcels"
-                : "Channelling disabled — battler-style listing"}
+                : "Channelling disabled: battler-style listing"}
             >
               <Zap className="w-3 h-3" /> Channelling: {lending.channellingAllowed ? "ON" : "OFF"}
             </span>
@@ -382,7 +382,7 @@ function DetailContent({
             <span className="text-muted-foreground">
               {lending.timeCreated
                 ? new Date(lending.timeCreated * 1000).toLocaleString()
-                : "—"}
+                : "None"}
             </span>
           </Row>
         </div>
@@ -466,7 +466,7 @@ function Row({
 }
 
 function Address({ value }: { value: string }) {
-  if (!value) return <span className="text-muted-foreground">—</span>;
+  if (!value) return <span className="text-muted-foreground">None</span>;
   return (
     <Link
       to={`/lending?owner=${value}`}

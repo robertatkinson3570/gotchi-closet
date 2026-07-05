@@ -32,7 +32,7 @@ export function GoPremium({ onActivated }: { onActivated?: () => void }) {
       setMsg("verifying on-chain…");
       await claimPremium(address, ghst, txHash);
       const status = await getPremium(address);
-      setMsg(status.active ? `premium active — ${status.credits.toLocaleString()} credits ✨` : "claim pending…");
+      setMsg(status.active ? `premium active · ${status.credits.toLocaleString()} credits ✨` : "claim pending…");
       if (status.active) onActivated?.();
     } catch (e: any) {
       setMsg(e?.shortMessage || e?.message || "payment failed");
@@ -43,7 +43,7 @@ export function GoPremium({ onActivated }: { onActivated?: () => void }) {
 
   return (
     <div className="rounded-xl border border-fuchsia-400/30 bg-fuchsia-500/10 p-3">
-      <div className="text-xs font-medium text-fuchsia-100">✨ Go Premium — sharper replies &amp; roast edge</div>
+      <div className="text-xs font-medium text-fuchsia-100">✨ Go Premium · sharper replies &amp; roast edge</div>
       <div className="mt-2 flex gap-2">
         {PACKS.map((p) => (
           <button key={p.ghst} disabled={busy} onClick={() => buy(p.ghst)}

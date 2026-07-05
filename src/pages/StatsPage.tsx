@@ -137,7 +137,7 @@ export default function StatsPage() {
 
   return (
     <div className="container mx-auto max-w-[1000px] px-4 py-6">
-      <Seo title="Marketplace Stats — GotchiCloset" description="Settled Baazaar and auction volume across the Aavegotchi marketplace on Base." canonical={siteUrl("/stats")} />
+      <Seo title="Marketplace Stats · GotchiCloset" description="Settled Baazaar and auction volume across the Aavegotchi marketplace on Base." canonical={siteUrl("/stats")} />
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <h1 className="text-2xl font-bold tracking-tight inline-flex items-center gap-2"><BarChart3 className="w-6 h-6 text-primary" /> Marketplace Stats</h1>

@@ -79,7 +79,7 @@ function ActiveGotchi({
       <div className="catwalk-active-shadow" />
       <div className="catwalk-active-info">
         <div className="catwalk-active-name">{gotchi.name}</div>
-        <div className="catwalk-active-brs">BRS: {gotchi.baseRarityScore ?? "—"}</div>
+        <div className="catwalk-active-brs">BRS: {gotchi.baseRarityScore ?? "None"}</div>
       </div>
     </div>
   );

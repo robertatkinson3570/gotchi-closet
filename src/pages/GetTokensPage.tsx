@@ -24,7 +24,7 @@ const SWAP: Provider[] = [
   { name: "Quickswap", desc: "Legacy GHST liquidity on Polygon", href: "https://quickswap.exchange/#/swap" },
 ];
 const BRIDGE: Provider[] = [
-  { name: "Bungee (Socket)", desc: "Bridge any token to GHST on Base — the dapp's bridge rail", href: "https://www.bungee.exchange/", tag: "Recommended" },
+  { name: "Bungee (Socket)", desc: "Bridge any token to GHST on Base, the dapp's bridge rail", href: "https://www.bungee.exchange/", tag: "Recommended" },
   { name: "Jumper", desc: "Multi-route bridge + swap to Base", href: `https://jumper.exchange/?toChain=8453&toToken=${GHST}` },
   { name: "Base Bridge", desc: "Official Ethereum → Base bridge", href: "https://bridge.base.org/" },
 ];
@@ -62,7 +62,7 @@ export default function GetTokensPage() {
 
   return (
     <div className="container mx-auto max-w-[720px] px-4 py-6">
-      <Seo title="Get GHST — GotchiCloset" description="Swap, bridge or buy GHST on Base to use across the Aavegotchi ecosystem." canonical={siteUrl("/get-tokens")} />
+      <Seo title="Get GHST · GotchiCloset" description="Swap, bridge or buy GHST on Base to use across the Aavegotchi ecosystem." canonical={siteUrl("/get-tokens")} />
 
       <div className="text-center mb-6">
         <h1 className="text-2xl font-bold tracking-tight inline-flex items-center gap-2"><Sparkles className="w-6 h-6 text-primary" /> Get GHST</h1>

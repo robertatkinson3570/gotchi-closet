@@ -37,7 +37,7 @@ const fmtGhst = (v: number) =>
   v >= 1_000_000 ? `${(v / 1_000_000).toFixed(2)}M` : v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v.toLocaleString(undefined, { maximumFractionDigits: 0 });
 const fmtUsd = (v: number) =>
   v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(2)}M` : v >= 1000 ? `$${(v / 1000).toFixed(1)}K` : `$${v.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-const fmtDelta = (d: number | null) => (d == null ? "—" : `${d >= 0 ? "+" : ""}${d.toFixed(1)}%`);
+const fmtDelta = (d: number | null) => (d == null ? "None" : `${d >= 0 ? "+" : ""}${d.toFixed(1)}%`);
 
 const VERDICT_STYLE: Record<VerdictColor, string> = {
   green: "bg-emerald-500/15 text-emerald-500 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.25)]",
@@ -167,7 +167,7 @@ export default function PulsePage() {
 
   return (
     <div className="container mx-auto max-w-[1100px] px-4 py-6">
-      <Seo title="Pulse — State of the Aavegotchiverse" description="Daily GHST and marketplace health metrics for Aavegotchi on Base: price, volume, buyers, holders — with transparent health verdicts." canonical={siteUrl("/pulse")} />
+      <Seo title="Pulse: State of the Aavegotchiverse" description="Daily GHST and marketplace health metrics for Aavegotchi on Base: price, volume, buyers, holders, with transparent health verdicts." canonical={siteUrl("/pulse")} />
 
       <h1 className="text-3xl font-bold tracking-tight inline-flex items-center gap-2.5 mb-1">
         <span className="relative inline-flex">
@@ -175,7 +175,7 @@ export default function PulsePage() {
         </span>
         <span className="bg-gradient-to-r from-[hsl(var(--spectral))] via-[hsl(var(--ghst-pink))] to-[hsl(var(--cyan))] bg-clip-text text-transparent">Pulse</span>
       </h1>
-      <p className="text-sm text-muted-foreground mb-5">State of the Aavegotchiverse — reality first, levers second. Chain: <span className="font-semibold text-foreground">Base</span></p>
+      <p className="text-sm text-muted-foreground mb-5">State of the Aavegotchiverse: reality first, levers second. Chain: <span className="font-semibold text-foreground">Base</span></p>
 
       <PulseVideoHero />
 
@@ -185,7 +185,7 @@ export default function PulsePage() {
       {isLoading || isBuilding(data) || !p ? (
         <div className="flex flex-col items-center gap-3 py-20 text-sm text-muted-foreground">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          {isBuilding(data) ? "Building history from the chain — first run takes a few minutes…" : "Loading…"}
+          {isBuilding(data) ? "Building history from the chain, first run takes a few minutes…" : "Loading…"}
         </div>
       ) : (
         <>
@@ -300,7 +300,7 @@ export default function PulsePage() {
 
           {/* DAO section */}
           <GlowCard accent="bg-[hsl(var(--gold))]/12" className="p-5 mt-4">
-            <h2 className="text-sm font-semibold text-muted-foreground mb-3">DAO turnout — VP cast per proposal close day (line = 7.2M quorum)</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground mb-3">DAO turnout: VP cast per proposal close day (line = 7.2M quorum)</h2>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={slice("dao_turnout_vp")} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
@@ -360,14 +360,14 @@ export default function PulsePage() {
             <summary className="text-sm font-semibold cursor-pointer inline-flex items-center gap-2"><Info className="w-4 h-4" /> Methodology & data sources</summary>
             <div className="mt-3 space-y-2 text-xs text-muted-foreground">
               <p>Sales: settled Baazaar ERC721/ERC1155 listings + settled GBM auctions on Base (Goldsky subgraphs), bucketed by UTC day. ERC1155 volume is price × quantity. Historical USD uses that day's GHST price (DefiLlama), never today's.</p>
-              <p>"Unique buyers" windows sum daily unique addresses (an address active on N days counts N times). Supply via Base RPC; holders via Blockscout; floor = cheapest active gotchi listing. Supply, holders and floor accrue forward from the tracking-since date — no history exists before it.</p>
+              <p>"Unique buyers" windows sum daily unique addresses (an address active on N days counts N times). Supply via Base RPC; holders via Blockscout; floor = cheapest active gotchi listing. Supply, holders and floor accrue forward from the tracking-since date. No history exists before it.</p>
               <p>Engagement: summons = portals claimed on Base by claim timestamp (backfilled). Petting, population and kinship stats come from a nightly full scan of claimed gotchis (kinship + last-interacted) and accrue forward from their tracking-since date.</p>
               <p>Lending: agreements by timeAgreed with upfront cost and unique borrowers (backfilled). Channeling = gotchiverse gotchis with lastChanneledAlchemica within 7 days (nightly count, accruing). DAO: turnout VP and vote counts by proposal close day from the aavegotchi.eth Snapshot space (backfilled); votable-VP and treasury snapshots come from this site's live-quorum pipeline.</p>
               <p className="font-semibold text-foreground">Verdict rules (computed, transparent):</p>
               <ul className="list-disc pl-5 space-y-1">
                 {p.verdicts.map((v) => (<li key={v.key}><span className="font-medium text-foreground">{v.label}:</span> {v.ruleText}</li>))}
               </ul>
-              <p>Levers are hand-written opinion about what would move each metric — aspirational by design, and labeled as such.</p>
+              <p>Levers are hand-written opinion about what would move each metric, aspirational by design, and labeled as such.</p>
               <p>Updated {new Date(p.updatedAt).toUTCString()}. Refreshes nightly at 03:10 UTC.</p>
             </div>
           </details>
@@ -408,7 +408,7 @@ function Accruing({ label, value, since, fmt }: { label: string; value?: number;
   return (
     <div className="rounded-xl border border-border/40 bg-muted/10 p-3">
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="text-lg font-bold">{value != null ? fmt(value) : "—"}</div>
+      <div className="text-lg font-bold">{value != null ? fmt(value) : "None"}</div>
       {since && <div className="text-[10px] text-muted-foreground">tracking since {since}</div>}
     </div>
   );

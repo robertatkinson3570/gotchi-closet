@@ -1,6 +1,7 @@
-import { useRef, useEffect, useCallback, useState } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { WearableExplorerCard } from "./WearableExplorerCard";
 import { WearableDetailModal } from "./WearableDetailModal";
+import { useDetailNav } from "./detail/useDetailNav";
 import { Loader2 } from "lucide-react";
 import type { ExplorerWearable } from "@/lib/explorer/wearableTypes";
 import type { DataMode } from "@/lib/explorer/types";
@@ -30,7 +31,7 @@ export function WearableExplorerGrid({
   const loaderRef = useRef<HTMLDivElement>(null);
   // Full cheapest-listing map (listingId/priceWei/quantity) for one-click buy.
   const baazaarPrices = useAppStore((s) => s.baazaarPrices);
-  const [detail, setDetail] = useState<ExplorerWearable | null>(null);
+  const nav = useDetailNav({ items: wearables, getId: (w) => String(w.id), asset: "wearable", hasMore, onNeedMore: loadMore });
 
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -71,7 +72,7 @@ export function WearableExplorerGrid({
             price={mode === "baazaar" ? prices[wearable.id] : undefined}
             listing={mode === "baazaar" ? baazaarPrices[wearable.id] : undefined}
             canOffer={mode !== "mine"}
-            onClick={() => { onCardClick?.(wearable); setDetail(wearable); }}
+            onClick={() => { onCardClick?.(wearable); nav.openItem(wearable); }}
           />
         ))}
       </div>
@@ -83,8 +84,13 @@ export function WearableExplorerGrid({
         )}
       </div>
 
-      {detail && (
-        <WearableDetailModal wearable={detail} listing={baazaarPrices[detail.id]} onClose={() => setDetail(null)} />
+      {nav.open && (
+        <WearableDetailModal
+          wearable={nav.open}
+          listing={baazaarPrices[nav.open.id]}
+          onClose={() => nav.close()}
+          onPrev={nav.prev} onNext={nav.next} hasPrev={nav.hasPrev} hasNext={nav.hasNext} shareUrl={nav.shareUrl}
+        />
       )}
     </div>
   );

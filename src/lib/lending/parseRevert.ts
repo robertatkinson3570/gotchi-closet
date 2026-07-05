@@ -22,7 +22,7 @@ const REVERT_PATTERNS: Array<{ match: RegExp; message: string }> = [
   { match: /Lending:\s*Lending not found/i, message: "Lending no longer exists (already ended/cancelled)." },
   { match: /Lending:\s*Token in escrow/i, message: "Gotchi is in baazaar/lending escrow." },
   { match: /Lending:\s*Lending already exists/i, message: "This gotchi is already lent out." },
-  { match: /Lending:\s*Period not over/i, message: "Rental period hasn't ended yet — only the borrower can return early." },
+  { match: /Lending:\s*Period not over/i, message: "Rental period hasn't ended yet. Only the borrower can return early." },
   { match: /Lending:\s*Not the lender/i, message: "Only the original lender can cancel/end this." },
   { match: /Lending:\s*Not the borrower/i, message: "Only the current borrower can do this." },
   { match: /Lending:\s*Caller not lender or borrower/i, message: "Only the lender or borrower can settle this rental." },
@@ -43,7 +43,7 @@ const REVERT_PATTERNS: Array<{ match: RegExp; message: string }> = [
   { match: /chain.*mismatch|wrong network/i, message: "Switch your wallet to Base." },
   { match: /insufficient funds for gas/i, message: "Not enough ETH on Base for gas. Bridge a tiny amount." },
   { match: /nonce too low|replacement transaction underpriced/i, message: "Wallet nonce out of sync. Refresh the page or reset wallet activity." },
-  { match: /timeout|timed out/i, message: "Network is slow — the tx may still go through. Check Basescan in a minute." },
+  { match: /timeout|timed out/i, message: "Network is slow. The tx may still go through. Check Basescan in a minute." },
   { match: /execution reverted(?!:)/i, message: "Transaction reverted on-chain. Likely a state issue (e.g. gotchi already lent, kinship too low, allowance reset)." },
 ];
 

@@ -14,7 +14,8 @@ import { useAddressState } from "@/lib/addressState";
 import { useAppStore } from "@/state/useAppStore";
 import { fetchAllWearables, fetchAllWearableSets } from "@/graphql/fetchers";
 import { cacheGet, cacheSet, cacheIsStale, CACHE_KEYS } from "@/lib/cache";
-import type { DataMode, ExplorerFilters as FiltersType } from "@/lib/explorer/types";
+import type { DataMode, ExplorerFilters as FiltersType, ExplorerGotchi } from "@/lib/explorer/types";
+import { useDetailNav } from "@/components/explorer/detail/useDetailNav";
 import { defaultFilters } from "@/lib/explorer/types";
 import { getActiveFilterCount } from "@/lib/explorer/filters";
 import { defaultBaazaarSort } from "@/lib/explorer/sorts";
@@ -137,7 +138,7 @@ export default function ExplorerPage() {
     if (!/^0x[a-fA-F0-9]{40}$/.test(to)) { toast({ title: "Invalid recipient", description: "Enter a 0x wallet address on Base.", variant: "destructive" }); return; }
     if (to.toLowerCase() === connectedAddress.toLowerCase()) { toast({ title: "That's your own wallet", variant: "destructive" }); return; }
     const lent = [...selected].filter((id) => rentalSets?.lentOut.has(id));
-    if (lent.length > 0) { toast({ title: "Lent-out gotchis can't move", description: `Deselect #${lent.join(", #")} — they're in active rentals.`, variant: "destructive" }); return; }
+    if (lent.length > 0) { toast({ title: "Lent-out gotchis can't move", description: `Deselect #${lent.join(", #")}. They're in active rentals.`, variant: "destructive" }); return; }
     setSending(true);
     try {
       const ids = [...selected].map((id) => BigInt(id));
@@ -316,6 +317,30 @@ export default function ExplorerPage() {
     );
   }, [gotchis, gotchiFilters.nameContains, gotchiFilters.ownerAddress, mode]);
 
+  // Build the manage/details payload for a gotchi (owned = actions, else read-only).
+  const toManage = useCallback((g: ExplorerGotchi): ManageGotchi => (
+    mode === "mine"
+      ? { gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables, locked: rentalSets?.lentOut.has(g.tokenId) || rentalSets?.borrowed.has(g.tokenId), lockReason: rentalSets?.lentOut.has(g.tokenId) ? "Rented out" : rentalSets?.borrowed.has(g.tokenId) ? "Borrowed" : undefined, listed: !!g.listing?.id }
+      : { gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables, readOnly: true, owner: g.owner, listingId: g.listing?.id, listingPriceWei: g.listing?.priceInWei }
+  ), [mode, rentalSets]);
+
+  // Detail-dialog nav for gotchis: prev/next paging + ?asset=gotchi&id= deep-link.
+  const gotchiNav = useDetailNav({ items: filteredGotchisBySearch, getId: (g) => g.tokenId, asset: "gotchi", hasMore: gotchiHasMore, onNeedMore: gotchiLoadMore });
+  // Mirror the open gotchi into `manage`; only rebuild when the id changes so an
+  // in-flight equip patch (setManage below) isn't clobbered.
+  useEffect(() => {
+    if (!gotchiNav.open) { setManage(null); return; }
+    const g = gotchiNav.open;
+    setManage((prev) => (prev && prev.gotchiId === g.tokenId ? prev : toManage(g)));
+  }, [gotchiNav.open, toManage]);
+  // The gotchi modal lives at page level (unlike the other grids' dialogs, which
+  // unmount on tab switch). Close it when leaving the Gotchis tab so it doesn't
+  // linger behind another asset's dialog.
+  useEffect(() => {
+    if (assetType !== "gotchi" && gotchiNav.open) gotchiNav.close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetType]);
+
   // Soul seal status for the currently displayed gotchis (shown on every tab).
   // One batched multicall on the server; cache-aware so paging only reads new ids.
   const displayedGotchiIds = useMemo(
@@ -441,7 +466,7 @@ export default function ExplorerPage() {
                     mode={mode}
                   />
                 ) : assetType === "auction" ? (
-                  <div className="text-xs text-muted-foreground p-1">Live GBM auctions — click a card to view details and bid.</div>
+                  <div className="text-xs text-muted-foreground p-1">Live GBM auctions. Click a card to view details and bid.</div>
                 ) : null}
                 {/*
                   Market tabs (items/parcels/installations/tiles/portals) portal
@@ -510,7 +535,7 @@ export default function ExplorerPage() {
               if (mode === "mine") {
                 return ownable
                   ? <OwnedMarketGrid itemKind={assetType as "item" | "installation" | "parcel" | "tile" | "forge" | "fakegotchi" | "portal" | "fakecard" | "guardian"} />
-                  : <div className="text-center py-12 text-muted-foreground text-sm">An owned view for this collection isn't available yet — it has no on-chain enumeration. Use the Baazaar tab to browse listings.</div>;
+                  : <div className="text-center py-12 text-muted-foreground text-sm">An owned view for this collection isn't available yet. It has no on-chain enumeration. Use the Baazaar tab to browse listings.</div>;
               }
               // Parcels get a second lens: the full Citaadel map with market overlays.
               if (assetType === "parcel") {
@@ -560,12 +585,8 @@ export default function ExplorerPage() {
                 error={gotchiError}
                 onLoadMore={gotchiLoadMore}
                 onManage={(g) => {
-                  if (mode === "mine") {
-                    if (selectMode) return toggleSel(g.tokenId);
-                    return setManage({ gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables, locked: rentalSets?.lentOut.has(g.tokenId) || rentalSets?.borrowed.has(g.tokenId), lockReason: rentalSets?.lentOut.has(g.tokenId) ? "Rented out" : rentalSets?.borrowed.has(g.tokenId) ? "Borrowed" : undefined, listed: !!g.listing?.id });
-                  }
-                  // Not owned → read-only Details view (with owner + listing for Buy).
-                  setManage({ gotchiId: g.tokenId, name: g.name, hauntId: g.hauntId, collateral: g.collateral, numericTraits: g.numericTraits, equippedWearables: g.equippedWearables, readOnly: true, owner: g.owner, listingId: g.listing?.id, listingPriceWei: g.listing?.priceInWei });
+                  if (mode === "mine" && selectMode) return toggleSel(g.tokenId);
+                  gotchiNav.openItem(g);
                 }}
                 manageLabel={mode === "mine" ? (selectMode ? "Select" : undefined) : "Details"}
                 selectedFor={mode === "mine" && selectMode ? (g) => selected.has(g.tokenId) : undefined}
@@ -635,7 +656,7 @@ export default function ExplorerPage() {
             <>
               <input value={bulkRecipient} onChange={(e) => setBulkRecipient(e.target.value)} placeholder="Recipient 0x…" spellCheck={false} className="h-8 w-44 sm:w-56 rounded border border-border bg-background px-2 text-xs font-mono" />
               <button disabled={sending || selected.size === 0 || !/^0x[a-fA-F0-9]{40}$/.test(bulkRecipient.trim())} onClick={doBulkTransfer} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50">
-                {sending ? (<><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>) : (<>Send {selected.size} — 1 tx</>)}
+                {sending ? (<><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>) : (<>Send {selected.size} · 1 tx</>)}
               </button>
             </>
           )}
@@ -646,7 +667,12 @@ export default function ExplorerPage() {
       {manage && (
         <GotchiManageModal
           gotchi={manage}
-          onClose={() => setManage(null)}
+          onClose={() => gotchiNav.close()}
+          onPrev={gotchiNav.prev}
+          onNext={gotchiNav.next}
+          hasPrev={gotchiNav.hasPrev}
+          hasNext={gotchiNav.hasNext}
+          shareUrl={gotchiNav.shareUrl}
           onEquipped={(equipped) => {
             // Update the grid immediately and keep the open manage object in
             // sync so the change shows without a manual refresh (subgraph lags).

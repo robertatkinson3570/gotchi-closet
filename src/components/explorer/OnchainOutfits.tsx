@@ -74,7 +74,7 @@ export function OnchainOutfits({ gotchiId, ownerAddress, locked }: { gotchiId: s
                 <button
                   disabled={busy || !!locked}
                   onClick={() => apply(outfit)}
-                  title={locked ? "This gotchi is locked — unlock it to apply outfits" : undefined}
+                  title={locked ? "This gotchi is locked, unlock it to apply outfits" : undefined}
                   className="h-7 px-2.5 rounded-md bg-primary/15 text-primary text-[11px] font-semibold disabled:opacity-50 hover:bg-primary/25 shrink-0"
                 >
                   {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Apply"}

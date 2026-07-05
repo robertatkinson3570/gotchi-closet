@@ -159,8 +159,8 @@ export default function LendingAnalyticsPage() {
   return (
     <div className="container mx-auto max-w-7xl px-4 py-6">
       <Seo
-        title="Lending Analytics — GotchiCloset"
-        description="Comprehensive Aavegotchi rental analytics on Base — heatmaps, distributions, leaderboards, address drill-downs, and a suggested-price tool."
+        title="Lending Analytics · GotchiCloset"
+        description="Comprehensive Aavegotchi rental analytics on Base: heatmaps, distributions, leaderboards, address drill-downs, and a suggested-price tool."
         canonical={siteUrl("/lending/analytics")}
       />
 
@@ -250,7 +250,7 @@ export default function LendingAnalyticsPage() {
         <Stat
           icon={<TrendingUp className="w-4 h-4 text-primary" />}
           label="Median paid"
-          value={hero.medianUpfrontPaid > 0 ? `${hero.medianUpfrontPaid.toFixed(1)} GHST` : "—"}
+          value={hero.medianUpfrontPaid > 0 ? `${hero.medianUpfrontPaid.toFixed(1)} GHST` : "None"}
           loading={loading}
         />
         <Stat
@@ -289,7 +289,7 @@ export default function LendingAnalyticsPage() {
 
       <div className="grid lg:grid-cols-2 gap-4 mb-4">
         <div className="rounded-xl glass p-4">
-          <h2 className="font-semibold mb-3">Daily volume — last {windowDays} days</h2>
+          <h2 className="font-semibold mb-3">Daily volume (last {windowDays} days)</h2>
           {loading ? (
             <div className="h-64 bg-muted/30 animate-pulse rounded" />
           ) : (

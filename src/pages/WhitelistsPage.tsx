@@ -25,7 +25,7 @@ export default function WhitelistsPage() {
     if (create.step === "success") {
       toast({
         title: "Whitelist created",
-        description: "It may take a few seconds for the subgraph to index — refreshing list…",
+        description: "It may take a few seconds for the subgraph to index, refreshing list…",
       });
       setCreating(false);
       // Invalidate cache + force a re-fetch by toggling address through useEffect deps
@@ -44,7 +44,7 @@ export default function WhitelistsPage() {
   return (
     <div className="container mx-auto max-w-5xl px-4 py-6">
       <Seo
-        title="Whitelists — GotchiCloset"
+        title="Whitelists · GotchiCloset"
         description="Create and manage borrower whitelists for your Aavegotchi rentals."
         canonical={siteUrl("/lending/whitelists")}
       />

@@ -33,7 +33,7 @@ export default function LeaderboardPage() {
   return (
     <div className="container mx-auto max-w-[900px] px-4 py-6">
       <Seo
-        title="Kinship & XP Leaderboard — GotchiCloset"
+        title="Kinship & XP Leaderboard · GotchiCloset"
         description="Live Aavegotchi kinship and XP leaderboards on Base. See the most loved and most experienced gotchis."
         canonical={siteUrl("/leaderboard")}
       />
@@ -57,7 +57,7 @@ export default function LeaderboardPage() {
 
       <p className="text-xs text-muted-foreground mb-4">
         Kinship grows when a gotchi is petted (every 12h) and decays when neglected. XP comes from DAO
-        voting and community events. Live from the Base subgraph — summoned gotchis only.
+        voting and community events. Live from the Base subgraph, summoned gotchis only.
       </p>
 
       {error && (

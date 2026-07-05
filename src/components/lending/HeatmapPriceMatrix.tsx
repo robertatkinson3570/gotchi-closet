@@ -88,7 +88,7 @@ export function HeatmapPriceMatrix({ cells, onCellClick }: Props) {
                       ) : count > 0 ? (
                         <div className="text-[10px] opacity-50">{count}</div>
                       ) : (
-                        <span className="opacity-30">—</span>
+                        <span className="opacity-30">-</span>
                       )}
                     </td>
                   );

@@ -3,7 +3,7 @@ import { qk } from "@/lib/queryKeys";
 import { createPortal } from "react-dom";
 import { useAccount, useWriteContract, usePublicClient } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, Loader2, MapPin, Zap, Sprout, Package, Lock, Trash2, Telescope, ArrowUpCircle } from "lucide-react";
+import { X, Loader2, MapPin, Zap, Sprout, Package, Lock, Trash2, Telescope, ArrowUpCircle, ChevronLeft, ChevronRight, Link2, Check } from "lucide-react";
 import { useParcelDetail, type Placed } from "@/hooks/useParcelDetail";
 import { useInstallationInventory, type InventoryItem } from "@/hooks/useInstallationInventory";
 import { useCraft } from "@/hooks/useCraft";
@@ -32,7 +32,7 @@ const ACCESS_LABEL: Record<number, string> = {
   4: "Anyone",
 };
 const accessLabel = (m: number | null) =>
-  m == null ? "—" : ACCESS_LABEL[m] ?? `Mode ${m}`;
+  m == null ? "None" : ACCESS_LABEL[m] ?? `Mode ${m}`;
 
 type Props = {
   parcelId: string;
@@ -42,9 +42,20 @@ type Props = {
   /** Optional Baazaar action panel (buy/offer or list/cancel + sale history),
    *  rendered under the header when this modal is opened from the Explorer. */
   marketPanel?: React.ReactNode;
+  /** Detail-nav controls (prev/next + copy-link), when opened from a grid. */
+  onPrev?: () => void;
+  onNext?: () => void;
+  hasPrev?: boolean;
+  hasNext?: boolean;
+  shareUrl?: string | null;
 };
 
-export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId, marketPanel }: Props) {
+export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId, marketPanel, onPrev, onNext, hasPrev, hasNext, shareUrl }: Props) {
+  const [copiedLink, setCopiedLink] = useState(false);
+  const copyLink = async () => {
+    if (!shareUrl) return;
+    try { await navigator.clipboard.writeText(location.origin + location.pathname + shareUrl); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 1500); } catch { /* clipboard blocked */ }
+  };
   const { detail, isLoading, error } = useParcelDetail(parcelId);
   const { address } = useAccount();
   const inventory = useInstallationInventory(address);
@@ -140,10 +151,17 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId, market
   }
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement as HTMLElement | null;
+      const typing = !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
+      if (typing) return;
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowLeft" && hasPrev && onPrev) onPrev();
+      else if (e.key === "ArrowRight" && hasNext && onNext) onNext();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, onPrev, onNext, hasPrev, hasNext]);
 
   const boostList = detail
     ? (["fud", "fomo", "alpha", "kek"] as const)
@@ -160,14 +178,22 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId, market
         className="relative w-full max-w-2xl rounded-xl border border-border/50 bg-background shadow-xl my-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-3 top-3 h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted/60 text-muted-foreground"
-          aria-label="Close"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <div className="absolute right-3 top-3 flex items-center gap-1 z-10">
+          {shareUrl && (
+            <button type="button" onClick={copyLink} title="Copy link to this parcel" className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted/60 text-muted-foreground">
+              {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Link2 className="w-4 h-4" />}
+            </button>
+          )}
+          {(onPrev || onNext) && (
+            <>
+              <button type="button" onClick={onPrev} disabled={!hasPrev} title="Previous (left arrow)" className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted/60 text-muted-foreground disabled:opacity-30 disabled:cursor-default"><ChevronLeft className="w-4 h-4" /></button>
+              <button type="button" onClick={onNext} disabled={!hasNext} title="Next (right arrow)" className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted/60 text-muted-foreground disabled:opacity-30 disabled:cursor-default"><ChevronRight className="w-4 h-4" /></button>
+            </>
+          )}
+          <button type="button" onClick={onClose} aria-label="Close" className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted/60 text-muted-foreground">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
         {isLoading && !detail ? (
           <div className="p-10 flex items-center justify-center text-muted-foreground text-sm gap-2">
@@ -180,7 +206,7 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId, market
         ) : (
           <div className="p-4 sm:p-5 space-y-4">
             {/* Header */}
-            <div className="pr-8">
+            <div className="pr-32">
               <div className="text-lg font-bold inline-flex items-center gap-2 flex-wrap">
                 <MapPin className="w-5 h-5 text-emerald-500" />
                 <span>Parcel {detail.tokenId}</span>
@@ -426,7 +452,7 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId, market
               {canBuild && (
                 <div className="mt-3">
                   <div className="text-xs font-semibold mb-1.5 flex items-center justify-between gap-2 flex-wrap">
-                    <span>Your installations — drag onto the grid (staged, not saved yet)</span>
+                    <span>Your installations: drag onto the grid (staged, not saved yet)</span>
                     {pendingChanges > 0 && (
                       <span className="inline-flex items-center gap-1.5">
                         <button
@@ -488,7 +514,7 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId, market
                   )}
                   <div className="text-[10px] text-muted-foreground mt-1">
                     Drop to stage (green = valid, red = occupied). Click a staged tile to unstage. Hit{" "}
-                    <span className="font-medium">Save changes</span> to equip — one wallet signature each (level-1 installs only).
+                    <span className="font-medium">Save changes</span> to equip, one wallet signature each (level-1 installs only).
                   </div>
 
                   <div className="mt-3 border-t border-border/30 pt-3">
@@ -633,7 +659,7 @@ export function ParcelDetailModal({ parcelId, onClose, actions, gotchiId, market
                     </div>
                   )}
                   <div className="text-[10px] text-muted-foreground mt-1">
-                    Upgrades cost alchemica and queue for a block delay — hit <span className="font-medium">Finalize ready</span>{" "}
+                    Upgrades cost alchemica and queue for a block delay, hit <span className="font-medium">Finalize ready</span>{" "}
                     once the timer passes (or pass GLTR to skip, not wired here).
                   </div>
                 </section>

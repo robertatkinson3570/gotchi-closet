@@ -5,10 +5,10 @@ describe("timeAgo", () => {
   const NOW_MS = 1_800_000_000_000; // fixed "now" so tests are deterministic
   const nowSec = NOW_MS / 1000;
 
-  it("returns em dash for zero/invalid timestamps", () => {
-    expect(timeAgo(0, NOW_MS)).toBe("—");
-    expect(timeAgo(NaN, NOW_MS)).toBe("—");
-    expect(timeAgo(-5, NOW_MS)).toBe("—");
+  it("returns None for zero/invalid timestamps", () => {
+    expect(timeAgo(0, NOW_MS)).toBe("None");
+    expect(timeAgo(NaN, NOW_MS)).toBe("None");
+    expect(timeAgo(-5, NOW_MS)).toBe("None");
   });
   it("formats under a minute as 'just now'", () => {
     expect(timeAgo(nowSec - 30, NOW_MS)).toBe("just now");

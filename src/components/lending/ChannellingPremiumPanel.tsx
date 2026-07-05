@@ -50,7 +50,7 @@ export function ChannellingPremiumPanel({ rows }: Props) {
                         </span>
                       </span>
                     ) : (
-                      <span className="text-muted-foreground/40">—</span>
+                      <span className="text-muted-foreground/40">-</span>
                     )}
                   </td>
                   <td className="py-1.5 text-right">
@@ -62,12 +62,12 @@ export function ChannellingPremiumPanel({ rows }: Props) {
                         </span>
                       </span>
                     ) : (
-                      <span className="text-muted-foreground/40">—</span>
+                      <span className="text-muted-foreground/40">-</span>
                     )}
                   </td>
                   <td className="py-1.5 text-right">
                     {r.premiumPct == null ? (
-                      <span className="text-muted-foreground/40">—</span>
+                      <span className="text-muted-foreground/40">-</span>
                     ) : (
                       <span
                         className={

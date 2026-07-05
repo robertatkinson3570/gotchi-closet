@@ -390,7 +390,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
         <button
           onClick={(e) => { e.stopPropagation(); onSeal(); }}
           className="absolute top-1 right-1 z-10 inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/90 text-white shadow ring-1 ring-emerald-300/50 hover:bg-emerald-400 transition-colors"
-          title="Soul sealed on Base — view certificate"
+          title="Soul sealed on Base, view certificate"
         >
           🔏 Sealed
         </button>
@@ -403,7 +403,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
         <button
           onClick={(e) => { e.stopPropagation(); onSeal(); }}
           className="absolute top-1 right-1 z-10 inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-600 text-white shadow ring-1 ring-violet-300/70 hover:bg-violet-500 transition-colors"
-          title="This soul isn't sealed on Base yet — tap to seal it"
+          title="This soul isn't sealed on Base yet, tap to seal it"
         >
           🔏 Seal soul
         </button>

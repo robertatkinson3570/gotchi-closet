@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { qk } from "@/lib/queryKeys";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, ShoppingCart, MapPin, SlidersHorizontal, X } from "lucide-react";
+import { Loader2, ShoppingCart, MapPin, SlidersHorizontal } from "lucide-react";
 import { BuyButton } from "./BuyButton";
 import { MakeOfferButton } from "./MakeOfferButton";
 import { RecentSales } from "./RecentSales";
@@ -17,6 +17,8 @@ import { PortalOptionsGrid } from "./PortalOptionsGrid";
 import { FakeGotchiImage } from "./GotchiSvgById";
 import { Palette } from "lucide-react";
 import { itemMetaSync, GUARDIAN_SKIN_NAMES } from "@/lib/explorer/itemMeta";
+import { useDetailNav } from "./detail/useDetailNav";
+import { DetailDialogShell } from "./detail/DetailDialogShell";
 
 type Listing = { listingId: string; tokenId: string; priceWei: string; quantity: number; created: number; category?: number };
 
@@ -212,7 +214,6 @@ export function MarketGrid({
   const [districtF, setDistrictF] = useState("");
   const [levelF, setLevelF] = useState("");
   const [typeF, setTypeF] = useState("");
-  const [detail, setDetail] = useState<Listing | null>(null);
   const isTyped = itemKind === "installation" || itemKind === "tile";
 
   // Render filters into the Explorer's left sidebar (same panel as gotchis/
@@ -332,6 +333,8 @@ export function MarketGrid({
   const cartList = Object.values(cart);
   const cartTotal = cartList.reduce((s, l) => s + Number(l.priceWei) / 1e18, 0);
   const bulkBusy = bulkStep === "approving" || bulkStep === "submitting";
+  const nav = useDetailNav({ items: rows, getId: (l) => l.tokenId, asset: itemKind });
+  const detail = nav.open;
 
   const toggle = (l: Listing) =>
     setCart((c) => {
@@ -443,7 +446,7 @@ export function MarketGrid({
                 <span className="text-[10px] font-mono text-muted-foreground">#{l.tokenId}{l.quantity > 1 ? ` ×${l.quantity}` : ""}</span>
                 <input type="checkbox" checked={selected} onChange={() => toggle(l)} className="cursor-pointer accent-primary" />
               </div>
-              <div onClick={() => setDetail(l)} title="View details, sale history & actions" className="h-20 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 group-hover:from-primary/5 group-hover:to-primary/15 transition-colors cursor-pointer">
+              <div onClick={() => nav.openItem(l)} title="View details, sale history & actions" className="h-20 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 group-hover:from-primary/5 group-hover:to-primary/15 transition-colors cursor-pointer">
                 {itemKind === "item" ? (
                   <AssetImage candidates={itemImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-16 max-w-16 object-contain" />
                 ) : itemKind === "installation" ? (
@@ -453,7 +456,7 @@ export function MarketGrid({
                 ) : itemKind === "parcel" ? (
                   <AssetImage candidates={parcelImageCandidates(l.tokenId)} alt={`#${l.tokenId}`} className="max-h-full max-w-full object-contain rounded" />
                 ) : itemKind === "portal" ? (
-                  <button type="button" onClick={() => setDetail(l)} title="View portal details" className="w-full h-full [&>svg]:w-full [&>svg]:h-full"><PortalImage tokenId={l.tokenId} /></button>
+                  <button type="button" onClick={() => nav.openItem(l)} title="View portal details" className="w-full h-full [&>svg]:w-full [&>svg]:h-full"><PortalImage tokenId={l.tokenId} /></button>
                 ) : itemKind === "fakegotchi" || itemKind === "fakecard" ? (
                   <FakeGotchiImage id={l.tokenId} className="max-h-16 max-w-16 object-contain rounded" fallback={<Palette className="w-6 h-6 text-fuchsia-400/70" />} />
                 ) : itemKind === "forge" ? (
@@ -502,7 +505,7 @@ export function MarketGrid({
               {itemKind === "parcel" && parcelMeta?.[l.tokenId] && (
                 <div className="text-center leading-tight">
                   {parcelMeta[l.tokenId].name && <div className="text-[9px] font-semibold truncate" title={parcelMeta[l.tokenId].name}>{parcelMeta[l.tokenId].name}</div>}
-                  <div className="text-[8px] text-muted-foreground">Dist {parcelMeta[l.tokenId].district || "—"} · {PARCEL_SIZES[parcelMeta[l.tokenId].size] ?? "—"}</div>
+                  <div className="text-[8px] text-muted-foreground">Dist {parcelMeta[l.tokenId].district || "None"} · {PARCEL_SIZES[parcelMeta[l.tokenId].size] ?? "None"}</div>
                 </div>
               )}
               <div className="text-[11px] text-emerald-500 font-semibold text-center">{ghst(l.priceWei)} GHST</div>
@@ -539,7 +542,8 @@ export function MarketGrid({
       {detail && itemKind === "parcel" && (
         <ParcelDetailModal
           parcelId={detail.tokenId}
-          onClose={() => setDetail(null)}
+          onClose={() => nav.close()}
+          onPrev={nav.prev} onNext={nav.next} hasPrev={nav.hasPrev} hasNext={nav.hasNext} shareUrl={nav.shareUrl}
           marketPanel={(
             <>
               <div className="flex items-center justify-between">
@@ -563,13 +567,10 @@ export function MarketGrid({
         const pm = itemKind === "portal" ? portalMeta?.[detail.tokenId] : undefined;
         const schematicName = itemKind === "forge" && detail.category === 8 ? itemMetaSync(detail.tokenId)?.name : undefined;
         return (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-3" onClick={() => setDetail(null)}>
-          <div className="w-[min(480px,96vw)] max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 sticky top-0 bg-background z-10">
-              <div className="text-base font-bold truncate">{fm?.name || tm?.name || (itemKind === "guardian" ? GUARDIAN_SKIN_NAMES[Number(detail.tokenId)] ?? label : undefined) || (schematicName ? `${schematicName} Schematic` : label)} <span className="text-muted-foreground font-mono text-sm">#{detail.tokenId}</span></div>
-              <button onClick={() => setDetail(null)} className="p-1.5 rounded hover:bg-muted/50 shrink-0"><X className="w-5 h-5" /></button>
-            </div>
-            <div className="p-4 space-y-3">
+        <DetailDialogShell
+          title={<>{fm?.name || tm?.name || (itemKind === "guardian" ? GUARDIAN_SKIN_NAMES[Number(detail.tokenId)] ?? label : undefined) || (schematicName ? `${schematicName} Schematic` : label)} <span className="text-muted-foreground font-mono text-sm">#{detail.tokenId}</span></>}
+          onClose={() => nav.close()} onPrev={nav.prev} onNext={nav.next} hasPrev={nav.hasPrev} hasNext={nav.hasNext} shareUrl={nav.shareUrl}
+        >
               <div className="w-40 h-40 mx-auto rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 flex items-center justify-center [&_img]:max-h-36 [&_img]:max-w-36 [&_img]:object-contain [&>svg]:w-full [&>svg]:h-full">
                 {itemKind === "portal" ? <PortalImage tokenId={detail.tokenId} />
                   : itemKind === "installation" ? <AssetImage candidates={installationImageCandidates(detail.tokenId)} alt={`#${detail.tokenId}`} />
@@ -603,13 +604,11 @@ export function MarketGrid({
               <BuyButton listingId={detail.listingId} tokenId={detail.tokenId} priceInWei={detail.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`#${detail.tokenId}`} />
               <MakeOfferButton kind={kind} category={(itemKind === "forge" || itemKind === "portal") && detail.category != null ? Number(detail.category) : category} tokenId={detail.tokenId} contractAddress={contract} label={`#${detail.tokenId}`} />
               {itemKind === "portal" && detail.category !== 2 && <p className="text-[11px] text-muted-foreground text-center">A closed portal contains 10 random Aavegotchis. Buy it, then open it to summon and claim one.</p>}
-              {itemKind === "portal" && detail.category === 2 && <p className="text-[11px] text-muted-foreground text-center">An open portal shows its 10 summonable Aavegotchis — buy it, then pick and claim one.</p>}
+              {itemKind === "portal" && detail.category === 2 && <p className="text-[11px] text-muted-foreground text-center">An open portal shows its 10 summonable Aavegotchis, buy it, then pick and claim one.</p>}
               {itemKind === "portal" && detail.category === 2 && <PortalOptionsGrid tokenId={detail.tokenId} />}
 
               <RecentSales kind={kind} tokenId={detail.tokenId} />
-            </div>
-          </div>
-        </div>
+        </DetailDialogShell>
         );
       })()}
     </div>

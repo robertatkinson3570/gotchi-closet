@@ -98,7 +98,7 @@ export default function SetPage() {
             ))}
           </div>
           <div className="mt-2 text-xs text-muted-foreground">
-            Rarity boost: {set.setBonusBRS ?? "—"}
+            Rarity boost: {set.setBonusBRS ?? "None"}
           </div>
         </section>
 

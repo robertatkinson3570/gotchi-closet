@@ -58,7 +58,7 @@ export const EXCLUDED_WALLETS: ExcludedWallet[] = [
   { address: "0x50af2d63b839aa32b4166fd1cb247129b715186c", label: "Forge diamond (unminted forge stock)", kind: "infra" },
   { address: "0x80320a0000c7a6a34086e2acad6915ff57ffda31", label: "GBM auction escrow", kind: "infra" },
   { address: "0x4b0040c3646d3c44b8a28ad7055cfcf536c05372", label: "Realm diamond (parcel escrow)", kind: "infra" },
-  { address: "0xab449dca14413a6ae0bcea9ea210b57ace280d2c", label: "GLTR farm (staked LP — VP counted via the Staked LP component)", kind: "infra" },
+  { address: "0xab449dca14413a6ae0bcea9ea210b57ace280d2c", label: "GLTR farm (staked LP, VP counted via the Staked LP component)", kind: "infra" },
   // AMM pools holding GHST. LP'd GHST only earns VP via the staked-LP strategy,
   // so pool balances are excluded from wallet GHST to avoid double counting.
   { address: "0xeae2fb93e291c2eb69195851813de24f97f1ce71", label: "GHST/FUD pool", kind: "infra" },
@@ -67,7 +67,7 @@ export const EXCLUDED_WALLETS: ExcludedWallet[] = [
   { address: "0x699b4eb36b95cdf62c74f6322aaa140e7958dc9f", label: "GHST/KEK pool", kind: "infra" },
   { address: "0x0dfb9cb66a18468850d6216fcc691aa20ad1e091", label: "Aerodrome WETH/GHST pool", kind: "infra" },
   { address: "0xa83b31d701633b8edcfba55b93ddbc202d8a4621", label: "GHST/GLTR pool", kind: "infra" },
-  { address: "0x41d4934322f2bd6fe1dbe4124070fe61651a2067", label: "Aerodrome CL pool (GHST) — no VP until an LP strategy is added", kind: "infra" },
+  { address: "0x41d4934322f2bd6fe1dbe4124070fe61651a2067", label: "Aerodrome CL pool (GHST), no VP until an LP strategy is added", kind: "infra" },
 ];
 
 export function excludedAddressSet(): Set<string> {

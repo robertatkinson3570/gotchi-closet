@@ -49,7 +49,7 @@ function fallbackVerdict(
     winner,
     aScore,
     bScore,
-    verdict: "The judge could not be reached — victory goes to the wordier side.",
+    verdict: "The judge could not be reached. Victory goes to the wordier side.",
   };
 }
 

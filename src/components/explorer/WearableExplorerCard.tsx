@@ -43,7 +43,7 @@ export function WearableExplorerCard({
 
   const rarity = wearable.rarity || getWearableRarityTier(wearable.rarityScoreModifier);
   const slots = wearable.slots || [];
-  const slotLabel = slots.length > 0 ? getSlotName(slots[0]) : "—";
+  const slotLabel = slots.length > 0 ? getSlotName(slots[0]) : "None";
 
   const traitMods = wearable.traitModifiers.slice(0, 4);
   const hasTraits = traitMods.some((m) => m !== 0);

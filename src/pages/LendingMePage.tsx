@@ -129,7 +129,7 @@ export default function LendingMePage() {
   return (
     <div className="container mx-auto max-w-7xl px-4 py-6">
       <Seo
-        title="My Lendings — GotchiCloset"
+        title="My Lendings · GotchiCloset"
         description="Manage your Aavegotchi lending listings, rentals, and earnings."
         canonical={siteUrl("/lending/me")}
       />
@@ -168,7 +168,7 @@ export default function LendingMePage() {
             type="button"
             onClick={() => setShowBulkRent(true)}
             className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors"
-            title="Bulk-rent listings you're whitelisted on (sequential signing — Aavegotchi has no batch agree)"
+            title="Bulk-rent listings you're whitelisted on (sequential signing: Aavegotchi has no batch agree)"
             data-testid="bulk-rent-open"
           >
             <HandCoins className="w-3.5 h-3.5" /> Bulk rent
@@ -557,7 +557,7 @@ function BulkActionBar({
             <ActionButton
               onClick={onOpenReturnAndSweep}
               disabled={anyBusy}
-              title="Auto-chains two txs: (1) end rentals from this borrower wallet, (2) switch to lender wallet → sweep gotchi escrows to your wallet. Required for listings with empty revenueTokens — claim alone can't pay out on those."
+              title="Auto-chains two txs: (1) end rentals from this borrower wallet, (2) switch to lender wallet → sweep gotchi escrows to your wallet. Required for listings with empty revenueTokens: claim alone can't pay out on those."
               icon={<Coins className="w-3.5 h-3.5" />}
               variant="primary"
             >
@@ -568,7 +568,7 @@ function BulkActionBar({
               busy={claimEnd.step === "submitting" || claimEnd.step === "confirming"}
               busyLabel={claimEnd.step === "submitting" ? "Sign…" : "Confirming…"}
               disabled={anyBusy}
-              title="End rentals only — does NOT auto-sweep the gotchi escrows. Use 'Return & sweep' above for the full one-flow recovery."
+              title="End rentals only: does NOT auto-sweep the gotchi escrows. Use 'Return & sweep' above for the full one-flow recovery."
               icon={<StopCircle className="w-3.5 h-3.5" />}
             >
               End only ({selectedRows.length})
