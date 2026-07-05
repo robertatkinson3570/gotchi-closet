@@ -95,3 +95,16 @@ describe("personalityToSystemPrompt — SITE_OVERVIEW gating (free-tier token tr
     expect(p.systemPrompt.toLowerCase()).toContain("character");
   });
 });
+
+describe("personalityToSystemPrompt — high-SPK warmth guardrail (persona tuning)", () => {
+  it("adds a warmth guardrail for eerie (high-SPK) gotchis so they stay warm, not cold/cryptic", () => {
+    const p = buildPersonality(base({ numericTraits: [50, 50, 88, 50, 0, 0] }));
+    expect(p.systemPrompt.toLowerCase()).toContain("playfully spooky");
+    expect(p.systemPrompt.toLowerCase()).toContain("never cold");
+  });
+
+  it("does not add the guardrail for friendly (low-SPK) gotchis", () => {
+    const p = buildPersonality(base({ numericTraits: [50, 50, 20, 50, 0, 0] }));
+    expect(p.systemPrompt.toLowerCase()).not.toContain("playfully spooky");
+  });
+});

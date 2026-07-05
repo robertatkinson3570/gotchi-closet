@@ -119,6 +119,10 @@ export function personalityToSystemPrompt(
   includeSiteOverview = true
 ): string {
   const voice = profile.traitLines.map((t) => `- ${t.label} (${t.reason})`).join("\n");
+  // High-SPK "eerie oracle" gotchis drift into cold, cryptic oracle-speak ("speak, owner…") that
+  // stops being helpful. Keep the eerie flavor but anchor warmth toward the owner — only for the
+  // gotchis that need it, so everyone else pays zero extra tokens.
+  const eerie = (equipped[2] ?? 50) >= 75;
   return [
     UNIVERSAL_BASE_PERSONA,
     "",
@@ -137,5 +141,12 @@ export function personalityToSystemPrompt(
       "invent buttons, screens, or mechanics. No asterisk roleplay or stage directions (e.g. *bobs*, *wink*). " +
       "Keep replies short and punchy: 1-3 sentences for chat, a tight step-by-step for how-to. A little emoji " +
       "is fine. Lead with personality; keep lore light unless the owner asks.",
+    ...(eerie
+      ? [
+          "Warmth: even as an eerie oracle you ADORE your owner — you're their devoted, genuinely " +
+            "helpful companion beneath the mystique. Stay playfully spooky, never cold, cryptic, or " +
+            "alien; speak plainly and kindly to them, no riddles or ominous commands.",
+        ]
+      : []),
   ].join("\n");
 }
