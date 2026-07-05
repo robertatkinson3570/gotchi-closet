@@ -37,6 +37,7 @@ export function useDetailNav<T>({
   // appears or the list is exhausted, so a link to an item deep in the list works.
   const adopted = useRef(false);
   const pageAttempts = useRef(0);
+  const lastLen = useRef(-1);
   useEffect(() => {
     if (adopted.current || !urlSync) return;
     const pAsset = params.get("asset"), pId = params.get("id");
@@ -44,7 +45,13 @@ export function useDetailNav<T>({
     if (items.some((it) => getId(it) === pId)) {
       adopted.current = true;
       setOpenId(pId);
-    } else if (hasMore && onNeedMore && pageAttempts.current < 25) {
+      return;
+    }
+    // Request the next page only once the current one has actually landed
+    // (items grew since our last request). Firing on every render would stack
+    // many concurrent page loads and flood per-card fetches.
+    if (hasMore && onNeedMore && items.length !== lastLen.current && pageAttempts.current < 15) {
+      lastLen.current = items.length;
       pageAttempts.current += 1;
       onNeedMore();
     }

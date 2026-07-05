@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { coreSubgraphFetch } from "@/lib/subgraph";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
@@ -227,7 +228,7 @@ export function GotchiManageModal({ gotchi, onClose, onEquipped, onPrev, onNext,
     </div>
   );
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-3" onClick={onClose}>
       <div className="w-[min(620px,96vw)] max-h-[92vh] overflow-y-auto rounded-2xl border border-white/10 bg-background shadow-2xl ring-1 ring-primary/10" onClick={(e) => e.stopPropagation()}>
         {/* Hero header */}
@@ -492,7 +493,8 @@ export function GotchiManageModal({ gotchi, onClose, onEquipped, onPrev, onNext,
       {soulOpen && (
         <SoulCertificate tokenId={gotchiId} onClose={() => setSoulOpen(false)} />
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
 

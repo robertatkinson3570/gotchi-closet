@@ -293,6 +293,21 @@ export default function ExplorerPage() {
     }
   }, []);
 
+  // Deep link: /explorer?asset=gotchi&id=<tokenId> loads just that gotchi via the
+  // server-side id filter (the "all" list is far too large to page through), so
+  // gotchiNav then adopts it and opens its dialog.
+  const appliedGotchiIdRef = useRef(false);
+  useEffect(() => {
+    if (appliedGotchiIdRef.current) return;
+    const p = new URLSearchParams(window.location.search);
+    const id = p.get("id");
+    if (p.get("asset") === "gotchi" && id && /^\d+$/.test(id)) {
+      appliedGotchiIdRef.current = true;
+      setGotchiFilters({ ...gotchiFilters, tokenId: id, nameContains: "", ownerAddress: "" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleModeChange = useCallback((newMode: DataMode) => {
     setMode(newMode);
   }, []);
@@ -330,7 +345,9 @@ export default function ExplorerPage() {
   ), [mode, rentalSets]);
 
   // Detail-dialog nav for gotchis: prev/next paging + ?asset=gotchi&id= deep-link.
-  const gotchiNav = useDetailNav({ items: filteredGotchisBySearch, getId: (g) => g.tokenId, asset: "gotchi", hasMore: gotchiHasMore, onNeedMore: gotchiLoadMore });
+  // No page-to-find for gotchis: the "all" list is enormous, so a deep link loads
+  // just its token via the id filter (below) instead of paging thousands of cards.
+  const gotchiNav = useDetailNav({ items: filteredGotchisBySearch, getId: (g) => g.tokenId, asset: "gotchi" });
   // Mirror the open gotchi into `manage`; only rebuild when the id changes so an
   // in-flight equip patch (setManage below) isn't clobbered.
   useEffect(() => {
