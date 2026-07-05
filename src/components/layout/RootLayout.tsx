@@ -22,6 +22,7 @@ import { GhstTicker } from "@/components/layout/GhstTicker";
 import { CompanionRoot } from "@/components/companion/CompanionRoot";
 import { KnowledgeBaseButton } from "@/components/KnowledgeBaseModal";
 import { PoweredByWisp } from "@/components/wisp/PoweredByWisp";
+import { TrackerProvider } from "@/components/analytics/TrackerProvider";
 
 // Every page shows the full nav so all sections are reachable everywhere.
 // `title` = long descriptive tooltip on the desktop icon row; `label` = the
@@ -32,9 +33,9 @@ const NAV: { to: string; title: string; label: string; icon: LucideIcon }[] = [
   { to: "/dress", title: "Dress", label: "Dress", icon: Shirt },
   { to: "/activity", title: "Activity", label: "Activity", icon: Activity },
   { to: "/leaderboard", title: "Kinship & XP Leaderboard", label: "Leaderboard", icon: Trophy },
-  { to: "/pulse", title: "Pulse — State of the Aavegotchiverse", label: "Pulse", icon: HeartPulse },
-  { to: "/games", title: "Game Center — community games & tools", label: "Games", icon: Gamepad2 },
-  { to: "/megaphone", title: "Megaphone — auto-generated gotchi videos", label: "Megaphone", icon: Megaphone },
+  { to: "/pulse", title: "Pulse: State of the Aavegotchiverse", label: "Pulse", icon: HeartPulse },
+  { to: "/games", title: "Game Center: community games & tools", label: "Games", icon: Gamepad2 },
+  { to: "/megaphone", title: "Megaphone: auto-generated gotchi videos", label: "Megaphone", icon: Megaphone },
   { to: "/forge", title: "Forge", label: "Forge", icon: Flame },
   { to: "/staking", title: "GLTR Staking", label: "Staking", icon: Droplets },
   { to: "/lending", title: "Lending", label: "Lending", icon: Coins },
@@ -42,7 +43,7 @@ const NAV: { to: string; title: string; label: string; icon: LucideIcon }[] = [
   // Steward is hidden from the nav while we vet it (no one stumbles into it). The /steward
   // route still works by direct URL; set VITE_STEWARD_NAV=1 to reveal the menu option again.
   ...(import.meta.env.VITE_STEWARD_NAV === "1"
-    ? [{ to: "/steward", title: "Steward — put your gotchis to work", label: "Steward", icon: Bot }]
+    ? [{ to: "/steward", title: "Steward: put your gotchis to work", label: "Steward", icon: Bot }]
     : []),
   { to: "/dao", title: "DAO & Community", label: "DAO", icon: Landmark },
 ];
@@ -202,6 +203,7 @@ export function RootLayout() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <TrackerProvider />
       <Gv2Banner />
       <header className="h-14 w-full glass-nav sticky top-0 z-30">
         <div className="relative flex h-14 items-center justify-between px-3 md:px-4 gap-3">
@@ -226,7 +228,7 @@ export function RootLayout() {
                 </Link>
               ))}
               {isConnected && address && (
-                <Link to="/me/activity" title="My activity — listings, offers, bids, auctions, sales">
+                <Link to="/me/activity" title="My activity: listings, offers, bids, auctions, sales">
                   <Button size="sm" variant="ghost" className={`h-8 px-2 ${location.pathname.startsWith("/me/activity") || location.pathname.startsWith("/u/") ? "bg-primary/15 text-primary shadow-glow-sm" : ""}`}>
                     <Receipt className="h-4 w-4" />
                   </Button>
