@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm build:vercel",
+  "buildCommand": "pnpm build",
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/:path((?!api).*)", "destination": "/index.html" }
