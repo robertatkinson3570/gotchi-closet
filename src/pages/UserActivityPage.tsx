@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
-import { Loader2, Tag, HandCoins, Gavel, ShoppingCart, Receipt, Coins, Inbox } from "lucide-react";
+import { Loader2, Tag, HandCoins, Gavel, ShoppingCart, Receipt, Coins, Inbox, Gift, Wallet } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { siteUrl } from "@/lib/site";
 import { shortAddress as short } from "@/lib/format";
@@ -11,9 +11,13 @@ import { AAVEGOTCHI_DIAMOND_BASE, GBM_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLA
 import { CORE_SUBGRAPH, GBM_SUBGRAPH, GOTCHIVERSE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { useToast } from "@/ui/use-toast";
-import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "@/components/explorer/AssetImage";
+import { AssetImage, itemImageCandidates, forgeImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "@/components/explorer/AssetImage";
+import { forgeMetaSync } from "@/lib/explorer/forgeMeta";
+import { itemMetaSync } from "@/lib/explorer/itemMeta";
 import { GotchiSvgById } from "@/components/explorer/GotchiSvgById";
 import { GbmEarningsPanel } from "@/components/explorer/GbmEarningsPanel";
+import { AirdropsPanel } from "@/components/explorer/AirdropsPanel";
+import { ProfileInventory } from "@/components/profile/ProfileInventory";
 
 // Marketplace cancel calls live on the Aavegotchi diamond; auction claim/cancel
 // on the GBM diamond. Exact signatures verified from the live dapp bundle.
@@ -69,7 +73,7 @@ async function gql(url: string, query: string, variables?: any) {
   return json.data;
 }
 
-type TabKey = "listings" | "offers" | "received" | "auctions" | "bids" | "purchases" | "sales" | "earnings";
+type TabKey = "inventory" | "listings" | "offers" | "received" | "auctions" | "bids" | "purchases" | "sales" | "earnings" | "airdrops";
 type Item = {
   id: string;
   refId: string;
@@ -205,12 +209,14 @@ async function fetchOffersReceived(addr: string): Promise<Item[]> {
     .sort((x, y) => Number(y.priceWei) - Number(x.priceWei));
 }
 
-// "earnings" has no generic Item[] fetcher — it renders its own panel with
-// its own types (GBM incentives/scorecard/seller P&L), not the Item list.
-const FETCHERS: Record<Exclude<TabKey, "earnings">, (a: string) => Promise<Item[]>> = {
+// "inventory", "earnings" and "airdrops" have no generic Item[] fetcher — each
+// renders its own panel with its own types, not the Item list.
+const PANEL_TABS = ["inventory", "earnings", "airdrops"] as const;
+const FETCHERS: Record<Exclude<TabKey, (typeof PANEL_TABS)[number]>, (a: string) => Promise<Item[]>> = {
   listings: fetchListings, offers: fetchOffersMade, received: fetchOffersReceived, auctions: fetchAuctionsCreated, bids: fetchBids, purchases: fetchPurchases, sales: fetchSales,
 };
 const TABS: { key: TabKey; label: string; icon: typeof Tag }[] = [
+  { key: "inventory", label: "Inventory", icon: Wallet },
   { key: "listings", label: "Listings", icon: Tag },
   { key: "offers", label: "Offers made", icon: HandCoins },
   { key: "received", label: "Offers received", icon: Inbox },
@@ -219,6 +225,7 @@ const TABS: { key: TabKey; label: string; icon: typeof Tag }[] = [
   { key: "purchases", label: "Purchases", icon: ShoppingCart },
   { key: "sales", label: "Sales", icon: Receipt },
   { key: "earnings", label: "Earnings", icon: Coins },
+  { key: "airdrops", label: "Airdrops", icon: Gift },
 ];
 
 function catLabel(it: Item): string {
@@ -226,7 +233,24 @@ function catLabel(it: Item): string {
   if (it.category === BAAZAAR_CATEGORY.WEARABLE) return "Wearable";
   if (it.category === BAAZAAR_CATEGORY.INSTALLATION) return "Installation";
   if (it.category === BAAZAAR_CATEGORY.TILE) return "Tile";
+  // Forge baazaar categories, verified against live Base listings.
+  if (it.category === 7) return "Alloy";
+  if (it.category === 8) return "Schematic";
+  if (it.category === 9) return "Geode";
+  if (it.category === 10) return "Essence";
+  if (it.category === 11) return "Core";
   return "Item";
+}
+
+// Real item name for a row (wearable/consumable via the bundled db, forge
+// material via the forge table); undefined when nothing better than #id exists.
+function itemName(it: Item): string | undefined {
+  if (it.kind !== "erc1155") return undefined;
+  if (it.category === 8) {
+    const m = itemMetaSync(it.tokenId);
+    return m ? `${m.name} Schematic` : undefined;
+  }
+  return itemMetaSync(it.tokenId)?.name ?? forgeMetaSync(it.tokenId)?.name;
 }
 function ItemImg({ it }: { it: Item }) {
   const wrap = "inline-flex w-9 h-9 rounded bg-black/20 items-center justify-center overflow-hidden align-middle";
@@ -234,7 +258,11 @@ function ItemImg({ it }: { it: Item }) {
   if (it.kind === "erc721" && it.category === BAAZAAR_CATEGORY.AAVEGOTCHI) return <span className="inline-block w-9 h-9 rounded bg-muted/40 overflow-hidden align-middle"><GotchiSvgById id={it.tokenId} className="w-full h-full [&>svg]:w-full [&>svg]:h-full" /></span>;
   if (it.kind === "erc721" && it.category === BAAZAAR_CATEGORY.REALM) return <span className={wrap}><AssetImage candidates={parcelImageCandidates(it.tokenId)} alt={`#${it.tokenId}`} className={cls} /></span>;
   if (it.kind === "erc1155") {
-    const cands = it.category === BAAZAAR_CATEGORY.INSTALLATION ? installationImageCandidates(it.tokenId) : it.category === BAAZAAR_CATEGORY.TILE ? tileImageCandidates(it.tokenId) : itemImageCandidates(it.tokenId);
+    const cands =
+      it.category === BAAZAAR_CATEGORY.INSTALLATION ? installationImageCandidates(it.tokenId)
+      : it.category === BAAZAAR_CATEGORY.TILE ? tileImageCandidates(it.tokenId)
+      : [7, 8, 9, 10, 11].includes(it.category) ? forgeImageCandidates(it.tokenId)
+      : itemImageCandidates(it.tokenId);
     return <span className={wrap}><AssetImage candidates={cands} alt={`#${it.tokenId}`} className={cls} /></span>;
   }
   return <span className={wrap}><span className="text-[9px] font-mono text-muted-foreground">#{it.tokenId}</span></span>;
@@ -258,16 +286,16 @@ export default function UserActivityPage() {
   const { writeContractAsync } = useWriteContract();
   const { toast } = useToast();
 
-  const [tab, setTab] = useState<TabKey>("listings");
+  const [tab, setTab] = useState<TabKey>("inventory");
   const [busy, setBusy] = useState<string | null>(null);
   const [editPrice, setEditPrice] = useState<Record<string, string>>({});
   const [catFilter, setCatFilter] = useState<string>("all");
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["user-activity", tab, routeAddr],
-    enabled: !!routeAddr && tab !== "earnings",
+    enabled: !!routeAddr && !(PANEL_TABS as readonly string[]).includes(tab),
     staleTime: 30_000,
-    queryFn: () => FETCHERS[tab as Exclude<TabKey, "earnings">](routeAddr!),
+    queryFn: () => FETCHERS[tab as Exclude<TabKey, (typeof PANEL_TABS)[number]>](routeAddr!),
   });
 
   const rows = useMemo(() => {
@@ -352,8 +380,12 @@ export default function UserActivityPage() {
               </button>
             ))}
           </div>
-          {tab === "earnings" ? (
+          {tab === "inventory" ? (
+            routeAddr && <ProfileInventory address={routeAddr} />
+          ) : tab === "earnings" ? (
             routeAddr && <GbmEarningsPanel address={routeAddr} />
+          ) : tab === "airdrops" ? (
+            routeAddr && <AirdropsPanel address={routeAddr} isSelf={isSelf} />
           ) : (
             <>
           <div className="flex items-center gap-1 flex-wrap mb-4">
@@ -388,7 +420,16 @@ export default function UserActivityPage() {
                     <tr key={it.id} className="border-t border-border/20 hover:bg-muted/20">
                       <td className="px-3 py-1.5"><ItemImg it={it} /></td>
                       <td className="px-3 py-1.5">{catLabel(it)}</td>
-                      <td className="px-3 py-1.5 font-mono">#{it.tokenId}{it.quantity > 1 ? ` ×${it.quantity}` : ""}</td>
+                      <td className="px-3 py-1.5">
+                        {itemName(it) ? (
+                          <div className="leading-tight">
+                            <div className="font-medium">{itemName(it)}</div>
+                            <div className="font-mono text-[10px] text-muted-foreground">#{it.tokenId}{it.quantity > 1 ? ` ×${it.quantity}` : ""}</div>
+                          </div>
+                        ) : (
+                          <span className="font-mono">#{it.tokenId}{it.quantity > 1 ? ` ×${it.quantity}` : ""}</span>
+                        )}
+                      </td>
                       <td className="px-3 py-1.5 text-right text-emerald-500 font-semibold">{ghst(it.priceWei)} GHST</td>
                       {(tab === "purchases" || tab === "sales" || tab === "auctions" || tab === "bids") && (
                         <td className="px-3 py-1.5 text-muted-foreground">

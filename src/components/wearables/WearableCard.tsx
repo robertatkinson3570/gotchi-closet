@@ -7,6 +7,9 @@ import {
 } from "@/lib/wearableImages";
 import { placeholderSvg } from "@/lib/placeholderSvg";
 import { useEffect, useState } from "react";
+import { useView3D } from "@/app/View3DProvider";
+import { ModelViewer3D } from "@/components/viewer3d/ModelViewer3D";
+import { hasWearable3D, wearable3dGlbUrl } from "@/lib/gotchi3d";
 
 let didLogWearableDebug = false;
 import type { Wearable } from "@/types";
@@ -43,6 +46,12 @@ export function WearableCardView({
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
   const fallbackSvg = placeholderSvg(String(wearable.id), "no image");
+  // Site-wide 3D: show the display model in the thumb. pointer-events-none so
+  // dragging a wearable onto the gotchi keeps working (the model is visual
+  // only here; inspect/rotate lives in the wearable detail modal).
+  const { enabled: view3d } = useView3D();
+  const [threeDFailed, setThreeDFailed] = useState(false);
+  const show3d = view3d && !threeDFailed && hasWearable3D(wearable.id);
   useEffect(() => {
     if (!import.meta.env.DEV || didLogWearableDebug) return;
     didLogWearableDebug = true;
@@ -83,7 +92,18 @@ export function WearableCardView({
           data-testid={`wearable-thumb-${wearable.id}`}
           className="h-[52px] w-full flex items-center justify-center"
         >
-          {!imageUrls[urlIndex] || errored ? (
+          {show3d ? (
+            <div className="w-full h-full pointer-events-none">
+              <ModelViewer3D
+                src={wearable3dGlbUrl(wearable.id)}
+                alt={`${wearable.name} in 3D`}
+                className="w-full h-full"
+                onLoadError={() => setThreeDFailed(true)}
+                disableZoom
+                autoRotate={false}
+              />
+            </div>
+          ) : !imageUrls[urlIndex] || errored ? (
             <div
               className="w-full h-full [&>svg]:w-full [&>svg]:h-full"
               dangerouslySetInnerHTML={{ __html: fallbackSvg }}
@@ -110,7 +130,7 @@ export function WearableCardView({
             />
           )}
         </div>
-        {!loaded && !!imageUrls[urlIndex] && !errored && (
+        {!show3d && !loaded && !!imageUrls[urlIndex] && !errored && (
           <div className="absolute inset-1 rounded-md bg-muted/60 animate-pulse" />
         )}
       </div>

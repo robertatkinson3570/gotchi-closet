@@ -40,6 +40,20 @@ const StewardPage = lazyWithRetry(() => import("@/pages/StewardPage"));
 const PublicGotchiPage = lazyWithRetry(() => import("@/pages/PublicGotchiPage"));
 const PublicBattlePage = lazyWithRetry(() => import("@/pages/PublicBattlePage"));
 const AdminPage = lazyWithRetry(() => import("@/pages/AdminPage"));
+// Guides (SEO content pages, see seo-output/content-plan.md briefs 7-18)
+const GuidesIndexPage = lazyWithRetry(() => import("@/pages/guides/GuidesIndexPage"));
+const BaseMigrationGuide = lazyWithRetry(() => import("@/pages/guides/BaseMigrationGuide"));
+const GetStartedGuide = lazyWithRetry(() => import("@/pages/guides/GetStartedGuide"));
+const RarityFarmingGuide = lazyWithRetry(() => import("@/pages/guides/RarityFarmingGuide"));
+const KinshipGuide = lazyWithRetry(() => import("@/pages/guides/KinshipGuide"));
+const ForgeGuide = lazyWithRetry(() => import("@/pages/guides/ForgeGuide"));
+const GhstGuide = lazyWithRetry(() => import("@/pages/guides/GhstGuide"));
+const WhatIsAavegotchiGuide = lazyWithRetry(() => import("@/pages/guides/WhatIsAavegotchiGuide"));
+const BaazaarGuide = lazyWithRetry(() => import("@/pages/guides/BaazaarGuide"));
+const GotchiLendingGuide = lazyWithRetry(() => import("@/pages/guides/GotchiLendingGuide"));
+const GotchiBattlerGuide = lazyWithRetry(() => import("@/pages/guides/GotchiBattlerGuide"));
+const WearableSetsGuide = lazyWithRetry(() => import("@/pages/guides/WearableSetsGuide"));
+const ValuationGuide = lazyWithRetry(() => import("@/pages/guides/ValuationGuide"));
 
 export const router = createBrowserRouter([
   {
@@ -76,6 +90,19 @@ export const router = createBrowserRouter([
       { path: "staking", element: <StakingPage /> },
       { path: "steward", element: <StewardPage /> },
       { path: "admin", element: <AdminPage /> },
+      { path: "guides", element: <GuidesIndexPage /> },
+      { path: "guides/base-migration", element: <BaseMigrationGuide /> },
+      { path: "guides/get-started", element: <GetStartedGuide /> },
+      { path: "guides/rarity-farming", element: <RarityFarmingGuide /> },
+      { path: "guides/kinship", element: <KinshipGuide /> },
+      { path: "guides/forge", element: <ForgeGuide /> },
+      { path: "guides/ghst", element: <GhstGuide /> },
+      { path: "guides/what-is-aavegotchi", element: <WhatIsAavegotchiGuide /> },
+      { path: "guides/baazaar", element: <BaazaarGuide /> },
+      { path: "guides/gotchi-lending", element: <GotchiLendingGuide /> },
+      { path: "guides/gotchi-battler", element: <GotchiBattlerGuide /> },
+      { path: "guides/wearable-sets", element: <WearableSetsGuide /> },
+      { path: "guides/valuation", element: <ValuationGuide /> },
       { path: "soul/verify/:tokenId", element: <SoulVerifyPage /> },
       // Public arena — no wallet required
       { path: "g/:tokenId", element: <PublicGotchiPage /> },

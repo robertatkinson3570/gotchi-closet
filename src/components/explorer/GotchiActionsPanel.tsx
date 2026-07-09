@@ -8,6 +8,7 @@ import { BASE_CHAIN_ID } from "@/lib/chains";
 import { AAVEGOTCHI_DIAMOND_BASE, CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, ESCROW_FACET_ABI, GHST_TOKEN_BASE, LENDING_FACET_ABI } from "@/lib/lending/contracts";
 import { parseRevert } from "@/lib/lending/parseRevert";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
+import { Gotchi3D } from "@/components/viewer3d/Gotchi3D";
 import { EquipWearablesModal } from "@/components/explorer/EquipWearablesModal";
 import { UseConsumablesBody } from "@/components/explorer/UseConsumablesBody";
 import { useBatchTransferEscrow, type EscrowBalance } from "@/hooks/useEscrowWithdraw";
@@ -248,7 +249,11 @@ export function GotchiManageModal({ gotchi, onClose, onEquipped, onPrev, onNext,
           </div>
           <div className="relative flex items-center gap-4 p-4">
             <span className="w-24 h-24 rounded-xl bg-black/20 overflow-hidden shrink-0 ring-2 ring-white/15 shadow-lg">
-              <GotchiSvg gotchiId={gotchiId} hauntId={hauntId} collateral={collateral} numericTraits={numericTraits} equippedWearables={equippedWearables} mode="preview" useBlobUrl className="w-full h-full object-contain" />
+              <Gotchi3D
+                gotchi={{ collateral: collateral ?? "", hauntId: Number(hauntId) || 1, numericTraits: numericTraits ?? [], equippedWearables: equippedWearables ?? [], name, tokenId: gotchiId }}
+                className="w-full h-full"
+                fallback={<GotchiSvg gotchiId={gotchiId} hauntId={hauntId} collateral={collateral} numericTraits={numericTraits} equippedWearables={equippedWearables} mode="preview" useBlobUrl className="w-full h-full object-contain" />}
+              />
             </span>
             <div className="min-w-0">
               <div className="text-xl font-bold tracking-tight truncate">{name || "Unnamed"}</div>

@@ -10,6 +10,8 @@ import { AdminReviewTab } from "@/components/games/AdminReviewTab";
 import { MySubmissionsTab } from "@/components/games/MySubmissionsTab";
 import { Button } from "@/ui/button";
 import { useToast } from "@/ui/use-toast";
+import { Seo } from "@/components/Seo";
+import { siteUrl } from "@/lib/site";
 
 type Filter = "All" | Category;
 type View = "browse" | "mine" | "review";
@@ -46,6 +48,11 @@ export default function GameCenterPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
+      <Seo
+        title="Aavegotchi Game Center – Community Games, Tools & Dashboards | GotchiCloset"
+        description="A curated directory of community-built Aavegotchi games, tools, and dashboards on Base. Every entry is reviewed; gotchi owners can submit their own."
+        canonical={siteUrl("/games")}
+      />
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Game Center</h1>

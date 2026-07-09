@@ -40,12 +40,25 @@ export default function WearablePage() {
     );
   }
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: `${wearable.name} Wearable`,
-    url: siteUrl(`/wearable/${toSlug(wearable.name)}`),
-  };
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: `${wearable.name} Wearable`,
+      url: siteUrl(`/wearable/${toSlug(wearable.name)}`),
+      description: `Trait modifiers, slots, rarity, and set usage for the ${wearable.name} Aavegotchi wearable on Base.`,
+      isPartOf: { "@id": "https://www.gotchicloset.com/#website" },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: siteUrl("/") },
+        { "@type": "ListItem", position: 2, name: "Wearables", item: siteUrl("/wearables") },
+        { "@type": "ListItem", position: 3, name: wearable.name, item: siteUrl(`/wearable/${toSlug(wearable.name)}`) },
+      ],
+    },
+  ];
 
   const traitMods = TRAIT_KEYS.slice(0, 4).map((key, idx) => ({
     key,

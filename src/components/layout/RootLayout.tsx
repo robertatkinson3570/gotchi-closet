@@ -13,6 +13,7 @@ import { useToast } from "@/ui/use-toast";
 import { useAuctionAlerts } from "@/hooks/useAuctionAlerts";
 import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { View3DToggle } from "@/components/layout/View3DToggle";
 import { FailoverPill } from "@/components/layout/FailoverPill";
 import { Gv2Banner } from "@/components/layout/Gv2Banner";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
@@ -243,6 +244,7 @@ export function RootLayout() {
               <WalletChip />
             </div>
             <KnowledgeBaseButton variant="nav" />
+            <View3DToggle />
             <ThemeToggle />
           </div>
         </div>

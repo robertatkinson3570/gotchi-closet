@@ -7,6 +7,7 @@ import { fetchEvents } from "@/lib/analytics/api";
 import type { Sig, WindowKey } from "@/lib/analytics/types";
 import { EventGrid } from "@/components/admin/EventGrid";
 import { AnalyticsSummary } from "@/components/admin/AnalyticsSummary";
+import { XpDropsOperator } from "@/components/admin/XpDropsOperator";
 
 // Client-side hint only. The real gate is the server signature check on the data
 // endpoints; a non-admin who loads this page sees "Not found" and fetches nothing.
@@ -23,6 +24,7 @@ export default function AdminPage() {
   const [filter, setFilter] = useState("");
   const [eventType, setEventType] = useState<"all" | "pageview" | "connect">("all");
   const [connectedOnly, setConnectedOnly] = useState(false);
+  const [view, setView] = useState<"analytics" | "xpdrops">("analytics");
 
   const isAdmin = !!address && ADMINS.has(address.toLowerCase());
 
@@ -51,9 +53,16 @@ export default function AdminPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-xl font-semibold mb-4">Site activity</h1>
+      <h1 className="text-xl font-semibold mb-4">Admin</h1>
 
-      {!sig ? (
+      <div className="flex items-center gap-1.5 mb-4">
+        <button onClick={() => setView("analytics")} className={`h-8 px-3 rounded text-sm font-medium border ${view === "analytics" ? "bg-sky-500/20 text-sky-300 border-sky-500/40" : "border-white/10 opacity-70 hover:bg-white/5"}`}>Analytics</button>
+        <button onClick={() => setView("xpdrops")} className={`h-8 px-3 rounded text-sm font-medium border ${view === "xpdrops" ? "bg-sky-500/20 text-sky-300 border-sky-500/40" : "border-white/10 opacity-70 hover:bg-white/5"}`}>XP drops</button>
+      </div>
+
+      {view === "xpdrops" ? (
+        <XpDropsOperator />
+      ) : !sig ? (
         <button type="button" onClick={authorize} className="rounded bg-sky-500 px-4 py-2 text-sm font-medium text-white">
           Sign in to view analytics
         </button>

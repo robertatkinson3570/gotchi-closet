@@ -1,5 +1,6 @@
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
+import { Gotchi3D } from "@/components/viewer3d/Gotchi3D";
 
 type Props = {
   gotchi: ExplorerGotchi;
@@ -8,19 +9,35 @@ type Props = {
 export function FamilyPhotoItem({ gotchi }: Props) {
   const brs = gotchi.withSetsRarityScore || gotchi.modifiedRarityScore;
   const baseRar = gotchi.baseRarityScore;
-  
+
+  const svg = (
+    <GotchiSvg
+      gotchiId={gotchi.tokenId}
+      hauntId={gotchi.hauntId}
+      equippedWearables={gotchi.equippedWearables}
+      numericTraits={gotchi.numericTraits}
+      collateral={gotchi.collateral}
+      className="w-full h-full"
+    />
+  );
+
   return (
     <div
       className="flex flex-col items-center p-1 rounded hover:bg-muted/30 transition-colors text-center min-w-0 group"
     >
       <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 flex items-center justify-center">
-        <GotchiSvg
-          gotchiId={gotchi.tokenId}
-          hauntId={gotchi.hauntId}
-          equippedWearables={gotchi.equippedWearables}
-          numericTraits={gotchi.numericTraits}
-          collateral={gotchi.collateral}
+        <Gotchi3D
+          gotchi={{
+            collateral: gotchi.collateral,
+            hauntId: gotchi.hauntId,
+            numericTraits: gotchi.numericTraits,
+            equippedWearables: gotchi.equippedWearables,
+            name: gotchi.name,
+            tokenId: gotchi.tokenId,
+          }}
           className="w-full h-full"
+          posterOnly
+          fallback={svg}
         />
       </div>
       <span className="text-[10px] sm:text-xs font-medium w-full mt-0.5 group-hover:text-primary transition-colors leading-tight break-words">

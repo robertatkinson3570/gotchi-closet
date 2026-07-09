@@ -38,6 +38,8 @@ import setsData from "../../data/setsByTraitDirection.json";
 import { env } from "@/lib/env";
 import { SoulCertificate } from "@/components/soul/SoulCertificate";
 import { useSealedTokens } from "@/state/useSealedTokens";
+import { Seo } from "@/components/Seo";
+import { siteUrl } from "@/lib/site";
 
 const ADD_LISTING_ABI = [
   { name: "addERC721Listing", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_erc721TokenAddress", type: "address" }, { name: "_erc721TokenId", type: "uint256" }, { name: "_category", type: "uint256" }, { name: "_priceInWei", type: "uint256" }], outputs: [] },
@@ -451,6 +453,11 @@ export default function ExplorerPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <Seo
+        title="Aavegotchi Baazaar Explorer – Gotchis, Wearables & Parcels on Base | GotchiCloset"
+        description="Browse live Baazaar listings on Base: gotchis by traits and BRS, wearables by slot and rarity, parcels, and Forge assets. Filter, sort, and buy in GHST."
+        canonical={siteUrl("/baazaar")}
+      />
       <ExplorerTopBar
         mode={mode}
         onModeChange={handleModeChange}

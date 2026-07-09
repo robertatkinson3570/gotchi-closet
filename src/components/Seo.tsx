@@ -26,12 +26,13 @@ export function Seo({ title, description, canonical, jsonLd }: SeoProps) {
       <meta name="twitter:card" content="summary" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
+      {/* react-helmet-async only forwards string children for <script>;
+          dangerouslySetInnerHTML is silently dropped (verified: 0 ld+json
+          tags reached the DOM with it). */}
       {jsonLdArray.map((block, idx) => (
-        <script
-          key={idx}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(block) }}
-        />
+        <script key={idx} type="application/ld+json">
+          {JSON.stringify(block)}
+        </script>
       ))}
     </Helmet>
   );

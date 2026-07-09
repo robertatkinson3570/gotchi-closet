@@ -22,6 +22,8 @@ import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
 import { placeholderSvg } from "@/lib/placeholderSvg";
 import type { Gotchi } from "@/types";
+import { Seo } from "@/components/Seo";
+import { siteUrl } from "@/lib/site";
 
 const TRAIT_NAMES = ["NRG", "AGG", "SPK", "BRN"];
 
@@ -848,6 +850,11 @@ export default function WardrobeLabPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <Seo
+        title="Wardrobe Lab – Best Wearables Optimizer for Your Aavegotchi | GotchiCloset"
+        description="Find the best wearables for your gotchi automatically: maximize BRS, build a battler, or upgrade without breaking sets, using wearables you already own."
+        canonical={siteUrl("/wardrobe-lab")}
+      />
       <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="px-4 flex h-12 items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0 shrink-0">

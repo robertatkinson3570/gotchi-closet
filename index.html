@@ -14,7 +14,70 @@
       rel="stylesheet"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GotchiCloset</title>
+    <title>GotchiCloset – Dress Your Aavegotchi, Preview Wearables & Optimize Sets</title>
+    <!-- Static SEO defaults for crawlers that don't run JS (GPTBot, ClaudeBot,
+         PerplexityBot, etc). Tags marked data-static-seo are removed at app boot
+         in src/main.tsx so react-helmet-async per-route tags never duplicate. -->
+    <meta
+      data-static-seo
+      name="description"
+      content="GotchiCloset is a free Aavegotchi toolkit on Base: preview wearables on your gotchi, compare all 300+ wearables and 150+ sets, calculate BRS rarity score, browse the Baazaar, and manage Gotchi lending."
+    />
+    <meta data-static-seo property="og:site_name" content="GotchiCloset" />
+    <meta data-static-seo property="og:title" content="GotchiCloset – Dress Your Aavegotchi, Preview Wearables & Optimize Sets" />
+    <meta
+      data-static-seo
+      property="og:description"
+      content="Free Aavegotchi fitting room, wearables database, set bonus explorer, BRS calculator, Baazaar explorer and lending manager. Built for the gotchigang on Base."
+    />
+    <meta data-static-seo property="og:type" content="website" />
+    <meta data-static-seo property="og:url" content="https://www.gotchicloset.com/" />
+    <meta data-static-seo property="og:image" content="https://www.gotchicloset.com/logo.png" />
+    <meta data-static-seo name="twitter:card" content="summary" />
+    <meta data-static-seo name="twitter:title" content="GotchiCloset – Dress Your Aavegotchi, Preview Wearables & Optimize Sets" />
+    <meta
+      data-static-seo
+      name="twitter:description"
+      content="Free Aavegotchi fitting room, wearables database, set bonus explorer, BRS calculator, Baazaar explorer and lending manager on Base."
+    />
+    <meta data-static-seo name="twitter:image" content="https://www.gotchicloset.com/logo.png" />
+    <script type="application/ld+json" data-static-seo>
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://www.gotchicloset.com/#website",
+            "name": "GotchiCloset",
+            "url": "https://www.gotchicloset.com/",
+            "description": "Free Aavegotchi toolkit on Base: wearable previews, set bonuses, BRS rarity scores, Baazaar explorer, and Gotchi lending.",
+            "publisher": { "@id": "https://www.gotchicloset.com/#organization" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://www.gotchicloset.com/#organization",
+            "name": "GotchiCloset",
+            "url": "https://www.gotchicloset.com/",
+            "logo": "https://www.gotchicloset.com/logo.png"
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://www.gotchicloset.com/#webapp",
+            "name": "GotchiCloset",
+            "url": "https://www.gotchicloset.com/",
+            "applicationCategory": "GameApplication",
+            "operatingSystem": "Web browser",
+            "browserRequirements": "Requires JavaScript",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "about": {
+              "@type": "Thing",
+              "name": "Aavegotchi",
+              "sameAs": "https://www.aavegotchi.com/"
+            }
+          }
+        ]
+      }
+    </script>
     <script>
       // Apply theme before paint to prevent flash. Defaults to dark.
       (function () {
@@ -30,10 +93,83 @@
         } catch (e) { /* fall through; dark class is set as default */ }
       })();
     </script>
+    <style data-static-seo>
+      /* Styles the static crawler-visible shell only; removed with the shell at app boot. */
+      .gc-static-shell { max-width: 44rem; margin: 0 auto; padding: 3rem 1.25rem; font-family: Inter, system-ui, sans-serif; color: #e8e3f2; background: transparent; line-height: 1.6; }
+      html:not(.dark) .gc-static-shell { color: #2a2140; }
+      .gc-static-shell a { color: #a78bfa; }
+      .gc-static-shell h1 { font-size: 1.6rem; line-height: 1.3; }
+      .gc-static-shell h2 { font-size: 1.15rem; margin-top: 1.75rem; }
+      /* Hidden for humans so the app doesn't flash crawler content before React
+         mounts. Non-JS crawlers (GPTBot, ClaudeBot, curl) parse the HTML text
+         regardless of CSS; the <noscript> below re-shows it for no-JS people. */
+      .gc-static-shell { display: none; }
+      body { background: #0b0316; }
+      html:not(.dark) body { background: #fafafe; }
+    </style>
+    <noscript>
+      <style>.gc-static-shell { display: block; }</style>
+    </noscript>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static shell: real, crawlable landing content for user agents that do
+           not execute JavaScript. React replaces this on mount (createRoot render
+           swaps in the full app), so users with JS see the app as before. -->
+      <main class="gc-static-shell">
+        <h1>GotchiCloset: Dress Your Aavegotchi, Preview Wearables & Optimize Sets</h1>
+        <p>
+          GotchiCloset is a free web app for <a href="https://www.aavegotchi.com/">Aavegotchi</a>,
+          the DeFi-powered crypto Tamagotchi game that lives on the Base network (migrated from
+          Polygon in July 2025). Use it as a fitting room to preview any wearable on your own
+          gotchi before you buy, compare set bonuses, calculate BRS (Base Rarity Score), browse
+          Baazaar listings, and manage Gotchi lending, all in one place.
+        </p>
+
+        <h2>What you can do on GotchiCloset</h2>
+        <ul>
+          <li><a href="/dress">Dressing room</a>: try wearables and full sets on your Aavegotchi with a live preview.</li>
+          <li><a href="/wearables">Wearables database</a>: every Aavegotchi wearable with trait modifiers, slots, and rarity.</li>
+          <li><a href="/sets">Wearable sets</a>: 150+ sets with trait bonuses and BRS impact.</li>
+          <li><a href="/traits">Trait guides</a>: NRG, AGG, SPK, BRN, plus eye shape and eye color.</li>
+          <li><a href="/rarity-score">Rarity score calculator</a>: understand and raise your gotchi's BRS for rarity farming.</li>
+          <li><a href="/baazaar">Baazaar explorer</a>: browse gotchis, wearables, parcels, and Forge asset listings on Base.</li>
+          <li><a href="/lending">Gotchi lending</a>: list, borrow, and track lending income with revenue splits.</li>
+          <li><a href="/forge">Forge tools</a>: schematics, cores, and alloy for crafting and smelting wearables.</li>
+          <li><a href="/dao">DAO dashboard</a>: live AavegotchiDAO proposals and voting power on Snapshot.</li>
+          <li><a href="/pulse">Ecosystem pulse</a>: on-chain activity stats for the Aavegotchi protocol.</li>
+        </ul>
+
+        <h2>What is Aavegotchi?</h2>
+        <p>
+          Aavegotchi is an NFT game where pixel ghosts backed by DeFi collateral gain rarity from
+          wearables, kinship from care, and XP from governance. Gotchis compete for GHST rewards in
+          rarity farming and battle in Gotchi Battler. Since July 2025 the entire protocol,
+          including the Baazaar marketplace and GHST token, runs on Base.
+        </p>
+
+        <h2>Is GotchiCloset free?</h2>
+        <p>
+          Yes. GotchiCloset is free to use and works read-only with any wallet address: paste an
+          address to preview wearables and stats without connecting. Connecting a wallet unlocks
+          on-chain actions such as equipping wearables, Baazaar listings, and lending directly on
+          Base.
+        </p>
+
+        <h2>Do I need to own an Aavegotchi?</h2>
+        <p>
+          No. You can explore all 300+ wearables, 150+ set bonuses, and trait guides without owning
+          a gotchi, or borrow one through Gotchi lending and start playing with almost no upfront
+          cost. When you are ready to buy, the Baazaar explorer shows live gotchi and wearable
+          listings priced in GHST.
+        </p>
+
+        <p>
+          <a href="/wearables">Browse wearables</a> · <a href="/sets">Explore sets</a> ·
+          <a href="/rarity-score">BRS guide</a> · <a href="/lending">Lending</a>
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

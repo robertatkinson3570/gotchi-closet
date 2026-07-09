@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Card } from "@/ui/card";
 import { SvgInline } from "./SvgInline";
 import { GotchiSvg } from "./GotchiSvg";
+import { Gotchi3D } from "@/components/viewer3d/Gotchi3D";
 import type { Gotchi } from "@/types";
 import { useRespecSimulator, editableBrsCorrection } from "@/lib/respec";
 import { useAvailableSkillPoints } from "@/lib/hooks/useAvailableSkillPoints";
@@ -155,22 +156,34 @@ export function GotchiCard({
         <div className="p-2 min-w-[180px]">
           <div className="flex items-center gap-3 mb-2">
             {showImage && (
-              <>
-                {svg ? (
-                  <SvgInline svg={svg} className="h-12 w-12" />
-                ) : (
-                  // Selector falls back to the editor's SVG pipeline.
-                  <GotchiSvg
-                    gotchiId={gotchi.gotchiId || gotchi.id}
-                    hauntId={gotchi.hauntId}
-                    collateral={gotchi.collateral}
-                    numericTraits={gotchi.numericTraits}
-                    equippedWearables={gotchi.equippedWearables}
-                    className="h-12 w-12"
-                    mode="preview"
-                  />
-                )}
-              </>
+              <Gotchi3D
+                gotchi={{
+                  collateral: gotchi.collateral ?? "",
+                  hauntId: Number(gotchi.hauntId) || 1,
+                  numericTraits: gotchi.numericTraits ?? [],
+                  equippedWearables: gotchi.equippedWearables ?? [],
+                  name: gotchi.name,
+                  tokenId: String(gotchi.gotchiId || gotchi.id),
+                }}
+                className="h-12 w-12"
+                posterOnly
+                fallback={
+                  svg ? (
+                    <SvgInline svg={svg} className="h-12 w-12" />
+                  ) : (
+                    // Selector falls back to the editor's SVG pipeline.
+                    <GotchiSvg
+                      gotchiId={gotchi.gotchiId || gotchi.id}
+                      hauntId={gotchi.hauntId}
+                      collateral={gotchi.collateral}
+                      numericTraits={gotchi.numericTraits}
+                      equippedWearables={gotchi.equippedWearables}
+                      className="h-12 w-12"
+                      mode="preview"
+                    />
+                  )
+                }
+              />
             )}
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-sm truncate leading-tight">{gotchi.name}</h3>

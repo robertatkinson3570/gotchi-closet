@@ -54,12 +54,25 @@ export default function SetPage() {
     value: set.traitBonuses?.[idx] ?? 0,
   }));
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: `${set.name} Wearable Set`,
-    url: siteUrl(`/sets/${toSlug(set.name)}`),
-  };
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: `${set.name} Wearable Set`,
+      url: siteUrl(`/sets/${toSlug(set.name)}`),
+      description: `Required wearables, trait bonuses, and BRS impact for the ${set.name} Aavegotchi wearable set on Base.`,
+      isPartOf: { "@id": "https://www.gotchicloset.com/#website" },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: siteUrl("/") },
+        { "@type": "ListItem", position: 2, name: "Wearable Sets", item: siteUrl("/sets") },
+        { "@type": "ListItem", position: 3, name: set.name, item: siteUrl(`/sets/${toSlug(set.name)}`) },
+      ],
+    },
+  ];
 
   const relatedSets = sets
     .filter((s) => s.id !== set.id)

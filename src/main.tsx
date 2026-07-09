@@ -15,6 +15,15 @@ window.addEventListener("vite:preloadError", (e) => {
 });
 window.addEventListener("load", () => sessionStorage.removeItem(CHUNK_RELOAD_KEY));
 
+// index.html ships static SEO tags + a crawler-visible content shell for user
+// agents that don't execute JS. Once the app boots, react-helmet-async owns the
+// document head, so drop the static tags to avoid duplicate title/description/
+// OG tags in the rendered DOM. Order matters: the shell node must go before the
+// [data-static-seo] <style> that hides it — removing the style first makes the
+// shell visible for the frames until React's first commit clears #root.
+document.querySelector(".gc-static-shell")?.remove();
+document.querySelectorAll("[data-static-seo]").forEach((el) => el.remove());
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <App />
 );

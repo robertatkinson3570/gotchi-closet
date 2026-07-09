@@ -9,6 +9,9 @@ import { formatTraitValue } from "@/lib/format";
 import { useEffect, useState, useMemo } from "react";
 import type { Wearable } from "@/types";
 import { useAppStore } from "@/state/useAppStore";
+import { useView3D } from "@/app/View3DProvider";
+import { ModelViewer3D } from "@/components/viewer3d/ModelViewer3D";
+import { hasWearable3D, wearable3dGlbUrl } from "@/lib/gotchi3d";
 
 const TRAIT_LABELS = ["NRG", "AGG", "SPK", "BRN"];
 
@@ -32,6 +35,8 @@ export function SlotCard({
   onSlotClick,
 }: SlotCardProps) {
   const unequipSlot = useAppStore((state) => state.unequipSlot);
+  const { enabled: view3d } = useView3D();
+  const [threeDFailed, setThreeDFailed] = useState(false);
   const imageUrls = wearable ? getWearableIconUrlCandidates(wearable.id) : [];
   const [urlIndex, setUrlIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
@@ -90,6 +95,19 @@ export function SlotCard({
               className="w-full h-full [&>svg]:w-full [&>svg]:h-full"
               dangerouslySetInnerHTML={{ __html: emptySlotSvg }}
             />
+          ) : view3d && !threeDFailed && hasWearable3D(wearable.id) ? (
+            // 3D display of the equipped item; pointer-events pass through so
+            // drop/click/unequip keep working.
+            <div className="w-full h-full pointer-events-none">
+              <ModelViewer3D
+                src={wearable3dGlbUrl(wearable.id)}
+                alt={`${wearable.name} in 3D`}
+                className="w-full h-full"
+                onLoadError={() => setThreeDFailed(true)}
+                disableZoom
+                autoRotate={false}
+              />
+            </div>
           ) : !imageUrls[urlIndex] || errored ? (
             <div
               className="w-full h-full [&>svg]:w-full [&>svg]:h-full"
@@ -116,7 +134,7 @@ export function SlotCard({
               }}
             />
           )}
-          {!loaded && !!imageUrls[urlIndex] && !errored && (
+          {!(view3d && !threeDFailed && wearable && hasWearable3D(wearable.id)) && !loaded && !!imageUrls[urlIndex] && !errored && (
             <div className="absolute inset-1 rounded-md bg-muted/60 animate-pulse" />
           )}
         </div>

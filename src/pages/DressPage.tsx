@@ -32,6 +32,8 @@ import { CatwalkModal } from "@/components/catwalk/CatwalkModal";
 import { useSortedGotchis } from "@/state/selectors";
 import { Button } from "@/ui/button";
 import { Footprints } from "lucide-react";
+import { Seo } from "@/components/Seo";
+import { siteUrl } from "@/lib/site";
 
 export default function DressPage() {
   const [searchParams] = useSearchParams();
@@ -352,6 +354,11 @@ export default function DressPage() {
       onDragEnd={handleDragEnd}
       onDragStart={handleDragStart}
     >
+      <Seo
+        title="Aavegotchi Dressing Room – Try On Wearables & Sets | GotchiCloset"
+        description="Preview any wearable or full set on your Aavegotchi before you buy. See trait and BRS changes live as you dress, straight from your wallet inventory."
+        canonical={siteUrl("/dress")}
+      />
       <div className="min-h-screen flex flex-col overflow-x-hidden">
         <WalletHeader
           multiWallets={multiWallets}

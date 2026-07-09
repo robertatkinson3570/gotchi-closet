@@ -11,8 +11,9 @@ import { shortAddress as short } from "@/lib/format";
 import { CORE_SUBGRAPH_URL, BAAZAAR_CATEGORY, AAVEGOTCHI_DIAMOND_BASE, REALM_DIAMOND_BASE, INSTALLATION_DIAMOND_BASE, TILE_DIAMOND_BASE, WEARABLE_DIAMOND_BASE, FORGE_DIAMOND_BASE, FAKE_GOTCHIS_NFT_BASE } from "@/lib/lending/contracts";
 import { GBM_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
-import { AssetImage, itemImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "@/components/explorer/AssetImage";
+import { AssetImage, itemImageCandidates, forgeImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "@/components/explorer/AssetImage";
 import { fetchItemMetaMap, itemMetaSync, GUARDIAN_SKIN_NAMES, RARITY_COLORS, type ItemMeta } from "@/lib/explorer/itemMeta";
+import { forgeMetaSync, forgeKind, FORGE_DESCRIPTIONS } from "@/lib/explorer/forgeMeta";
 import { toSlug } from "@/lib/slug";
 
 type GotchiArt = { numericTraits: number[]; equippedWearables: number[]; hauntId?: number; collateral?: string };
@@ -180,14 +181,18 @@ async function fetchOffers(): Promise<Row[]> {
 }
 
 // Map an auction's token contract to the (kind, category) used for imagery.
-function auctionCat(contract: string, type: string): { kind: "erc721" | "erc1155"; category: number } {
+function auctionCat(contract: string, type: string, tokenId?: string): { kind: "erc721" | "erc1155"; category: number } {
   const c = (contract || "").toLowerCase();
   if (c === REALM_DIAMOND_BASE.toLowerCase()) return { kind: "erc721", category: BAAZAAR_CATEGORY.REALM };
   if (c === INSTALLATION_DIAMOND_BASE.toLowerCase()) return { kind: "erc1155", category: BAAZAAR_CATEGORY.INSTALLATION };
   if (c === TILE_DIAMOND_BASE.toLowerCase()) return { kind: "erc1155", category: BAAZAAR_CATEGORY.TILE };
   if (c === AAVEGOTCHI_DIAMOND_BASE.toLowerCase()) return type === "erc1155" ? { kind: "erc1155", category: BAAZAAR_CATEGORY.CONSUMABLE } : { kind: "erc721", category: BAAZAAR_CATEGORY.AAVEGOTCHI };
   if (c === WEARABLE_DIAMOND_BASE.toLowerCase()) return { kind: "erc1155", category: BAAZAAR_CATEGORY.WEARABLE };
-  if (c === FORGE_DIAMOND_BASE.toLowerCase()) return { kind: "erc1155", category: BAAZAAR_CATEGORY.CONSUMABLE };
+  if (c === FORGE_DIAMOND_BASE.toLowerCase()) {
+    // Forge baazaar categories: 7 alloy, 8 schematic, 9 geode, 10 essence, 11 core.
+    const k = forgeKind(tokenId ?? "");
+    return { kind: "erc1155", category: k === "alloy" ? 7 : k === "geode" ? 9 : k === "essence" ? 10 : k === "core" ? 11 : 8 };
+  }
   if (c === FAKE_GOTCHIS_NFT_BASE.toLowerCase()) return { kind: "erc721", category: 5 };
   return { kind: type === "erc1155" ? "erc1155" : "erc721", category: -1 };
 }
@@ -196,7 +201,7 @@ async function fetchAuctions(): Promise<Row[]> {
   const d = await gql(GBM_SUBGRAPH, `query { auctions(first: 100, orderBy: endsAt, orderDirection: desc){ id type tokenId contractAddress highestBid highestBidder seller endsAt totalBids } }`);
   const now = Math.floor(Date.now() / 1000);
   const rows: Row[] = (d?.auctions ?? []).map((a: any) => {
-    const { kind, category } = auctionCat(a.contractAddress, a.type);
+    const { kind, category } = auctionCat(a.contractAddress, a.type, a.tokenId);
     const endsAt = Number(a.endsAt);
     return {
       id: `a-${a.id}`, feed: "auction" as const, kind, category, tokenId: a.tokenId, quantity: 1,
@@ -211,7 +216,7 @@ async function fetchAuctions(): Promise<Row[]> {
 async function fetchBidsFeed(): Promise<Row[]> {
   const d = await gql(GBM_SUBGRAPH, `query { bids(first: 100, orderBy: bidTime, orderDirection: desc){ id bidder amount bidTime outbid tokenId contractAddress type } }`);
   const rows: Row[] = (d?.bids ?? []).map((b: any) => {
-    const { kind, category } = auctionCat(b.contractAddress, b.type);
+    const { kind, category } = auctionCat(b.contractAddress, b.type, b.tokenId);
     return {
       id: `b-${b.id}`, feed: "bid" as const, kind, category, tokenId: b.tokenId, quantity: 1,
       priceWei: b.amount ?? "0", to: (b.bidder ?? "").toLowerCase(), time: Number(b.bidTime),
@@ -253,13 +258,35 @@ function ItemImage({ s }: { s: Row }) {
   const imgCls = "max-w-8 max-h-8 object-contain";
   if (s.kind === "erc721" && s.category === BAAZAAR_CATEGORY.REALM) return <span className={wrap}><AssetImage candidates={parcelImageCandidates(s.tokenId)} alt={`#${s.tokenId}`} className={imgCls} /></span>;
   if (s.kind === "erc1155") {
-    const cands = s.category === BAAZAAR_CATEGORY.INSTALLATION ? installationImageCandidates(s.tokenId) : s.category === BAAZAAR_CATEGORY.TILE ? tileImageCandidates(s.tokenId) : itemImageCandidates(s.tokenId);
+    const cands =
+      s.category === BAAZAAR_CATEGORY.INSTALLATION ? installationImageCandidates(s.tokenId)
+      : s.category === BAAZAAR_CATEGORY.TILE ? tileImageCandidates(s.tokenId)
+      // Forge items (7 alloy, 8 schematic, 9 geode, 10 essence, 11 core) have
+      // dedicated blueprint/material art — /brand/items/{id}.svg is wrong or 404s.
+      : [7, 8, 9, 10, 11].includes(s.category) ? forgeImageCandidates(s.tokenId)
+      : itemImageCandidates(s.tokenId);
     return <span className={wrap}><AssetImage candidates={cands} alt={`#${s.tokenId}`} className={imgCls} /></span>;
   }
   return <span className="inline-flex w-9 h-9 rounded bg-emerald-500/10 items-center justify-center align-middle"><MapPin className="w-4 h-4 text-emerald-500/70" /></span>;
 }
 
 const FETCHERS: Record<Feed, () => Promise<Row[]>> = { sale: fetchSales, offer: fetchOffers, auction: fetchAuctions, bid: fetchBidsFeed };
+
+// Power-user export: the current filtered feed as a CSV download.
+function exportCsv(rows: Row[], feed: Feed, nameFor: (s: Row) => string | undefined) {
+  const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const header = ["feed", "type", "item", "tokenId", "quantity", "priceGhst", "from", "to", "status", "timeUnix", "timeIso"];
+  const lines = rows.map((s) =>
+    [s.feed, catLabel(s), nameFor(s) ?? "", s.tokenId, s.quantity, Number(s.priceWei) / 1e18, s.from ?? "", s.to ?? "", s.status ?? "", s.time, new Date(s.time * 1000).toISOString()].map(esc).join(",")
+  );
+  const blob = new Blob([[header.join(","), ...lines].join("\n")], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `gotchicloset-activity-${feed}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function ActivityPage() {
   const [feed, setFeed] = useState<Feed>("sale");
@@ -273,7 +300,9 @@ export default function ActivityPage() {
   const { data: metaMap } = useQuery({ queryKey: ["item-meta-map"], queryFn: fetchItemMetaMap, staleTime: Infinity });
 
   const rowMeta = (s: Row): ItemMeta | undefined =>
-    s.kind === "erc1155" && s.category !== 6 && s.category !== 12 ? metaMap?.get(Number(s.tokenId)) ?? itemMetaSync(s.tokenId) : undefined;
+    s.kind === "erc1155" && s.category !== 6 && s.category !== 12
+      ? metaMap?.get(Number(s.tokenId)) ?? itemMetaSync(s.tokenId) ?? forgeMetaSync(s.tokenId)
+      : undefined;
 
   // .gotchi names for every address in the current feed (one multicall,
   // session-cached) — the dapp shows "ztef.gotchi" instead of 0x… everywhere.
@@ -370,13 +399,22 @@ export default function ActivityPage() {
             )}
           </div>
 
-          <div className="mb-3">
+          <div className="mb-3 flex items-center gap-2">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search name, #id or 0xaddress"
               className="h-8 w-full sm:w-72 rounded-lg border border-border/40 bg-background px-3 text-xs"
             />
+            <button
+              type="button"
+              onClick={() => exportCsv(rows, feed, (s) => rowMeta(s)?.name ?? s.gotchiName)}
+              disabled={rows.length === 0}
+              title="Download the current view as CSV"
+              className="h-8 px-3 shrink-0 rounded-lg border border-border/40 text-[11px] font-semibold text-muted-foreground hover:bg-muted/40 disabled:opacity-50"
+            >
+              ⤓ CSV
+            </button>
           </div>
           {error && <div className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm mb-3">{(error as Error).message}</div>}
           {isLoading ? (
@@ -494,6 +532,11 @@ function DetailModal({ s, meta, metaMap, nameOf, onClose }: { s: Row; meta?: Ite
           <div className="flex justify-center">
             <span className="w-32 h-32 flex items-center justify-center rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 [&_span]:!w-28 [&_span]:!h-28 [&_img]:max-h-28 [&_img]:max-w-28"><ItemImage s={s} /></span>
           </div>
+          {s.kind === "erc1155" && [7, 8, 9, 10, 11].includes(s.category) && (
+            <p className="text-[11px] text-muted-foreground leading-snug rounded-lg border border-border/40 bg-muted/20 p-2.5">
+              {FORGE_DESCRIPTIONS[forgeKind(s.tokenId) ?? "core"]}
+            </p>
+          )}
           <div>
             <Row2 label={priceLabel}><span className="text-emerald-500 font-bold">{ghst(s.priceWei)} GHST</span></Row2>
             {s.quantity > 1 && <Row2 label="Quantity">×{s.quantity}</Row2>}

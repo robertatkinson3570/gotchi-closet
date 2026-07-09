@@ -98,8 +98,17 @@ export default function HomePage() {
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
           name: "GotchiCloset",
-          applicationCategory: "GameUtility",
-          operatingSystem: "Web",
+          url: siteUrl("/"),
+          description:
+            "Free Aavegotchi toolkit on Base: preview wearables and sets on your gotchi, calculate BRS rarity score, browse the Baazaar, and manage Gotchi lending.",
+          applicationCategory: "GameApplication",
+          operatingSystem: "Web browser",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          about: {
+            "@type": "Thing",
+            name: "Aavegotchi",
+            sameAs: "https://www.aavegotchi.com/",
+          },
         }}
       />
 

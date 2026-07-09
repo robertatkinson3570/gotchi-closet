@@ -3,6 +3,8 @@ import { useAccount } from "wagmi";
 import type { ExplorerGotchi } from "@/lib/explorer/types";
 import { getRarityTier } from "@/lib/explorer/filters";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
+import { Gotchi3D } from "@/components/viewer3d/Gotchi3D";
+import { useView3D } from "@/app/View3DProvider";
 import { GotchiInfoOverlay } from "./GotchiInfoOverlay";
 import { BuyButton } from "./BuyButton";
 import { MakeOfferButton } from "./MakeOfferButton";
@@ -36,6 +38,10 @@ type Props = {
   // Buy-side only: show a "Make Offer" (buy order) action. Set by the browse
   // grid, not by auction/lending views.
   offerable?: boolean;
+  // Detail surfaces only (modals, single-gotchi views): honor the site-wide
+  // 3D toggle and render the composed 3D model with orbit controls. Grids
+  // must NOT set this — browsers cap concurrent WebGL contexts.
+  allow3d?: boolean;
 };
 
 const NAKED_WEARABLES: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -62,6 +68,7 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   sealStatus,
   onSeal,
   offerable,
+  allow3d,
 }: Props) {
   const { address } = useAccount();
   const isOwnListing = !!gotchi.listing?.seller && !!address && gotchi.listing.seller.toLowerCase() === address.toLowerCase();
@@ -70,6 +77,15 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
   const wearableCount = gotchi.equippedWearables.filter((w) => w > 0).length;
   const [imageHovered, setImageHovered] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  // Site-wide 3D: the global toggle switches every card to its 3D model
+  // (model-viewer lazy-loads by viewport, so only visible cards download).
+  // Models sit still until the per-card rotate button is pressed — a grid of
+  // continuously spinning models would churn the GPU. no3d hides 3D once we
+  // know this combo has no cached model.
+  const { enabled: view3dEnabled } = useView3D();
+  const [rotating, setRotating] = useState(false);
+  const [no3d, setNo3d] = useState(false);
+  const show3d = !no3d && view3dEnabled;
   const [imageBadgeHovered, setImageBadgeHovered] = useState(false);
   const [infoBadgeHovered, setInfoBadgeHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -220,24 +236,66 @@ export const GotchiExplorerCard = memo(function GotchiExplorerCard({
       ref={cardRef}
       className={`rounded-lg border ${selected ? "border-emerald-500 ring-2 ring-emerald-500/50" : colors.border} ${colors.bg} hover:ring-1 hover:ring-primary/40 transition-all duration-150 active:scale-[0.98] relative overflow-hidden`}
     >
-      <div 
+      <div
         className="relative aspect-square flex items-center justify-center"
         onMouseEnter={() => setImageHovered(true)}
         onMouseLeave={() => setImageHovered(false)}
       >
+        {show3d && !allow3d && isReady && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setRotating((v) => !v); }}
+            title={rotating ? "Stop rotating" : "Rotate 360°"}
+            aria-label={rotating ? "Stop rotating" : "Rotate 360°"}
+            // Bottom-left: top-left is the rental badge, top-right the seal
+            // badge, bottom-right the wearable count.
+            className={`absolute bottom-1.5 left-1.5 z-10 text-[11px] leading-none px-1.5 py-1 rounded-md border transition-colors ${
+              rotating ? "bg-primary/25 text-primary border-primary/50" : "bg-black/50 text-primary/90 border-primary/40 hover:bg-primary/20"
+            }`}
+          >
+            ⟳
+          </button>
+        )}
         {/* READY GATE: Only mount GotchiSvg when gotchi is ready */}
         {isReady ? (
-          <GotchiSvg
-            gotchiId={gotchi.tokenId}
-            hauntId={gotchi.hauntId}
-            collateral={gotchi.collateral}
-            numericTraits={stableNumericTraits}
-            equippedWearables={activeWearables}
-            mode="preview"
-            className="w-full h-full"
-            testId={`explorer-gotchi-${gotchi.tokenId}`}
-            useBlobUrl={true} // Use blob URL to prevent DOM repaint flash
-          />
+          (() => {
+            const svg = (
+              <GotchiSvg
+                gotchiId={gotchi.tokenId}
+                hauntId={gotchi.hauntId}
+                collateral={gotchi.collateral}
+                numericTraits={stableNumericTraits}
+                equippedWearables={activeWearables}
+                mode="preview"
+                className="w-full h-full"
+                testId={`explorer-gotchi-${gotchi.tokenId}`}
+                useBlobUrl={true} // Use blob URL to prevent DOM repaint flash
+              />
+            );
+            if (!allow3d && !show3d) return svg;
+            return (
+              <Gotchi3D
+                gotchi={{
+                  collateral: gotchi.collateral,
+                  hauntId: gotchi.hauntId,
+                  numericTraits: stableNumericTraits,
+                  // 3D always shows the dressed gotchi (hover-undress is a 2D affordance).
+                  equippedWearables: stableEquippedWearables,
+                  name: gotchi.name,
+                  tokenId: gotchi.tokenId,
+                }}
+                className="w-full h-full"
+                fallback={svg}
+                onUnavailable={() => setNo3d(true)}
+                disableZoom={!allow3d}
+                autoRotate={allow3d || rotating}
+                // Grids show the pre-rendered PNG (identical look, no WebGL);
+                // the rotate button swaps in the live scene. Detail surfaces
+                // are always live.
+                posterOnly={!allow3d && !rotating}
+              />
+            );
+          })()
         ) : (
           <div 
             className="w-full h-full bg-muted/50 animate-pulse"

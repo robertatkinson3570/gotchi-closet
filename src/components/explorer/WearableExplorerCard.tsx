@@ -9,6 +9,9 @@ import { MakeOfferButton } from "./MakeOfferButton";
 import { InlineSvg } from "./InlineSvg";
 import { AAVEGOTCHI_DIAMOND_BASE, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
 import { RARITY_COLORS, RARITY_BG } from "@/lib/explorer/itemMeta";
+import { useView3D } from "@/app/View3DProvider";
+import { ModelViewer3D } from "@/components/viewer3d/ModelViewer3D";
+import { hasWearable3D, wearable3dGlbUrl } from "@/lib/gotchi3d";
 
 interface WearableExplorerCardProps {
   wearable: ExplorerWearable;
@@ -34,6 +37,13 @@ export function WearableExplorerCard({
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
   const fallbackSvg = placeholderSvg(String(wearable.id), wearable.name);
+  // Site-wide 3D toggle: cards with a display model render it in place
+  // (viewport-lazy, ~200-550 KB each); the rest keep their 2D icon. Models
+  // sit still until the rotate button is pressed.
+  const { enabled: view3d } = useView3D();
+  const [threeDFailed, setThreeDFailed] = useState(false);
+  const [rotating, setRotating] = useState(false);
+  const show3d = view3d && !threeDFailed && hasWearable3D(wearable.id);
 
   useEffect(() => {
     setUrlIndex(0);
@@ -59,8 +69,30 @@ export function WearableExplorerCard({
         </span>
       )}
 
-      <div className="h-12 w-full flex items-center justify-center bg-black/20 rounded overflow-hidden">
-        {!imageUrls[urlIndex] || errored ? (
+      <div className={`relative ${show3d ? "h-20" : "h-12"} w-full flex items-center justify-center bg-black/20 rounded overflow-hidden`}>
+        {show3d && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setRotating((v) => !v); }}
+            title={rotating ? "Stop rotating" : "Rotate 360°"}
+            aria-label={rotating ? "Stop rotating" : "Rotate 360°"}
+            className={`absolute bottom-1 left-1 z-10 text-[11px] leading-none px-1 py-0.5 rounded border transition-colors ${
+              rotating ? "bg-primary/25 text-primary border-primary/50" : "bg-black/50 text-primary/90 border-primary/40 hover:bg-primary/20"
+            }`}
+          >
+            ⟳
+          </button>
+        )}
+        {show3d ? (
+          <ModelViewer3D
+            src={wearable3dGlbUrl(wearable.id)}
+            alt={`${wearable.name} in 3D`}
+            className="w-full h-full"
+            onLoadError={() => setThreeDFailed(true)}
+            disableZoom
+            autoRotate={rotating}
+          />
+        ) : !imageUrls[urlIndex] || errored ? (
           <InlineSvg
             svg={fallbackSvg}
             className="w-10 h-10 [&>svg]:w-full [&>svg]:h-full"
@@ -82,7 +114,7 @@ export function WearableExplorerCard({
             }}
           />
         )}
-        {!loaded && !!imageUrls[urlIndex] && !errored && (
+        {!show3d && !loaded && !!imageUrls[urlIndex] && !errored && (
           <div className="absolute inset-0 bg-muted/40 animate-pulse rounded" />
         )}
       </div>

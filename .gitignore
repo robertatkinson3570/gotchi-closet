@@ -68,3 +68,8 @@ video/golden/current/
 # Foundry build artifacts
 /out/
 /cache/
+
+# 3D compose runtime cache (built on demand per hash)
+server/data/gotchi3d-cache/
+# Playwright MCP session artifacts
+.playwright-mcp/

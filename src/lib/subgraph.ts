@@ -26,3 +26,14 @@ export const SVG_SUBGRAPH = `${GOLDSKY_PROJECT}/aavegotchi-svg-base/prod/gn`;
 export const PORTAL_SVGS_SUBGRAPH = `${GOLDSKY_PROJECT}/aavegotchi-portal-svgs-base/prod/gn`;
 /** XP merkle drops + per-gotchi claims. */
 export const XP_SUBGRAPH = `${GOLDSKY_PROJECT}/aavegotchi-xp-base/prod/gn`;
+
+/**
+ * Polygon-era core subgraph (pre-July-2025 history). Same Goldsky project,
+ * still actively indexed (verified live 2026-07-09: parcel 8965's 130 GHST
+ * sale from 2025-02 returns, head block tracks current Polygon). Used as a
+ * fallback for sale history that predates the Base migration; the dapp
+ * queries the same endpoint. Keyless.
+ */
+export const CORE_SUBGRAPH_MATIC = `${GOLDSKY_PROJECT}/aavegotchi-core-matic/prod/gn`;
+/** Polygon-era GBM auctions (verified live alongside core-matic). */
+export const GBM_SUBGRAPH_MATIC = `${GOLDSKY_PROJECT}/aavegotchi-gbm-baazaar-matic/prod/gn`;

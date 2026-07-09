@@ -9,6 +9,7 @@ import { SLOT_NAMES } from "@/lib/constants";
 import { GotchiSvg } from "@/components/gotchi/GotchiSvg";
 import { LiveTraitPanel } from "@/components/gotchi/LiveTraitPanel";
 import { BrsSummary } from "@/components/gotchi/BrsSummary";
+import { Wearable3DThumb } from "@/components/viewer3d/Wearable3DThumb";
 import { computeInstanceTraits, useWearablesById } from "@/state/selectors";
 import wearablesData from "../../../data/wearables.json";
 
@@ -276,7 +277,13 @@ export function EquipWearablesModal({
                     className={`relative aspect-square rounded-md flex items-center justify-center bg-muted/30 hover:bg-muted/50 transition-colors ${picker === slot ? "ring-2 ring-primary" : ""}`}
                     title={w?.name ?? "Select a wearable"}
                   >
-                    {id ? <img src={itemImg(id)} alt={w?.name ?? `#${id}`} className="max-w-[80%] max-h-[80%] object-contain" /> : <span className="text-[10px] text-muted-foreground font-medium">Select</span>}
+                    {id ? (
+                      <Wearable3DThumb
+                        wearableId={id}
+                        alt={w?.name ?? `#${id}`}
+                        fallback={<img src={itemImg(id)} alt={w?.name ?? `#${id}`} className="max-w-[80%] max-h-[80%] object-contain" />}
+                      />
+                    ) : <span className="text-[10px] text-muted-foreground font-medium">Select</span>}
                     {id !== 0 && (
                       <span onClick={(e) => { e.stopPropagation(); setSlot(slot, 0); }} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center shadow" title="Remove"><X className="w-3 h-3" /></span>
                     )}
@@ -318,7 +325,13 @@ export function EquipWearablesModal({
                   const bal = owned?.[id] ?? 0;
                   return (
                     <button key={id} onClick={() => setSlot(picker, id)} className={`rounded-lg border p-1.5 hover:-translate-y-0.5 transition-all ${slots[picker] === id ? "border-primary ring-1 ring-primary/50" : "border-border/40 hover:border-primary/40"}`} title={traitSummary(w)}>
-                      <span className="block aspect-square rounded bg-muted/30 flex items-center justify-center"><img src={itemImg(id)} alt={w?.name ?? `#${id}`} className="max-w-[80%] max-h-[80%] object-contain" /></span>
+                      <span className="block aspect-square rounded bg-muted/30 flex items-center justify-center">
+                        <Wearable3DThumb
+                          wearableId={id}
+                          alt={w?.name ?? `#${id}`}
+                          fallback={<img src={itemImg(id)} alt={w?.name ?? `#${id}`} className="max-w-[80%] max-h-[80%] object-contain" />}
+                        />
+                      </span>
                       <div className="mt-1 text-[9px] font-medium truncate text-center">{w?.name ?? `#${id}`}</div>
                       <div className="text-[8px] text-muted-foreground text-center">×{bal}</div>
                       <TraitMods w={w} directions={traitDirections} />

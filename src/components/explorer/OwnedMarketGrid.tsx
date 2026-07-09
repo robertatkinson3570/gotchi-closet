@@ -16,6 +16,7 @@ import { fetchOwnedListings, type ListedMap } from "./detail/ownedListings";
 import { itemMetaSync } from "@/lib/explorer/itemMeta";
 import { useDetailNav } from "./detail/useDetailNav";
 import { DetailDialogShell } from "./detail/DetailDialogShell";
+import { Wearable3DThumb } from "@/components/viewer3d/Wearable3DThumb";
 import wearablesData from "../../../data/wearables.json";
 
 const fmtGhst = (wei: string) => (Number(wei) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -330,7 +331,11 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
                 {canList ? (sel ? <span className="text-emerald-500 text-xs">✓ list</span> : <span className="text-[9px] text-muted-foreground opacity-0 group-hover:opacity-100">tap to list</span>) : <span className="text-[9px] text-muted-foreground">owned</span>}
               </button>
               <div onClick={() => { nav.openItem(o); setDPrice(""); }} title="View details" className="cursor-pointer h-16 flex items-center justify-center rounded-lg overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 hover:from-primary/5 hover:to-primary/15 transition-colors">
-                <AssetImage candidates={imgFor(itemKind, o.id)} alt={`#${o.id}`} className="max-h-14 max-w-14 object-contain" />
+                {itemKind === "wearable" ? (
+                  <Wearable3DThumb wearableId={o.id} fallback={<AssetImage candidates={imgFor(itemKind, o.id)} alt={`#${o.id}`} className="max-h-14 max-w-14 object-contain" />} />
+                ) : (
+                  <AssetImage candidates={imgFor(itemKind, o.id)} alt={`#${o.id}`} className="max-h-14 max-w-14 object-contain" />
+                )}
               </div>
               {itemKind !== "forge" && itemMetaSync(o.id)?.name && (
                 <div className="text-[9px] text-muted-foreground text-center truncate" title={itemMetaSync(o.id)!.name}>{itemMetaSync(o.id)!.name}</div>
@@ -398,9 +403,17 @@ export function OwnedMarketGrid({ itemKind }: { itemKind: OwnedKind }) {
             onClose={() => nav.close()} onPrev={nav.prev} onNext={nav.next} hasPrev={nav.hasPrev} hasNext={nav.hasNext} shareUrl={nav.shareUrl}
             widthClass="w-[min(440px,96vw)]"
           >
+            {itemKind === "wearable" ? (
+              <div className="w-48 h-48 mx-auto rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
+                <Wearable3DThumb wearableId={o.id} interactive autoRotate className="w-full h-full" fallback={
+                  <div className="w-full h-full flex items-center justify-center [&_img]:max-h-28 [&_img]:max-w-28 [&_img]:object-contain"><AssetImage candidates={imgFor(itemKind, o.id)} alt={`#${o.id}`} /></div>
+                } />
+              </div>
+            ) : (
             <div className="w-32 h-32 mx-auto rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 flex items-center justify-center [&_img]:max-h-28 [&_img]:max-w-28 [&_img]:object-contain">
               <AssetImage candidates={imgFor(itemKind, o.id)} alt={`#${o.id}`} />
             </div>
+            )}
             {o.bal > 1 && <div className="text-center text-xs text-muted-foreground">You own ×{o.bal}</div>}
             {listingCategory != null && (
               <div className="rounded-lg border border-border/60 p-3 space-y-2">

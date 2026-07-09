@@ -1,6 +1,7 @@
 import { SlotGrid } from "./SlotGrid";
 import { useAppStore } from "@/state/useAppStore";
 import { GotchiSvg } from "./GotchiSvg";
+import { Gotchi3D } from "@/components/viewer3d/Gotchi3D";
 import { X, Wand2, Sparkles, Shirt, RotateCcw, Lock, Unlock, Baby, Undo2 } from "lucide-react";
 import { Button } from "@/ui/button";
 import { computeInstanceTraits, useWearablesById, useWearableInventory } from "@/state/selectors";
@@ -242,15 +243,29 @@ export function EditorPanel() {
                       <div className="flex flex-col items-center gap-2 shrink-0">
                         <div className="relative group">
                           <div className="absolute -inset-1 bg-gradient-to-br from-purple-500/30 to-fuchsia-500/30 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity" />
-                          <GotchiSvg
-                            gotchiId={instance.baseGotchi.gotchiId || instance.baseGotchi.id}
-                            hauntId={instance.baseGotchi.hauntId}
-                            collateral={instance.baseGotchi.collateral}
-                            numericTraits={instance.baseGotchi.numericTraits}
-                            equippedWearables={instance.equippedBySlot}
+                          <Gotchi3D
+                            gotchi={{
+                              collateral: instance.baseGotchi.collateral ?? "",
+                              hauntId: Number(instance.baseGotchi.hauntId) || 1,
+                              numericTraits: instance.baseGotchi.numericTraits,
+                              equippedWearables: instance.equippedBySlot,
+                              name: instance.baseGotchi.name,
+                              tokenId: String(instance.baseGotchi.gotchiId || instance.baseGotchi.id),
+                            }}
                             className="h-16 w-16 relative"
-                            mode="preview"
-                            testId={`editor-gotchi-svg-${instance.instanceId}`}
+                            disableZoom
+                            fallback={
+                              <GotchiSvg
+                                gotchiId={instance.baseGotchi.gotchiId || instance.baseGotchi.id}
+                                hauntId={instance.baseGotchi.hauntId}
+                                collateral={instance.baseGotchi.collateral}
+                                numericTraits={instance.baseGotchi.numericTraits}
+                                equippedWearables={instance.equippedBySlot}
+                                className="h-16 w-16 relative"
+                                mode="preview"
+                                testId={`editor-gotchi-svg-${instance.instanceId}`}
+                              />
+                            }
                           />
                         </div>
                         

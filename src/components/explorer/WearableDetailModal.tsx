@@ -4,6 +4,10 @@ import { formatTraitValue } from "@/lib/format";
 import { AAVEGOTCHI_DIAMOND_BASE, BAAZAAR_CATEGORY } from "@/lib/lending/contracts";
 import { AssetImage } from "./AssetImage";
 import { getWearableIconUrlCandidates } from "@/lib/wearableImages";
+import { useState } from "react";
+import { useView3D } from "@/app/View3DProvider";
+import { ModelViewer3D } from "@/components/viewer3d/ModelViewer3D";
+import { hasWearable3D, wearable3dGlbUrl } from "@/lib/gotchi3d";
 import { RecentSales } from "./RecentSales";
 import { WornBy } from "./WornBy";
 import { WearableHolders } from "./WearableHolders";
@@ -34,6 +38,9 @@ export function WearableDetailModal({
   const slots = wearable.slots || [];
   const slotLabel = slots.length > 0 ? getSlotName(slots[0]) : "None";
   const mods = wearable.traitModifiers.slice(0, 4);
+  const { enabled: view3d } = useView3D();
+  const [threeDFailed, setThreeDFailed] = useState(false);
+  const show3d = view3d && !threeDFailed && hasWearable3D(wearable.id);
 
   return (
     <DetailDialogShell
@@ -41,9 +48,22 @@ export function WearableDetailModal({
       onClose={onClose} onPrev={onPrev} onNext={onNext} hasPrev={hasPrev} hasNext={hasNext} shareUrl={shareUrl}
       widthClass="w-[min(460px,96vw)]"
     >
-          <div className="w-32 h-32 mx-auto rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 flex items-center justify-center [&_img]:max-h-28 [&_img]:max-w-28 [&_img]:object-contain">
-            <AssetImage candidates={getWearableIconUrlCandidates(wearable.id)} alt={wearable.name} />
-          </div>
+          {show3d ? (
+            // 3D display model with 360° orbit + auto-rotate (site-wide 3D
+            // toggle); larger stage than the 2D icon so it can be inspected.
+            <div className="w-56 h-56 mx-auto rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40">
+              <ModelViewer3D
+                src={wearable3dGlbUrl(wearable.id)}
+                alt={`${wearable.name} in 3D`}
+                className="w-full h-full"
+                onLoadError={() => setThreeDFailed(true)}
+              />
+            </div>
+          ) : (
+            <div className="w-32 h-32 mx-auto rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 flex items-center justify-center [&_img]:max-h-28 [&_img]:max-w-28 [&_img]:object-contain">
+              <AssetImage candidates={getWearableIconUrlCandidates(wearable.id)} alt={wearable.name} />
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
             <div className="rounded bg-muted/30 py-1.5"><div className="text-muted-foreground">Rarity</div><div className={`font-semibold ${RARITY_COLORS[rarity] || ""}`}>{rarity}</div></div>

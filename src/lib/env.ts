@@ -51,7 +51,8 @@ export const env = {
   }),
   donationAddress: resolveEnv("VITE_DONATION_ADDRESS", ""),
   grimlabsName: resolveEnv("VITE_GRIMLABS_NAME", "GrimLabs"),
-  grimlabsUrl: resolveEnv("VITE_GRIMLABS_URL", "https://grimlabs.xyz"),
+  // "Built by GrimLabs" links to Grim's X profile (@ReaperGallery).
+  grimlabsUrl: resolveEnv("VITE_GRIMLABS_URL", "https://x.com/ReaperGallery"),
   // Address that receives the third-party split on listings created via this UI.
   // Set to your collection wallet to capture the nominal fee. Empty = no third-party.
   lendingFeeAddress: resolveEnv("VITE_LENDING_FEE_ADDRESS", ""),

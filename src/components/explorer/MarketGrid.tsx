@@ -10,17 +10,21 @@ import { ParcelDetailModal } from "@/components/lending/ParcelDetailModal";
 import { useMarketplaceBuy, type BuyParams } from "@/hooks/useMarketplaceBuy";
 import { useToast } from "@/ui/use-toast";
 import { CORE_SUBGRAPH_URL } from "@/lib/lending/contracts";
-import { GOTCHIVERSE_SUBGRAPH, coreSubgraphFetch } from "@/lib/subgraph";
+import { GOTCHIVERSE_SUBGRAPH, CORE_SUBGRAPH_MATIC, coreSubgraphFetch } from "@/lib/subgraph";
 import { AssetImage, itemImageCandidates, forgeImageCandidates, installationImageCandidates, tileImageCandidates, parcelImageCandidates } from "./AssetImage";
 import { PortalImage } from "./PortalImage";
 import { PortalOptionsGrid } from "./PortalOptionsGrid";
 import { FakeGotchiImage } from "./GotchiSvgById";
 import { Palette } from "lucide-react";
-import { itemMetaSync, GUARDIAN_SKIN_NAMES } from "@/lib/explorer/itemMeta";
+import { itemMetaSync, fetchItemMetaMap, GUARDIAN_SKIN_NAMES, RARITY_COLORS, type ItemMeta } from "@/lib/explorer/itemMeta";
+import { forgeMetaSync, forgeKind, FORGE_DESCRIPTIONS } from "@/lib/explorer/forgeMeta";
+import { ParcelDetailsPanel } from "./ParcelDetailsPanel";
+import { shortAddress as short } from "@/lib/format";
+import { Link } from "react-router-dom";
 import { useDetailNav } from "./detail/useDetailNav";
 import { DetailDialogShell } from "./detail/DetailDialogShell";
 
-type Listing = { listingId: string; tokenId: string; priceWei: string; quantity: number; created: number; category?: number };
+type Listing = { listingId: string; tokenId: string; priceWei: string; quantity: number; created: number; category?: number; seller?: string };
 
 // Parcel size codes used by the realm contract / gotchiverse subgraph.
 const PARCEL_SIZES: Record<string, string> = { "0": "Humble", "1": "Reasonable", "2": "Spacious (V)", "3": "Spacious (H)", "4": "Partner" };
@@ -37,8 +41,8 @@ async function fetchListings(kind: "erc721" | "erc1155", category: number, token
   const where1155 = byAddr ? `erc1155TokenAddress: "${tokenAddress!.toLowerCase()}", cancelled: false, sold: false, quantity_gt: 0` : `${catFilter}, cancelled: false, sold: false, quantity_gt: 0`;
   const query =
     kind === "erc721"
-      ? `{ erc721Listings(first: 1000, where: { ${where721} }, orderBy: timeCreated, orderDirection: desc){ id tokenId priceInWei timeCreated category } }`
-      : `{ erc1155Listings(first: 1000, where: { ${where1155} }, orderBy: timeCreated, orderDirection: desc){ id erc1155TypeId priceInWei quantity timeCreated category } }`;
+      ? `{ erc721Listings(first: 1000, where: { ${where721} }, orderBy: timeCreated, orderDirection: desc){ id tokenId priceInWei timeCreated category seller } }`
+      : `{ erc1155Listings(first: 1000, where: { ${where1155} }, orderBy: timeCreated, orderDirection: desc){ id erc1155TypeId priceInWei quantity timeCreated category seller } }`;
   const res = await coreSubgraphFetch(CORE_SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -47,9 +51,9 @@ async function fetchListings(kind: "erc721" | "erc1155", category: number, token
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? "subgraph error");
   if (kind === "erc721") {
-    return (json.data?.erc721Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.tokenId, priceWei: l.priceInWei, quantity: 1, created: Number(l.timeCreated) || 0, category: Number(l.category) }));
+    return (json.data?.erc721Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.tokenId, priceWei: l.priceInWei, quantity: 1, created: Number(l.timeCreated) || 0, category: Number(l.category), seller: (l.seller ?? "").toLowerCase() || undefined }));
   }
-  return (json.data?.erc1155Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.erc1155TypeId, priceWei: l.priceInWei, quantity: Number(l.quantity) || 1, created: Number(l.timeCreated) || 0, category: Number(l.category) }));
+  return (json.data?.erc1155Listings ?? []).map((l: any) => ({ listingId: l.id, tokenId: l.erc1155TypeId, priceWei: l.priceInWei, quantity: Number(l.quantity) || 1, created: Number(l.timeCreated) || 0, category: Number(l.category), seller: (l.seller ?? "").toLowerCase() || undefined }));
 }
 
 // Forge items span Baazaar categories 7-11 (verified against live Base
@@ -147,7 +151,9 @@ async function fetchFakeMeta(tokenIds: string[]): Promise<Record<string, FakeMet
 type LastSold = { priceWei: string; time: number };
 
 // Newest settled sale per token (dapp cards show "SOLD (x ago) · price" /
-// "SOLD NEVER"). One batched query per grid load.
+// "SOLD NEVER"). One batched query per grid load; tokens with no Base-era
+// sale get a second batched pass against the Polygon-era subgraph, like the
+// dapp's cross-chain history.
 async function fetchLastSold(tokenIds: string[], categories: number[]): Promise<Record<string, LastSold>> {
   if (tokenIds.length === 0) return {};
   const query = `query($ids: [String!]){ erc721Listings(first: 1000, where: { tokenId_in: $ids, category_in: [${categories.join(", ")}], timePurchased_gt: "0" }, orderBy: timePurchased, orderDirection: desc){ tokenId priceInWei timePurchased } }`;
@@ -161,7 +167,62 @@ async function fetchLastSold(tokenIds: string[], categories: number[]): Promise<
   for (const l of json.data?.erc721Listings ?? []) {
     if (!out[l.tokenId]) out[l.tokenId] = { priceWei: l.priceInWei, time: Number(l.timePurchased) };
   }
+  const missing = tokenIds.filter((id) => !out[id]);
+  if (missing.length > 0) {
+    try {
+      const mres = await fetch(CORE_SUBGRAPH_MATIC, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query, variables: { ids: missing } }) });
+      const mjson = await mres.json();
+      for (const l of mjson.data?.erc721Listings ?? []) {
+        if (!out[l.tokenId]) out[l.tokenId] = { priceWei: l.priceInWei, time: Number(l.timePurchased) };
+      }
+    } catch { /* polygon history is best-effort */ }
+  }
   return out;
+}
+
+// Newest fill per ERC1155 type (wearables, consumables, forge, tiles…) —
+// erc1155Purchases carries per-fill prices, unlike erc1155Listings. Types with
+// no Base-era fill fall back to the Polygon-era subgraph.
+async function fetchLastSold1155(tokenIds: string[], categories: number[]): Promise<Record<string, LastSold>> {
+  if (tokenIds.length === 0) return {};
+  const query = `query($ids: [String!]){ erc1155Purchases(first: 1000, where: { erc1155TypeId_in: $ids, category_in: [${categories.join(", ")}] }, orderBy: timeLastPurchased, orderDirection: desc){ erc1155TypeId priceInWei timeLastPurchased } }`;
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables: { ids: tokenIds } }),
+  });
+  const json = await res.json();
+  const out: Record<string, LastSold> = {};
+  for (const l of json.data?.erc1155Purchases ?? []) {
+    if (!out[l.erc1155TypeId]) out[l.erc1155TypeId] = { priceWei: l.priceInWei, time: Number(l.timeLastPurchased) };
+  }
+  const missing = tokenIds.filter((id) => !out[id]);
+  if (missing.length > 0) {
+    try {
+      const mres = await fetch(CORE_SUBGRAPH_MATIC, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query, variables: { ids: missing } }) });
+      const mjson = await mres.json();
+      for (const l of mjson.data?.erc1155Purchases ?? []) {
+        if (!out[l.erc1155TypeId]) out[l.erc1155TypeId] = { priceWei: l.priceInWei, time: Number(l.timeLastPurchased) };
+      }
+    } catch { /* polygon history is best-effort */ }
+  }
+  return out;
+}
+
+type BestOffer = { priceWei: string; buyer: string };
+
+// Highest live buy order for the opened token — the dapp's "HIGHEST OFFER".
+async function fetchBestOffer(kind: "erc721" | "erc1155", tokenId: string, categories: number[]): Promise<BestOffer | null> {
+  const now = Math.floor(Date.now() / 1000);
+  const query =
+    kind === "erc721"
+      ? `{ erc721BuyOrders(first: 10, where: { erc721TokenId: "${tokenId}", category_in: [${categories.join(", ")}], canceled: false }, orderBy: priceInWei, orderDirection: desc){ priceInWei buyer createdAt duration executedAt } }`
+      : `{ erc1155BuyOrders(first: 10, where: { erc1155TokenId: "${tokenId}", category_in: [${categories.join(", ")}], canceled: false }, orderBy: priceInWei, orderDirection: desc){ priceInWei buyer createdAt duration completedAt } }`;
+  const res = await coreSubgraphFetch(CORE_SUBGRAPH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query }) });
+  const json = await res.json();
+  const rows = json.data?.erc721BuyOrders ?? json.data?.erc1155BuyOrders ?? [];
+  const open = rows.find((o: any) => !o.executedAt && !o.completedAt && (Number(o.duration) === 0 || Number(o.createdAt) + Number(o.duration) > now));
+  return open ? { priceWei: open.priceInWei, buyer: (open.buyer ?? "").toLowerCase() } : null;
 }
 
 function agoShort(unix: number): string {
@@ -247,16 +308,30 @@ export function MarketGrid({
     staleTime: 5 * 60_000,
   });
 
-  // Last settled sale per listed token ("SOLD (x ago)" like the dapp) —
-  // portal + FAKE grids only, one batched query each.
-  const soldCats = itemKind === "portal" ? [category, ...(extraCategories ?? [])] : itemKind === "fakegotchi" ? [category] : [];
-  const soldIds = useMemo(() => (soldCats.length ? all.map((l) => l.tokenId) : []), [soldCats.length, all]);
+  // Last settled sale per listed token ("SOLD (x ago)" like the dapp) — every
+  // grid, one batched query. Categories come from the loaded rows so
+  // by-contract collections (forge, portals) match all their categories.
+  const soldCats = useMemo(() => {
+    const observed = [...new Set(all.map((l) => l.category).filter((c): c is number => c != null && c >= 0))];
+    return observed.length ? observed : [category, ...(extraCategories ?? [])];
+  }, [all, category, extraCategories]);
+  const soldIds = useMemo(() => all.map((l) => l.tokenId), [all]);
   const { data: lastSold } = useQuery({
-    queryKey: ["baazaar", "last-sold", itemKind, soldIds],
-    queryFn: () => fetchLastSold(soldIds, soldCats),
+    queryKey: ["baazaar", "last-sold", kind, itemKind, soldIds],
+    queryFn: () => (kind === "erc721" ? fetchLastSold(soldIds, soldCats) : fetchLastSold1155(soldIds, soldCats)),
     enabled: soldIds.length > 0,
     staleTime: 5 * 60_000,
   });
+
+  // Item names/rarity for wearable + consumable listings (bundled db merged
+  // with subgraph itemTypes), one cached fetch per session.
+  const { data: itemMetaMap } = useQuery({ queryKey: ["item-meta-map"], queryFn: fetchItemMetaMap, staleTime: Infinity, enabled: itemKind === "item" || itemKind === "forge" });
+  const metaFor = (l: { tokenId: string; category?: number }): ItemMeta | undefined => {
+    if (itemKind !== "item" && itemKind !== "forge") return undefined;
+    const base = itemMetaMap?.get(Number(l.tokenId)) ?? itemMetaSync(l.tokenId) ?? forgeMetaSync(l.tokenId);
+    if (base && itemKind === "forge" && l.category === 8 && !/ Schematic$/.test(base.name)) return { ...base, name: `${base.name} Schematic` };
+    return base;
+  };
 
   // Parcel metadata for size/district filtering, loaded once listings arrive.
   const parcelIds = useMemo(() => (itemKind === "parcel" ? all.map((l) => l.tokenId) : []), [itemKind, all]);
@@ -303,7 +378,7 @@ export function MarketGrid({
     let r = all;
     const q = idQuery.trim().toLowerCase();
     // For typed assets the search box also matches the item name.
-    if (q) r = r.filter((l) => l.tokenId.includes(q) || (typeMeta?.[l.tokenId]?.name ?? "").toLowerCase().includes(q) || (fakeMeta?.[l.tokenId]?.name ?? "").toLowerCase().includes(q));
+    if (q) r = r.filter((l) => l.tokenId.includes(q) || (typeMeta?.[l.tokenId]?.name ?? "").toLowerCase().includes(q) || (fakeMeta?.[l.tokenId]?.name ?? "").toLowerCase().includes(q) || (metaFor(l)?.name ?? "").toLowerCase().includes(q));
     const lo = Number(minP), hi = Number(maxP);
     if (minP && lo > 0) r = r.filter((l) => Number(l.priceWei) / 1e18 >= lo);
     if (maxP && hi > 0) r = r.filter((l) => Number(l.priceWei) / 1e18 <= hi);
@@ -326,7 +401,7 @@ export function MarketGrid({
       return Number(b.tokenId) - Number(a.tokenId);
     });
     return arr;
-  }, [all, idQuery, minP, maxP, sort, sizeF, districtF, levelF, typeF, itemKind, isTyped, parcelMeta, typeMeta]);
+  }, [all, idQuery, minP, maxP, sort, sizeF, districtF, levelF, typeF, itemKind, isTyped, parcelMeta, typeMeta, fakeMeta, itemMetaMap]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeFilters = (idQuery ? 1 : 0) + (minP ? 1 : 0) + (maxP ? 1 : 0) + (sizeF ? 1 : 0) + (districtF ? 1 : 0) + (levelF ? 1 : 0) + (typeF ? 1 : 0);
   const clearFilters = () => { setIdQuery(""); setMinP(""); setMaxP(""); setSizeF(""); setDistrictF(""); setLevelF(""); setTypeF(""); };
@@ -472,11 +547,27 @@ export function MarketGrid({
               {isTyped && typeMeta?.[l.tokenId]?.name && (
                 <div className="text-[9px] text-muted-foreground text-center truncate" title={typeMeta[l.tokenId].name}>{typeMeta[l.tokenId].name}</div>
               )}
-              {itemKind === "forge" && l.category != null && (
-                <div className="text-[9px] text-muted-foreground text-center truncate" title={l.category === 8 ? itemMetaSync(l.tokenId)?.name : undefined}>
-                  {l.category === 8 && itemMetaSync(l.tokenId) ? `${itemMetaSync(l.tokenId)!.name} Schematic` : FORGE_TYPE_NAME[l.category] ?? "Forge"}
-                </div>
-              )}
+              {itemKind === "forge" && l.category != null && (() => {
+                const m = metaFor(l);
+                const nm = m?.name ?? FORGE_TYPE_NAME[l.category] ?? "Forge";
+                return (
+                  <div className={`text-[9px] text-center truncate ${m?.rarity ? RARITY_COLORS[m.rarity] ?? "text-muted-foreground" : "text-muted-foreground"}`} title={nm}>
+                    {nm}
+                  </div>
+                );
+              })()}
+              {itemKind === "item" && (() => {
+                const m = metaFor(l);
+                if (!m) return null;
+                return (
+                  <div className="text-center leading-tight">
+                    <div className={`text-[9px] font-semibold truncate ${m.rarity ? RARITY_COLORS[m.rarity] ?? "" : ""}`} title={m.name}>{m.name}</div>
+                    {(m.slot || m.modifiers.length > 0) && (
+                      <div className="text-[8px] text-muted-foreground truncate">{[m.slot, m.modifiers.join(" ")].filter(Boolean).join(" · ")}</div>
+                    )}
+                  </div>
+                );
+              })()}
               {itemKind === "portal" && (
                 <div className="text-center leading-tight">
                   <div className="text-[9px] font-semibold">
@@ -554,6 +645,12 @@ export function MarketGrid({
               </div>
               <BuyButton listingId={detail.listingId} tokenId={detail.tokenId} priceInWei={detail.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`Parcel #${detail.tokenId}`} />
               <MakeOfferButton kind={kind} category={category} tokenId={detail.tokenId} contractAddress={contract} label={`Parcel #${detail.tokenId}`} />
+              {detail.seller && (
+                <div className="text-center text-[11px] text-muted-foreground">
+                  Seller <Link to={`/u/${detail.seller}`} onClick={() => nav.close()} className="font-mono text-primary hover:underline">{short(detail.seller)}</Link>
+                </div>
+              )}
+              <ParcelDetailsPanel tokenId={detail.tokenId} showName={false} />
               <RecentSales kind={kind} tokenId={detail.tokenId} />
             </>
           )}
@@ -565,10 +662,15 @@ export function MarketGrid({
         const tm = isTyped ? typeMeta?.[detail.tokenId] : undefined;
         const fm = itemKind === "fakegotchi" ? fakeMeta?.[detail.tokenId] : undefined;
         const pm = itemKind === "portal" ? portalMeta?.[detail.tokenId] : undefined;
-        const schematicName = itemKind === "forge" && detail.category === 8 ? itemMetaSync(detail.tokenId)?.name : undefined;
+        const im = metaFor(detail);
+        const fk = itemKind === "forge" ? forgeKind(detail.tokenId) : null;
+        // Floor across this grid's open listings of the same 1155 type (the
+        // dapp's FLOOR) + how many cheaper/equal listings exist.
+        const sameToken = kind === "erc1155" ? all.filter((x) => x.tokenId === detail.tokenId) : [];
+        const floorWei = sameToken.length ? sameToken.reduce((m, x) => (BigInt(x.priceWei) < BigInt(m) ? x.priceWei : m), sameToken[0].priceWei) : null;
         return (
         <DetailDialogShell
-          title={<>{fm?.name || tm?.name || (itemKind === "guardian" ? GUARDIAN_SKIN_NAMES[Number(detail.tokenId)] ?? label : undefined) || (schematicName ? `${schematicName} Schematic` : label)} <span className="text-muted-foreground font-mono text-sm">#{detail.tokenId}</span></>}
+          title={<>{fm?.name || tm?.name || im?.name || (itemKind === "guardian" ? GUARDIAN_SKIN_NAMES[Number(detail.tokenId)] ?? label : undefined) || label} <span className="text-muted-foreground font-mono text-sm">#{detail.tokenId}</span></>}
           onClose={() => nav.close()} onPrev={nav.prev} onNext={nav.next} hasPrev={nav.hasPrev} hasNext={nav.hasNext} shareUrl={nav.shareUrl}
         >
               <div className="w-40 h-40 mx-auto rounded-xl overflow-hidden bg-gradient-to-b from-muted/15 to-muted/40 flex items-center justify-center [&_img]:max-h-36 [&_img]:max-w-36 [&_img]:object-contain [&>svg]:w-full [&>svg]:h-full">
@@ -596,10 +698,38 @@ export function MarketGrid({
                 </div>
               )}
 
+              {im && (im.rarity || im.slot || im.modifiers.length > 0) && (
+                <div className="flex items-center justify-center gap-1.5 flex-wrap text-xs">
+                  {im.rarity && <span className={`px-2 py-0.5 rounded bg-muted/40 font-semibold ${RARITY_COLORS[im.rarity] ?? ""}`}>{im.rarity}</span>}
+                  {im.slot && <span className="text-muted-foreground">{im.slot}</span>}
+                  {im.modifiers.map((m) => (
+                    <span key={m} className="px-1.5 py-0.5 rounded bg-muted/40 text-muted-foreground">{m}</span>
+                  ))}
+                </div>
+              )}
+              {fk && (
+                <p className="text-[11px] text-muted-foreground leading-snug rounded-lg border border-border/40 bg-muted/20 p-2.5">{FORGE_DESCRIPTIONS[fk]}</p>
+              )}
+
               <div className="text-center">
                 <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Listed price</div>
                 <div className="text-2xl font-bold text-emerald-500">{ghst(detail.priceWei)} GHST</div>
               </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {floorWei != null && (
+                  <div className="rounded-lg border border-border/60 p-2 text-center">
+                    <div className="text-[9px] uppercase tracking-wide text-muted-foreground">Floor · {sameToken.length} listing{sameToken.length === 1 ? "" : "s"}</div>
+                    <div className="text-sm font-bold">{ghst(floorWei)} GHST</div>
+                  </div>
+                )}
+                <BestOfferTile kind={kind} tokenId={detail.tokenId} categories={soldCats} />
+              </div>
+              {detail.seller && (
+                <div className="text-center text-[11px] text-muted-foreground">
+                  Seller <Link to={`/u/${detail.seller}`} onClick={() => nav.close()} className="font-mono text-primary hover:underline">{short(detail.seller)}</Link>
+                </div>
+              )}
 
               <BuyButton listingId={detail.listingId} tokenId={detail.tokenId} priceInWei={detail.priceWei} kind={kind} contractAddress={contract} quantity={1} label={`#${detail.tokenId}`} />
               <MakeOfferButton kind={kind} category={(itemKind === "forge" || itemKind === "portal") && detail.category != null ? Number(detail.category) : category} tokenId={detail.tokenId} contractAddress={contract} label={`#${detail.tokenId}`} />
@@ -611,6 +741,21 @@ export function MarketGrid({
         </DetailDialogShell>
         );
       })()}
+    </div>
+  );
+}
+
+// The dapp's "HIGHEST OFFER" — best live buy order for the opened token.
+function BestOfferTile({ kind, tokenId, categories }: { kind: "erc721" | "erc1155"; tokenId: string; categories: number[] }) {
+  const { data } = useQuery({
+    queryKey: ["baazaar", "best-offer", kind, tokenId, categories.join(",")],
+    queryFn: () => fetchBestOffer(kind, tokenId, categories),
+    staleTime: 60_000,
+  });
+  return (
+    <div className="rounded-lg border border-border/60 p-2 text-center">
+      <div className="text-[9px] uppercase tracking-wide text-muted-foreground">Highest offer</div>
+      <div className="text-sm font-bold">{data ? `${ghst(data.priceWei)} GHST` : "None"}</div>
     </div>
   );
 }

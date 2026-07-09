@@ -16,6 +16,7 @@ import pulseRoutes from "./routes/pulse";
 import gamesRoutes from "./routes/games";
 import analyticsRoutes from "./routes/analytics";
 import megaphoneRoutes from "./routes/megaphone";
+import gotchi3dRoutes from "./routes/gotchi3d";
 import { seedDemos as seedMegaphoneDemos } from "./megaphone/seed";
 import { startMegaphoneCron } from "./megaphone/cron";
 import { stewardRouter } from "./routes/steward";
@@ -110,6 +111,9 @@ export function createApp() {
   app.use("/api/analytics", analyticsRoutes);
   // Megaphone — content-ops: published video library, /pulse hero, admin publish/pin.
   app.use("/api/megaphone", megaphoneRoutes);
+  // 3D render-kick relay — asks Pixelcraft's renderer to generate missing
+  // gotchi models (their API has no CORS; browsers can't call it directly).
+  app.use("/api/gotchi3d", gotchi3dRoutes);
   // Keyed, rate-limited MCP protocol endpoint for external customers (POST only).
   // Distinct from /api/mcp (billing REST). Plan limits enforced in mcp/http.ts.
   app.post("/mcp", wispMcpHttpHandler);

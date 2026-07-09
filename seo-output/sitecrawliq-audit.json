@@ -1,0 +1,337 @@
+{
+  "auditedAt": "2026-07-09T07:29:03.366Z",
+  "engine": "SiteCrawlIQ geo-audit + structured-data (standalone, raw HTML, no JS rendering)",
+  "base": "https://www.gotchicloset.com",
+  "robotsTxt": "User-agent: *\nAllow: /\nSitemap: https://gotchicloset.xyz/sitemap.xml\n",
+  "onPage": [
+    {
+      "url": "https://www.gotchicloset.com/",
+      "status": 200,
+      "title": "GotchiCloset",
+      "metaDescription": null,
+      "canonical": null,
+      "h1Count": 0,
+      "h2Count": 0,
+      "ogTags": 0,
+      "twitterTags": 0,
+      "jsonLdBlocks": 0,
+      "rawBodyWordCount": 0
+    },
+    {
+      "url": "https://www.gotchicloset.com/wearables",
+      "status": 200,
+      "title": "GotchiCloset",
+      "metaDescription": null,
+      "canonical": null,
+      "h1Count": 0,
+      "h2Count": 0,
+      "ogTags": 0,
+      "twitterTags": 0,
+      "jsonLdBlocks": 0,
+      "rawBodyWordCount": 0
+    },
+    {
+      "url": "https://www.gotchicloset.com/sets",
+      "status": 200,
+      "title": "GotchiCloset",
+      "metaDescription": null,
+      "canonical": null,
+      "h1Count": 0,
+      "h2Count": 0,
+      "ogTags": 0,
+      "twitterTags": 0,
+      "jsonLdBlocks": 0,
+      "rawBodyWordCount": 0
+    },
+    {
+      "url": "https://www.gotchicloset.com/traits",
+      "status": 200,
+      "title": "GotchiCloset",
+      "metaDescription": null,
+      "canonical": null,
+      "h1Count": 0,
+      "h2Count": 0,
+      "ogTags": 0,
+      "twitterTags": 0,
+      "jsonLdBlocks": 0,
+      "rawBodyWordCount": 0
+    },
+    {
+      "url": "https://www.gotchicloset.com/rarity-score",
+      "status": 200,
+      "title": "GotchiCloset",
+      "metaDescription": null,
+      "canonical": null,
+      "h1Count": 0,
+      "h2Count": 0,
+      "ogTags": 0,
+      "twitterTags": 0,
+      "jsonLdBlocks": 0,
+      "rawBodyWordCount": 0
+    },
+    {
+      "url": "https://www.gotchicloset.com/lending",
+      "status": 200,
+      "title": "GotchiCloset",
+      "metaDescription": null,
+      "canonical": null,
+      "h1Count": 0,
+      "h2Count": 0,
+      "ogTags": 0,
+      "twitterTags": 0,
+      "jsonLdBlocks": 0,
+      "rawBodyWordCount": 0
+    },
+    {
+      "url": "https://www.gotchicloset.com/forge",
+      "status": 200,
+      "title": "GotchiCloset",
+      "metaDescription": null,
+      "canonical": null,
+      "h1Count": 0,
+      "h2Count": 0,
+      "ogTags": 0,
+      "twitterTags": 0,
+      "jsonLdBlocks": 0,
+      "rawBodyWordCount": 0
+    },
+    {
+      "url": "https://www.gotchicloset.com/dao",
+      "status": 200,
+      "title": "GotchiCloset",
+      "metaDescription": null,
+      "canonical": null,
+      "h1Count": 0,
+      "h2Count": 0,
+      "ogTags": 0,
+      "twitterTags": 0,
+      "jsonLdBlocks": 0,
+      "rawBodyWordCount": 0
+    },
+    {
+      "url": "https://www.gotchicloset.com/dress",
+      "status": 200,
+      "title": "GotchiCloset",
+      "metaDescription": null,
+      "canonical": null,
+      "h1Count": 0,
+      "h2Count": 0,
+      "ogTags": 0,
+      "twitterTags": 0,
+      "jsonLdBlocks": 0,
+      "rawBodyWordCount": 0
+    },
+    {
+      "url": "https://www.gotchicloset.com/sets/aastronaut",
+      "status": 200,
+      "title": "GotchiCloset",
+      "metaDescription": null,
+      "canonical": null,
+      "h1Count": 0,
+      "h2Count": 0,
+      "ogTags": 0,
+      "twitterTags": 0,
+      "jsonLdBlocks": 0,
+      "rawBodyWordCount": 0
+    },
+    {
+      "url": "https://www.gotchicloset.com/traits/nrg",
+      "status": 200,
+      "title": "GotchiCloset",
+      "metaDescription": null,
+      "canonical": null,
+      "h1Count": 0,
+      "h2Count": 0,
+      "ogTags": 0,
+      "twitterTags": 0,
+      "jsonLdBlocks": 0,
+      "rawBodyWordCount": 0
+    }
+  ],
+  "geoAudit": {
+    "llmsTxtFound": true,
+    "llmsTxtValid": true,
+    "llmsTxtUrl": "https://www.gotchicloset.com/llms.txt",
+    "aiCrawlerAccess": [
+      {
+        "crawler": "GPTBot (OpenAI)",
+        "type": "training",
+        "allowed": true,
+        "recommendation": "Consider blocking to prevent content from being used for AI model training."
+      },
+      {
+        "crawler": "OAI-SearchBot (OpenAI)",
+        "type": "search",
+        "allowed": true,
+        "recommendation": "Good. AI search crawlers can index your content for citation"
+      },
+      {
+        "crawler": "ChatGPT-User (OpenAI)",
+        "type": "user",
+        "allowed": true,
+        "recommendation": "OK. Training crawler appropriately blocked."
+      },
+      {
+        "crawler": "ClaudeBot (Anthropic)",
+        "type": "training",
+        "allowed": true,
+        "recommendation": "Consider blocking to prevent content from being used for AI model training."
+      },
+      {
+        "crawler": "Claude-SearchBot (Anthropic)",
+        "type": "search",
+        "allowed": true,
+        "recommendation": "Good. AI search crawlers can index your content for citation"
+      },
+      {
+        "crawler": "PerplexityBot (Perplexity)",
+        "type": "search",
+        "allowed": true,
+        "recommendation": "Good. AI search crawlers can index your content for citation"
+      },
+      {
+        "crawler": "Google-Extended (Google)",
+        "type": "training",
+        "allowed": true,
+        "recommendation": "Consider blocking to prevent content from being used for AI model training."
+      },
+      {
+        "crawler": "Bytespider (ByteDance)",
+        "type": "training",
+        "allowed": true,
+        "recommendation": "Consider blocking to prevent content from being used for AI model training."
+      },
+      {
+        "crawler": "CCBot (Common Crawl)",
+        "type": "training",
+        "allowed": true,
+        "recommendation": "Consider blocking to prevent content from being used for AI model training."
+      }
+    ],
+    "schemaMarkup": {
+      "found": [],
+      "missing": [
+        "FAQPage",
+        "HowTo",
+        "Article",
+        "Organization",
+        "WebSite",
+        "BreadcrumbList",
+        "Product",
+        "SoftwareApplication",
+        "LocalBusiness"
+      ],
+      "score": 0
+    },
+    "contentFreshness": {
+      "freshPages": 0,
+      "stalePages": 0,
+      "unknownPages": 11,
+      "score": 50
+    },
+    "citabilityScore": 0,
+    "citabilityDetails": [
+      {
+        "factor": "Data Density",
+        "score": 0,
+        "description": "0/11 pages contain specific data points (numbers, percentages, statistics)"
+      },
+      {
+        "factor": "Structural Clarity",
+        "score": 0,
+        "description": "0/11 pages have well-structured content (lists, tables, clear headings)"
+      },
+      {
+        "factor": "Content Depth",
+        "score": 0,
+        "description": "Average 0 words per page (800-1200+ recommended for AI citation)"
+      },
+      {
+        "factor": "Expert Attribution",
+        "score": 0,
+        "description": "0/11 pages have author/expert attribution"
+      },
+      {
+        "factor": "Modular Content",
+        "score": 0,
+        "description": "0/11 pages use well-sectioned, extractable content blocks"
+      }
+    ],
+    "questionHeadings": {
+      "totalHeadings": 0,
+      "questionHeadings": 0,
+      "percentage": 0,
+      "score": 30
+    },
+    "answerFirstPages": {
+      "pagesChecked": 11,
+      "pagesWithDirectAnswer": 0,
+      "percentage": 0,
+      "score": 30
+    },
+    "contentStructureRecommendations": [
+      {
+        "category": "Structured Lists",
+        "recommendation": "Add bulleted or numbered lists to break down key points. LLMs extract lists 40% more often than prose.",
+        "priority": "high",
+        "affectedPages": 11
+      },
+      {
+        "category": "Heading Hierarchy",
+        "recommendation": "Use H2/H3 subheadings to create a clear content hierarchy. This helps LLMs identify distinct answer sections.",
+        "priority": "high",
+        "affectedPages": 11
+      },
+      {
+        "category": "Content Depth",
+        "recommendation": "11 pages have thin content (<300 words). Expand with data, examples, and comparisons to increase AI citation likelihood.",
+        "priority": "high",
+        "affectedPages": 11
+      },
+      {
+        "category": "Definition Formatting",
+        "recommendation": "Use bold terms, definition lists, or tables for key concepts. AI models extract definitions as authoritative facts.",
+        "priority": "low",
+        "affectedPages": 11
+      }
+    ]
+  },
+  "structuredDataHomepage": {
+    "url": "https://www.gotchicloset.com/",
+    "jsonLd": [],
+    "openGraph": {},
+    "twitterCard": {},
+    "microdata": [],
+    "score": 5,
+    "issues": [
+      {
+        "severity": "warning",
+        "message": "No JSON-LD structured data found",
+        "type": "json-ld"
+      },
+      {
+        "severity": "warning",
+        "message": "No OpenGraph meta tags found",
+        "type": "opengraph"
+      },
+      {
+        "severity": "info",
+        "message": "No Twitter Card meta tags found",
+        "type": "twitter"
+      },
+      {
+        "severity": "warning",
+        "message": "Missing canonical link tag",
+        "type": "general"
+      }
+    ],
+    "recommendations": [
+      "Your structured data implementation needs significant improvement for AI search visibility",
+      "Add JSON-LD structured data (Organization, WebSite, WebPage at minimum)",
+      "Add OpenGraph meta tags (og:title, og:type, og:url, og:image, og:description)",
+      "Add Twitter Card meta tags for better social sharing on X/Twitter",
+      "Add Organization or LocalBusiness schema to establish entity identity for AI search",
+      "Add WebSite schema with SearchAction for sitelinks search box"
+    ]
+  }
+}
