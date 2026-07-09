@@ -104,7 +104,9 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
     (async () => {
       let missedDressedCdn = false;
       for (const c of candidates) {
-        if (posterOnly && c.liveOnly) continue;
+        // Composed models have no PNG poster, but a dressed gotchi shown naked
+        // is worse than a few live scenes per grid: poster cards fall through
+        // to the live composed viewer rather than the naked poster.
         if (await srcAvailable(c.src)) {
           if (missedDressedCdn) kickMissingRender(dressedCdnHashes);
           if (alive) setResolved(c);
@@ -140,7 +142,7 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
     </span>
   ) : null;
 
-  if (posterOnly) {
+  if (posterOnly && !resolved.liveOnly) {
     return (
       <span className={`relative block ${className ?? ""}`}>
         <img
