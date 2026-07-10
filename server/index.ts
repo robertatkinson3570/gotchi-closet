@@ -16,5 +16,6 @@ const app = createApp();
 
 app.listen(port, () => {
   console.log(`API server listening on ${port}`);
+  startPrewarm();
 });
 
