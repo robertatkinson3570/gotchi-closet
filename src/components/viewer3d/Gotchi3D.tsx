@@ -136,21 +136,21 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
       }
       if (missedDressedCdn) kickMissingRender(dressedCdnHashes);
       if (!alive) return;
-      // CRITICAL: when nothing instant resolved but a composed candidate is
-      // still pending, stay "pending" (2D shows meanwhile) instead of
-      // resolving null — null fires onUnavailable and parents lock the card
-      // to 2D permanently, so gotchis with NO official render of any kind
-      // (e.g. Jo #9369: dressed AND naked both missing upstream) never got
-      // their composed model even though it exists.
-      if (shown !== null || !composed) setResolved(shown);
-      // Upgrade path: when the best instant result is the naked body, or an
-      // ALT-ordering official render (those have the hands physically
-      // mirrored vs the 2D art — our composed model has them right).
+      // CRITICAL: while the composed candidate is still pending, stay
+      // "pending" (2D shows meanwhile) in two cases instead of resolving:
+      // - nothing instant resolved: resolving null fires onUnavailable and
+      //   parents lock the card to 2D permanently (Jo #9369 class, where
+      //   dressed AND naked hashes are both missing upstream);
+      // - only an ALT-ordering official resolved: those renders have the
+      //   hands physically MIRRORED vs the 2D art, and flashing the wrong
+      //   model before the correct composed one reads as broken.
+      if ((shown !== null && !shown.altOrder) || !composed) setResolved(shown);
       if (composed && (shown === null || shown.altOrder)) {
         const ok = await srcAvailable(composed.src);
         if (!alive) return;
-        if (ok) setResolved(composed);
-        else if (shown === null) setResolved(null); // now truly unavailable
+        // Composed failed: fall back to whatever the instant pass found —
+        // a mirrored official beats nothing, and null = truly unavailable.
+        setResolved(ok ? composed : shown);
       }
     })();
     return () => { alive = false; };
