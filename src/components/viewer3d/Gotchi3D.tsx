@@ -129,10 +129,12 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
 
   const alt = `${gotchi.name ?? "Aavegotchi"}${gotchi.tokenId ? ` #${gotchi.tokenId}` : ""} in 3D`;
 
-  // Official posters win in grids: they're Pixelcraft's pre-lit renders and
-  // look better than live neutral-lit scenes. Composed-only outfits have no
-  // poster and render the live model with in-model frame anchors instead.
-  if (posterOnly && posterOk) {
+  // Grids are IMAGE-ONLY: poster when it exists, else the 2D art while the
+  // server renders one (first cold view). Never fall through to the live
+  // model here — a grid of streaming multi-MB GLBs paints as blank cards
+  // (user-reported). The live model stays behind the explicit ⟳.
+  if (posterOnly) {
+    if (!posterOk) return <>{fallback}</>;
     return (
       <span className={`relative block ${className ?? ""}`}>
         <img
