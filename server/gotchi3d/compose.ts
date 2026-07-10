@@ -70,9 +70,11 @@ try {
 
 /** A real GLB starts with the ASCII magic "glTF"; the CDN's error responses
  *  don't. Never cache or graft from an error body. */
-function isGlb(buf: Uint8Array): boolean {
+export function isGlb(buf: Uint8Array): boolean {
   return buf.length > 12 && buf[0] === 0x67 && buf[1] === 0x6c && buf[2] === 0x54 && buf[3] === 0x46;
 }
+
+export { CACHE_DIR as GOTCHI3D_CACHE_DIR };
 
 // Distinguishes "the CDN says this asset doesn't exist" (a definitive answer,
 // safe to bake into a cached composed file) from a transient failure (timeout,
@@ -109,6 +111,20 @@ async function fetchDonorGlb(hash: string, ctx: ComposeCtx): Promise<Uint8Array 
     ctx.transientFailure = true; // donors are known-good renders; absence is transient
     return null;
   }
+  const tmp = `${file}.tmp`;
+  fs.writeFileSync(tmp, buf);
+  fs.renameSync(tmp, file);
+  return buf;
+}
+
+/** Standalone wearable GLBs, disk-cached: a full-collection prewarm would
+ *  otherwise re-download the same ~300 items thousands of times — and the
+ *  cache doubles as our archive of them should Pixelcraft's CDN go dark. */
+async function fetchPartGlb(id: number, ctx: ComposeCtx): Promise<Uint8Array | null> {
+  const file = path.join(CACHE_DIR, `part-${id}.glb`);
+  if (fs.existsSync(file)) return new Uint8Array(fs.readFileSync(file));
+  const buf = await fetchGlb(WEARABLE_GLB(id), ctx);
+  if (!buf) return null;
   const tmp = `${file}.tmp`;
   fs.writeFileSync(tmp, buf);
   fs.renameSync(tmp, file);
@@ -229,7 +245,7 @@ const MANUAL_HAND_ASSEMBLY: Record<number, {
 async function graftManualHandWearable(target: Document, id: number, side: "L" | "R", ctx: ComposeCtx): Promise<"socket" | null> {
   const manual = MANUAL_HAND_ASSEMBLY[id];
   if (!manual) return null;
-  const buf = await fetchGlb(WEARABLE_GLB(id), ctx);
+  const buf = await fetchPartGlb(id, ctx);
   if (!buf) return null;
   const socket = findTargetSocket(target, manual.socketType, side);
   if (!socket) return null;
@@ -423,7 +439,7 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   }
   const parts = new Map<number, Uint8Array>();
   await Promise.all([...fallbackIds].map(async (id) => {
-    const buf = await fetchGlb(WEARABLE_GLB(id), ctx);
+    const buf = await fetchPartGlb(id, ctx);
     if (buf) parts.set(id, buf);
   }));
   if (!placedAnything && parts.size === 0) return null; // nothing renderable to add
@@ -520,7 +536,7 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
     prune(),
     dedup({ propertyTypes: [PropertyType.TEXTURE] }),
     weld(),
-    textureCompress({ resize: [1024, 1024] }),
+    textureCompress({ resize: [2048, 2048] }),
     unpartition(),
   );
   const out = await io.writeBinary(target);
