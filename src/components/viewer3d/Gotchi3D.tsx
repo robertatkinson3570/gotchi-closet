@@ -97,7 +97,7 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
       // positioned pets. The version param busts browser caches that pinned
       // older pipeline output under the previous URL (the route used to send
       // max-age=86400; it is no-cache + ETag now).
-      list.push({ src: `${env.companionApiUrl}/api/gotchi3d/composed/${dressed[0]}?v=3`, liveOnly: true });
+      list.push({ src: `${env.companionApiUrl}/api/gotchi3d/composed/${dressed[0]}?v=8`, liveOnly: true });
     }
     // A DRESSED gotchi never falls back to its naked model: showing the
     // right gotchi with no outfit reads as wrong data. While the composed

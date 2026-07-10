@@ -67,11 +67,11 @@ router.get("/composed/:hash", async (req, res) => {
       return;
     }
     res.setHeader("Content-Type", "model/gltf-binary");
-    // no-cache ≠ no-store: browsers may keep the bytes but MUST revalidate
-    // (sendFile sets ETag/Last-Modified, so unchanged files still 304). A
-    // blind max-age here once pinned pipeline-broken GLBs in every visitor's
-    // browser for a day — cache purges and redeploys were invisible.
-    res.setHeader("Cache-Control", "no-cache");
+    // Versioned URLs (?v=N, bumped in lockstep with the composer's
+    // PIPELINE_VERSION) are immutable: browsers keep the model on disk and
+    // revisits render instantly with zero revalidation. Unversioned requests
+    // stay no-cache + ETag so nothing ever pins stale output.
+    res.setHeader("Cache-Control", req.query.v ? "public, max-age=31536000, immutable" : "no-cache");
     res.sendFile(file);
   } catch (e) {
     console.error("GET /api/gotchi3d/composed failed", e);

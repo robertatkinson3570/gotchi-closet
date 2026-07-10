@@ -60,7 +60,7 @@ try {
 // wipe outputs stamped with a different version (donor-* files are upstream
 // content, not pipeline output, and fetchDonorGlb validates them on read).
 // Bump on ANY change that alters composed output.
-const PIPELINE_VERSION = "v6";
+const PIPELINE_VERSION = "v8";
 try {
   const stamp = path.join(CACHE_DIR, ".pipeline-version");
   if (!fs.existsSync(stamp) || fs.readFileSync(stamp, "utf8").trim() !== PIPELINE_VERSION) {
@@ -528,8 +528,26 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
     if (outside) node.setMesh(null);
   }
 
+  // MATERIAL REPAIR: a few wearables ship with broken material exports.
+  // Beard of Divinity (368) has NO texture and metallic=1/roughness=1 —
+  // renders as flat white plastic while the official poster shows grey
+  // strandy hair. Its meshes DO have UVs, so give it our authored hair-
+  // strand texture and sane dielectric factors. Applies to any material
+  // named Beard_of_divinity* that lacks a base color texture.
+  for (const mat of target.getRoot().listMaterials()) {
+    if (!/beard_of_divinity/i.test(mat.getName() ?? "") || mat.getBaseColorTexture()) continue;
+    try {
+      const bytes = fs.readFileSync(path.join(process.cwd(), "server", "gotchi3d", "assets", "beard-strands.png"));
+      const tex = target.createTexture("BeardStrands").setImage(new Uint8Array(bytes)).setMimeType("image/png");
+      mat.setBaseColorTexture(tex)
+        .setBaseColorFactor([0.92, 0.9, 0.88, 1])
+        .setMetallicFactor(0)
+        .setRoughnessFactor(0.6);
+    } catch { /* texture asset missing: leave the material as shipped */ }
+  }
+
   // FRAME ANCHOR: two zero-area (invisible) triangles pinning the scene's
-  // bounding box to y ∈ [-0.05, 3.5]. Viewers auto-frame to scene bounds, so
+  // bounding box to y ∈ [-0.64, 2.9] (body center 1.13 = box center, so the gotchi sits centered like the posters). Viewers auto-frame to scene bounds, so
   // without this a petless gotchi fills its card while one with accessories
   // shrinks. Anchored, every composed gotchi's body renders at ~65% of the
   // frame — measured equal to Pixelcraft's own poster framing (their posters
@@ -540,8 +558,8 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
     const anchorPos = target.createAccessor("FrameAnchorPos")
       .setType("VEC3")
       .setArray(new Float32Array([
-        0, -0.05, 0, 0, -0.05, 0, 0, -0.05, 0,
-        0, 3.5, 0, 0, 3.5, 0, 0, 3.5, 0,
+        0, -0.64, 0, 0, -0.64, 0, 0, -0.64, 0,
+        0, 2.9, 0, 0, 2.9, 0, 0, 2.9, 0,
       ]));
     const prim = target.createPrimitive().setAttribute("POSITION", anchorPos);
     const anchorMesh = target.createMesh("FrameAnchor").addPrimitive(prim);
