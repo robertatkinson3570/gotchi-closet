@@ -10,7 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import ndarray from "ndarray";
 import { getPixels, savePixels } from "ndarray-pixels";
-import { composeGotchiGlbDetached, GOTCHI3D_CACHE_DIR, isGlb } from "./compose";
+import { composeGotchiGlbDetached, GOTCHI3D_CACHE_DIR, hasBaldFireball, isGlb } from "./compose";
 
 const CDN = "https://dzqjok0x69zbl.cloudfront.net";
 
@@ -187,8 +187,13 @@ export async function officialPoster(hash: string): Promise<string | null> {
  * have the hands physically mirrored vs the 2D art.
  */
 export async function resolveModel(hash: string): Promise<{ file: string; source: "official" | "composed" } | null> {
-  const official = await officialModel(hash);
-  if (official) return { file: official, source: "official" };
+  // Fireball outfits: the OFFICIAL render is the degraded one (bald sphere;
+  // Pixelcraft's flame effect never survived export) — always compose, our
+  // pipeline builds the real flames.
+  if (!hasBaldFireball(hash)) {
+    const official = await officialModel(hash);
+    if (official) return { file: official, source: "official" };
+  }
   const composed = await composeGotchiGlbDetached(hash);
   if (composed) return { file: composed, source: "composed" };
   return null;

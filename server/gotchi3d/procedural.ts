@@ -277,7 +277,9 @@ export function addFireballFlames(doc: Document): void {
     };
     strip(node);
 
-    const holder = doc.createNode("FireballFlames").setTranslation(center);
+    // Scaled so the WHOLE fire (ball + tongues) matches the donor sphere's
+    // footprint, like the 2D sprite — unscaled it dwarfed the hand.
+    const holder = doc.createNode("FireballFlames").setTranslation(center).setScale([0.68, 0.68, 0.68]);
     // ONE white opaque material: the whole fire gradient lives in vertex
     // colors. Fully opaque everywhere — translucent nested shells produced
     // depth-sorting artifacts (dark holes where layers overlapped).

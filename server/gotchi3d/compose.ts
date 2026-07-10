@@ -95,6 +95,17 @@ export function isGlb(buf: Uint8Array): boolean {
 
 export { CACHE_DIR as GOTCHI3D_CACHE_DIR };
 
+/** Hashes holding the Fireball (130): Pixelcraft's OWN renders show it as a
+ *  bald translucent sphere (their flame effect never survived export), so
+ *  the official render is the degraded one — these always compose, where
+ *  procedural.ts builds the real flames. */
+export function hasBaldFireball(hash: string): boolean {
+  const m = HASH_RE.exec(hash);
+  if (!m) return false;
+  const slots = m.slice(4).map(Number);
+  return slots[4] === 130 || slots[5] === 130;
+}
+
 /** Already-composed model for a hash, disk only — never composes. */
 export function composedModelOnDisk(hash: string): string | null {
   const file = path.join(CACHE_DIR, `${hash}_GLB.glb`);

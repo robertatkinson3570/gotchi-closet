@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { composeGotchiGlbDetached, HASH_RE as COMPOSE_HASH_RE, PIPELINE_VERSION } from "../gotchi3d/compose";
+import { composeGotchiGlbDetached, HASH_RE as COMPOSE_HASH_RE, hasBaldFireball, PIPELINE_VERSION } from "../gotchi3d/compose";
 import { mirrorOfficialInBackground, officialExists, officialModelOnDisk, officialPoster, officialProxyUrl } from "../gotchi3d/mirror";
 import { generatedPoster } from "../gotchi3d/poster-render";
 
@@ -100,7 +100,10 @@ router.get("/model/:hash", async (req, res) => {
   }
   try {
     const isProbe = !!req.query.gcprobe;
-    const onDisk = officialModelOnDisk(hash);
+    // Fireball outfits skip the official entirely (bald-sphere render;
+    // composing builds the real flames) — see hasBaldFireball.
+    const preferComposed = hasBaldFireball(hash);
+    const onDisk = preferComposed ? null : officialModelOnDisk(hash);
     if (onDisk) {
       if (isProbe) {
         res.setHeader("Cache-Control", "no-cache");
@@ -113,7 +116,7 @@ router.get("/model/:hash", async (req, res) => {
       res.sendFile(onDisk);
       return;
     }
-    const exists = await officialExists(hash);
+    const exists = preferComposed ? false : await officialExists(hash);
     if (exists !== false) {
       // exists, or transiently unknown: kick the background mirror. PROBES
       // are answered right here with an empty 204 — redirecting a probe to
@@ -169,7 +172,7 @@ router.get("/poster/:hash", async (req, res) => {
     return;
   }
   try {
-    const file = (await officialPoster(hash)) ?? (await generatedPoster(hash, 45_000));
+    const file = (hasBaldFireball(hash) ? null : await officialPoster(hash)) ?? (await generatedPoster(hash, 45_000));
     if (file === "pending") {
       res.setHeader("Retry-After", "30");
       res.setHeader("Cache-Control", "no-cache");

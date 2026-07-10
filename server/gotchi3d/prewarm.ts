@@ -11,7 +11,7 @@
  * with GOTCHI3D_PREWARM=0.
  */
 import { gotchi3dHashes } from "../../src/lib/gotchi3d";
-import { composedModelOnDisk } from "./compose";
+import { composedModelOnDisk, hasBaldFireball } from "./compose";
 import { officialModelOnDisk, officialPoster, officialPosterOnDisk, resolveModel } from "./mirror";
 import { generatedPoster, generatedPosterOnDisk, hasInteractiveRenderDemand } from "./poster-render";
 
@@ -78,8 +78,11 @@ async function warmOne(g: Gotchi, counters: { total: number; cached: number; off
     const hash = hashes[0];
     // Fully warm (model + poster on disk): skip at full speed, no polite
     // delay — this is what makes an interrupted pass resume cheaply.
-    const warmModel = officialModelOnDisk(hash) ?? composedModelOnDisk(hash);
-    const warmPoster = officialPosterOnDisk(hash) ?? generatedPosterOnDisk(hash);
+    // Fireball outfits never count official files as warm — they always
+    // compose (the official render is the bald-sphere one).
+    const fireball = hasBaldFireball(hash);
+    const warmModel = (fireball ? null : officialModelOnDisk(hash)) ?? composedModelOnDisk(hash);
+    const warmPoster = (fireball ? null : officialPosterOnDisk(hash)) ?? generatedPosterOnDisk(hash);
     if (warmModel && warmPoster) {
       counters.cached++;
       return;
@@ -92,7 +95,7 @@ async function warmOne(g: Gotchi, counters: { total: number; cached: number; off
     // official pre-lit card when Pixelcraft made one, else our own render
     // of the resolved model (waits for the render — this loop is the
     // background job, there's no one to hand "pending" to).
-    if (model && !(await officialPoster(hash))) await generatedPoster(hash, Infinity);
+    if (model && (fireball || !(await officialPoster(hash)))) await generatedPoster(hash, Infinity);
     await sleep(ITEM_DELAY_MS);
   } catch { /* one gotchi never stops the pass */ }
 }
