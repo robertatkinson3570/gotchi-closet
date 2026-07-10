@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { composeGotchiGlb, HASH_RE as COMPOSE_HASH_RE, PIPELINE_VERSION } from "../gotchi3d/compose";
 import { mirrorOfficialInBackground, officialExists, officialModelOnDisk, officialPoster, officialProxyUrl } from "../gotchi3d/mirror";
+import { generatedPoster } from "../gotchi3d/poster-render";
 
 /**
  * Render-kick relay: when the frontend finds a gotchi combo with no 3D model
@@ -155,9 +156,12 @@ router.get("/model/:hash", async (req, res) => {
   }
 });
 
-// Official poster PNG (exists only for Pixelcraft-rendered combos). Grids
-// use it when available; per-hash content never changes, but the cache rule
-// stays version-locked for symmetry with /model.
+// Poster PNG for EVERY gotchi: Pixelcraft's official render when one exists,
+// else our server-rendered card of the resolved model (official or composed)
+// — this is what lets 3D grids load like 2D image grids. A cold generated
+// poster renders during this request (bounded); past the wait we return 503
+// (NOT 404 — the frontend session-caches 404s) and the render finishes in
+// the background for the next request.
 router.get("/poster/:hash", async (req, res) => {
   const { hash } = req.params;
   if (!COMPOSE_HASH_RE.test(hash)) {
@@ -165,7 +169,13 @@ router.get("/poster/:hash", async (req, res) => {
     return;
   }
   try {
-    const file = await officialPoster(hash);
+    const file = (await officialPoster(hash)) ?? (await generatedPoster(hash, 45_000));
+    if (file === "pending") {
+      res.setHeader("Retry-After", "30");
+      res.setHeader("Cache-Control", "no-cache");
+      res.status(503).json({ error: "poster rendering" });
+      return;
+    }
     if (!file) {
       res.status(404).json({ error: "no poster" });
       return;

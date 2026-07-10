@@ -103,7 +103,7 @@ export function officialProxyUrl(hash: string): string {
 const CARD_SIZE = 1024;
 const CONTENT_FRACTION = 0.65;
 
-async function normalizePoster(raw: Uint8Array): Promise<Uint8Array | null> {
+export async function normalizePoster(raw: Uint8Array): Promise<Uint8Array | null> {
   try {
     const px = await getPixels(raw, "image/png");
     const [w, h, channels] = px.shape as [number, number, number];
@@ -151,6 +151,12 @@ async function normalizePoster(raw: Uint8Array): Promise<Uint8Array | null> {
 }
 
 const cardPngFile = (hash: string) => path.join(GOTCHI3D_CACHE_DIR, `official-${hash}_Card.png`);
+
+/** Already-normalized official card, disk only — never touches the network. */
+export function officialPosterOnDisk(hash: string): string | null {
+  const file = cardPngFile(hash);
+  return fs.existsSync(file) ? file : null;
+}
 
 /** Official poster for a hash: mirrored, then re-framed to the uniform card
  *  framing. Falls back to the raw poster if normalization fails. */

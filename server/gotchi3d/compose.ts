@@ -66,7 +66,11 @@ try {
   if (!fs.existsSync(stamp) || fs.readFileSync(stamp, "utf8").trim() !== PIPELINE_VERSION) {
     if (fs.existsSync(CACHE_DIR)) {
       for (const f of fs.readdirSync(CACHE_DIR)) {
-        if (f.endsWith("_GLB.glb") && !f.startsWith("donor-")) fs.rmSync(path.join(CACHE_DIR, f), { force: true });
+        // official-* mirrors are upstream content (pipeline-independent);
+        // composed GLBs and generated posters are pipeline output.
+        const composedGlb = f.endsWith("_GLB.glb") && !f.startsWith("donor-") && !f.startsWith("official-");
+        const generatedPoster = f.startsWith("gen-") && f.endsWith("_Card.png");
+        if (composedGlb || generatedPoster) fs.rmSync(path.join(CACHE_DIR, f), { force: true });
       }
     }
     fs.mkdirSync(CACHE_DIR, { recursive: true });
@@ -84,6 +88,12 @@ export function isGlb(buf: Uint8Array): boolean {
 }
 
 export { CACHE_DIR as GOTCHI3D_CACHE_DIR };
+
+/** Already-composed model for a hash, disk only — never composes. */
+export function composedModelOnDisk(hash: string): string | null {
+  const file = path.join(CACHE_DIR, `${hash}_GLB.glb`);
+  return fs.existsSync(file) ? file : null;
+}
 
 // Distinguishes "the CDN says this asset doesn't exist" (a definitive answer,
 // safe to bake into a cached composed file) from a transient failure (timeout,

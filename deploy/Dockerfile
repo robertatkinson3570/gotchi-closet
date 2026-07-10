@@ -11,10 +11,14 @@ RUN corepack enable \
 
 FROM node:20-bookworm-slim AS runner
 WORKDIR /app
+# chromium: headless renderer for the gotchi 3D poster generator
+# (server/gotchi3d/poster-render.ts). Debian's package ships every shared
+# lib it needs, so no playwright install-deps / sudo dance on the VPS.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    tini \
+    tini chromium \
   && rm -rf /var/lib/apt/lists/* \
   && useradd -m -u 1001 gotchicloset
+ENV GOTCHI3D_CHROMIUM=/usr/bin/chromium
 COPY --from=deps /app/node_modules ./node_modules
 COPY --chown=gotchicloset:gotchicloset . .
 RUN mkdir -p /srv/gotchicloset/data && chown -R gotchicloset:gotchicloset /srv/gotchicloset
