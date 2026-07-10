@@ -53,9 +53,12 @@ export function ModelViewer3D({ src, poster, alt, className, onLoadError, disabl
     // empirically — the same "8m" attribute produced per-model scales), while
     // post-load properties + jumpCameraToGoal() stick exactly. Users can
     // still orbit/zoom from this initial view.
+    // Calibrated against Pixelcraft's poster PNGs (Grace Hopper #23881 has
+    // both a poster and a GLB: at 9.5m the live body renders the same size
+    // as the poster's), so live cards match poster cards in mixed grids.
     const applyFraming = () => {
       el.cameraTarget = "0m 1.15m 0m";
-      el.cameraOrbit = "0deg 88deg 7m";
+      el.cameraOrbit = "0deg 88deg 9.5m";
       el.fieldOfView = "30deg";
       el.jumpCameraToGoal?.();
     };

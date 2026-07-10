@@ -33,7 +33,11 @@ async function srcAvailable(url: string): Promise<boolean> {
     // request.
     const probeUrl = url + (url.includes("?") ? "&" : "?") + "gcprobe=1";
     const r = await fetch(probeUrl, { cache: "no-store", headers: { Range: "bytes=0-0" } });
-    availabilityCache.set(url, r.ok);
+    // Only DEFINITIVE misses (403/404: asset absent upstream) cache negative.
+    // Transient statuses (5xx, 429) would otherwise pin a card to 2D for the
+    // whole session — seen on cold servers right after a deploy, when the
+    // composed endpoint is still building its cache.
+    if (r.ok || r.status === 403 || r.status === 404) availabilityCache.set(url, r.ok);
     return r.ok;
   } catch {
     return false; // transient: don't cache
