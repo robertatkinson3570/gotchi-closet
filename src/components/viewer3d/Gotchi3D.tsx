@@ -185,6 +185,7 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
         className="w-full h-full"
         disableZoom={disableZoom}
         autoRotate={autoRotate}
+        frameGotchi
       />
       {nakedBadge}
     </span>

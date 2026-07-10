@@ -19,6 +19,12 @@ type Props = {
   /** Spin the model continuously. Default on (modals); grids pass a per-card
    *  rotate-button state so 100 models don't churn the GPU at once. */
   autoRotate?: boolean;
+  /** Gotchis: frame the ~2.3-unit body with a FIXED camera instead of
+   *  auto-framing to scene bounds. Auto-framing sizes the gotchi by its
+   *  accessories (a petless gotchi fills the card, one with pets shrinks),
+   *  so mixed grids look inconsistent. Every gotchi body is the same world
+   *  size, so one fixed camera renders them all at identical scale. */
+  frameGotchi?: boolean;
 };
 
 /**
@@ -26,7 +32,7 @@ type Props = {
  * auto-rotate via <model-viewer> (the same component the dapp uses). Parents
  * MUST handle onLoadError by falling back to the 2D render — no broken cubes.
  */
-export function ModelViewer3D({ src, poster, alt, className, onLoadError, disableZoom, autoRotate = true }: Props) {
+export function ModelViewer3D({ src, poster, alt, className, onLoadError, disableZoom, autoRotate = true, frameGotchi }: Props) {
   const [ready, setReady] = useState(false);
   const ref = useRef<HTMLElement | null>(null);
 
@@ -36,6 +42,26 @@ export function ModelViewer3D({ src, poster, alt, className, onLoadError, disabl
     return () => { mounted = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const el = ref.current as (HTMLElement & {
+      cameraTarget?: string; cameraOrbit?: string; fieldOfView?: string; jumpCameraToGoal?: () => void;
+    }) | null;
+    if (!el || !frameGotchi) return;
+    // Must be set as PROPERTIES after the model loads: attribute-time camera
+    // values get re-resolved against each model's auto-framing (verified
+    // empirically — the same "8m" attribute produced per-model scales), while
+    // post-load properties + jumpCameraToGoal() stick exactly. Users can
+    // still orbit/zoom from this initial view.
+    const applyFraming = () => {
+      el.cameraTarget = "0m 1.15m 0m";
+      el.cameraOrbit = "0deg 88deg 7m";
+      el.fieldOfView = "30deg";
+      el.jumpCameraToGoal?.();
+    };
+    el.addEventListener("load", applyFraming);
+    return () => el.removeEventListener("load", applyFraming);
+  }, [ready, src, frameGotchi]);
 
   useEffect(() => {
     const el = ref.current;
