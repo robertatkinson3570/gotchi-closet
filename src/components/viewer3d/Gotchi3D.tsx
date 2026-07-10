@@ -59,7 +59,7 @@ type Props = {
   posterOnly?: boolean;
 };
 
-type Candidate = { src: string; poster?: string; liveOnly?: boolean; naked?: boolean; altOrder?: boolean };
+type Candidate = { src: string; poster?: string; liveOnly?: boolean; altOrder?: boolean };
 
 /**
  * Renders the gotchi's 3D model when the site-wide toggle is on. Source
@@ -72,8 +72,9 @@ type Candidate = { src: string; poster?: string; liveOnly?: boolean; naked?: boo
  *      composed because those renders exist with the hands physically
  *      MIRRORED vs the 2D art (verified on Immaterial #16559: the CDN only
  *      has 52-0-17-0, drawn with the item on the wrong hand)
- *   4. naked body model
- *   5. the 2D fallback, silently.
+ *   4. the 2D fallback, silently.
+ * A dressed gotchi NEVER shows its naked model; naked candidates exist only
+ * for gotchis that are actually naked.
  */
 export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZoom, autoRotate, posterOnly }: Props) {
   const { enabled } = useView3D();
@@ -98,8 +99,15 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
       // max-age=86400; it is no-cache + ETag now).
       list.push({ src: `${env.companionApiUrl}/api/gotchi3d/composed/${dressed[0]}?v=3`, liveOnly: true });
     }
-    for (const h of naked) {
-      if (!seen.has(h)) { seen.add(h); list.push({ src: gotchi3dGlbUrl(h), poster: gotchi3dPosterUrl(h), naked: isDressed }); }
+    // A DRESSED gotchi never falls back to its naked model: showing the
+    // right gotchi with no outfit reads as wrong data. While the composed
+    // model builds, the card stays on the 2D art (always correct), then
+    // swaps to the dressed 3D. Naked candidates only exist for gotchis that
+    // are actually naked.
+    if (!isDressed) {
+      for (const h of naked) {
+        if (!seen.has(h)) { seen.add(h); list.push({ src: gotchi3dGlbUrl(h), poster: gotchi3dPosterUrl(h) }); }
+      }
     }
     return { candidates: list, dressedCdnHashes: dressed };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -124,18 +132,25 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
       let shown: Candidate | null = null;
       for (const c of instant) {
         if (await srcAvailable(c.src)) { shown = c; break; }
-        if (!c.naked) missedDressedCdn = true;
+        if (!c.liveOnly) missedDressedCdn = true;
       }
       if (missedDressedCdn) kickMissingRender(dressedCdnHashes);
       if (!alive) return;
-      setResolved(shown);
+      // CRITICAL: when nothing instant resolved but a composed candidate is
+      // still pending, stay "pending" (2D shows meanwhile) instead of
+      // resolving null — null fires onUnavailable and parents lock the card
+      // to 2D permanently, so gotchis with NO official render of any kind
+      // (e.g. Jo #9369: dressed AND naked both missing upstream) never got
+      // their composed model even though it exists.
+      if (shown !== null || !composed) setResolved(shown);
       // Upgrade path: when the best instant result is the naked body, or an
       // ALT-ordering official render (those have the hands physically
       // mirrored vs the 2D art — our composed model has them right).
-      if (composed && (shown === null || shown.naked || shown.altOrder)) {
-        if (await srcAvailable(composed.src)) {
-          if (alive) setResolved(composed);
-        }
+      if (composed && (shown === null || shown.altOrder)) {
+        const ok = await srcAvailable(composed.src);
+        if (!alive) return;
+        if (ok) setResolved(composed);
+        else if (shown === null) setResolved(null); // now truly unavailable
       }
     })();
     return () => { alive = false; };
@@ -150,18 +165,7 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
   if (!enabled || failed) return <>{fallback}</>;
   if (resolved === "pending") return <>{fallback}</>; // 2D while resolving (fast)
 
-  const alt = `${gotchi.name ?? "Aavegotchi"}${gotchi.tokenId ? ` #${gotchi.tokenId}` : ""} in 3D${resolved.naked ? " (body only)" : ""}`;
-
-  const nakedBadge = resolved.naked ? (
-    <span
-      className="absolute bottom-0.5 right-0.5 z-10 text-[8px] leading-none px-1 py-0.5 rounded bg-black/60 text-amber-400/90 border border-amber-400/30 cursor-help"
-      title={posterOnly
-        ? "The official render of this outfit doesn't exist yet. Press ⟳ to build and view the outfit in 3D."
-        : "This outfit's official 3D render doesn't exist yet and couldn't be composed. It has been queued for rendering; 2D always shows the full outfit."}
-    >
-      {posterOnly ? "⟳ for 3D outfit" : "no 3D outfit yet"}
-    </span>
-  ) : null;
+  const alt = `${gotchi.name ?? "Aavegotchi"}${gotchi.tokenId ? ` #${gotchi.tokenId}` : ""} in 3D`;
 
   // Official posters win in grids: they're Pixelcraft's pre-lit renders and
   // look better than live neutral-lit scenes. NOTE their framing varies per
@@ -180,7 +184,6 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
           draggable={false}
           className="object-contain w-full h-full"
         />
-        {nakedBadge}
       </span>
     );
   }
@@ -197,7 +200,6 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
         autoRotate={autoRotate}
         frameGotchi
       />
-      {nakedBadge}
     </span>
   );
 }
