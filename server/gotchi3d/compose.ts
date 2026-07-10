@@ -419,7 +419,11 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   if (!m) return null;
   const [, coll, shape, color, ...slotStrs] = m;
   const slots = slotStrs.map(Number); // [body, face, eyes, head, rightHand, leftHand, pet]
-  if (!slots.some((s) => s > 0)) return null; // naked: nothing to compose
+  // Naked gotchis compose too: when Pixelcraft never rendered the exact
+  // naked body, a sibling body (below) IS the model — bailing here left
+  // whole eye-shape/color combos permanently 2D (e.g. The Great Freeze
+  // #10170, Aave-MythicalLow1_H2-Uncommon_Low).
+  const isNaked = !slots.some((s) => s > 0);
 
   fs.mkdirSync(CACHE_DIR, { recursive: true });
   const outFile = path.join(CACHE_DIR, `${hash}_GLB.glb`);
@@ -431,11 +435,22 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   // only tints the iris, and a slightly-off tint beats never rendering in 3D
   // (e.g. Jo #9369: only the Rare_High variant of its body exists).
   const EYE_COLORS = ["Mythical_Low", "Rare_Low", "Uncommon_Low", "Common", "Uncommon_High", "Rare_High", "Mythical_High"];
+  // Mythical-low eye shapes: traits 0 and 1 are the SAME haunt-specific
+  // shape in 2D, but the render farm named its output MythicalLow1_HX or
+  // MythicalLow2_HX depending on the trait value and rendered the variants
+  // patchily per collateral (verified on the CDN: USDC has 1_H2 only in
+  // Rare_High, Aave has only 2_H2). The other variant digit is therefore a
+  // pixel-identical fallback body.
+  const shapeSiblings = [shape];
+  const mythLow = shape.match(/^MythicalLow([12])(_H[12])$/);
+  if (mythLow) shapeSiblings.push(`MythicalLow${mythLow[1] === "1" ? "2" : "1"}${mythLow[2]}`);
   let nakedBuf: Uint8Array | null = null;
-  for (const c of [color, ...EYE_COLORS.filter((x) => x !== color)]) {
-    const nakedHash = `${coll}-${shape}-${c}-0-0-0-0-0-0-0`;
-    const buf = await fetchGlb(`${CDN}/${nakedHash}/${nakedHash}_GLB.glb`, ctx);
-    if (buf && isGlb(buf)) { nakedBuf = buf; break; }
+  outer: for (const c of [color, ...EYE_COLORS.filter((x) => x !== color)]) {
+    for (const s of shapeSiblings) {
+      const nakedHash = `${coll}-${s}-${c}-0-0-0-0-0-0-0`;
+      const buf = await fetchGlb(`${CDN}/${nakedHash}/${nakedHash}_GLB.glb`, ctx);
+      if (buf && isGlb(buf)) { nakedBuf = buf; break outer; }
+    }
   }
   if (!nakedBuf) return null;
   const target = await io.readBinary(nakedBuf);
@@ -499,7 +514,10 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
     const buf = await fetchPartGlb(id, ctx);
     if (buf) parts.set(id, buf);
   }));
-  if (!placedAnything && parts.size === 0) return null; // nothing renderable to add
+  // A dressed gotchi with zero renderable parts stays null (a naked model
+  // under a dressed hash would violate "never show naked for dressed").
+  // A genuinely naked gotchi proceeds: the sibling body IS the render.
+  if (!isNaked && !placedAnything && parts.size === 0) return null;
 
   // Face wearable replaces the default mouth (verified on official models).
   if (slots[1] > 0 && (parts.has(slots[1]) || donorGraftedSlots.has(slots[1]))) {
