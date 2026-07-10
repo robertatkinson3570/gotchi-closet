@@ -78,32 +78,35 @@ function isGlb(buf: Uint8Array): boolean {
 // safe to bake into a cached composed file) from a transient failure (timeout,
 // network blip, junk body). A compose that hit a transient failure must NOT be
 // cached, or the incomplete model gets served forever (seen in prod: gotchis
-// missing an eye wearable permanently after one flaky fetch).
-let sawTransientFailure = false;
+// missing an eye wearable permanently after one flaky fetch). PER-COMPOSE
+// state, threaded through explicitly: composes run concurrently (a grid fires
+// dozens at once), so a module-global flag would cross-contaminate them — and
+// one compose resetting it mid-run of another would re-open the cache hole.
+type ComposeCtx = { transientFailure: boolean };
 
-async function fetchGlb(url: string): Promise<Uint8Array | null> {
+async function fetchGlb(url: string, ctx: ComposeCtx): Promise<Uint8Array | null> {
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
     if (!res.ok) return null; // 403/404: asset genuinely absent upstream
     const buf = new Uint8Array(await res.arrayBuffer());
     if (!isGlb(buf)) {
-      sawTransientFailure = true; // 200 with junk body (flaky proxy)
+      ctx.transientFailure = true; // 200 with junk body (flaky proxy)
       return null;
     }
     return buf;
   } catch {
-    sawTransientFailure = true; // timeout / network error
+    ctx.transientFailure = true; // timeout / network error
     return null;
   }
 }
 
 /** Donor GLBs are ~5-8 MB; cache them on disk beside the composed output. */
-async function fetchDonorGlb(hash: string): Promise<Uint8Array | null> {
+async function fetchDonorGlb(hash: string, ctx: ComposeCtx): Promise<Uint8Array | null> {
   const file = path.join(CACHE_DIR, `donor-${hash}_GLB.glb`);
   if (fs.existsSync(file)) return new Uint8Array(fs.readFileSync(file));
-  const buf = await fetchGlb(`${CDN}/${hash}/${hash}_GLB.glb`);
+  const buf = await fetchGlb(`${CDN}/${hash}/${hash}_GLB.glb`, ctx);
   if (!buf) {
-    sawTransientFailure = true; // donors are known-good renders; absence is transient
+    ctx.transientFailure = true; // donors are known-good renders; absence is transient
     return null;
   }
   const tmp = `${file}.tmp`;
@@ -223,10 +226,10 @@ const MANUAL_HAND_ASSEMBLY: Record<number, {
 };
 
 /** Place a donor-less item's standalone GLB into a hand socket by hand. */
-async function graftManualHandWearable(target: Document, id: number, side: "L" | "R"): Promise<"socket" | null> {
+async function graftManualHandWearable(target: Document, id: number, side: "L" | "R", ctx: ComposeCtx): Promise<"socket" | null> {
   const manual = MANUAL_HAND_ASSEMBLY[id];
   if (!manual) return null;
-  const buf = await fetchGlb(WEARABLE_GLB(id));
+  const buf = await fetchGlb(WEARABLE_GLB(id), ctx);
   if (!buf) return null;
   const socket = findTargetSocket(target, manual.socketType, side);
   if (!socket) return null;
@@ -252,10 +255,10 @@ async function graftManualHandWearable(target: Document, id: number, side: "L" |
  * scene root at identity (their whole donor chain is identity transforms).
  * Returns how the item was placed, or null when it couldn't be.
  */
-async function graftHandWearable(target: Document, id: number, side: "L" | "R", contractSide?: "R" | "L"): Promise<"socket" | "root" | null> {
+async function graftHandWearable(target: Document, id: number, side: "L" | "R", ctx: ComposeCtx, contractSide?: "R" | "L"): Promise<"socket" | "root" | null> {
   const donor = donorMap[String(id)];
-  if (!donor) return graftManualHandWearable(target, id, side);
-  const buf = await fetchDonorGlb(donor.hash);
+  if (!donor) return graftManualHandWearable(target, id, side, ctx);
+  const buf = await fetchDonorGlb(donor.hash, ctx);
   if (!buf) return null;
   const src = await io.readBinary(buf);
   const clones = findHandClones(src, id);
@@ -348,7 +351,7 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   fs.mkdirSync(CACHE_DIR, { recursive: true });
   const outFile = path.join(CACHE_DIR, `${hash}_GLB.glb`);
   if (fs.existsSync(outFile)) return outFile;
-  sawTransientFailure = false;
+  const ctx: ComposeCtx = { transientFailure: false };
 
   // Naked body. When the exact hash was never rendered by Pixelcraft, fall
   // back to an eye-COLOR sibling (same collateral + eye shape): eye color
@@ -358,7 +361,7 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   let nakedBuf: Uint8Array | null = null;
   for (const c of [color, ...EYE_COLORS.filter((x) => x !== color)]) {
     const nakedHash = `${coll}-${shape}-${c}-0-0-0-0-0-0-0`;
-    const buf = await fetchGlb(`${CDN}/${nakedHash}/${nakedHash}_GLB.glb`);
+    const buf = await fetchGlb(`${CDN}/${nakedHash}/${nakedHash}_GLB.glb`, ctx);
     if (buf && isGlb(buf)) { nakedBuf = buf; break; }
   }
   if (!nakedBuf) return null;
@@ -374,7 +377,7 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   const rootGrafted = new Set<number>(); // WearableRoot pieces: once, not per hand
   for (const [id, side, contractSide] of handSides) {
     if (id <= 0 || rootGrafted.has(id)) continue;
-    const placed = await graftHandWearable(target, id, side, contractSide);
+    const placed = await graftHandWearable(target, id, side, ctx, contractSide);
     if (placed) placedAnything = true;
     if (placed === "root") rootGrafted.add(id);
   }
@@ -386,7 +389,7 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   // merge below stays as the no-donor fallback.
   let petGrafted = false;
   if (slots[6] > 0) {
-    petGrafted = (await graftHandWearable(target, slots[6], "L")) !== null;
+    petGrafted = (await graftHandWearable(target, slots[6], "L", ctx)) !== null;
     if (petGrafted) placedAnything = true;
   }
 
@@ -399,7 +402,7 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   for (const i of [0, 1, 2, 3]) {
     const id = slots[i];
     if (id <= 0 || !PREFER_DONOR_SLOTS.has(id) || donorGraftedSlots.has(id)) continue;
-    if (await graftHandWearable(target, id, "L")) {
+    if (await graftHandWearable(target, id, "L", ctx)) {
       donorGraftedSlots.add(id);
       placedAnything = true;
     }
@@ -420,7 +423,7 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   }
   const parts = new Map<number, Uint8Array>();
   await Promise.all([...fallbackIds].map(async (id) => {
-    const buf = await fetchGlb(WEARABLE_GLB(id));
+    const buf = await fetchGlb(WEARABLE_GLB(id), ctx);
     if (buf) parts.set(id, buf);
   }));
   if (!placedAnything && parts.size === 0) return null; // nothing renderable to add
@@ -524,7 +527,7 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   // A compose that hit a transient fetch failure may be missing parts: serve
   // it (better than nothing right now) but do NOT cache it, so the next
   // request retries the full composition.
-  if (sawTransientFailure) {
+  if (ctx.transientFailure) {
     const serveOnce = path.join(CACHE_DIR, `${hash}_GLB.partial.glb`);
     fs.writeFileSync(serveOnce, out);
     return serveOnce;

@@ -163,32 +163,23 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
     </span>
   ) : null;
 
-  if (posterOnly && !resolved.liveOnly) {
-    return (
-      <span className={`relative block ${className ?? ""}`}>
-        <img
-          src={resolved.poster}
-          alt={alt}
-          title="Pre-rendered 3D view. Press ⟳ for the live, draggable model."
-          loading="lazy"
-          draggable={false}
-          className="object-contain w-full h-full"
-        />
-        {nakedBadge}
-      </span>
-    );
-  }
-
+  // Grids render the LIVE model too (posterOnly now only gates auto-rotate
+  // behind the per-card ⟳ button). Pixelcraft's poster PNGs are auto-framed
+  // per scene — a gotchi with pets renders smaller than one without — so a
+  // grid mixing posters with live viewers can never show a uniform gotchi
+  // size. One fixed camera across live viewers can (see frameGotchi). No
+  // poster placeholder either: it would flash at poster framing and snap to
+  // the fixed camera when the model arrives — the exact size-jump this
+  // exists to eliminate.
   return (
     <span className={`relative block ${className ?? ""}`}>
       <ModelViewer3D
         key={resolved.src}
         src={resolved.src}
-        poster={resolved.poster}
         alt={alt}
         className="w-full h-full"
         disableZoom={disableZoom}
-        autoRotate={autoRotate}
+        autoRotate={posterOnly ? false : autoRotate}
         frameGotchi
       />
       {nakedBadge}
