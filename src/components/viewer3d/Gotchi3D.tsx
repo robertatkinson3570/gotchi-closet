@@ -55,17 +55,21 @@ type Props = {
   posterOnly?: boolean;
 };
 
-type Candidate = { src: string; poster?: string; liveOnly?: boolean; naked?: boolean };
+type Candidate = { src: string; poster?: string; liveOnly?: boolean; naked?: boolean; altOrder?: boolean };
 
 /**
  * Renders the gotchi's 3D model when the site-wide toggle is on. Source
  * ladder, PRE-RESOLVED with plain fetches (model-viewer's singleton renderer
  * re-dispatches stale error events across elements, so its error event can't
  * drive fallbacks):
- *   1. official dressed model (both hand orderings; CDN is inconsistent)
+ *   1. official dressed model under the PRIMARY hash ordering
  *   2. our server-composed dressed model (live contexts only — no PNG poster)
- *   3. naked body model
- *   4. the 2D fallback, silently.
+ *   3. official dressed model under the SWAPPED hand ordering — demoted below
+ *      composed because those renders exist with the hands physically
+ *      MIRRORED vs the 2D art (verified on Immaterial #16559: the CDN only
+ *      has 52-0-17-0, drawn with the item on the wrong hand)
+ *   4. naked body model
+ *   5. the 2D fallback, silently.
  */
 export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZoom, autoRotate, posterOnly }: Props) {
   const { enabled } = useView3D();
@@ -80,11 +84,15 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
     const naked = gotchi3dHashes({ ...gotchi, equippedWearables: [] });
     const list: Candidate[] = [];
     const seen = new Set<string>();
-    for (const h of dressed) {
-      if (!seen.has(h)) { seen.add(h); list.push({ src: gotchi3dGlbUrl(h), poster: gotchi3dPosterUrl(h) }); }
+    for (const [i, h] of dressed.entries()) {
+      if (!seen.has(h)) { seen.add(h); list.push({ src: gotchi3dGlbUrl(h), poster: gotchi3dPosterUrl(h), altOrder: i > 0 }); }
     }
     if (isDressed && dressed[0] !== naked[0]) {
-      list.push({ src: `${env.companionApiUrl}/api/gotchi3d/composed/${dressed[0]}`, liveOnly: true });
+      // v3: socket-grafted hand wearables on the 2D-correct sides + donor-
+      // positioned pets. The version param busts browser caches that pinned
+      // older pipeline output under the previous URL (the route used to send
+      // max-age=86400; it is no-cache + ETag now).
+      list.push({ src: `${env.companionApiUrl}/api/gotchi3d/composed/${dressed[0]}?v=3`, liveOnly: true });
     }
     for (const h of naked) {
       if (!seen.has(h)) { seen.add(h); list.push({ src: gotchi3dGlbUrl(h), poster: gotchi3dPosterUrl(h), naked: isDressed }); }
@@ -102,20 +110,29 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
     let alive = true;
     setResolved("pending");
     (async () => {
+      // Composed models take ~1-3s to build on first request; never leave the
+      // card in plain 2D that long. Resolve the instant candidates (CDN
+      // dressed/naked, cheap availability checks) first, show that, THEN
+      // upgrade in place to the composed dressed model once it exists.
+      const instant = candidates.filter((c) => !c.liveOnly);
+      const composed = candidates.find((c) => c.liveOnly);
       let missedDressedCdn = false;
-      for (const c of candidates) {
-        // Composed models have no PNG poster, but a dressed gotchi shown naked
-        // is worse than a few live scenes per grid: poster cards fall through
-        // to the live composed viewer rather than the naked poster.
-        if (await srcAvailable(c.src)) {
-          if (missedDressedCdn) kickMissingRender(dressedCdnHashes);
-          if (alive) setResolved(c);
-          return;
-        }
-        if (!c.liveOnly && !c.naked) missedDressedCdn = true;
+      let shown: Candidate | null = null;
+      for (const c of instant) {
+        if (await srcAvailable(c.src)) { shown = c; break; }
+        if (!c.naked) missedDressedCdn = true;
       }
       if (missedDressedCdn) kickMissingRender(dressedCdnHashes);
-      if (alive) setResolved(null);
+      if (!alive) return;
+      setResolved(shown);
+      // Upgrade path: when the best instant result is the naked body, or an
+      // ALT-ordering official render (those have the hands physically
+      // mirrored vs the 2D art — our composed model has them right).
+      if (composed && (shown === null || shown.naked || shown.altOrder)) {
+        if (await srcAvailable(composed.src)) {
+          if (alive) setResolved(composed);
+        }
+      }
     })();
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps

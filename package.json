@@ -27,6 +27,7 @@
     "@dnd-kit/sortable": "^8.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@gltf-transform/core": "^4.4.1",
+    "@gltf-transform/extensions": "^4.4.1",
     "@gltf-transform/functions": "^4.4.1",
     "@google/model-viewer": "^4.3.1",
     "@headlessui/react": "^2.2.9",

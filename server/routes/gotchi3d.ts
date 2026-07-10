@@ -67,7 +67,11 @@ router.get("/composed/:hash", async (req, res) => {
       return;
     }
     res.setHeader("Content-Type", "model/gltf-binary");
-    res.setHeader("Cache-Control", "public, max-age=86400");
+    // no-cache ≠ no-store: browsers may keep the bytes but MUST revalidate
+    // (sendFile sets ETag/Last-Modified, so unchanged files still 304). A
+    // blind max-age here once pinned pipeline-broken GLBs in every visitor's
+    // browser for a day — cache purges and redeploys were invisible.
+    res.setHeader("Cache-Control", "no-cache");
     res.sendFile(file);
   } catch (e) {
     console.error("GET /api/gotchi3d/composed failed", e);

@@ -1,0 +1,299 @@
+{
+ "3": {
+  "hash": "Link-UncommonHigh3-Uncommon_Low-0-0-0-87-3-0-0"
+ },
+ "6": {
+  "hash": "USDT-UncommonHigh3-Rare_Low-56-295-208-4-158-6-151"
+ },
+ "9": {
+  "hash": "USDT-UncommonLow3-Rare_High-8-18-199-7-9-9-233"
+ },
+ "12": {
+  "hash": "wEth-UncommonLow1-Common-112-219-199-111-123-12-151"
+ },
+ "17": {
+  "hash": "Aave-RareHigh2-Mythical_Low-314-263-262-33-17-51-261"
+ },
+ "20": {
+  "hash": "Dai-UncommonHigh2-Mythical_High-19-18-0-370-134-20-0"
+ },
+ "23": {
+  "hash": "wBTC-Common1-Uncommon_Low-37-0-36-71-38-23-0"
+ },
+ "26": {
+  "hash": "Eth-RareLow2-Rare_High-25-295-208-24-247-26-406"
+ },
+ "29": {
+  "hash": "Aave-RareLow1-Uncommon_High-115-219-57-139-201-29-152"
+ },
+ "32": {
+  "hash": "Dai-RareLow2-Uncommon_Low-34-13-14-33-32-32-35"
+ },
+ "35": {
+  "hash": "Dai-RareLow2-Uncommon_Low-34-13-14-33-32-32-35"
+ },
+ "38": {
+  "hash": "Dai-UncommonLow2-Uncommon_High-0-0-0-232-38-223-0"
+ },
+ "40": {
+  "hash": "USDC-UncommonHigh3-Rare_High-109-0-0-77-0-294-40"
+ },
+ "41": {
+  "hash": "Aave-UncommonLow3-Rare_High-241-240-351-239-299-41-353"
+ },
+ "44": {
+  "hash": "USDC-MythicalLow1_H2-Uncommon_Low-227-240-246-226-225-44-233"
+ },
+ "47": {
+  "hash": "wEth-Common3-Rare_Low-234-219-159-124-201-47-236"
+ },
+ "51": {
+  "hash": "wEth-UncommonLow3-Rare_Low-43-240-246-42-44-51-40"
+ },
+ "58": {
+  "hash": "Aave-UncommonHigh1-Uncommon_High-56-55-57-7-58-0-0"
+ },
+ "64": {
+  "hash": "Aave-RareLow3-Rare_High-350-0-351-87-64-352-353"
+ },
+ "65": {
+  "hash": "Eth-RareHigh3-Common-105-18-117-27-65-121-0"
+ },
+ "69": {
+  "hash": "Dai-RareLow3-Uncommon_High-78-0-36-147-38-69-0"
+ },
+ "70": {
+  "hash": "Aave-RareLow2-Rare_High-362-216-49-363-70-364-155"
+ },
+ "75": {
+  "hash": "wEth-UncommonLow2-Uncommon_High-54-216-359-363-75-75-154"
+ },
+ "76": {
+  "hash": "Dai-RareHigh1-Common-372-371-208-370-130-76-0"
+ },
+ "79": {
+  "hash": "Aave-RareLow3-Rare_High-207-0-66-94-79-205-0"
+ },
+ "82": {
+  "hash": "USDC-UncommonHigh2-Rare_High-234-263-86-235-82-119-236"
+ },
+ "83": {
+  "hash": "Link-RareLow2-Rare_High-112-18-66-111-123-83-0"
+ },
+ "89": {
+  "hash": "wEth-Common2-Rare_Low-250-295-249-245-89-251-151"
+ },
+ "92": {
+  "hash": "wBTC-Common1-Rare_High-91-140-377-90-141-92-0"
+ },
+ "93": {
+  "hash": "Dai-RareLow3-Rare_High-250-378-249-245-251-93-40"
+ },
+ "96": {
+  "hash": "Yfi-UncommonHigh2-Uncommon_High-95-0-0-94-0-96-0"
+ },
+ "99": {
+  "hash": "USDC-UncommonLow1-Rare_Low-98-378-249-97-12-99-40"
+ },
+ "100": {
+  "hash": "wBTC-RareHigh2-Rare_Low-383-412-377-380-100-100-40"
+ },
+ "103": {
+  "hash": "Uni-UNI-Uncommon_Low-102-55-262-101-103-26-413"
+ },
+ "106": {
+  "hash": "Aave-AAVE-Uncommon_High-105-209-159-104-106-257-305"
+ },
+ "107": {
+  "hash": "Polygon-POLYGON-Mythical_High-258-260-259-52-17-107-238"
+ },
+ "110": {
+  "hash": "USDC-RareHigh1-Uncommon_High-213-0-199-59-110-110-151"
+ },
+ "113": {
+  "hash": "Aave-AAVE-Rare_High-34-263-86-33-32-113-35"
+ },
+ "116": {
+  "hash": "Dai-UncommonLow1-Rare_High-207-140-377-90-116-123-0"
+ },
+ "118": {
+  "hash": "wEth-UncommonLow2-Rare_Low-256-382-86-255-257-118-413"
+ },
+ "119": {
+  "hash": "Dai-UncommonHigh3-Uncommon_Low-234-240-243-235-92-119-236"
+ },
+ "120": {
+  "hash": "Aave-UncommonLow1-Mythical_High-244-209-243-242-120-148-153"
+ },
+ "121": {
+  "hash": "wBTC-UncommonHigh2-Uncommon_Low-222-157-224-221-121-223-151"
+ },
+ "122": {
+  "hash": "wEth-UncommonHigh3-Uncommon_High-362-306-359-363-365-122-152"
+ },
+ "123": {
+  "hash": "Dai-UncommonLow1-Rare_High-207-140-377-90-116-123-0"
+ },
+ "130": {
+  "hash": "Dai-RareHigh1-Common-372-371-208-370-130-76-0"
+ },
+ "134": {
+  "hash": "Polygon-Common3-Common-37-0-0-67-0-134-0"
+ },
+ "137": {
+  "hash": "wEth-UncommonLow1-Uncommon_High-138-146-199-139-137-299-0"
+ },
+ "141": {
+  "hash": "USDC-RareLow2-Common-297-140-0-142-204-141-0"
+ },
+ "148": {
+  "hash": "Aave-UncommonLow1-Mythical_High-244-209-243-242-120-148-153"
+ },
+ "151": {
+  "hash": "USDC-RareHigh1-Uncommon_High-213-0-199-59-110-110-151"
+ },
+ "152": {
+  "hash": "Aave-RareLow1-Uncommon_High-115-219-57-139-201-29-152"
+ },
+ "153": {
+  "hash": "wEth-RareHigh2-Rare_Low-303-0-0-308-92-92-153"
+ },
+ "154": {
+  "hash": "USDT-USDT-Common-293-0-0-149-148-148-154"
+ },
+ "155": {
+  "hash": "Aave-RareLow2-Rare_High-362-216-49-363-70-364-155"
+ },
+ "156": {
+  "hash": "Aave-UncommonHigh3-Rare_Low-31-263-259-30-103-32-156"
+ },
+ "158": {
+  "hash": "USDC-Common1-Rare_High-250-295-249-245-158-251-0"
+ },
+ "201": {
+  "hash": "Aave-RareLow1-Uncommon_High-115-219-57-139-201-29-152"
+ },
+ "204": {
+  "hash": "USDC-RareLow2-Common-297-140-0-142-204-141-0"
+ },
+ "205": {
+  "hash": "Dai-DAI-Uncommon_High-248-0-0-39-64-205-0"
+ },
+ "212": {
+  "hash": "Aave-RareLow2-Rare_High-114-263-262-144-212-364-261"
+ },
+ "217": {
+  "hash": "wEth-UncommonHigh1-Uncommon_High-28-0-246-309-217-247-0"
+ },
+ "223": {
+  "hash": "wBTC-UncommonHigh2-Uncommon_Low-222-157-224-221-121-223-151"
+ },
+ "225": {
+  "hash": "wBTC-wBTC-Uncommon_Low-0-0-0-0-225-0-0"
+ },
+ "229": {
+  "hash": "wEth-UncommonHigh2-Mythical_Low-230-0-0-228-229-0-0"
+ },
+ "233": {
+  "hash": "wEth-UncommonLow1-Mythical_High-213-295-249-245-29-251-233"
+ },
+ "236": {
+  "hash": "wEth-wETH-Common-213-209-215-235-229-223-236"
+ },
+ "237": {
+  "hash": "Polygon-RareHigh3-Uncommon_High-11-216-215-101-65-217-237"
+ },
+ "238": {
+  "hash": "Polygon-POLYGON-Mythical_High-258-260-259-52-17-107-238"
+ },
+ "247": {
+  "hash": "Polygon-RareHigh2-Common-135-0-0-60-64-247-0"
+ },
+ "251": {
+  "hash": "Aave-Common3-Rare_Low-250-0-249-0-251-0-151"
+ },
+ "254": {
+  "hash": "wEth-UncommonHigh3-Mythical_High-253-18-66-252-299-254-0"
+ },
+ "257": {
+  "hash": "Aave-AAVE-Uncommon_High-105-209-159-104-106-257-305"
+ },
+ "261": {
+  "hash": "Aave-RareHigh2-Mythical_Low-314-263-262-33-17-51-261"
+ },
+ "294": {
+  "hash": "USDT-RareHigh2-Common-244-0-36-242-294-294-0"
+ },
+ "296": {
+  "hash": "Aave-UncommonLow1-Uncommon_High-297-295-0-298-296-0-0"
+ },
+ "299": {
+  "hash": "Polygon-RareHigh1-Common-293-0-0-300-299-0-0"
+ },
+ "304": {
+  "hash": "Dai-UncommonLow2-Rare_Low-241-240-208-239-304-379-353"
+ },
+ "305": {
+  "hash": "Aave-AAVE-Uncommon_High-105-209-159-104-106-257-305"
+ },
+ "311": {
+  "hash": "Polygon-UncommonHigh2-Uncommon_High-310-0-159-309-311-312-0"
+ },
+ "312": {
+  "hash": "Polygon-UncommonHigh2-Uncommon_High-310-0-159-309-311-312-0"
+ },
+ "352": {
+  "hash": "Aave-RareLow3-Rare_High-350-0-351-87-64-352-353"
+ },
+ "353": {
+  "hash": "Aave-RareLow3-Rare_High-350-0-351-87-64-352-353"
+ },
+ "357": {
+  "hash": "Aave-RareHigh3-Rare_Low-46-157-208-45-158-357-151"
+ },
+ "360": {
+  "hash": "USDT-MythicalLow1_H2-Uncommon_Low-358-209-359-84-120-360-153"
+ },
+ "361": {
+  "hash": "Dai-RareHigh3-Uncommon_High-310-382-381-309-311-312-361"
+ },
+ "364": {
+  "hash": "Aave-RareLow2-Rare_High-362-216-49-363-70-364-155"
+ },
+ "365": {
+  "hash": "wBTC-UncommonHigh3-Rare_Low-114-55-57-97-365-110-153"
+ },
+ "369": {
+  "hash": "USDC-USDC-Uncommon_High-16-368-53-387-369-386-156"
+ },
+ "374": {
+  "hash": "Polygon-UncommonLow1-Common-350-0-301-87-352-352-374"
+ },
+ "375": {
+  "hash": "USDT-Common3-Common-373-0-0-39-375-205-0"
+ },
+ "379": {
+  "hash": "Dai-UncommonLow2-Rare_Low-241-240-208-239-304-379-353"
+ },
+ "386": {
+  "hash": "USDC-USDC-Uncommon_High-16-368-53-387-369-386-156"
+ },
+ "406": {
+  "hash": "Uni-RareHigh1-Uncommon_Low-248-378-377-376-247-123-406"
+ },
+ "410": {
+  "hash": "Dai-RareHigh3-Uncommon_Low-56-55-57-59-58-58-410"
+ },
+ "413": {
+  "hash": "wEth-UncommonLow2-Rare_Low-256-382-86-255-257-118-413"
+ },
+ "415": {
+  "hash": "Dai-UncommonHigh3-Common-310-378-243-309-100-311-415"
+ },
+ "417": {
+  "hash": "wBTC-MythicalLow2_H2-Uncommon_Low-50-414-202-0-201-12-417"
+ },
+ "419": {
+  "hash": "Polygon-Common3-Uncommon_Low-418-371-351-420-44-419-353"
+ }
+}

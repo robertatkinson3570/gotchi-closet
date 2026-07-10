@@ -1,26 +1,72 @@
 /**
  * Server-side gotchi 3D composition: builds the dressed model Pixelcraft's
  * offline renderer never generated, from the same canonical parts it would
- * have used. Empirically validated (Felon #19095): an official dressed GLB is
- * exactly the naked-body GLB plus each wearable's standalone GLB merged at
- * identity transforms (the wearable models are authored in gotchi space),
- * with the default mouth node removed when a face wearable is equipped.
+ * have used.
+ *
+ * Empirically validated against official dressed GLBs (Felon #19095, Grace
+ * Hopper #23881):
+ * - Non-hand wearables (body/face/eyes/head/pet) live at identity under the
+ *   scene root ("WearableRoot"), exactly matching the standalone wearable
+ *   GLBs — plain merges are correct for them.
+ * - HAND wearables are different: the standalone GLBs are raw prefab meshes
+ *   in arbitrary local spaces (item 212 is a 0.017-unit speck, 217 is
+ *   world-authored over the LEFT arm, 315 is upside down at the feet, 386 is
+ *   a 2.6-unit rod at the origin). Official models attach them under the
+ *   body rig's hand sockets (Melee/Shield/Grenade/Ranged per hand) via a
+ *   "Wearable_Mesh_<id>(Clone)" subtree that carries the item-specific
+ *   assembly transforms (prefab roots with x100 scale, offsets, rotations).
+ *   Those transforms exist ONLY inside official dressed GLBs, so we graft
+ *   the clone subtree from a DONOR official render (map built by
+ *   scripts/buildHandDonors.ts) into the target's matching socket.
  *
  * Composed files are cached on disk and served by /api/gotchi3d/composed.
  */
-import { NodeIO, Document } from "@gltf-transform/core";
-import { mergeDocuments, prune, dedup, unpartition } from "@gltf-transform/functions";
+import { NodeIO, Document, Node, PropertyType } from "@gltf-transform/core";
+import { dedup, mergeDocuments, prune, quantize, textureCompress, unpartition, weld } from "@gltf-transform/functions";
 import fs from "node:fs";
 import path from "node:path";
 
 const CDN = "https://dzqjok0x69zbl.cloudfront.net";
 const WEARABLE_GLB = (id: number) => `https://dapp.aavegotchi.com/brand/items/3d/${id}.glb`;
 const CACHE_DIR = path.join(process.cwd(), "server", "data", "gotchi3d-cache");
+const DONOR_MAP_FILE = path.join(process.cwd(), "server", "gotchi3d", "hand-donors.json");
 
 // Same shape the frontend derives: <Collateral>-<EyeShape>-<EyeColor>-b-f-e-h-rh-lh-p
 export const HASH_RE = /^([A-Za-z0-9_]+)-([A-Za-z0-9_]+)-([A-Za-z0-9_]+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)$/;
 
+// NOTE: deliberately NOT registering Khronos extensions. Registering them
+// (KHRONOS_EXTENSIONS) makes the merged output hang three.js/model-viewer
+// (verified empirically: Snoop's compose loads without them, hangs with).
+// Unregistered extensions are dropped with a warning, which degrades some
+// material effects but keeps the output parseable.
 const io = new NodeIO();
+
+// wearable id -> official dressed render that contains it in a hand socket.
+let donorMap: Record<string, { hash: string }> = {};
+try {
+  donorMap = JSON.parse(fs.readFileSync(DONOR_MAP_FILE, "utf8"));
+} catch { /* map not built yet: hand items fall back to plain merges */ }
+
+// Composed outputs are only valid for the pipeline that built them. On boot,
+// wipe outputs stamped with a different version (donor-* files are upstream
+// content, not pipeline output, and fetchDonorGlb validates them on read).
+// Bump on ANY change that alters composed output.
+const PIPELINE_VERSION = "v3";
+try {
+  const stamp = path.join(CACHE_DIR, ".pipeline-version");
+  if (!fs.existsSync(stamp) || fs.readFileSync(stamp, "utf8").trim() !== PIPELINE_VERSION) {
+    if (fs.existsSync(CACHE_DIR)) {
+      for (const f of fs.readdirSync(CACHE_DIR)) {
+        if (f.endsWith("_GLB.glb") && !f.startsWith("donor-")) fs.rmSync(path.join(CACHE_DIR, f), { force: true });
+      }
+    }
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
+    fs.writeFileSync(stamp, PIPELINE_VERSION);
+    console.log(`[gotchi3d] composed cache purged for pipeline ${PIPELINE_VERSION}`);
+  }
+} catch (e) {
+  console.error("[gotchi3d] cache version check failed", e);
+}
 
 async function fetchGlb(url: string): Promise<Uint8Array | null> {
   try {
@@ -30,6 +76,244 @@ async function fetchGlb(url: string): Promise<Uint8Array | null> {
   } catch {
     return null;
   }
+}
+
+/** A real GLB starts with the ASCII magic "glTF"; the CDN's error responses
+ *  don't. Never cache or graft from an error body. */
+function isGlb(buf: Uint8Array): boolean {
+  return buf.length > 12 && buf[0] === 0x67 && buf[1] === 0x6c && buf[2] === 0x54 && buf[3] === 0x46;
+}
+
+/** Donor GLBs are ~5-8 MB; cache them on disk beside the composed output. */
+async function fetchDonorGlb(hash: string): Promise<Uint8Array | null> {
+  const file = path.join(CACHE_DIR, `donor-${hash}_GLB.glb`);
+  if (fs.existsSync(file)) return new Uint8Array(fs.readFileSync(file));
+  const buf = await fetchGlb(`${CDN}/${hash}/${hash}_GLB.glb`);
+  if (!buf || !isGlb(buf)) return null;
+  const tmp = `${file}.tmp`;
+  fs.writeFileSync(tmp, buf);
+  fs.renameSync(tmp, file);
+  return buf;
+}
+
+/** Pixelcraft's rig spells the left shield socket "SheildSocket_L". */
+const normSocket = (name: string) => name.replace(/sheild/gi, "Shield");
+const SOCKET_RE = /^(Melee|Sheild|Shield|Grenade|Ranged)Socket_(L|R)$/i;
+
+type CloneHit =
+  | { kind: "socket"; node: Node; parent: Node; socketType: string; side: "L" | "R" }
+  | { kind: "root"; node: Node; parent: Node };
+
+/**
+ * Find every "Wearable_Mesh_<id>(Clone)" in a donor. Hand items come in two
+ * official flavors: rigid props under a hand socket (laptops, wands, signs)
+ * and skinned world-authored pieces under WearableRoot at identity (gloves,
+ * arm covers — same placement scheme as body wearables).
+ */
+function findHandClones(doc: Document, id: number): CloneHit[] {
+  const scene = doc.getRoot().getDefaultScene() ?? doc.getRoot().listScenes()[0];
+  const hits: CloneHit[] = [];
+  const wanted = `Wearable_Mesh_${id}(Clone)`;
+  const walk = (node: Node, ancestors: Node[]) => {
+    if (node.getName() === wanted && ancestors.length > 0) {
+      const parent = ancestors[ancestors.length - 1];
+      let socketed = false;
+      for (let i = ancestors.length - 1; i >= 0; i--) {
+        const m = SOCKET_RE.exec(ancestors[i].getName() ?? "");
+        if (m) {
+          hits.push({ kind: "socket", node, parent, socketType: normSocket(m[1]), side: m[2].toUpperCase() as "L" | "R" });
+          socketed = true;
+          break;
+        }
+      }
+      if (!socketed) hits.push({ kind: "root", node, parent });
+    }
+    for (const c of node.listChildren()) walk(c, [...ancestors, node]);
+  };
+  for (const c of scene?.listChildren() ?? []) walk(c, []);
+  return hits;
+}
+
+/** The target body's socket of the given type on the given hand. */
+function findTargetSocket(doc: Document, socketType: string, side: "L" | "R"): Node | null {
+  for (const node of doc.getRoot().listNodes()) {
+    const m = SOCKET_RE.exec(node.getName() ?? "");
+    if (m && normSocket(m[1]).toLowerCase() === socketType.toLowerCase() && m[2].toUpperCase() === side) return node;
+  }
+  return null;
+}
+
+function disposeTree(node: Node) {
+  for (const c of node.listChildren()) disposeTree(c);
+  node.dispose();
+}
+
+/**
+ * Flip triangle winding for every mesh under a node. Required after a
+ * negative-scale (mirror) wrapper: mirroring alone flips the winding order,
+ * so the mesh gets backface-culled and renders invisible.
+ */
+function reverseWinding(node: Node) {
+  const seen = new Set<unknown>();
+  const walk = (n: Node) => {
+    const mesh = n.getMesh();
+    if (mesh && !seen.has(mesh)) {
+      seen.add(mesh);
+      for (const prim of mesh.listPrimitives()) {
+        const idx = prim.getIndices();
+        const arr = idx?.getArray();
+        if (idx && arr) {
+          for (let i = 0; i + 2 < arr.length; i += 3) {
+            const t = arr[i + 1];
+            arr[i + 1] = arr[i + 2];
+            arr[i + 2] = t;
+          }
+          idx.setArray(arr);
+        }
+      }
+    }
+    for (const c of n.listChildren()) walk(c);
+  };
+  walk(node);
+}
+
+/** Which contract hand (R/L) holds `id` in a donor's render hash. */
+function donorContractSide(hash: string, id: number): "R" | "L" | null {
+  const m = HASH_RE.exec(hash);
+  if (!m) return null;
+  const slots = m.slice(4).map(Number);
+  if (slots[4] === id) return "R";
+  if (slots[5] === id) return "L";
+  return null;
+}
+
+/**
+ * Manual assembly for items with NO official render anywhere on the CDN
+ * (nothing to donor-graft from). The standalone GLB is placed under a hand
+ * socket with a hand-tuned adjustment, mirroring how analog items are
+ * assembled in official models (reference: Spirit Sword 311 sits in
+ * MeleeSocket with the grip near the socket origin and the blade up +Y).
+ */
+const MANUAL_HAND_ASSEMBLY: Record<number, {
+  socketType: string;
+  translation?: [number, number, number];
+  rotation?: [number, number, number, number];
+  scale?: number;
+}> = {
+  // Haanzo Katana (godlike, Kabuto/Yoroi set): its standalone GLB's own node
+  // transform (180° X flip + x10 scale) already yields blade-up +Y with the
+  // grip near the origin — the same socket-space pose Spirit Sword uses.
+  315: { socketType: "Melee" },
+};
+
+/** Place a donor-less item's standalone GLB into a hand socket by hand. */
+async function graftManualHandWearable(target: Document, id: number, side: "L" | "R"): Promise<"socket" | null> {
+  const manual = MANUAL_HAND_ASSEMBLY[id];
+  if (!manual) return null;
+  const buf = await fetchGlb(WEARABLE_GLB(id));
+  if (!buf) return null;
+  const socket = findTargetSocket(target, manual.socketType, side);
+  if (!socket) return null;
+  const src = await io.readBinary(buf);
+  const map = mergeDocuments(target, src);
+  const holder = target.createNode(`Wearable_Mesh_${id}(Manual)`);
+  if (manual.translation) holder.setTranslation(manual.translation);
+  if (manual.rotation) holder.setRotation(manual.rotation);
+  if (manual.scale) holder.setScale([manual.scale, manual.scale, manual.scale]);
+  for (const scene of src.getRoot().listScenes()) {
+    const mergedScene = map.get(scene);
+    if (!mergedScene) continue;
+    for (const child of [...(mergedScene as unknown as typeof scene).listChildren()]) holder.addChild(child);
+    (mergedScene as unknown as { dispose: () => void }).dispose();
+  }
+  socket.addChild(holder);
+  return "socket";
+}
+
+/**
+ * Graft the donor's assembled hand-wearable subtree into the target: socketed
+ * props go into the matching hand socket, WearableRoot-style pieces go to the
+ * scene root at identity (their whole donor chain is identity transforms).
+ * Returns how the item was placed, or null when it couldn't be.
+ */
+async function graftHandWearable(target: Document, id: number, side: "L" | "R", contractSide?: "R" | "L"): Promise<"socket" | "root" | null> {
+  const donor = donorMap[String(id)];
+  if (!donor) return graftManualHandWearable(target, id, side);
+  const buf = await fetchDonorGlb(donor.hash);
+  if (!buf) return null;
+  const src = await io.readBinary(buf);
+  const clones = findHandClones(src, id);
+  if (clones.length === 0) return null;
+  // Prefer the donor instance already on the hand we need (the clone's inner
+  // Left/RightHandRoot transforms differ slightly per side).
+  const pick = clones.find((c) => c.kind === "socket" && c.side === side) ?? clones[0];
+
+  const map = mergeDocuments(target, src);
+  const mergedClone = map.get(pick.node) as Node | undefined;
+  const mergedParent = map.get(pick.parent) as Node | undefined;
+  if (!mergedClone) return null;
+  mergedParent?.removeChild(mergedClone);
+
+  // Drop the rest of the donor gotchi (detached clone survives; prune() then
+  // sweeps the donor's now-unused meshes/materials/textures). The donor's
+  // Scene objects must go too or the output accumulates empty scenes.
+  for (const scene of src.getRoot().listScenes()) {
+    const mergedScene = map.get(scene);
+    if (!mergedScene) continue;
+    for (const child of (mergedScene as unknown as typeof scene).listChildren()) {
+      if (child !== mergedClone) disposeTree(child);
+    }
+    (mergedScene as unknown as { dispose: () => void }).dispose();
+  }
+
+  const targetScene = target.getRoot().getDefaultScene() ?? target.getRoot().listScenes()[0];
+
+  if (pick.kind === "root") {
+    if (!targetScene) {
+      disposeTree(mergedClone);
+      return null;
+    }
+    // Preserve the donor parent's WORLD placement: pets hang off a PetRoot
+    // node that carries the beside-the-gotchi offset (e.g. t=[1.15,0,1.27]);
+    // dropping it leaves the pet hidden inside the body. WearableRoot pieces
+    // have an identity chain, so the wrapper is a no-op for them.
+    const wrapper = target.createNode(`${pick.parent.getName() || "graft"}_placement`);
+    wrapper.setMatrix(pick.parent.getWorldMatrix());
+    wrapper.addChild(mergedClone);
+    targetScene.addChild(wrapper);
+    // Rooted hand pieces are ONE-SIDED baked meshes (e.g. 217 Energy Gun is
+    // authored on the gotchi's left arm). When the target wears it on the
+    // OTHER contract hand than the donor did, mirror across X and flip the
+    // triangle winding (negative scale alone renders backface-culled).
+    const dSide = contractSide ? donorContractSide(donor.hash, id) : null;
+    if (contractSide && dSide && dSide !== contractSide) {
+      const mirror = target.createNode(`${pick.node.getName() || "graft"}_mirror`).setScale([-1, 1, 1]);
+      wrapper.removeChild(mergedClone);
+      mirror.addChild(mergedClone);
+      wrapper.addChild(mirror);
+      reverseWinding(mergedClone);
+    }
+    return "root";
+  }
+
+  const socket = findTargetSocket(target, pick.socketType, side);
+  if (!socket) {
+    disposeTree(mergedClone);
+    return null;
+  }
+  socket.addChild(mergedClone);
+
+  // Donor had the item on the other hand: the clone ships BOTH Left/Right
+  // HandRoot locators (side transforms baked, mesh under the donor's side),
+  // so re-hang the mesh under the locator for the hand we're dressing.
+  if (pick.side !== side) {
+    const donorRoot = mergedClone.listChildren().find((c) => c.getName() === `${pick.side === "L" ? "Left" : "Right"}HandRoot`);
+    const wantRoot = mergedClone.listChildren().find((c) => c.getName() === `${side === "L" ? "Left" : "Right"}HandRoot`);
+    if (donorRoot && wantRoot) {
+      for (const c of [...donorRoot.listChildren()]) wantRoot.addChild(c);
+    }
+  }
+  return "socket";
 }
 
 /**
@@ -49,19 +333,64 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   const outFile = path.join(CACHE_DIR, `${hash}_GLB.glb`);
   if (fs.existsSync(outFile)) return outFile;
 
-  const nakedHash = `${coll}-${shape}-${color}-0-0-0-0-0-0-0`;
-  const nakedBuf = await fetchGlb(`${CDN}/${nakedHash}/${nakedHash}_GLB.glb`);
+  // Naked body. When the exact hash was never rendered by Pixelcraft, fall
+  // back to an eye-COLOR sibling (same collateral + eye shape): eye color
+  // only tints the iris, and a slightly-off tint beats never rendering in 3D
+  // (e.g. Jo #9369: only the Rare_High variant of its body exists).
+  const EYE_COLORS = ["Mythical_Low", "Rare_Low", "Uncommon_Low", "Common", "Uncommon_High", "Rare_High", "Mythical_High"];
+  let nakedBuf: Uint8Array | null = null;
+  for (const c of [color, ...EYE_COLORS.filter((x) => x !== color)]) {
+    const nakedHash = `${coll}-${shape}-${c}-0-0-0-0-0-0-0`;
+    const buf = await fetchGlb(`${CDN}/${nakedHash}/${nakedHash}_GLB.glb`);
+    if (buf && isGlb(buf)) { nakedBuf = buf; break; }
+  }
   if (!nakedBuf) return null;
   const target = await io.readBinary(nakedBuf);
 
-  // Fetch each distinct equipped wearable's model once.
-  const ids = [...new Set(slots.filter((s) => s > 0))];
+  // Hand slots first: graft each from its donor official render. Hash slot
+  // order is body-face-eyes-head-RIGHT-LEFT-pet. SIDE MAPPING (verified on
+  // Felon #19095's official GLB + 2D art): the contract/hash RIGHT-hand item
+  // is physically mounted on the rig's Hand_L (and appears on the viewer's
+  // right, matching where the 2D SVG draws it), and vice versa.
+  const handSides: Array<[number, "R" | "L", "R" | "L"]> = [[slots[4], "L", "R"], [slots[5], "R", "L"]];
+  let placedAnything = false;
+  const rootGrafted = new Set<number>(); // WearableRoot pieces: once, not per hand
+  for (const [id, side, contractSide] of handSides) {
+    if (id <= 0 || rootGrafted.has(id)) continue;
+    const placed = await graftHandWearable(target, id, side, contractSide);
+    if (placed) placedAnything = true;
+    if (placed === "root") rootGrafted.add(id);
+  }
+
+  // Pet (slot 6): standalone pet GLBs are authored CENTERED AT THE ORIGIN —
+  // root-merged they render hidden inside the gotchi's body. Official models
+  // position pets via the PetRoot clone subtree (e.g. the Godlike Cacti rig
+  // sits at x≈±1.1), so pets donor-graft exactly like hand props; the plain
+  // merge below stays as the no-donor fallback.
+  let petGrafted = false;
+  if (slots[6] > 0) {
+    petGrafted = (await graftHandWearable(target, slots[6], "L")) !== null;
+    if (petGrafted) placedAnything = true;
+  }
+
+  // Everything else merges as authored. Hand items WITHOUT a donor are
+  // skipped outright: their standalone GLBs are unassembled prefab meshes
+  // (wrong scale/position/rotation), and a missing item beats a floating
+  // artifact. They self-heal into official renders once Pixelcraft's
+  // generator is back (the frontend already queues kicks).
+  const fallbackIds = new Set<number>();
+  for (const [i, id] of slots.entries()) {
+    if (id <= 0) continue;
+    if (i === 4 || i === 5) continue; // hand slots: donor graft only
+    if (i === 6 && petGrafted) continue; // pet already placed via donor
+    fallbackIds.add(id);
+  }
   const parts = new Map<number, Uint8Array>();
-  await Promise.all(ids.map(async (id) => {
+  await Promise.all([...fallbackIds].map(async (id) => {
     const buf = await fetchGlb(WEARABLE_GLB(id));
     if (buf) parts.set(id, buf);
   }));
-  if (parts.size === 0) return null; // nothing renderable to add
+  if (!placedAnything && parts.size === 0) return null; // nothing renderable to add
 
   // Face wearable replaces the default mouth (verified on official models).
   if (slots[1] > 0 && parts.has(slots[1])) {
@@ -71,34 +400,24 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   }
 
   const targetScene = target.getRoot().getDefaultScene() ?? target.getRoot().listScenes()[0];
-  const mergeIn = async (buf: Uint8Array, mirrorX: boolean) => {
+
+  // Merge every non-hand part EXACTLY as authored, no transforms. Ground
+  // truth: in official dressed GLBs the non-hand wearables sit at identity
+  // under the scene root, byte-identical to the standalone GLBs. fallbackIds
+  // is a Set, so an item repeated across slots merges once (duplicating in
+  // place just z-fights).
+  for (const id of fallbackIds) {
+    const buf = parts.get(id);
+    if (!buf) continue;
     const src = await io.readBinary(buf);
     const map = mergeDocuments(target, src);
     for (const scene of src.getRoot().listScenes()) {
-      const merged = map.get(scene);
-      if (!merged) continue;
-      const children = (merged as unknown as typeof scene).listChildren();
-      for (const child of children) {
-        if (mirrorX) {
-          const wrapper = target.createNode(`${child.getName()}_mirror`).setScale([-1, 1, 1]);
-          wrapper.addChild(child);
-          targetScene?.addChild(wrapper);
-        } else {
-          targetScene?.addChild(child);
-        }
-      }
-      (merged as unknown as { dispose: () => void }).dispose();
+      const mergedScene = map.get(scene);
+      if (!mergedScene) continue;
+      const children = (mergedScene as unknown as typeof scene).listChildren();
+      for (const child of children) targetScene?.addChild(child);
+      (mergedScene as unknown as { dispose: () => void }).dispose();
     }
-  };
-
-  for (const [i, id] of slots.entries()) {
-    if (id <= 0) continue;
-    const buf = parts.get(id);
-    if (!buf) continue;
-    // Same item in both hands: the standalone model is authored for one hand;
-    // mirror the second instance across X (slot order here: 4=right, 5=left).
-    const bothHandsSame = (i === 5) && slots[4] === slots[5];
-    await mergeIn(buf, bothHandsSame);
   }
 
   // Static display: strip skinning + animations. Some wearable models are
@@ -116,9 +435,61 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   for (const anim of target.getRoot().listAnimations()) anim.dispose();
   for (const skin of target.getRoot().listSkins()) skin.dispose();
 
-  // unpartition: merged sources each bring a buffer; GLB requires exactly one.
-  await target.transform(dedup(), prune(), unpartition());
+  // Drop stray meshes authored far outside the display envelope (the Wizard
+  // Hat 63 ships a "MagicDust" particle mesh ~10 units below the floor).
+  // They're harmless in Pixelcraft's fixed-camera renders but wreck
+  // model-viewer's auto-framing: the camera zooms out to fit them and the
+  // gotchi renders tiny. Only meshes ENTIRELY outside the envelope go.
+  const ENV_MIN = [-3.5, -0.75, -3.5];
+  const ENV_MAX = [3.5, 4.5, 3.5];
+  for (const node of target.getRoot().listNodes()) {
+    const mesh = node.getMesh();
+    if (!mesh) continue;
+    const wm = node.getWorldMatrix();
+    let min = [Infinity, Infinity, Infinity];
+    let max = [-Infinity, -Infinity, -Infinity];
+    for (const prim of mesh.listPrimitives()) {
+      const pos = prim.getAttribute("POSITION");
+      if (!pos) continue;
+      const mn = pos.getMin([]);
+      const mx = pos.getMax([]);
+      for (const c of [[mn[0], mn[1], mn[2]], [mn[0], mn[1], mx[2]], [mn[0], mx[1], mn[2]], [mn[0], mx[1], mx[2]], [mx[0], mn[1], mn[2]], [mx[0], mn[1], mx[2]], [mx[0], mx[1], mn[2]], [mx[0], mx[1], mx[2]]]) {
+        const w = [
+          wm[0] * c[0] + wm[4] * c[1] + wm[8] * c[2] + wm[12],
+          wm[1] * c[0] + wm[5] * c[1] + wm[9] * c[2] + wm[13],
+          wm[2] * c[0] + wm[6] * c[1] + wm[10] * c[2] + wm[14],
+        ];
+        for (let k = 0; k < 3; k++) { min[k] = Math.min(min[k], w[k]); max[k] = Math.max(max[k], w[k]); }
+      }
+    }
+    const outside = min[0] > ENV_MAX[0] || min[1] > ENV_MAX[1] || min[2] > ENV_MAX[2]
+      || max[0] < ENV_MIN[0] || max[1] < ENV_MIN[1] || max[2] < ENV_MIN[2];
+    if (outside) node.setMesh(null);
+  }
+
+  // Size pass (grid cards load a dozen of these; bytes are the loading
+  // bottleneck): texture-only dedup collapses the duplicated images that
+  // both-hands grafts bring (the historical dedup crash came from node/skin
+  // dedup, so ONLY textures are deduped); weld+quantize roughly halve the
+  // geometry bytes via KHR_mesh_quantization, which model-viewer decodes
+  // natively. unpartition: merged sources each bring a buffer; GLB requires
+  // exactly one.
+  // textureCompress without an encoder still resizes (pure-JS ndarray path):
+  // donors ship 2K normal/albedo maps that dwarf everything else; 1K is
+  // indistinguishable at card/modal sizes and roughly halves the file again.
+  await target.transform(
+    prune(),
+    dedup({ propertyTypes: [PropertyType.TEXTURE] }),
+    weld(),
+    quantize(),
+    textureCompress({ resize: [1024, 1024] }),
+    unpartition(),
+  );
   const out = await io.writeBinary(target);
-  fs.writeFileSync(outFile, out);
+  // Atomic write: a process killed mid-write must never leave a corrupt GLB
+  // that then gets served from cache forever.
+  const tmp = `${outFile}.tmp`;
+  fs.writeFileSync(tmp, out);
+  fs.renameSync(tmp, outFile);
   return outFile;
 }
