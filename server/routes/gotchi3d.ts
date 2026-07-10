@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { composeGotchiGlb, HASH_RE as COMPOSE_HASH_RE, PIPELINE_VERSION } from "../gotchi3d/compose";
-import { officialPoster, resolveModel } from "../gotchi3d/mirror";
+import { mirrorOfficialInBackground, officialExists, officialModelOnDisk, officialPoster, officialProxyUrl } from "../gotchi3d/mirror";
 
 /**
  * Render-kick relay: when the frontend finds a gotchi combo with no 3D model
@@ -82,10 +82,14 @@ router.get("/composed/:hash", async (req, res) => {
 // (old cached frontend, or a pipeline bump) safely degrades to no-cache.
 const cacheHeader = (v: unknown) => (String(v) === PIPELINE_VERSION.replace(/^v/, "") ? "public, max-age=31536000, immutable" : "no-cache");
 
-// THE gotchi model endpoint: official primary render (mirrored to this box
-// forever) when Pixelcraft made one, else our composed model. One URL, one
-// source, one timing — the frontend never talks to CloudFront.
-const modelInFlight = new Map<string, Promise<{ file: string; source: string } | null>>();
+// THE gotchi model endpoint: official primary render when Pixelcraft made
+// one, else our composed model. Cold officials are served by REDIRECTING to
+// the CORS-open render proxy at CDN speed while this box mirrors the file in
+// the background — without that, a grid/tab switch queued dozens of multi-MB
+// server-side downloads and cards sat in 2D for minutes (user-reported on
+// Baazaar/Owned/dress surfaces). Once mirrored (or prewarmed), it serves
+// from local disk.
+const composeInFlight = new Map<string, Promise<string | null>>();
 
 router.get("/model/:hash", async (req, res) => {
   const { hash } = req.params;
@@ -94,20 +98,38 @@ router.get("/model/:hash", async (req, res) => {
     return;
   }
   try {
-    let job = modelInFlight.get(hash);
-    if (!job) {
-      job = resolveModel(hash).finally(() => modelInFlight.delete(hash));
-      modelInFlight.set(hash, job);
+    const onDisk = officialModelOnDisk(hash);
+    if (onDisk) {
+      res.setHeader("Content-Type", "model/gltf-binary");
+      res.setHeader("X-Gotchi3d-Source", "official");
+      res.setHeader("Cache-Control", cacheHeader(req.query.v));
+      res.sendFile(onDisk);
+      return;
     }
-    const model = await job;
-    if (!model) {
+    const exists = await officialExists(hash);
+    if (exists !== false) {
+      // exists, or transiently unknown: hand the browser the fast proxy
+      // either way (a failed redirect just re-resolves on the next view).
+      mirrorOfficialInBackground(hash);
+      res.setHeader("Cache-Control", "no-cache");
+      res.redirect(302, officialProxyUrl(hash));
+      return;
+    }
+    // Definitively no official render: our composed model.
+    let job = composeInFlight.get(hash);
+    if (!job) {
+      job = composeGotchiGlb(hash).finally(() => composeInFlight.delete(hash));
+      composeInFlight.set(hash, job);
+    }
+    const file = await job;
+    if (!file) {
       res.status(404).json({ error: "no model" });
       return;
     }
     res.setHeader("Content-Type", "model/gltf-binary");
-    res.setHeader("X-Gotchi3d-Source", model.source);
+    res.setHeader("X-Gotchi3d-Source", "composed");
     res.setHeader("Cache-Control", cacheHeader(req.query.v));
-    res.sendFile(model.file);
+    res.sendFile(file);
   } catch (e) {
     console.error("GET /api/gotchi3d/model failed", e);
     res.status(500).json({ error: "model failed" });

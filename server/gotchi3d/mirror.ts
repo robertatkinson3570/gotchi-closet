@@ -51,6 +51,48 @@ export async function officialModel(hash: string): Promise<string | null> {
   return mirrorFile(`${CDN}/${hash}/${hash}_GLB.glb`, officialGlbFile(hash), isGlb);
 }
 
+/** Already-mirrored official GLB, disk only — never touches the network. */
+export function officialModelOnDisk(hash: string): string | null {
+  const file = officialGlbFile(hash);
+  return fs.existsSync(file) ? file : null;
+}
+
+/** Does the CDN have an official render for this hash? Fast byte-range
+ *  probe with the definitive-miss cache; null = transient/unknown. */
+export async function officialExists(hash: string): Promise<boolean | null> {
+  const file = officialGlbFile(hash);
+  if (fs.existsSync(file)) return true;
+  if (knownMissing.has(file)) return false;
+  try {
+    const res = await fetch(`${CDN}/${hash}/${hash}_GLB.glb`, {
+      headers: { Range: "bytes=0-3" },
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!res.ok) {
+      knownMissing.add(file);
+      return false;
+    }
+    return true;
+  } catch {
+    return null;
+  }
+}
+
+// Fire-and-forget mirror with in-flight dedup: a grid switching tabs fires
+// dozens of requests for the same cold hashes.
+const mirrorInFlight = new Set<string>();
+export function mirrorOfficialInBackground(hash: string): void {
+  if (mirrorInFlight.has(hash)) return;
+  mirrorInFlight.add(hash);
+  void officialModel(hash).finally(() => mirrorInFlight.delete(hash));
+}
+
+/** The CORS-open proxy in front of the render CDN — used to serve cold
+ *  officials at CDN speed while the background mirror fills our disk. */
+export function officialProxyUrl(hash: string): string {
+  return `https://www.aavegotchi.com/api/renderer/assets?url=${encodeURIComponent(`${CDN}/${hash}/${hash}_GLB.glb`)}`;
+}
+
 /**
  * Re-frame a poster so its content (feet-to-crown, found via alpha) renders
  * at 65% of the canvas height, centered — the same framing our composed
