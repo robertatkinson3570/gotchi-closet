@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { composeGotchiGlb, HASH_RE as COMPOSE_HASH_RE, PIPELINE_VERSION } from "../gotchi3d/compose";
+import { composeGotchiGlbDetached, HASH_RE as COMPOSE_HASH_RE, PIPELINE_VERSION } from "../gotchi3d/compose";
 import { mirrorOfficialInBackground, officialExists, officialModelOnDisk, officialPoster, officialProxyUrl } from "../gotchi3d/mirror";
 import { generatedPoster } from "../gotchi3d/poster-render";
 
@@ -60,7 +60,7 @@ router.get("/composed/:hash", async (req, res) => {
   try {
     let job = inFlight.get(hash);
     if (!job) {
-      job = composeGotchiGlb(hash).finally(() => inFlight.delete(hash));
+      job = composeGotchiGlbDetached(hash).finally(() => inFlight.delete(hash));
       inFlight.set(hash, job);
     }
     const file = await job;
@@ -133,7 +133,7 @@ router.get("/model/:hash", async (req, res) => {
     // Definitively no official render: our composed model.
     let job = composeInFlight.get(hash);
     if (!job) {
-      job = composeGotchiGlb(hash).finally(() => composeInFlight.delete(hash));
+      job = composeGotchiGlbDetached(hash).finally(() => composeInFlight.delete(hash));
       composeInFlight.set(hash, job);
     }
     const file = await job;

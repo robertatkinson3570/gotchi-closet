@@ -10,7 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import ndarray from "ndarray";
 import { getPixels, savePixels } from "ndarray-pixels";
-import { composeGotchiGlb, GOTCHI3D_CACHE_DIR, isGlb } from "./compose";
+import { composeGotchiGlbDetached, GOTCHI3D_CACHE_DIR, isGlb } from "./compose";
 
 const CDN = "https://dzqjok0x69zbl.cloudfront.net";
 
@@ -189,7 +189,7 @@ export async function officialPoster(hash: string): Promise<string | null> {
 export async function resolveModel(hash: string): Promise<{ file: string; source: "official" | "composed" } | null> {
   const official = await officialModel(hash);
   if (official) return { file: official, source: "official" };
-  const composed = await composeGotchiGlb(hash);
+  const composed = await composeGotchiGlbDetached(hash);
   if (composed) return { file: composed, source: "composed" };
   return null;
 }

@@ -24,8 +24,10 @@
 import { NodeIO, Document, Node, PropertyType } from "@gltf-transform/core";
 import { KHRLightsPunctual, KHRMaterialsEmissiveStrength, KHRMaterialsUnlit, KHRTextureTransform } from "@gltf-transform/extensions";
 import { dedup, mergeDocuments, prune, textureCompress, unpartition, weld } from "@gltf-transform/functions";
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import pLimit from "p-limit";
 
 const CDN = "https://dzqjok0x69zbl.cloudfront.net";
 const WEARABLE_GLB = (id: number) => `https://dapp.aavegotchi.com/brand/items/3d/${id}.glb`;
@@ -96,6 +98,39 @@ export { CACHE_DIR as GOTCHI3D_CACHE_DIR };
 export function composedModelOnDisk(hash: string): string | null {
   const file = path.join(CACHE_DIR, `${hash}_GLB.glb`);
   return fs.existsSync(file) ? file : null;
+}
+
+// Composing runs gltf-transform's CPU passes (texture resize, weld) — pure
+// JS that blocks the event loop for tens of seconds. In-process composing
+// froze the whole API while the prewarm ran (measured 57s TTFB on a
+// disk-warm poster). ALL callers go through this child-process wrapper; the
+// in-process composeGotchiGlb is only invoked by compose-cli.ts.
+const detachLimit = pLimit(2); // ~half the VPS cores; leaves room for renders + serving
+const detachInFlight = new Map<string, Promise<string | null>>();
+
+export function composeGotchiGlbDetached(hash: string): Promise<string | null> {
+  const disk = composedModelOnDisk(hash);
+  if (disk) return Promise.resolve(disk);
+  let job = detachInFlight.get(hash);
+  if (!job) {
+    job = detachLimit(
+      () =>
+        new Promise<string | null>((resolve) => {
+          const child = spawn(
+            process.execPath,
+            [path.join("node_modules", "tsx", "dist", "cli.mjs"), path.join("server", "gotchi3d", "compose-cli.ts"), hash],
+            { cwd: process.cwd(), stdio: ["ignore", "ignore", "inherit"], timeout: 5 * 60_000 },
+          );
+          child.on("exit", () => resolve(composedModelOnDisk(hash)));
+          child.on("error", (e) => {
+            console.error(`[gotchi3d] compose child failed to spawn for ${hash}`, e);
+            resolve(null);
+          });
+        }),
+    ).finally(() => detachInFlight.delete(hash));
+    detachInFlight.set(hash, job);
+  }
+  return job;
 }
 
 // Distinguishes "the CDN says this asset doesn't exist" (a definitive answer,
