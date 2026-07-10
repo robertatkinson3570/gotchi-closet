@@ -1,0 +1,35 @@
+name: Enable HTTP/2 on api.gotchicloset.com
+
+# Browsers cap HTTP/1.1 at 6 connections per origin. 3D grids fire a probe
+# pair per card, and cold poster renders legitimately hold a request for up
+# to 45s — over 1.1 those long-holds starve every other card's probe and the
+# whole grid looks wedged (user-reported). HTTP/2 multiplexes them all over
+# one connection, so warm cards resolve instantly regardless of cold renders.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  http2:
+    runs-on: [self-hosted, gotchicloset-vps]
+    timeout-minutes: 5
+    steps:
+      - name: Add http2 to the TLS listeners (idempotent)
+        run: |
+          set -euxo pipefail
+          CONF=/etc/nginx/sites-available/api.gotchicloset.com
+          echo "==== before ===="
+          grep -n "listen" "$CONF"
+          # Append http2 to every ssl listen line that doesn't have it yet.
+          sed -i -E '/http2/! s/^([[:space:]]*listen[^;]*[[:space:]]ssl\b[^;]*);/\1 http2;/' "$CONF"
+          echo "==== after ===="
+          grep -n "listen" "$CONF"
+          nginx -t
+          systemctl reload nginx
+
+      - name: Verify HTTP/2 answers
+        run: |
+          set -euxo pipefail
+          v=$(curl -so /dev/null -w '%{http_version}' --resolve api.gotchicloset.com:443:127.0.0.1 https://api.gotchicloset.com/api/lending/autorenew/health)
+          echo "http_version=$v"
+          [ "$v" = "2" ]
