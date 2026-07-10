@@ -15,7 +15,7 @@ import { createRequire } from "node:module";
 import pLimit from "p-limit";
 import { chromium, type Browser } from "playwright";
 import { GOTCHI3D_CACHE_DIR } from "./compose";
-import { normalizePoster, resolveModel } from "./mirror";
+import { resolveModel } from "./mirror";
 
 const require = createRequire(import.meta.url);
 
@@ -119,15 +119,49 @@ async function renderAttempt(hash: string, modelFile: string): Promise<string | 
       console.error(`[gotchi3d] poster render: model-viewer failed to load ${hash}; page console: ${consoleTail.join(" | ")}`);
       return null;
     }
-    const dataUrl = (await page.evaluate('document.getElementById("mv").toDataURL("image/png")')) as string;
-    const raw = Buffer.from(dataUrl.slice(dataUrl.indexOf(",") + 1), "base64");
-    // Identical alpha-bbox re-framing as the mirrored official cards, so
-    // generated and official posters are pixel-uniform in the same grid.
-    const normalized = (await normalizePoster(new Uint8Array(raw))) ?? new Uint8Array(raw);
+    // Normalize IN THE PAGE (same alpha-bbox 0.65 re-framing as the official
+    // cards, but via native canvas): running it in node's pure-JS pixel loops
+    // blocked the API event loop for seconds per poster — with the prewarm
+    // running, that wedged every interactive request on the VPS.
+    const dataUrl = (await page.evaluate(`(async () => {
+      const mv = document.getElementById("mv");
+      const src = new Image();
+      src.src = mv.toDataURL("image/png");
+      await src.decode();
+      const CARD = 1024, FRACTION = 0.65;
+      const scan = document.createElement("canvas");
+      scan.width = src.width; scan.height = src.height;
+      const sctx = scan.getContext("2d", { willReadFrequently: true });
+      sctx.drawImage(src, 0, 0);
+      const d = sctx.getImageData(0, 0, scan.width, scan.height).data;
+      let minX = scan.width, minY = scan.height, maxX = -1, maxY = -1;
+      for (let y = 0; y < scan.height; y++) {
+        for (let x = 0; x < scan.width; x++) {
+          if (d[(y * scan.width + x) * 4 + 3] > 10) {
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+      if (maxX < 0 || maxY <= minY) return src.src; // fully transparent: keep raw
+      const contentW = maxX - minX + 1, contentH = maxY - minY + 1;
+      const scale = (CARD * FRACTION) / contentH;
+      const out = document.createElement("canvas");
+      out.width = CARD; out.height = CARD;
+      const octx = out.getContext("2d");
+      octx.imageSmoothingEnabled = true;
+      octx.imageSmoothingQuality = "high";
+      const dw = contentW * scale, dh = contentH * scale;
+      octx.drawImage(scan, minX, minY, contentW, contentH, (CARD - dw) / 2, (CARD - dh) / 2, dw, dh);
+      return out.toDataURL("image/png");
+    })()`)) as string;
+    const card = Buffer.from(dataUrl.slice(dataUrl.indexOf(",") + 1), "base64");
     const file = genPngFile(hash);
     fs.mkdirSync(GOTCHI3D_CACHE_DIR, { recursive: true });
     const tmp = `${file}.tmp`;
-    fs.writeFileSync(tmp, normalized);
+    fs.writeFileSync(tmp, card);
     fs.renameSync(tmp, file);
     return file;
   } finally {
@@ -136,6 +170,16 @@ async function renderAttempt(hash: string, modelFile: string): Promise<string | 
 }
 
 const genInFlight = new Map<string, Promise<string | null>>();
+
+// Hashes whose render was started/joined by an INTERACTIVE caller (a real
+// request with a bounded wait). The prewarm pauses while any exist so a
+// browsing user never queues behind background rendering.
+const interactiveHashes = new Set<string>();
+
+/** Is a user actively waiting on poster renders right now? */
+export function hasInteractiveRenderDemand(): boolean {
+  return interactiveHashes.size > 0;
+}
 
 /**
  * Generated poster for a hash: disk hit, else render (deduped per hash).
@@ -159,5 +203,7 @@ export async function generatedPoster(hash: string, waitMs = 45_000): Promise<st
     genInFlight.set(hash, job);
   }
   if (!Number.isFinite(waitMs)) return job;
+  interactiveHashes.add(hash);
+  void job.finally(() => interactiveHashes.delete(hash));
   return Promise.race([job, new Promise<"pending">((r) => setTimeout(() => r("pending"), waitMs))]);
 }

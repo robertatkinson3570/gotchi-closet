@@ -103,12 +103,18 @@ export function officialProxyUrl(hash: string): string {
 const CARD_SIZE = 1024;
 const CONTENT_FRACTION = 0.65;
 
+// These pixel loops run on the API's main thread; without yields a single
+// poster blocks the event loop for seconds — with the prewarm normalizing
+// thousands of official posters, that starved every interactive request.
+const yieldLoop = () => new Promise<void>((r) => setImmediate(r));
+
 export async function normalizePoster(raw: Uint8Array): Promise<Uint8Array | null> {
   try {
     const px = await getPixels(raw, "image/png");
     const [w, h, channels] = px.shape as [number, number, number];
     let minX = w, minY = h, maxX = -1, maxY = -1;
     for (let y = 0; y < h; y++) {
+      if ((y & 63) === 0) await yieldLoop();
       for (let x = 0; x < w; x++) {
         const a = channels > 3 ? px.get(x, y, 3) : 255;
         if (a > 10) {
@@ -128,6 +134,7 @@ export async function normalizePoster(raw: Uint8Array): Promise<Uint8Array | nul
     const offX = (outW - dstW) / 2, offY = (outH - dstH) / 2;
     const out = ndarray(new Uint8Array(outW * outH * 4), [outW, outH, 4]);
     for (let oy = 0; oy < outH; oy++) {
+      if ((oy & 63) === 0) await yieldLoop();
       for (let ox = 0; ox < outW; ox++) {
         const sx = minX + (ox - offX) / scale;
         const sy = minY + (oy - offY) / scale;
