@@ -98,8 +98,14 @@ router.get("/model/:hash", async (req, res) => {
     return;
   }
   try {
+    const isProbe = !!req.query.gcprobe;
     const onDisk = officialModelOnDisk(hash);
     if (onDisk) {
+      if (isProbe) {
+        res.setHeader("Cache-Control", "no-cache");
+        res.status(204).end();
+        return;
+      }
       res.setHeader("Content-Type", "model/gltf-binary");
       res.setHeader("X-Gotchi3d-Source", "official");
       res.setHeader("Cache-Control", cacheHeader(req.query.v));
@@ -108,10 +114,18 @@ router.get("/model/:hash", async (req, res) => {
     }
     const exists = await officialExists(hash);
     if (exists !== false) {
-      // exists, or transiently unknown: hand the browser the fast proxy
-      // either way (a failed redirect just re-resolves on the next view).
+      // exists, or transiently unknown: kick the background mirror. PROBES
+      // are answered right here with an empty 204 — redirecting a probe to
+      // the CDN proxy makes its Range header trigger a cross-origin
+      // preflight the proxy rejects, and every cold card silently fell back
+      // to 2D (user-reported on Owned/Auction surfaces). Real model fetches
+      // (no Range) follow the redirect fine.
       mirrorOfficialInBackground(hash);
       res.setHeader("Cache-Control", "no-cache");
+      if (isProbe) {
+        res.status(204).end();
+        return;
+      }
       res.redirect(302, officialProxyUrl(hash));
       return;
     }
@@ -124,6 +138,11 @@ router.get("/model/:hash", async (req, res) => {
     const file = await job;
     if (!file) {
       res.status(404).json({ error: "no model" });
+      return;
+    }
+    if (isProbe) {
+      res.setHeader("Cache-Control", "no-cache");
+      res.status(204).end();
       return;
     }
     res.setHeader("Content-Type", "model/gltf-binary");
