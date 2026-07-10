@@ -60,7 +60,7 @@ try {
 // wipe outputs stamped with a different version (donor-* files are upstream
 // content, not pipeline output, and fetchDonorGlb validates them on read).
 // Bump on ANY change that alters composed output.
-const PIPELINE_VERSION = "v8";
+export const PIPELINE_VERSION = "v9";
 try {
   const stamp = path.join(CACHE_DIR, ".pipeline-version");
   if (!fs.existsSync(stamp) || fs.readFileSync(stamp, "utf8").trim() !== PIPELINE_VERSION) {
@@ -547,7 +547,7 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   }
 
   // FRAME ANCHOR: two zero-area (invisible) triangles pinning the scene's
-  // bounding box to y ∈ [-0.64, 2.9] (body center 1.13 = box center, so the gotchi sits centered like the posters). Viewers auto-frame to scene bounds, so
+  // bounding box to y in [-0.84, 3.6]: sized so typical content (feet 0 to hat crown ~2.75) renders at ~65% of the frame, the margin measured in Pixelcraft posters.13 = box center, so the gotchi sits centered like the posters). Viewers auto-frame to scene bounds, so
   // without this a petless gotchi fills its card while one with accessories
   // shrinks. Anchored, every composed gotchi's body renders at ~65% of the
   // frame — measured equal to Pixelcraft's own poster framing (their posters
@@ -558,8 +558,8 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
     const anchorPos = target.createAccessor("FrameAnchorPos")
       .setType("VEC3")
       .setArray(new Float32Array([
-        0, -0.64, 0, 0, -0.64, 0, 0, -0.64, 0,
-        0, 2.9, 0, 0, 2.9, 0, 0, 2.9, 0,
+        0, -0.84, 0, 0, -0.84, 0, 0, -0.84, 0,
+        0, 3.6, 0, 0, 3.6, 0, 0, 3.6, 0,
       ]));
     const prim = target.createPrimitive().setAttribute("POSITION", anchorPos);
     const anchorMesh = target.createMesh("FrameAnchor").addPrimitive(prim);

@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { composeGotchiGlb, HASH_RE as COMPOSE_HASH_RE } from "../gotchi3d/compose";
+import { composeGotchiGlb, HASH_RE as COMPOSE_HASH_RE, PIPELINE_VERSION } from "../gotchi3d/compose";
+import { officialPoster, resolveModel } from "../gotchi3d/mirror";
 
 /**
  * Render-kick relay: when the frontend finds a gotchi combo with no 3D model
@@ -67,15 +68,73 @@ router.get("/composed/:hash", async (req, res) => {
       return;
     }
     res.setHeader("Content-Type", "model/gltf-binary");
-    // Versioned URLs (?v=N, bumped in lockstep with the composer's
-    // PIPELINE_VERSION) are immutable: browsers keep the model on disk and
-    // revisits render instantly with zero revalidation. Unversioned requests
-    // stay no-cache + ETag so nothing ever pins stale output.
-    res.setHeader("Cache-Control", req.query.v ? "public, max-age=31536000, immutable" : "no-cache");
+    res.setHeader("Cache-Control", cacheHeader(req.query.v));
     res.sendFile(file);
   } catch (e) {
     console.error("GET /api/gotchi3d/composed failed", e);
     res.status(500).json({ error: "compose failed" });
+  }
+});
+
+// Requests whose ?v matches the live pipeline version are immutable: browsers
+// keep the file on disk and revisits render with zero revalidation. The
+// frontend bumps ?v in lockstep with PIPELINE_VERSION, so a version mismatch
+// (old cached frontend, or a pipeline bump) safely degrades to no-cache.
+const cacheHeader = (v: unknown) => (String(v) === PIPELINE_VERSION.replace(/^v/, "") ? "public, max-age=31536000, immutable" : "no-cache");
+
+// THE gotchi model endpoint: official primary render (mirrored to this box
+// forever) when Pixelcraft made one, else our composed model. One URL, one
+// source, one timing — the frontend never talks to CloudFront.
+const modelInFlight = new Map<string, Promise<{ file: string; source: string } | null>>();
+
+router.get("/model/:hash", async (req, res) => {
+  const { hash } = req.params;
+  if (!COMPOSE_HASH_RE.test(hash)) {
+    res.status(400).json({ error: "bad hash" });
+    return;
+  }
+  try {
+    let job = modelInFlight.get(hash);
+    if (!job) {
+      job = resolveModel(hash).finally(() => modelInFlight.delete(hash));
+      modelInFlight.set(hash, job);
+    }
+    const model = await job;
+    if (!model) {
+      res.status(404).json({ error: "no model" });
+      return;
+    }
+    res.setHeader("Content-Type", "model/gltf-binary");
+    res.setHeader("X-Gotchi3d-Source", model.source);
+    res.setHeader("Cache-Control", cacheHeader(req.query.v));
+    res.sendFile(model.file);
+  } catch (e) {
+    console.error("GET /api/gotchi3d/model failed", e);
+    res.status(500).json({ error: "model failed" });
+  }
+});
+
+// Official poster PNG (exists only for Pixelcraft-rendered combos). Grids
+// use it when available; per-hash content never changes, but the cache rule
+// stays version-locked for symmetry with /model.
+router.get("/poster/:hash", async (req, res) => {
+  const { hash } = req.params;
+  if (!COMPOSE_HASH_RE.test(hash)) {
+    res.status(400).json({ error: "bad hash" });
+    return;
+  }
+  try {
+    const file = await officialPoster(hash);
+    if (!file) {
+      res.status(404).json({ error: "no poster" });
+      return;
+    }
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Cache-Control", cacheHeader(req.query.v));
+    res.sendFile(file);
+  } catch (e) {
+    console.error("GET /api/gotchi3d/poster failed", e);
+    res.status(500).json({ error: "poster failed" });
   }
 });
 

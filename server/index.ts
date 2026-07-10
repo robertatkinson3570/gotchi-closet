@@ -1,4 +1,5 @@
 import { createApp } from "./app";
+import { startPrewarm } from "./gotchi3d/prewarm";
 
 // Load a local .env for development if present. No-op when the file is missing
 // or on older Node without loadEnvFile. Production sets real env vars directly.
