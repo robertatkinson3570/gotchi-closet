@@ -28,6 +28,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import pLimit from "p-limit";
+import { addFireballFlames, buildBasePhone } from "./procedural";
 
 const CDN = "https://dzqjok0x69zbl.cloudfront.net";
 const WEARABLE_GLB = (id: number) => `https://dapp.aavegotchi.com/brand/items/3d/${id}.glb`;
@@ -291,32 +292,42 @@ const MANUAL_HAND_ASSEMBLY: Record<number, {
   translation?: [number, number, number];
   rotation?: [number, number, number, number];
   scale?: number;
+  /** Procedurally authored mesh (no 3D source art exists at all). */
+  build?: (doc: Document) => Node;
 }> = {
   // Haanzo Katana (godlike, Kabuto/Yoroi set): its standalone GLB's own node
   // transform (180° X flip + x10 scale) already yields blade-up +Y with the
   // grip near the origin — the same socket-space pose Spirit Sword uses.
   315: { socketType: "Melee" },
+  // Based Phone: Base-era wearable (418+ have no 3D source art anywhere).
+  // Procedurally authored in procedural.ts, gripped like a held slab. The
+  // socket's +Z points into the body — half-turn so the screen faces out.
+  419: { socketType: "Melee", build: buildBasePhone, rotation: [0, 1, 0, 0] },
 };
 
 /** Place a donor-less item's standalone GLB into a hand socket by hand. */
 async function graftManualHandWearable(target: Document, id: number, side: "L" | "R", ctx: ComposeCtx): Promise<"socket" | null> {
   const manual = MANUAL_HAND_ASSEMBLY[id];
   if (!manual) return null;
-  const buf = await fetchPartGlb(id, ctx);
-  if (!buf) return null;
   const socket = findTargetSocket(target, manual.socketType, side);
   if (!socket) return null;
-  const src = await io.readBinary(buf);
-  const map = mergeDocuments(target, src);
   const holder = target.createNode(`Wearable_Mesh_${id}(Manual)`);
   if (manual.translation) holder.setTranslation(manual.translation);
   if (manual.rotation) holder.setRotation(manual.rotation);
   if (manual.scale) holder.setScale([manual.scale, manual.scale, manual.scale]);
-  for (const scene of src.getRoot().listScenes()) {
-    const mergedScene = map.get(scene);
-    if (!mergedScene) continue;
-    for (const child of [...(mergedScene as unknown as typeof scene).listChildren()]) holder.addChild(child);
-    (mergedScene as unknown as { dispose: () => void }).dispose();
+  if (manual.build) {
+    holder.addChild(manual.build(target));
+  } else {
+    const buf = await fetchPartGlb(id, ctx);
+    if (!buf) { holder.dispose(); return null; }
+    const src = await io.readBinary(buf);
+    const map = mergeDocuments(target, src);
+    for (const scene of src.getRoot().listScenes()) {
+      const mergedScene = map.get(scene);
+      if (!mergedScene) continue;
+      for (const child of [...(mergedScene as unknown as typeof scene).listChildren()]) holder.addChild(child);
+      (mergedScene as unknown as { dispose: () => void }).dispose();
+    }
   }
   socket.addChild(holder);
   return "socket";
@@ -332,10 +343,14 @@ async function graftHandWearable(target: Document, id: number, side: "L" | "R", 
   const donor = donorMap[String(id)];
   if (!donor) return graftManualHandWearable(target, id, side, ctx);
   const buf = await fetchDonorGlb(donor.hash, ctx);
-  if (!buf) return null;
+  if (!buf) return graftManualHandWearable(target, id, side, ctx);
   const src = await io.readBinary(buf);
   const clones = findHandClones(src, id);
-  if (clones.length === 0) return null;
+  // A donor can EXIST yet not contain the item: Pixelcraft's farm rendered
+  // hashes with Base-era items by silently omitting them (verified: the 419
+  // donor GLB has no Wearable_Mesh_419). Manual/procedural assembly is the
+  // fallback, not a dead end.
+  if (clones.length === 0) return graftManualHandWearable(target, id, side, ctx);
   // Prefer the donor instance already on the hand we need (the clone's inner
   // Left/RightHandRoot transforms differ slightly per side).
   const pick = clones.find((c) => c.kind === "socket" && c.side === side) ?? clones[0];
@@ -480,6 +495,11 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
     petGrafted = (await graftHandWearable(target, slots[6], "L", ctx)) !== null;
     if (petGrafted) placedAnything = true;
   }
+
+  // Fireball (130): wrap the grafted bald sphere (Pixelcraft's flame was a
+  // Unity particle effect that never survived export) in authored flame
+  // shells — see procedural.ts.
+  if (slots.includes(130)) addFireballFlames(target);
 
   // Body/face/eyes/head items whose STANDALONE GLB is known-degraded (e.g.
   // 368 Beard of Divinity ships with no texture at all and renders flat
