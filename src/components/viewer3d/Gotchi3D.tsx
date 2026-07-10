@@ -22,8 +22,12 @@ function kickMissingRender(hashes: string[]) {
 }
 
 // Availability results are stable per URL — cache across all cards/session.
-const availabilityCache = new Map<string, boolean>();
-async function srcAvailable(url: string): Promise<boolean> {
+// Tri-state: "missing" (403/404, definitive, cacheable) is different from
+// "transient" (503/5xx/network: server still rendering or hiccuping) — a
+// transient miss keeps the card on 2D for THIS mount but retries next mount.
+type Availability = "ok" | "missing" | "transient";
+const availabilityCache = new Map<string, Availability>();
+async function srcAvailability(url: string): Promise<Availability> {
   const cached = availabilityCache.get(url);
   if (cached !== undefined) return cached;
   try {
@@ -33,14 +37,11 @@ async function srcAvailable(url: string): Promise<boolean> {
     // request.
     const probeUrl = url + (url.includes("?") ? "&" : "?") + "gcprobe=1";
     const r = await fetch(probeUrl, { cache: "no-store", headers: { Range: "bytes=0-0" } });
-    // Only DEFINITIVE misses (403/404: asset absent upstream) cache negative.
-    // Transient statuses (5xx, 429) would otherwise pin a card to 2D for the
-    // whole session — seen on cold servers right after a deploy, when the
-    // composed endpoint is still building its cache.
-    if (r.ok || r.status === 403 || r.status === 404) availabilityCache.set(url, r.ok);
-    return r.ok;
+    const result: Availability = r.ok ? "ok" : r.status === 403 || r.status === 404 ? "missing" : "transient";
+    if (result !== "transient") availabilityCache.set(url, result);
+    return result;
   } catch {
-    return false; // transient: don't cache
+    return "transient";
   }
 }
 
@@ -94,26 +95,29 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
   }, [gotchi.collateral, gotchi.hauntId, traitsKey, wearablesKey]);
   const candidatesKey = (candidate?.src ?? "") + (posterOnly ? "|poster" : "|live");
 
-  // Resolve the first available candidate up front (posters use the same GLB
-  // availability: PNG and GLB exist together per hash; composed is GLB-only).
+  // Resolve availability up front. Grids (posterOnly) probe ONLY the poster:
+  // it's rendered FROM the model so it implies one, and the model probe can
+  // legitimately hold a connection for minutes on a cold outfit — with the
+  // browser's 6-connections-per-origin cap, two probes per card starved
+  // even done-and-on-disk posters behind cold neighbors (user-reported
+  // blank grids). Live viewers still probe the model itself.
   const [resolved, setResolved] = useState<Candidate | null | "pending">("pending");
   const [posterOk, setPosterOk] = useState(false);
+  const [posterPainted, setPosterPainted] = useState(false);
   useEffect(() => {
     if (!enabled || !candidate) return;
     let alive = true;
     setResolved("pending");
     setPosterOk(false);
+    setPosterPainted(false);
     (async () => {
-      // One probe. A cold model composes server-side during this request
-      // (seconds); the card shows the 2D art until it's confirmed ready.
-      const [modelOk, posterAvailable] = await Promise.all([
-        srcAvailable(candidate.src),
-        posterOnly ? srcAvailable(candidate.poster) : Promise.resolve(false),
-      ]);
+      const avail = await srcAvailability(posterOnly ? candidate.poster : candidate.src);
       if (!alive) return;
-      if (!modelOk && isDressed) kickMissingRender(dressedCdnHashes);
-      setPosterOk(posterAvailable);
-      setResolved(modelOk ? candidate : null);
+      if (avail === "missing" && isDressed) kickMissingRender(dressedCdnHashes);
+      setPosterOk(!!posterOnly && avail === "ok");
+      // "transient" (still rendering server-side) stays pending: 2D shows,
+      // no negative cache, the next mount retries — never a naked/blank card.
+      setResolved(avail === "ok" ? candidate : avail === "missing" ? null : "pending");
     })();
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -132,18 +136,23 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
   // Grids are IMAGE-ONLY: poster when it exists, else the 2D art while the
   // server renders one (first cold view). Never fall through to the live
   // model here — a grid of streaming multi-MB GLBs paints as blank cards
-  // (user-reported). The live model stays behind the explicit ⟳.
+  // (user-reported). The live model stays behind the explicit ⟳. The 2D art
+  // also stays visible UNDER the poster until its pixels actually arrive:
+  // a probe-confirmed poster can still queue behind other downloads, and an
+  // empty <img> box reads as a broken card.
   if (posterOnly) {
     if (!posterOk) return <>{fallback}</>;
     return (
       <span className={`relative block ${className ?? ""}`}>
+        {!posterPainted && <span className="absolute inset-0">{fallback}</span>}
         <img
           src={resolved.poster}
           alt={alt}
           title="Pre-rendered 3D view. Press ⟳ for the live, draggable model."
           loading="lazy"
           draggable={false}
-          className="object-contain w-full h-full"
+          onLoad={() => setPosterPainted(true)}
+          className={`object-contain w-full h-full ${posterPainted ? "" : "opacity-0"}`}
         />
       </span>
     );
