@@ -49,18 +49,28 @@ async function* listedGotchis(): AsyncGenerator<Gotchi> {
   for (const l of listings) if (l.gotchi) yield l.gotchi;
 }
 
+// Cold gotchis pipeline through compose (child processes, own limit) and
+// render (chromium, own limit); a strictly serial walk left both half-idle
+// (~1.6 posters/min measured during the v10 regen). Three lanes keep the
+// compose of the next gotchi overlapping the render of the current one.
+const WARM_LANES = 3;
+
 async function runPass(): Promise<void> {
   const counters = { total: 0, cached: 0, official: 0, composed: 0, missing: 0 };
+  const inFlight = new Set<Promise<void>>();
   for (const source of [listedGotchis(), allGotchis()]) {
     for await (const g of source) {
       // A browsing user's renders come first — pause the walk entirely while
       // any interactive poster render is pending.
       while (hasInteractiveRenderDemand()) await sleep(3_000);
-      await warmOne(g, counters);
+      while (inFlight.size >= WARM_LANES) await Promise.race(inFlight);
+      const p: Promise<void> = warmOne(g, counters).finally(() => { inFlight.delete(p); });
+      inFlight.add(p);
       const { total, cached, official, composed, missing } = counters;
       if (total % 500 === 0) console.log(`[gotchi3d] prewarm: ${total} scanned, ${cached} already warm, ${official} official, ${composed} composed, ${missing} unresolvable`);
     }
   }
+  await Promise.all([...inFlight]);
   const { total, cached, official, composed, missing } = counters;
   console.log(`[gotchi3d] prewarm pass complete: ${total} gotchis, ${cached} already warm, ${official} official, ${composed} composed, ${missing} unresolvable`);
 }
