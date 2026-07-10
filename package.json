@@ -55,6 +55,8 @@
     "html-to-image": "^1.11.13",
     "jose": "5.9.6",
     "lucide-react": "^0.344.0",
+    "ndarray": "^1.0.19",
+    "ndarray-pixels": "^5.0.1",
     "node-cron": "^4.2.1",
     "p-limit": "^7.2.0",
     "permissionless": "0.2.57",

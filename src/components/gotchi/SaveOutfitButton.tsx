@@ -14,6 +14,8 @@ import { getRespecBaseTraits } from "@/lib/respec";
 import { useAvailableSkillPoints } from "@/lib/hooks/useAvailableSkillPoints";
 import { AAVEGOTCHI_DIAMOND_BASE } from "@/lib/lending/contracts";
 import { BASE_CHAIN_ID } from "@/lib/chains";
+import { gotchi3dHashes } from "@/lib/gotchi3d";
+import { env } from "@/lib/env";
 
 // Same signature the explorer uses (GotchiActionsPanel) — token id is uint32.
 const RESPEC_COUNT_ABI = [
@@ -323,8 +325,30 @@ export function SaveOutfitButton(props: {
   const onConfirm = useCallback(async () => {
     if (!plan || plan.steps.length === 0) return;
     const ok = await execute(gotchiId, plan.steps);
-    if (ok) onSaved(to16(desired8), respecTarget);
-  }, [plan, execute, gotchiId, onSaved, desired8, respecTarget]);
+    if (!ok) return;
+    onSaved(to16(desired8), respecTarget);
+    // Warm the 3D cache for the new outfit IMMEDIATELY: the new render hash
+    // is derivable right here, so touch /model and the VPS builds and stores
+    // the dressed model before anyone even views it.
+    try {
+      const g = gotchis.find((gg) => gg.id === storeId);
+      const hashes = g?.collateral
+        ? gotchi3dHashes({
+            collateral: g.collateral,
+            hauntId: Number(g.hauntId),
+            numericTraits: (g.numericTraits ?? []).map(Number),
+            equippedWearables: to16(desired8),
+          })
+        : [];
+      if (hashes[0]) {
+        void fetch(`${env.companionApiUrl}/api/gotchi3d/model/${hashes[0]}?v=9&gcprobe=1`, {
+          cache: "no-store",
+          headers: { Range: "bytes=0-0" },
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch { /* best-effort warm */ }
+  }, [plan, execute, gotchiId, onSaved, desired8, respecTarget, gotchis, storeId]);
 
   // Retry re-plans fresh: progress back to idle (confirm view) + re-quote
   // listings; the executor hook already invalidated gotchis/balances on error.
