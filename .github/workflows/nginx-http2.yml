@@ -27,9 +27,20 @@ jobs:
           nginx -t
           systemctl reload nginx
 
-      - name: Verify HTTP/2 answers
+      - name: Verify HTTP/2 answers (restart if reload didn't rebind)
         run: |
           set -euxo pipefail
-          v=$(curl -so /dev/null -w '%{http_version}' --resolve api.gotchicloset.com:443:127.0.0.1 https://api.gotchicloset.com/api/lending/autorenew/health)
-          echo "http_version=$v"
+          probe() { curl -so /dev/null -w '%{http_version}' --resolve api.gotchicloset.com:443:127.0.0.1 https://api.gotchicloset.com/api/lending/autorenew/health; }
+          v=$(probe)
+          echo "after reload: http_version=$v"
+          if [ "$v" != "2" ]; then
+            # Pre-1.25 nginx treats http2 as a listen-socket flag; a HUP reload
+            # can keep the old socket. A restart rebinds (sub-second blip).
+            nginx -V 2>&1 | tr ' ' '\n' | grep -i http_v2 || echo "(no http_v2 module?!)"
+            nginx -T 2>/dev/null | grep -B2 -A8 "server_name api.gotchicloset.com" | head -40
+            systemctl restart nginx
+            sleep 2
+            v=$(probe)
+            echo "after restart: http_version=$v"
+          fi
           [ "$v" = "2" ]
