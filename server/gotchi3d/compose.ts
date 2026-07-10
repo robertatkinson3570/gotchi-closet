@@ -22,6 +22,7 @@
  * Composed files are cached on disk and served by /api/gotchi3d/composed.
  */
 import { NodeIO, Document, Node, PropertyType } from "@gltf-transform/core";
+import { KHRLightsPunctual, KHRMaterialsEmissiveStrength, KHRMaterialsUnlit, KHRTextureTransform } from "@gltf-transform/extensions";
 import { dedup, mergeDocuments, prune, textureCompress, unpartition, weld } from "@gltf-transform/functions";
 import fs from "node:fs";
 import path from "node:path";
@@ -34,12 +35,20 @@ const DONOR_MAP_FILE = path.join(process.cwd(), "server", "gotchi3d", "hand-dono
 // Same shape the frontend derives: <Collateral>-<EyeShape>-<EyeColor>-b-f-e-h-rh-lh-p
 export const HASH_RE = /^([A-Za-z0-9_]+)-([A-Za-z0-9_]+)-([A-Za-z0-9_]+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)$/;
 
-// NOTE: deliberately NOT registering Khronos extensions. Registering them
-// (KHRONOS_EXTENSIONS) makes the merged output hang three.js/model-viewer
-// (verified empirically: Snoop's compose loads without them, hangs with).
-// Unregistered extensions are dropped with a warning, which degrades some
-// material effects but keeps the output parseable.
-const io = new NodeIO();
+// Register EXACTLY the extensions Pixelcraft's assets use (scanned across
+// all cached donors/parts/officials: KHR_texture_transform,
+// KHR_materials_emissive_strength, KHR_lights_punctual, KHR_materials_unlit)
+// so merged output keeps their material effects — screen glows, tiled
+// textures — instead of dropping them. Do NOT register the full
+// KHRONOS_EXTENSIONS bundle: it includes compression codecs (Draco, meshopt)
+// that require decoders we don't ship, which is what made earlier attempts
+// hang (the historical "extensions hang Snoop" verdict).
+const io = new NodeIO().registerExtensions([
+  KHRTextureTransform,
+  KHRMaterialsEmissiveStrength,
+  KHRLightsPunctual,
+  KHRMaterialsUnlit,
+]);
 
 // wearable id -> official dressed render that contains it in a hand socket.
 let donorMap: Record<string, { hash: string }> = {};
@@ -51,7 +60,7 @@ try {
 // wipe outputs stamped with a different version (donor-* files are upstream
 // content, not pipeline output, and fetchDonorGlb validates them on read).
 // Bump on ANY change that alters composed output.
-const PIPELINE_VERSION = "v4";
+const PIPELINE_VERSION = "v5";
 try {
   const stamp = path.join(CACHE_DIR, ".pipeline-version");
   if (!fs.existsSync(stamp) || fs.readFileSync(stamp, "utf8").trim() !== PIPELINE_VERSION) {
