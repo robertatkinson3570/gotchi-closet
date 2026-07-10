@@ -29,7 +29,10 @@ import path from "node:path";
 
 const CDN = "https://dzqjok0x69zbl.cloudfront.net";
 const WEARABLE_GLB = (id: number) => `https://dapp.aavegotchi.com/brand/items/3d/${id}.glb`;
-const CACHE_DIR = path.join(process.cwd(), "server", "data", "gotchi3d-cache");
+// In Docker this MUST point at the persistent volume (set in
+// deploy/docker-compose.yml): the default lands inside the container FS and
+// every deploy silently wiped the whole mirror + poster cache.
+const CACHE_DIR = process.env.GOTCHI3D_CACHE_DIR || path.join(process.cwd(), "server", "data", "gotchi3d-cache");
 const DONOR_MAP_FILE = path.join(process.cwd(), "server", "gotchi3d", "hand-donors.json");
 
 // Same shape the frontend derives: <Collateral>-<EyeShape>-<EyeColor>-b-f-e-h-rh-lh-p

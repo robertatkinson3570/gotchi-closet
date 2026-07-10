@@ -16,6 +16,10 @@ services:
       # Steward enrollments/log DB on the writable volume too — the default ./data/steward.db
       # under /app is not writable, so status/log/enroll/cron would 500 without this.
       - STEWARD_DB_PATH=/srv/gotchicloset/data/steward.db
+      # 3D render cache (official mirrors + composed models + posters) on the
+      # persistent volume — inside the container FS it was wiped every deploy,
+      # restarting the 18.6k prewarm from zero each time.
+      - GOTCHI3D_CACHE_DIR=/srv/gotchicloset/data/gotchi3d-cache
       # Game Center: games.db auto-lands next to companion.db via the COMPANION_DB_PATH
       # fallback (server/games/store.ts). Admin allowlist = the operator's public wallets
       # that may approve/reject submissions (public addresses, not secrets).

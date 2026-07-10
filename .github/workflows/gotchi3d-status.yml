@@ -1,0 +1,33 @@
+name: Gotchi3D cache status
+
+# Read-only progress report for the 3D prewarm: recent prewarm log lines and
+# cache counts straight from the VPS. Dispatch it from the Actions tab (or
+# `gh workflow run gotchi3d-status.yml`) whenever you want a snapshot —
+# touches nothing, restarts nothing.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  status:
+    runs-on: [self-hosted, gotchicloset-vps]
+    timeout-minutes: 3
+    steps:
+      - name: Recent prewarm log
+        run: |
+          set -u
+          docker logs gotchicloset-autorenew --since 24h 2>&1 | grep "\[gotchi3d\]" | tail -25 || echo "(no gotchi3d log lines in the last 24h)"
+
+      - name: Cache counts
+        run: |
+          set -u
+          docker exec gotchicloset-autorenew sh -c '
+            d="${GOTCHI3D_CACHE_DIR:-/app/server/data/gotchi3d-cache}"
+            echo "cache dir: $d"
+            echo "official models : $(ls "$d" 2>/dev/null | grep -c "^official-.*_GLB\.glb$")"
+            echo "official cards  : $(ls "$d" 2>/dev/null | grep -c "^official-.*_Card\.png$")"
+            echo "generated cards : $(ls "$d" 2>/dev/null | grep -c "^gen-.*_Card\.png$")"
+            echo "composed models : $(ls "$d" 2>/dev/null | grep -vE "^(donor-|official-|part-)" | grep -c "_GLB\.glb$")"
+            echo "donor/part files: $(ls "$d" 2>/dev/null | grep -cE "^(donor-|part-)")"
+            echo "disk usage      : $(du -sh "$d" 2>/dev/null | cut -f1)"
+          ' || echo "(container not running?)"
