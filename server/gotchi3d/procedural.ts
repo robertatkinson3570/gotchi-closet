@@ -25,13 +25,42 @@ function unlitMat(doc: Document, name: string, rgba: [number, number, number, nu
   return mat;
 }
 
-function meshNode(doc: Document, name: string, positions: Float32Array, indices: Uint16Array, material: Material): Node {
+function meshNode(doc: Document, name: string, positions: Float32Array, indices: Uint16Array, material: Material, colors?: Float32Array): Node {
   const buffer = doc.getRoot().listBuffers()[0] ?? doc.createBuffer();
   const pos = doc.createAccessor(`${name}-pos`).setType("VEC3").setArray(positions).setBuffer(buffer);
   const idx = doc.createAccessor(`${name}-idx`).setType("SCALAR").setArray(indices).setBuffer(buffer);
   const prim = doc.createPrimitive().setMode(4).setAttribute("POSITION", pos).setIndices(idx).setMaterial(material);
+  // Per-vertex RGBA: unlit shading multiplies baseColor by COLOR_0, giving
+  // smooth gradients (fire blends) impossible with flat per-mesh colors.
+  if (colors) prim.setAttribute("COLOR_0", doc.createAccessor(`${name}-col`).setType("VEC4").setArray(colors).setBuffer(buffer));
   const mesh = doc.createMesh(name).addPrimitive(prim);
   return doc.createNode(name).setMesh(mesh);
+}
+
+/** Fire palette ramp: t 0 (base/center) → 1 (tip/edge). White-yellow heart,
+ *  yellow, orange, deep red — the classic blended fire look. */
+function fireRamp(t: number): [number, number, number, number] {
+  const stops: Array<[number, [number, number, number]]> = [
+    [0.0, [1.0, 0.98, 0.75]],
+    [0.25, [1.0, 0.9, 0.35]],
+    [0.5, [1.0, 0.62, 0.05]],
+    [0.75, [1.0, 0.32, 0.0]],
+    [1.0, [0.82, 0.1, 0.0]],
+  ];
+  const tt = Math.max(0, Math.min(1, t));
+  // glTF vertex colors are LINEAR; the palette is authored in sRGB. Without
+  // this conversion the renderer re-encodes and the fire washes out pale.
+  const lin = (c: number) => Math.pow(c, 2.2);
+  for (let i = 1; i < stops.length; i++) {
+    if (tt <= stops[i][0]) {
+      const [t0, c0] = stops[i - 1];
+      const [t1, c1] = stops[i];
+      const f = (tt - t0) / (t1 - t0);
+      return [lin(c0[0] + (c1[0] - c0[0]) * f), lin(c0[1] + (c1[1] - c0[1]) * f), lin(c0[2] + (c1[2] - c0[2]) * f), 1];
+    }
+  }
+  const last = stops[stops.length - 1][1];
+  return [lin(last[0]), lin(last[1]), lin(last[2]), 1];
 }
 
 /**
@@ -39,11 +68,13 @@ function meshNode(doc: Document, name: string, positions: Float32Array, indices:
  * sideways for the classic licking-flame silhouette instead of a static
  * teardrop; `phase` varies it per shell.
  */
-function flameShell(doc: Document, name: string, R: number, H: number, phase: number, material: Material): Node {
+function flameShell(doc: Document, name: string, R: number, H: number, phase: number, material: Material, rampStart = 0.15): Node {
   const rows = 20;
   const segs = 22;
   const positions = new Float32Array((rows + 1) * (segs + 1) * 3);
+  const colors = new Float32Array((rows + 1) * (segs + 1) * 4);
   let p = 0;
+  let c = 0;
   for (let i = 0; i <= rows; i++) {
     const t = i / rows;
     // Teardrop: full-bellied low, tapering to a point.
@@ -51,11 +82,14 @@ function flameShell(doc: Document, name: string, R: number, H: number, phase: nu
     const y = H * t;
     const bendX = R * 0.34 * Math.sin(4.4 * t + phase) * Math.pow(t, 1.7);
     const bendZ = R * 0.18 * Math.sin(3.1 * t + phase * 1.7) * Math.pow(t, 2.2);
+    // Blend yellow at the base through orange to deep red at the tip.
+    const col = fireRamp(rampStart + (1 - rampStart) * t);
     for (let j = 0; j <= segs; j++) {
       const a = (j / segs) * Math.PI * 2;
       positions[p++] = Math.cos(a) * radius + bendX;
       positions[p++] = y;
       positions[p++] = Math.sin(a) * radius + bendZ;
+      colors[c++] = col[0]; colors[c++] = col[1]; colors[c++] = col[2]; colors[c++] = col[3];
     }
   }
   const indices = new Uint16Array(rows * segs * 6);
@@ -68,7 +102,7 @@ function flameShell(doc: Document, name: string, R: number, H: number, phase: nu
       indices[q++] = a + 1; indices[q++] = b; indices[q++] = b + 1;
     }
   }
-  return meshNode(doc, name, positions, indices, material);
+  return meshNode(doc, name, positions, indices, material, colors);
 }
 
 /** Axis-aligned box centered at `center`. */
@@ -155,28 +189,38 @@ function localBounds(node: Node): { min: Vec3; max: Vec3 } | null {
 
 /** Lat/long sphere with deterministic turbulent radial displacement — the
  *  "boiling fire" surface. disp=0 gives a plain sphere. */
-function noisySphere(doc: Document, name: string, R: number, disp: number, phase: number, material: Material): Node {
+function noisySphere(doc: Document, name: string, R: number, disp: number, phase: number, material: Material, rampBase = 0, rampSpan = 0.5, outwardOnly = false): Node {
   const rows = 24;
   const segs = 28;
   const noise = (x: number, y: number, z: number) =>
     Math.sin(4.9 * x + 1.3 + phase) * Math.sin(4.1 * y + 2.7 + phase * 1.6) +
     0.55 * Math.sin(7.3 * z + 0.9 - phase) * Math.sin(6.1 * x - 1.1 + phase * 0.7);
   const positions = new Float32Array((rows + 1) * (segs + 1) * 3);
+  const colors = new Float32Array((rows + 1) * (segs + 1) * 4);
   let p = 0;
+  let c = 0;
   for (let i = 0; i <= rows; i++) {
     const v = (i / rows) * Math.PI;
     for (let j = 0; j <= segs; j++) {
       const u = (j / segs) * Math.PI * 2;
-      let nx = Math.sin(v) * Math.cos(u);
-      let ny = Math.cos(v);
-      let nz = Math.sin(v) * Math.sin(u);
+      const nx = Math.sin(v) * Math.cos(u);
+      const ny = Math.cos(v);
+      const nz = Math.sin(v) * Math.sin(u);
       // Seam (j=0 vs j=segs) must displace identically; noise is position-based, so it does.
-      const rr = R * (1 + disp * 0.5 * noise(nx, ny, nz));
+      const n = noise(nx, ny, nz);
+      // outwardOnly: bulges never dip below R, so an outer boil shell can't
+      // sink inside the core and open a dark window into its interior.
+      const rr = R * (1 + disp * 0.5 * (outwardOnly ? Math.max(0, n) : n));
       // Fire rises: stretch the upper hemisphere upward a touch.
       const lift = ny > 0 ? 1 + 0.22 * ny : 1;
       positions[p++] = nx * rr;
       positions[p++] = ny * rr * lift;
       positions[p++] = nz * rr;
+      // Hotter where the surface dips inward and low, redder on bulges and
+      // top — the mottled many-shades boil.
+      const heat = rampBase + rampSpan * Math.max(0, Math.min(1, 0.5 + 0.3 * n + 0.35 * ny));
+      const col = fireRamp(heat);
+      colors[c++] = col[0]; colors[c++] = col[1]; colors[c++] = col[2]; colors[c++] = col[3];
     }
   }
   const indices = new Uint16Array(rows * segs * 6);
@@ -189,7 +233,7 @@ function noisySphere(doc: Document, name: string, R: number, disp: number, phase
       indices[q++] = a + 1; indices[q++] = b; indices[q++] = b + 1;
     }
   }
-  return meshNode(doc, name, positions, indices, material);
+  return meshNode(doc, name, positions, indices, material, colors);
 }
 
 /** Quaternion rotating +Y onto direction d (normalized). */
@@ -223,33 +267,52 @@ export function addFireballFlames(doc: Document): void {
     const r = Math.max(b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]) / 2;
     if (r <= 0) continue;
 
+    // The donor "fireball" mesh is a bald translucent sphere; it poked
+    // through the fire surface wherever the boil dipped inward (read as
+    // dark holes). Our fire IS the fireball now — strip the donor meshes,
+    // keep the node for its socket transform.
+    const strip = (n: Node) => {
+      n.setMesh(null);
+      for (const ch of n.listChildren()) if (ch.getName() !== "FireballFlames") strip(ch);
+    };
+    strip(node);
+
     const holder = doc.createNode("FireballFlames").setTranslation(center);
-    const coreMat = unlitMat(doc, "FireCore", [1.0, 0.96, 0.62, 1.0]);
-    const midMat = unlitMat(doc, "FireMid", [1.0, 0.55, 0.04, 0.92]);
-    const outerMat = unlitMat(doc, "FireOuter", [1.0, 0.22, 0.0, 0.5]);
-    const tongueMatA = unlitMat(doc, "FireTongueA", [1.0, 0.45, 0.02, 0.85]);
-    const tongueMatB = unlitMat(doc, "FireTongueB", [1.0, 0.68, 0.08, 0.9]);
+    // ONE white opaque material: the whole fire gradient lives in vertex
+    // colors. Fully opaque everywhere — translucent nested shells produced
+    // depth-sorting artifacts (dark holes where layers overlapped).
+    const solid = unlitMat(doc, "FireSolid", [1, 1, 1, 1]);
 
-    // The ball of fire: opaque molten core swallows the donor sphere, two
-    // turbulent translucent shells boil around it.
-    holder.addChild(noisySphere(doc, "FireCoreBall", r * 1.06, 0.06, 0.0, coreMat));
-    holder.addChild(noisySphere(doc, "FireMidBall", r * 1.24, 0.22, 1.9, midMat));
-    holder.addChild(noisySphere(doc, "FireOuterBall", r * 1.45, 0.34, 4.2, outerMat));
+    // The ball: molten white-yellow heart swallowing the donor sphere, and a
+    // boiling mottled surface running yellow -> orange -> red on the bulges.
+    holder.addChild(noisySphere(doc, "FireCoreBall", r * 1.05, 0.0, 0.0, solid, 0.0, 0.3));
+    holder.addChild(noisySphere(doc, "FireMidBall", r * 1.12, 0.28, 1.9, solid, 0.2, 0.7, true));
 
-    // Crown of licking tongues over the upper hemisphere + one big top flame.
-    holder.addChild(flameShell(doc, "FireTongueTop", r * 0.5, r * 2.3, 0.8, tongueMatB).setTranslation([0, r * 0.75, 0]));
-    const tongues = 6;
-    for (let k = 0; k < tongues; k++) {
-      const az = (k / tongues) * Math.PI * 2 + 0.4;
-      const tilt = 0.55 + 0.2 * Math.sin(k * 2.1); // radians off vertical
-      const d: Vec3 = [Math.sin(tilt) * Math.cos(az), Math.cos(tilt), Math.sin(tilt) * Math.sin(az)];
-      const size = r * (0.26 + 0.1 * ((k * 7) % 3));
+    // MANY clearly separate flames licking off the ball: a tall top flame,
+    // a mid ring sweeping up-and-out, and small side spits — each gradient
+    // yellow base -> orange -> deep red tip.
+    holder.addChild(flameShell(doc, "FireTongueTop", r * 0.55, r * 2.9, 0.8, solid, 0.15).setTranslation([0, r * 0.7, 0]));
+    // Azimuths deliberately avoid ±Z-facing directions: a tongue aimed at
+    // the straight-on poster camera is seen tip-first and reads as a dark
+    // red dot on the ball instead of a flame (the "holes" of v2-v5).
+    const ring = [
+      { az: 0.35, tilt: 0.5, size: 0.42, h: 4.6 },
+      { az: 5.9, tilt: 0.75, size: 0.34, h: 4.0 },
+      { az: 2.6, tilt: 0.45, size: 0.46, h: 5.0 },
+      { az: 3.6, tilt: 0.8, size: 0.3, h: 3.6 },
+      { az: 4.4, tilt: 0.55, size: 0.4, h: 4.4 },
+      { az: 5.0, tilt: 0.7, size: 0.36, h: 4.2 },
+      { az: 0.15, tilt: 1.15, size: 0.24, h: 3.2 },
+      { az: 3.9, tilt: 1.2, size: 0.26, h: 3.4 },
+    ];
+    ring.forEach((f, k) => {
+      const d: Vec3 = [Math.sin(f.tilt) * Math.cos(f.az), Math.cos(f.tilt), Math.sin(f.tilt) * Math.sin(f.az)];
       holder.addChild(
-        flameShell(doc, `FireTongue${k}`, size, size * (3.4 + (k % 2)), k * 1.7, k % 2 ? tongueMatA : tongueMatB)
-          .setTranslation([d[0] * r * 1.02, d[1] * r * 1.02, d[2] * r * 1.02])
+        flameShell(doc, `FireTongue${k}`, r * f.size, r * f.size * f.h, k * 1.7, solid, 0.2)
+          .setTranslation([d[0] * r * 1.0, d[1] * r * 1.0, d[2] * r * 1.0])
           .setRotation(quatFromUp(d)),
       );
-    }
+    });
     node.addChild(holder);
   }
 }
