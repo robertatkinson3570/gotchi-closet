@@ -18,6 +18,18 @@ jobs:
           set -u
           docker logs gotchicloset-autorenew --since 24h 2>&1 | grep "\[gotchi3d\]" | tail -25 || echo "(no gotchi3d log lines in the last 24h)"
 
+      - name: Prewarm knobs and container state
+        run: |
+          set -u
+          echo "==== GOTCHI3D_* in .env (would override/disable the prewarm) ===="
+          grep -E "^GOTCHI3D" /root/gotchicloset/.env || echo "(none in .env)"
+          echo "==== GOTCHI3D_* env inside container ===="
+          docker exec gotchicloset-autorenew env | grep GOTCHI3D || echo "(none in container)"
+          echo "==== container started at ===="
+          docker inspect gotchicloset-autorenew --format '{{.State.StartedAt}}'
+          echo "==== last 15 log lines (any) ===="
+          docker logs gotchicloset-autorenew --tail 15 2>&1
+
       - name: Cache counts
         run: |
           set -u
