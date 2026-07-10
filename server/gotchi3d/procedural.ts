@@ -153,9 +153,64 @@ function localBounds(node: Node): { min: Vec3; max: Vec3 } | null {
   return Number.isFinite(min[0]) ? { min, max } : null;
 }
 
+/** Lat/long sphere with deterministic turbulent radial displacement — the
+ *  "boiling fire" surface. disp=0 gives a plain sphere. */
+function noisySphere(doc: Document, name: string, R: number, disp: number, phase: number, material: Material): Node {
+  const rows = 24;
+  const segs = 28;
+  const noise = (x: number, y: number, z: number) =>
+    Math.sin(4.9 * x + 1.3 + phase) * Math.sin(4.1 * y + 2.7 + phase * 1.6) +
+    0.55 * Math.sin(7.3 * z + 0.9 - phase) * Math.sin(6.1 * x - 1.1 + phase * 0.7);
+  const positions = new Float32Array((rows + 1) * (segs + 1) * 3);
+  let p = 0;
+  for (let i = 0; i <= rows; i++) {
+    const v = (i / rows) * Math.PI;
+    for (let j = 0; j <= segs; j++) {
+      const u = (j / segs) * Math.PI * 2;
+      let nx = Math.sin(v) * Math.cos(u);
+      let ny = Math.cos(v);
+      let nz = Math.sin(v) * Math.sin(u);
+      // Seam (j=0 vs j=segs) must displace identically; noise is position-based, so it does.
+      const rr = R * (1 + disp * 0.5 * noise(nx, ny, nz));
+      // Fire rises: stretch the upper hemisphere upward a touch.
+      const lift = ny > 0 ? 1 + 0.22 * ny : 1;
+      positions[p++] = nx * rr;
+      positions[p++] = ny * rr * lift;
+      positions[p++] = nz * rr;
+    }
+  }
+  const indices = new Uint16Array(rows * segs * 6);
+  let q = 0;
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < segs; j++) {
+      const a = i * (segs + 1) + j;
+      const b = a + segs + 1;
+      indices[q++] = a; indices[q++] = b; indices[q++] = a + 1;
+      indices[q++] = a + 1; indices[q++] = b; indices[q++] = b + 1;
+    }
+  }
+  return meshNode(doc, name, positions, indices, material);
+}
+
+/** Quaternion rotating +Y onto direction d (normalized). */
+function quatFromUp(d: Vec3): [number, number, number, number] {
+  const [x, y, z] = d;
+  const dot = y; // dot([0,1,0], d)
+  if (dot > 0.9999) return [0, 0, 0, 1];
+  if (dot < -0.9999) return [1, 0, 0, 0];
+  const ax = z, ay = 0, az = -x; // cross([0,1,0], d)
+  const len = Math.hypot(ax, ay, az);
+  const half = Math.acos(Math.max(-1, Math.min(1, dot))) / 2;
+  const s = Math.sin(half) / len;
+  return [ax * s, ay * s, az * s, Math.cos(half)];
+}
+
 /**
- * Wrap every grafted fireball sphere in cartoon flame shells. Call once per
- * compose after hand/pet grafting; matches nodes the donor graft named
+ * Replace every grafted fireball's look: the donor "fireball" is a bald
+ * translucent sphere (Pixelcraft's flame was a Unity particle effect that
+ * never survived export). Build a proper ball of fire over it — molten
+ * near-white core, two boiling displaced fire shells, and a crown of
+ * licking flame tongues, all flat-toon unlit. Matches nodes the graft named
  * Wearable_Mesh_130(...).
  */
 export function addFireballFlames(doc: Document): void {
@@ -168,13 +223,33 @@ export function addFireballFlames(doc: Document): void {
     const r = Math.max(b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]) / 2;
     if (r <= 0) continue;
 
-    const holder = doc.createNode("FireballFlames").setTranslation([center[0], b.min[1] + r * 0.15, center[2]]);
-    const outer = unlitMat(doc, "FlameOuter", [1.0, 0.28, 0.02, 0.78]);
-    const mid = unlitMat(doc, "FlameMid", [1.0, 0.58, 0.04, 0.9]);
-    const core = unlitMat(doc, "FlameCore", [1.0, 0.9, 0.42, 1.0]);
-    holder.addChild(flameShell(doc, "FlameShellOuter", r * 1.28, r * 3.1, 0.6, outer));
-    holder.addChild(flameShell(doc, "FlameShellMid", r * 0.92, r * 2.35, 2.9, mid).setTranslation([0, r * 0.08, 0]));
-    holder.addChild(flameShell(doc, "FlameShellCore", r * 0.58, r * 1.55, 4.4, core).setTranslation([0, r * 0.16, 0]));
+    const holder = doc.createNode("FireballFlames").setTranslation(center);
+    const coreMat = unlitMat(doc, "FireCore", [1.0, 0.96, 0.62, 1.0]);
+    const midMat = unlitMat(doc, "FireMid", [1.0, 0.55, 0.04, 0.92]);
+    const outerMat = unlitMat(doc, "FireOuter", [1.0, 0.22, 0.0, 0.5]);
+    const tongueMatA = unlitMat(doc, "FireTongueA", [1.0, 0.45, 0.02, 0.85]);
+    const tongueMatB = unlitMat(doc, "FireTongueB", [1.0, 0.68, 0.08, 0.9]);
+
+    // The ball of fire: opaque molten core swallows the donor sphere, two
+    // turbulent translucent shells boil around it.
+    holder.addChild(noisySphere(doc, "FireCoreBall", r * 1.06, 0.06, 0.0, coreMat));
+    holder.addChild(noisySphere(doc, "FireMidBall", r * 1.24, 0.22, 1.9, midMat));
+    holder.addChild(noisySphere(doc, "FireOuterBall", r * 1.45, 0.34, 4.2, outerMat));
+
+    // Crown of licking tongues over the upper hemisphere + one big top flame.
+    holder.addChild(flameShell(doc, "FireTongueTop", r * 0.5, r * 2.3, 0.8, tongueMatB).setTranslation([0, r * 0.75, 0]));
+    const tongues = 6;
+    for (let k = 0; k < tongues; k++) {
+      const az = (k / tongues) * Math.PI * 2 + 0.4;
+      const tilt = 0.55 + 0.2 * Math.sin(k * 2.1); // radians off vertical
+      const d: Vec3 = [Math.sin(tilt) * Math.cos(az), Math.cos(tilt), Math.sin(tilt) * Math.sin(az)];
+      const size = r * (0.26 + 0.1 * ((k * 7) % 3));
+      holder.addChild(
+        flameShell(doc, `FireTongue${k}`, size, size * (3.4 + (k % 2)), k * 1.7, k % 2 ? tongueMatA : tongueMatB)
+          .setTranslation([d[0] * r * 1.02, d[1] * r * 1.02, d[2] * r * 1.02])
+          .setRotation(quatFromUp(d)),
+      );
+    }
     node.addChild(holder);
   }
 }
