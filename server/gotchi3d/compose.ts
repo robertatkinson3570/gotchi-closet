@@ -65,7 +65,7 @@ try {
 // wipe outputs stamped with a different version (donor-* files are upstream
 // content, not pipeline output, and fetchDonorGlb validates them on read).
 // Bump on ANY change that alters composed output.
-export const PIPELINE_VERSION = "v9";
+export const PIPELINE_VERSION = "v10";
 try {
   const stamp = path.join(CACHE_DIR, ".pipeline-version");
   if (!fs.existsSync(stamp) || fs.readFileSync(stamp, "utf8").trim() !== PIPELINE_VERSION) {
@@ -519,12 +519,11 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   // A genuinely naked gotchi proceeds: the sibling body IS the render.
   if (!isNaked && !placedAnything && parts.size === 0) return null;
 
-  // Face wearable replaces the default mouth (verified on official models).
-  if (slots[1] > 0 && (parts.has(slots[1]) || donorGraftedSlots.has(slots[1]))) {
-    for (const node of target.getRoot().listNodes()) {
-      if (/smile|mouth/i.test(node.getName())) node.dispose();
-    }
-  }
+  // The mouth is NEVER removed for face wearables: official renders keep
+  // every mouth node even under full-coverage items (verified on Slide's
+  // official with Beard of Divinity 368 AND on Dai-...-157: Mouth, Smile_low,
+  // Smile_low_default, Mouth_M all present). An earlier blanket removal here
+  // produced mouthless gotchis for forehead-style face items (#15327).
 
   const targetScene = target.getRoot().getDefaultScene() ?? target.getRoot().listScenes()[0];
 

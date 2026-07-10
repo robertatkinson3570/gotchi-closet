@@ -341,7 +341,7 @@ export function SaveOutfitButton(props: {
           })
         : [];
       if (hashes[0]) {
-        void fetch(`${env.companionApiUrl}/api/gotchi3d/model/${hashes[0]}?v=9&gcprobe=1`, {
+        void fetch(`${env.companionApiUrl}/api/gotchi3d/model/${hashes[0]}?v=10&gcprobe=1`, {
           cache: "no-store",
           headers: { Range: "bytes=0-0" },
           keepalive: true,

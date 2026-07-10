@@ -85,8 +85,8 @@ export function Gotchi3D({ gotchi, className, fallback, onUnavailable, disableZo
     const hash = dressed[0];
     return {
       candidate: {
-        src: `${env.companionApiUrl}/api/gotchi3d/model/${hash}?v=9`,
-        poster: `${env.companionApiUrl}/api/gotchi3d/poster/${hash}?v=9`,
+        src: `${env.companionApiUrl}/api/gotchi3d/model/${hash}?v=10`,
+        poster: `${env.companionApiUrl}/api/gotchi3d/poster/${hash}?v=10`,
       },
       dressedCdnHashes: isDressed ? dressed : [],
     };
