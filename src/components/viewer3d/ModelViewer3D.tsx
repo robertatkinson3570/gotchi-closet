@@ -53,13 +53,14 @@ export function ModelViewer3D({ src, poster, alt, className, onLoadError, disabl
     // empirically — the same "8m" attribute produced per-model scales), while
     // post-load properties + jumpCameraToGoal() stick exactly. Users can
     // still orbit/zoom from this initial view.
-    // Frame like Pixelcraft framed their posters: auto-fit the scene, then
-    // pull back a calibrated margin (115%, matched against poster/GLB twins
-    // e.g. b00bs #20308). A FIXED camera can't work here — poster cards are
-    // auto-framed per scene, so a live card must auto-frame the same way or
-    // it reads bigger/smaller than the posters around it.
+    // Framing is baked into composed models (invisible FrameAnchor bounds -
+    // see server compose), so plain auto-framing is already consistent.
+    // Camera-property overrides are deliberately NOT used: model-viewer
+    // silently clamps absolute radii per model (verified 9m/10m/11m render
+    // identically), which sank three fixed-camera attempts. Just start
+    // straight-on.
     const applyFraming = () => {
-      el.cameraOrbit = "0deg 88deg 115%";
+      el.cameraOrbit = "0deg 88deg 105%";
       el.jumpCameraToGoal?.();
     };
     el.addEventListener("load", applyFraming);

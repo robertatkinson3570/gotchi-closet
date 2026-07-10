@@ -60,7 +60,7 @@ try {
 // wipe outputs stamped with a different version (donor-* files are upstream
 // content, not pipeline output, and fetchDonorGlb validates them on read).
 // Bump on ANY change that alters composed output.
-const PIPELINE_VERSION = "v5";
+const PIPELINE_VERSION = "v6";
 try {
   const stamp = path.join(CACHE_DIR, ".pipeline-version");
   if (!fs.existsSync(stamp) || fs.readFileSync(stamp, "utf8").trim() !== PIPELINE_VERSION) {
@@ -526,6 +526,27 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
     const outside = min[0] > ENV_MAX[0] || min[1] > ENV_MAX[1] || min[2] > ENV_MAX[2]
       || max[0] < ENV_MIN[0] || max[1] < ENV_MIN[1] || max[2] < ENV_MIN[2];
     if (outside) node.setMesh(null);
+  }
+
+  // FRAME ANCHOR: two zero-area (invisible) triangles pinning the scene's
+  // bounding box to y ∈ [-0.05, 3.5]. Viewers auto-frame to scene bounds, so
+  // without this a petless gotchi fills its card while one with accessories
+  // shrinks. Anchored, every composed gotchi's body renders at ~65% of the
+  // frame — measured equal to Pixelcraft's own poster framing (their posters
+  // are body-locked: b00bs 0.661, Immaterial 0.646 content height). Camera-
+  // side fixes were abandoned: model-viewer silently clamps/ignores absolute
+  // orbit radii per model (verified: identical output at 9/10/11m).
+  {
+    const anchorPos = target.createAccessor("FrameAnchorPos")
+      .setType("VEC3")
+      .setArray(new Float32Array([
+        0, -0.05, 0, 0, -0.05, 0, 0, -0.05, 0,
+        0, 3.5, 0, 0, 3.5, 0, 0, 3.5, 0,
+      ]));
+    const prim = target.createPrimitive().setAttribute("POSITION", anchorPos);
+    const anchorMesh = target.createMesh("FrameAnchor").addPrimitive(prim);
+    const anchorNode = target.createNode("FrameAnchor").setMesh(anchorMesh);
+    targetScene?.addChild(anchorNode);
   }
 
   // Size pass (grid cards load a dozen of these; bytes are the loading
