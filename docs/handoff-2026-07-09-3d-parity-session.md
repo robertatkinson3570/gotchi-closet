@@ -218,3 +218,35 @@ in-session; claims marked VERIFIED had a passing test or on-screen confirmation.
 - Core 3D files: `src/lib/gotchi3d.ts`, `src/components/viewer3d/{Gotchi3D,
   ModelViewer3D, Wearable3DThumb}.tsx`, `server/gotchi3d/compose.ts`,
   `server/routes/gotchi3d.ts`.
+
+## 2026-07-10 addendum: poster generator + HTTP/2 (grids now load like 2D)
+
+Item 4 above is BUILT and LIVE. Every gotchi now has a poster PNG:
+official pre-lit card when Pixelcraft made one, else our own server render.
+
+- `server/gotchi3d/poster-render.ts`: headless Chromium (playwright; Docker
+  image ships Debian `chromium`, env `GOTCHI3D_CHROMIUM=/usr/bin/chromium`)
+  loads the resolved GLB in the SAME model-viewer scene as the live viewer
+  (orbit 0deg 88deg 105%, shadow OFF — shadow draws at the frame-anchor floor
+  and skews the alpha bbox) and normalizes IN THE PAGE via canvas to the
+  official cards' 0.65 framing. Do NOT normalize in node: the pure-JS pixel
+  loops blocked the API event loop seconds per poster (prod outage-grade).
+- `GET /api/gotchi3d/poster/:hash`: official card -> generated card ->
+  renders during the request; returns 503 + Retry-After past 45s (never 404
+  — the frontend session-caches 404s). Render continues in background.
+- Prewarm: 2-min boot delay, warms active Baazaar listings FIRST, pauses
+  while any interactive render is pending, skips warm gotchis at full speed.
+  NOTE: every VPS deploy restarts the pass — avoid deploy bursts overnight.
+- nginx now serves HTTP/2 (`.github/workflows/nginx-http2.yml`, dispatch to
+  re-apply). Browsers cap HTTP/1.1 at 6 conns/origin; cold renders held
+  sockets 45s and starved every warm probe — grids looked wedged. GOTCHA:
+  `systemctl reload` does not rebind the http2 listener on nginx 1.18, the
+  workflow falls back to restart. GOTCHA: local Windows curl (Schannel) has
+  no HTTP/2 — verify protocol from the box or a browser, not curl.
+- VPS render speed: ~10-20 s/poster (software GL, limit 2 concurrent). A cold
+  30-card grid overruns the 45 s probe window for later cards: they stay 2D
+  that session, warm for the next. Composes >60 s hit nginx's
+  proxy_read_timeout and surface as CORS-looking probe failures (transient,
+  uncached, self-heal as the cache fills).
+- Frontend unchanged (no Vercel deploy needed): shipped client already
+  prefers posters in grids and falls back 2D -> live model.
