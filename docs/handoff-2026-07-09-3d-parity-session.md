@@ -107,11 +107,19 @@ in-session; claims marked VERIFIED had a passing test or on-screen confirmation.
     from an eye-COLOR sibling (same collateral + eye shape; tint-only diff).
     Unlocked Jo #9369, which could never render at all.
   - Size pass (rendering speed): texture-only dedup (both-hands grafts duplicate
-    images; node/skin dedup stays OFF — that was the historical crash), weld +
-    quantize (KHR_mesh_quantization, decoded natively by model-viewer), and
+    images; node/skin dedup stays OFF — that was the historical crash), weld, and
     textureCompress({resize:[1024,1024]}) which works WITHOUT sharp (pure-JS
-    ndarray path). Composed files went ~4.6MB avg -> ~1.7-3MB (-60%), load in
-    0.4-1.2s warm. All verified pixel-identical via Playwright captures.
+    ndarray path). NO quantize(): its output HANGS three.js on some combos
+    (verified: Immaterial #16559 never fired load with it, instant without).
+    Composed files ~4.6MB avg -> ~1.3-3MB, load 0.4-1.2s warm.
+  - Transient-failure guard: fetch timeouts/junk bodies mark the compose partial;
+    partial output serves once from *_GLB.partial.glb and is NEVER cached (a
+    flaky fetch once pinned a gotchi without its eye wearable forever). Plain
+    403/404 = the CDN definitively lacks the asset, safe to bake into the cache.
+  - PREFER_DONOR_SLOTS: body/face/eyes/head ids whose STANDALONE GLB is degraded
+    graft from donors instead (368 Beard of Divinity ships untextured). NOTE:
+    the official GLB's beard is ALSO plain white in model-viewer; the grey look
+    on poster cards is Pixelcraft's PNG lighting, not a model difference.
   - Same item both hands (socketed): graft twice, one per socket — official models
     show it in both hands (verified vs Grace Hopper #23881's official GLB).
   - Face wearable equipped: remove the default mouth node (/smile|mouth/i).

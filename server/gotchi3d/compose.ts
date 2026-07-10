@@ -22,7 +22,7 @@
  * Composed files are cached on disk and served by /api/gotchi3d/composed.
  */
 import { NodeIO, Document, Node, PropertyType } from "@gltf-transform/core";
-import { dedup, mergeDocuments, prune, quantize, textureCompress, unpartition, weld } from "@gltf-transform/functions";
+import { dedup, mergeDocuments, prune, textureCompress, unpartition, weld } from "@gltf-transform/functions";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -51,7 +51,7 @@ try {
 // wipe outputs stamped with a different version (donor-* files are upstream
 // content, not pipeline output, and fetchDonorGlb validates them on read).
 // Bump on ANY change that alters composed output.
-const PIPELINE_VERSION = "v3";
+const PIPELINE_VERSION = "v4";
 try {
   const stamp = path.join(CACHE_DIR, ".pipeline-version");
   if (!fs.existsSync(stamp) || fs.readFileSync(stamp, "utf8").trim() !== PIPELINE_VERSION) {
@@ -68,20 +68,33 @@ try {
   console.error("[gotchi3d] cache version check failed", e);
 }
 
-async function fetchGlb(url: string): Promise<Uint8Array | null> {
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
-    if (!res.ok) return null;
-    return new Uint8Array(await res.arrayBuffer());
-  } catch {
-    return null;
-  }
-}
-
 /** A real GLB starts with the ASCII magic "glTF"; the CDN's error responses
  *  don't. Never cache or graft from an error body. */
 function isGlb(buf: Uint8Array): boolean {
   return buf.length > 12 && buf[0] === 0x67 && buf[1] === 0x6c && buf[2] === 0x54 && buf[3] === 0x46;
+}
+
+// Distinguishes "the CDN says this asset doesn't exist" (a definitive answer,
+// safe to bake into a cached composed file) from a transient failure (timeout,
+// network blip, junk body). A compose that hit a transient failure must NOT be
+// cached, or the incomplete model gets served forever (seen in prod: gotchis
+// missing an eye wearable permanently after one flaky fetch).
+let sawTransientFailure = false;
+
+async function fetchGlb(url: string): Promise<Uint8Array | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+    if (!res.ok) return null; // 403/404: asset genuinely absent upstream
+    const buf = new Uint8Array(await res.arrayBuffer());
+    if (!isGlb(buf)) {
+      sawTransientFailure = true; // 200 with junk body (flaky proxy)
+      return null;
+    }
+    return buf;
+  } catch {
+    sawTransientFailure = true; // timeout / network error
+    return null;
+  }
 }
 
 /** Donor GLBs are ~5-8 MB; cache them on disk beside the composed output. */
@@ -89,7 +102,10 @@ async function fetchDonorGlb(hash: string): Promise<Uint8Array | null> {
   const file = path.join(CACHE_DIR, `donor-${hash}_GLB.glb`);
   if (fs.existsSync(file)) return new Uint8Array(fs.readFileSync(file));
   const buf = await fetchGlb(`${CDN}/${hash}/${hash}_GLB.glb`);
-  if (!buf || !isGlb(buf)) return null;
+  if (!buf) {
+    sawTransientFailure = true; // donors are known-good renders; absence is transient
+    return null;
+  }
   const tmp = `${file}.tmp`;
   fs.writeFileSync(tmp, buf);
   fs.renameSync(tmp, file);
@@ -332,6 +348,7 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   fs.mkdirSync(CACHE_DIR, { recursive: true });
   const outFile = path.join(CACHE_DIR, `${hash}_GLB.glb`);
   if (fs.existsSync(outFile)) return outFile;
+  sawTransientFailure = false;
 
   // Naked body. When the exact hash was never rendered by Pixelcraft, fall
   // back to an eye-COLOR sibling (same collateral + eye shape): eye color
@@ -373,6 +390,21 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
     if (petGrafted) placedAnything = true;
   }
 
+  // Body/face/eyes/head items whose STANDALONE GLB is known-degraded (e.g.
+  // 368 Beard of Divinity ships with no texture at all and renders flat
+  // white; the official dressed models carry the real material) graft from
+  // their donor render instead of merging the standalone.
+  const PREFER_DONOR_SLOTS = new Set([368]);
+  const donorGraftedSlots = new Set<number>();
+  for (const i of [0, 1, 2, 3]) {
+    const id = slots[i];
+    if (id <= 0 || !PREFER_DONOR_SLOTS.has(id) || donorGraftedSlots.has(id)) continue;
+    if (await graftHandWearable(target, id, "L")) {
+      donorGraftedSlots.add(id);
+      placedAnything = true;
+    }
+  }
+
   // Everything else merges as authored. Hand items WITHOUT a donor are
   // skipped outright: their standalone GLBs are unassembled prefab meshes
   // (wrong scale/position/rotation), and a missing item beats a floating
@@ -383,6 +415,7 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
     if (id <= 0) continue;
     if (i === 4 || i === 5) continue; // hand slots: donor graft only
     if (i === 6 && petGrafted) continue; // pet already placed via donor
+    if (donorGraftedSlots.has(id)) continue;
     fallbackIds.add(id);
   }
   const parts = new Map<number, Uint8Array>();
@@ -393,7 +426,7 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   if (!placedAnything && parts.size === 0) return null; // nothing renderable to add
 
   // Face wearable replaces the default mouth (verified on official models).
-  if (slots[1] > 0 && parts.has(slots[1])) {
+  if (slots[1] > 0 && (parts.has(slots[1]) || donorGraftedSlots.has(slots[1]))) {
     for (const node of target.getRoot().listNodes()) {
       if (/smile|mouth/i.test(node.getName())) node.dispose();
     }
@@ -477,15 +510,25 @@ export async function composeGotchiGlb(hash: string): Promise<string | null> {
   // textureCompress without an encoder still resizes (pure-JS ndarray path):
   // donors ship 2K normal/albedo maps that dwarf everything else; 1K is
   // indistinguishable at card/modal sizes and roughly halves the file again.
+  // NO quantize(): it produced GLBs that hang three.js on some combos
+  // (verified: Immaterial #16559's composed model never fired load with it,
+  // loads instantly without). Texture resize is the bulk of the size win.
   await target.transform(
     prune(),
     dedup({ propertyTypes: [PropertyType.TEXTURE] }),
     weld(),
-    quantize(),
     textureCompress({ resize: [1024, 1024] }),
     unpartition(),
   );
   const out = await io.writeBinary(target);
+  // A compose that hit a transient fetch failure may be missing parts: serve
+  // it (better than nothing right now) but do NOT cache it, so the next
+  // request retries the full composition.
+  if (sawTransientFailure) {
+    const serveOnce = path.join(CACHE_DIR, `${hash}_GLB.partial.glb`);
+    fs.writeFileSync(serveOnce, out);
+    return serveOnce;
+  }
   // Atomic write: a process killed mid-write must never leave a corrupt GLB
   // that then gets served from cache forever.
   const tmp = `${outFile}.tmp`;
