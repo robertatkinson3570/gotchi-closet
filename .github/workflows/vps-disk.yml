@@ -13,15 +13,18 @@ jobs:
     runs-on: [self-hosted, gotchicloset-vps]
     timeout-minutes: 15
     steps:
-      - name: Safe cleanup (dangling images + build cache)
+      - name: Safe cleanup (unused images + build cache)
         run: |
           set -u
           echo "==== df before ===="
           df -h / | tail -1
-          echo "==== reclaiming dangling images ===="
-          docker image prune -f | tail -1
+          # Remove ALL images not referenced by a container (running containers
+          # keep theirs). Clears superseded build-spree images; next build just
+          # re-pulls base layers. Safe for running services.
+          echo "==== reclaiming unused images ===="
+          timeout 300 docker image prune -a -f | tail -1 || echo "(image prune timed out, partial)"
           echo "==== reclaiming build cache ===="
-          docker builder prune -f | tail -1
+          timeout 400 docker builder prune -a -f | tail -1 || echo "(builder prune timed out, partial)"
           echo "==== df after ===="
           df -h / | tail -1
 
