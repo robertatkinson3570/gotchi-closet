@@ -11,27 +11,24 @@ on:
 jobs:
   disk:
     runs-on: [self-hosted, gotchicloset-vps]
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - name: Disk breakdown
-        run: |
-          set -u
-          echo "==== df -h / ===="
-          df -h / | tail -1
-          echo "==== docker system df ===="
-          docker system df
-          echo "==== biggest directories under /root and /var/lib/docker (top level) ===="
-          du -sh /root/* 2>/dev/null | sort -rh | head -8
-          du -sh /var/lib/docker/* 2>/dev/null | sort -rh | head -8
-          echo "==== gotchi3d cache ===="
-          du -sh /var/lib/docker/volumes/gotchicloset_autorenew_data/_data/gotchi3d-cache 2>/dev/null || echo "(volume path differs)"
-
       - name: Safe cleanup (dangling images + build cache)
         run: |
           set -u
+          echo "==== df before ===="
+          df -h / | tail -1
           echo "==== reclaiming dangling images ===="
-          docker image prune -f
+          docker image prune -f | tail -1
           echo "==== reclaiming build cache ===="
-          docker builder prune -f
+          docker builder prune -f | tail -1
           echo "==== df after ===="
           df -h / | tail -1
+
+      - name: Disk breakdown
+        run: |
+          set -u
+          echo "==== docker system df ===="
+          docker system df
+          echo "==== images by size ===="
+          docker images --format '{{.Repository}}:{{.Tag}} {{.Size}} {{.CreatedSince}}' | head -15
