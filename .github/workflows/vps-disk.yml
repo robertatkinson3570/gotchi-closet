@@ -1,0 +1,37 @@
+name: VPS disk report + safe cleanup
+
+# Shows what's eating the disk and reclaims ONLY safe space: dangling Docker
+# images (superseded builds — today's deploy spree left one ~1GB+ image per
+# push) and the Docker build cache. Never touches running containers,
+# volumes, or the gotchi3d cache.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  disk:
+    runs-on: [self-hosted, gotchicloset-vps]
+    timeout-minutes: 10
+    steps:
+      - name: Disk breakdown
+        run: |
+          set -u
+          echo "==== df -h / ===="
+          df -h / | tail -1
+          echo "==== docker system df ===="
+          docker system df
+          echo "==== biggest directories under /root and /var/lib/docker (top level) ===="
+          du -sh /root/* 2>/dev/null | sort -rh | head -8
+          du -sh /var/lib/docker/* 2>/dev/null | sort -rh | head -8
+          echo "==== gotchi3d cache ===="
+          du -sh /var/lib/docker/volumes/gotchicloset_autorenew_data/_data/gotchi3d-cache 2>/dev/null || echo "(volume path differs)"
+
+      - name: Safe cleanup (dangling images + build cache)
+        run: |
+          set -u
+          echo "==== reclaiming dangling images ===="
+          docker image prune -f
+          echo "==== reclaiming build cache ===="
+          docker builder prune -f
+          echo "==== df after ===="
+          df -h / | tail -1
