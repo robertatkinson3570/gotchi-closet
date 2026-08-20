@@ -15,7 +15,7 @@ import { Button } from "@/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { View3DToggle } from "@/components/layout/View3DToggle";
 import { FailoverPill } from "@/components/layout/FailoverPill";
-import { Gv2Banner } from "@/components/layout/Gv2Banner";
+import { GvrBanner } from "@/components/layout/GvrBanner";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { shortenAddress } from "@/lib/address";
 import { FooterAttribution } from "@/components/FooterAttribution";
@@ -205,7 +205,7 @@ export function RootLayout() {
   return (
     <div className="min-h-screen flex flex-col">
       <TrackerProvider />
-      <Gv2Banner />
+      <GvrBanner />
       <header className="h-14 w-full glass-nav sticky top-0 z-30">
         <div className="relative flex h-14 items-center justify-between px-3 md:px-4 gap-3">
           <Link to="/" className="flex items-center gap-1.5 min-w-0 hover:opacity-90 transition-opacity">

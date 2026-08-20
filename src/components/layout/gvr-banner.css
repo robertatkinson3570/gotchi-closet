@@ -1,0 +1,195 @@
+/*
+ * Styling lifted from the Gotchiverse Revival landing page so the banner reads
+ * as a door into the same world: violet/cyan nebula ground, drifting stars, the
+ * chrome GVR wordmark with its signature glint sweep, and a scaled-down copy of
+ * the site's chamfered "Enter" slab.
+ */
+
+.gvr-banner {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(124, 92, 255, 0.45);
+  background:
+    radial-gradient(900px 190px at 50% 8%, rgba(124, 92, 255, 0.62), transparent 72%),
+    radial-gradient(620px 150px at 84% 118%, rgba(255, 77, 216, 0.3), transparent 66%),
+    radial-gradient(560px 150px at 14% 118%, rgba(77, 232, 255, 0.26), transparent 64%),
+    linear-gradient(180deg, #241a5c, #170f38 55%, #0f0b24);
+}
+
+/* Slow sheen across the full bar so the whole strip reads as lit, not static. */
+.gvr-banner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 38%,
+    rgba(159, 226, 255, 0.16) 47%,
+    rgba(196, 166, 255, 0.2) 52%,
+    transparent 61%
+  );
+  background-size: 240% 100%;
+  animation: gvr-sheen 9s ease-in-out infinite;
+}
+
+@keyframes gvr-sheen {
+  0%        { background-position: 150% 0; }
+  65%, 100% { background-position: -60% 0; }
+}
+
+/* Drifting starfield, same dot recipe as the landing page. */
+.gvr-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 70% 20%, rgba(207, 200, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 40% 70%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 85% 60%, rgba(207, 200, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 55% 45%, rgba(255, 255, 255, 0.6), transparent);
+  background-size: 420px 420px;
+  opacity: 0.75;
+  animation: gvr-star-drift 90s linear infinite;
+}
+
+@keyframes gvr-star-drift {
+  from { background-position: 0 0; }
+  to   { background-position: 420px 0; }
+}
+
+.gvr-logo-wrap {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.gvr-logo {
+  display: block;
+  /* Kept small on phones so the spelled-out name gets room to sit on two
+     tidy lines instead of three cramped ones. */
+  height: 24px;
+  width: auto;
+  filter:
+    /* Dark pass first: the wordmark is violet on a violet ground, so it needs
+       edge separation before the glow reads. */
+    drop-shadow(0 1px 3px rgba(8, 3, 24, 0.85))
+    drop-shadow(0 0 10px rgba(124, 92, 255, 0.55))
+    drop-shadow(0 0 24px rgba(95, 240, 255, 0.3));
+}
+
+/* Light sweeping across the chrome, masked to the wordmark's own alpha. */
+.gvr-logo-glint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: color-dodge;
+  -webkit-mask-image: url(/gvr-logo.webp);
+  mask-image: url(/gvr-logo.webp);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.34) 50%, transparent 58%);
+  background-size: 260% 100%;
+  animation: gvr-glint 6s ease-in-out infinite;
+}
+
+@media (min-width: 640px) {
+  .gvr-logo {
+    height: 34px;
+  }
+  .gvr-cta {
+    padding: 6px 16px;
+    font-size: 12px;
+  }
+}
+
+@keyframes gvr-glint {
+  0%        { background-position: 165% 0; }
+  60%, 100% { background-position: -65% 0; }
+}
+
+/* Three brightness tiers: name, then the hook, then the tail. */
+.gvr-copy {
+  font-family: Audiowide, Orbitron, Inter, system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  text-indent: 0.06em;
+  text-transform: uppercase;
+  color: #ded6ff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+
+.gvr-copy-name {
+  color: #fff;
+  text-shadow:
+    0 1px 6px rgba(0, 0, 0, 0.6),
+    0 0 14px rgba(150, 220, 255, 0.6),
+    0 0 34px rgba(124, 92, 255, 0.6);
+}
+
+.gvr-copy-tail {
+  /* Dimmer than the headline so the eye lands on "is live in 3D" first. */
+  color: #b3a8e0;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+
+/* Scaled-down twin of the landing page's chamfered "Enter" slab. */
+.gvr-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 5px 12px;
+  text-decoration: none;
+  font-family: Audiowide, Orbitron, Inter, system-ui, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-indent: 0.14em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(180deg, #b979ff, #8a3cff 34%, #6417e6 64%, #40099f);
+  border: 1px solid rgba(206, 168, 255, 0.75);
+  clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+  text-shadow: 0 2px 6px rgba(12, 4, 32, 0.55);
+  box-shadow:
+    0 8px 22px rgba(8, 3, 26, 0.6),
+    0 0 22px rgba(140, 60, 255, 0.5),
+    inset 0 1px rgba(255, 255, 255, 0.4),
+    inset 0 -10px 18px rgba(20, 4, 52, 0.45);
+  transition: transform 0.16s ease, box-shadow 0.22s ease, filter 0.22s ease;
+}
+
+.gvr-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.12);
+  box-shadow:
+    0 12px 28px rgba(8, 3, 26, 0.7),
+    0 0 34px rgba(140, 60, 255, 0.72),
+    inset 0 1px rgba(255, 255, 255, 0.5),
+    inset 0 -10px 18px rgba(20, 4, 52, 0.45);
+}
+
+.gvr-dismiss {
+  color: rgba(207, 200, 255, 0.6);
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.gvr-dismiss:hover {
+  color: #f0ecff;
+  background-color: rgba(124, 92, 255, 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gvr-banner::before,
+  .gvr-banner::after,
+  .gvr-logo-glint {
+    animation: none;
+  }
+  .gvr-cta:hover {
+    transform: none;
+  }
+}
