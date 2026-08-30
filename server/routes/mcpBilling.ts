@@ -39,6 +39,18 @@ router.post("/account", (req, res) => {
   }
 });
 
+/** GET /api/mcp/plan/:wallet -> the wallet's effective plan + expiry, and nothing
+ *  else (no key): what a client (GVR's Wisp/Desk dialogs, GVR's Holder gate)
+ *  needs to show "active until" instead of Pay, and to grant the paid tier. */
+router.get("/plan/:wallet", (req, res) => {
+  const wallet = String(req.params.wallet ?? "");
+  if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) return res.status(400).json({ error: "wallet (0x) required" });
+  const acct = getAccountByWallet(wallet);
+  if (!acct) return res.json({ wallet: wallet.toLowerCase(), plan: "free", expiresAt: 0 });
+  const plan = effectivePlan(acct);
+  res.json({ wallet: wallet.toLowerCase(), plan, expiresAt: plan === "free" ? 0 : acct.expiresAt });
+});
+
 /** GET /api/mcp/account/:apiKey -> current effective plan + expiry. */
 router.get("/account/:apiKey", (req, res) => {
   const acct = getAccountByKey(String(req.params.apiKey));
