@@ -1,6 +1,6 @@
 import type { ChatMessage, Tier } from "../../src/lib/companion/types";
 
-interface ProviderCfg { url: string; key: string; models: string[] }
+interface ProviderCfg { url: string; key: string; models: string[]; extra?: Record<string, unknown> }
 
 function cfgFor(tier: Tier): ProviderCfg | null {
   if (tier === "premium") {
@@ -10,12 +10,19 @@ function cfgFor(tier: Tier): ProviderCfg | null {
   }
   const key = process.env.GROQ_API_KEY || "";
   if (!key) return null;
-  // The 70B model has a small 100k tokens/DAY free-tier cap; when it's exhausted every chat 429s
-  // and collapses to the "spirits are quiet" template. Fall back to 8b-instant (a SEPARATE daily
-  // bucket) so chat stays alive — lower quality beats dead. Both share the one Groq key.
-  const primary = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
-  const fallback = process.env.GROQ_FALLBACK_MODEL || "llama-3.1-8b-instant";
-  return { url: "https://api.groq.com/openai/v1/chat/completions", key, models: primary === fallback ? [primary] : [primary, fallback] };
+  // 2026-08-29: Groq RETIRED llama-3.3-70b-versatile AND llama-3.1-8b-instant (both answer
+  // model_not_found) — every completion returned null and every gotchi collapsed to the
+  // "spirits are quiet" template for days, in Closet and in GVR alike. The served models are
+  // now the gpt-oss pair (each its own daily free-tier bucket, so the 20b fallback still keeps
+  // chat alive when the 120b cap is hit — lower quality beats dead). They are REASONING models:
+  // without reasoning_effort=low the thinking eats max_tokens and content comes back "".
+  const primary = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+  const fallback = process.env.GROQ_FALLBACK_MODEL || "openai/gpt-oss-20b";
+  return {
+    url: "https://api.groq.com/openai/v1/chat/completions", key,
+    models: primary === fallback ? [primary] : [primary, fallback],
+    extra: { reasoning_effort: process.env.GROQ_REASONING_EFFORT || "low" },
+  };
 }
 
 export async function complete(
@@ -32,6 +39,7 @@ export async function complete(
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.key}` },
         body: JSON.stringify({
           model,
+          ...cfg.extra,
           max_tokens: 320,
           temperature: 0.8,
           messages: [{ role: "system", content: systemPrompt }, ...messages],
@@ -68,6 +76,7 @@ export async function completeWithTools(
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.key}` },
       body: JSON.stringify({
         model,
+        ...cfg.extra,
         max_tokens: 320,
         temperature: 0.7,
         tools,

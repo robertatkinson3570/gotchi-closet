@@ -149,7 +149,7 @@ async function callLLM(prompt) {
   const groq = process.env.GROQ_API_KEY;
   const openai = process.env.OPENAI_API_KEY;
   const cfg = groq
-    ? { url: "https://api.groq.com/openai/v1/chat/completions", key: groq, model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile" }
+    ? { url: "https://api.groq.com/openai/v1/chat/completions", key: groq, model: process.env.GROQ_MODEL || "openai/gpt-oss-120b", extra: { reasoning_effort: "low" } }
     : openai
       ? { url: "https://api.openai.com/v1/chat/completions", key: openai, model: process.env.OPENAI_MODEL || "gpt-4o-mini" }
       : null;
@@ -159,6 +159,7 @@ async function callLLM(prompt) {
     headers: { Authorization: `Bearer ${cfg.key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: cfg.model,
+      ...(cfg.extra ?? {}),
       temperature: 1.0,
       messages: [
         { role: "system", content: "You are a witty, concise crypto-native social writer. Output valid JSON only." },

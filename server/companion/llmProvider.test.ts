@@ -74,3 +74,22 @@ describe("completeWithTools", () => {
     expect(out?.text).not.toContain("<function");
   });
 });
+
+describe("the served Groq models (2026-08-29: llama-3.x retired → every chat was the template)", () => {
+  it("asks Groq for the gpt-oss pair with a low reasoning budget, and never sends that field to OpenAI", async () => {
+    vi.stubEnv("GROQ_API_KEY", "test-key");
+    vi.stubEnv("OPENAI_API_KEY", "test-key");
+    const calls: any[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init: any) => {
+      calls.push(JSON.parse(init.body));
+      return { ok: false, status: 404, text: async () => "model_not_found" };
+    }) as any);
+    await complete("sys", [{ role: "user", content: "hi" }], "free");
+    expect(calls.map((c) => c.model)).toEqual(["openai/gpt-oss-120b", "openai/gpt-oss-20b"]);
+    for (const c of calls) expect(c.reasoning_effort).toBe("low");
+    calls.length = 0;
+    await complete("sys", [{ role: "user", content: "hi" }], "premium");
+    expect(calls.map((c) => c.model)).toEqual(["gpt-4o-mini"]);
+    expect(calls[0]).not.toHaveProperty("reasoning_effort");
+  });
+});
