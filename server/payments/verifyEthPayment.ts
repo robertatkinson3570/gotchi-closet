@@ -52,6 +52,18 @@ export async function verifyUsdcPayment(args: {
   minUnits: bigint;
   expectedFrom?: `0x${string}`;
 }): Promise<VerifyResult> {
+  return verifyTokenPayment({ ...args, token: USDC_BASE, label: "USDC" });
+}
+
+/** Verify an ERC-20 transfer of `token` to expectedTo of at least minUnits (GHST for the Holder plan, USDC as before). */
+export async function verifyTokenPayment(args: {
+  txHash: `0x${string}`;
+  expectedTo: `0x${string}`;
+  minUnits: bigint;
+  expectedFrom?: `0x${string}`;
+  token: `0x${string}`;
+  label?: string;
+}): Promise<VerifyResult> {
   try {
     const receipt = await c().getTransactionReceipt({ hash: args.txHash });
     if (!receipt) return { ok: false, error: "tx not found" };
@@ -59,7 +71,7 @@ export async function verifyUsdcPayment(args: {
     const toLc = args.expectedTo.toLowerCase();
     const fromLc = args.expectedFrom?.toLowerCase();
     for (const log of receipt.logs) {
-      if (log.address.toLowerCase() !== USDC_BASE.toLowerCase()) continue;
+      if (log.address.toLowerCase() !== args.token.toLowerCase()) continue;
       try {
         const decoded = decodeEventLog({ abi: [TRANSFER], data: log.data, topics: log.topics });
         if (decoded.eventName !== "Transfer") continue;
@@ -71,7 +83,7 @@ export async function verifyUsdcPayment(args: {
         // not a Transfer — skip
       }
     }
-    return { ok: false, error: "no matching USDC transfer in tx receipt" };
+    return { ok: false, error: `no matching ${args.label ?? "token"} transfer in tx receipt` };
   } catch (err: any) {
     return { ok: false, error: err?.shortMessage || err?.message || String(err) };
   }

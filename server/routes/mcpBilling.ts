@@ -8,7 +8,8 @@ import { createAccount, getAccountByKey, getAccountByWallet, rotateKey, activate
 import { priceUsd, isValidPurchase, PERIODS } from "../../src/lib/wisp/pricing";
 import { wispManageMessage, isSignedAtFresh } from "../../src/lib/wisp/auth";
 import { usdToEthWei, usdToUsdcUnits } from "../payments/ethUsd";
-import { verifyEthPayment, verifyUsdcPayment } from "../payments/verifyEthPayment";
+import { verifyEthPayment, verifyUsdcPayment, verifyTokenPayment } from "../payments/verifyEthPayment";
+import { GHST_BASE, usdToGhstWei } from "../payments/ghstUsd";
 
 const router = Router();
 
@@ -51,8 +52,14 @@ router.get("/quote", async (req, res) => {
     const plan = String(req.query.plan ?? "");
     const months = Number(req.query.months ?? 0);
     const asset = String(req.query.asset ?? "eth");
+    const ghosts = Math.max(0, Math.floor(Number(req.query.ghosts ?? 0)) || 0);
     if (!isValidPurchase(plan, months)) return res.status(400).json({ error: "invalid plan/period" });
-    const usd = priceUsd(plan, months);
+    const usd = priceUsd(plan, months, ghosts);
+    if (asset === "ghst") {
+      // GHST at the LIVE rate (DeFiLlama); a stale/missing price throws → 502 below, never a fallback quote.
+      const { wei, ghstUsd } = await usdToGhstWei(usd);
+      return res.json({ usd, asset, amountWei: wei.toString(), ghst: Number(wei / 10n ** 12n) / 1_000_000, ghstUsd, receivingWallet: RECEIVING, goodUntil: Date.now() + 5 * 60_000 });
+    }
     if (asset === "eth") {
       const wei = await usdToEthWei(usd);
       return res.json({ usd, asset, amountWei: wei.toString(), receivingWallet: RECEIVING });
@@ -60,7 +67,7 @@ router.get("/quote", async (req, res) => {
     if (asset === "usdc") {
       return res.json({ usd, asset, amountUnits: usdToUsdcUnits(usd).toString(), receivingWallet: RECEIVING });
     }
-    return res.status(400).json({ error: "asset must be eth|usdc" });
+    return res.status(400).json({ error: "asset must be eth|usdc|ghst" });
   } catch (err: any) {
     res.status(502).json({ error: `pricing unavailable: ${err?.message ?? String(err)}` });
   }
@@ -79,12 +86,13 @@ router.post("/buy", async (req, res) => {
     const asset = String(b.asset ?? "");
     const txHash = String(b.txHash ?? "");
     const wallet = b.wallet ? (String(b.wallet) as `0x${string}`) : undefined;
+    const ghosts = Math.max(0, Math.floor(Number(b.extraGhosts ?? 0)) || 0);
 
     if (!getAccountByKey(apiKey)) return res.status(404).json({ error: "account not found" });
     if (!isValidPurchase(plan, months)) return res.status(400).json({ error: "invalid plan/period" });
     if (!txHash.startsWith("0x")) return res.status(400).json({ error: "txHash (0x) required" });
 
-    const usd = priceUsd(plan, months);
+    const usd = priceUsd(plan, months, ghosts);
     let result: Awaited<ReturnType<typeof verifyEthPayment>>;
     if (asset === "eth") {
       const expected = await usdToEthWei(usd);
@@ -93,8 +101,12 @@ router.post("/buy", async (req, res) => {
     } else if (asset === "usdc") {
       const minUnits = (usdToUsdcUnits(usd) * (10_000n - SLIPPAGE_BPS)) / 10_000n;
       result = await verifyUsdcPayment({ txHash: txHash as `0x${string}`, expectedTo: RECEIVING, minUnits, expectedFrom: wallet });
+    } else if (asset === "ghst") {
+      const { wei } = await usdToGhstWei(usd);
+      const minUnits = (wei * (10_000n - SLIPPAGE_BPS)) / 10_000n;
+      result = await verifyTokenPayment({ txHash: txHash as `0x${string}`, expectedTo: RECEIVING, minUnits, expectedFrom: wallet, token: GHST_BASE, label: "GHST" });
     } else {
-      return res.status(400).json({ error: "asset must be eth|usdc" });
+      return res.status(400).json({ error: "asset must be eth|usdc|ghst" });
     }
 
     if (!result.ok) return res.status(402).json({ error: `payment verification failed: ${result.error}` });

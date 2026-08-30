@@ -4,7 +4,8 @@
 // tiers are for EXTERNAL developers/projects only.
 // Pure module: no DOM, no env, no Date.now; safe to import on client and server.
 
-export type WispPlan = "free" | "pro" | "studio";
+export type WispPlan = "free" | "pro" | "studio" | "holder";
+export type WispAsset = "eth" | "usdc" | "ghst";
 
 export interface PlanInfo {
   id: WispPlan;
@@ -15,6 +16,21 @@ export interface PlanInfo {
 }
 
 export const WISP_PLANS: Record<Exclude<WispPlan, "free">, PlanInfo> = {
+  // THE HOLDER PLAN (GVR, 2026-08-30): a gotchi holder who does not own an LLM key.
+  // Metered by gotchis + desk calls, not MCP requests; GHST at the live rate by default.
+  holder: {
+    id: "holder",
+    name: "Holder",
+    usdPerMonth: 9,
+    tagline: "Your gotchi goes to work",
+    features: [
+      "The desk in your gotchi's own voice",
+      "The interview in natural language",
+      "One action a day, one tap, your signature",
+      "AUTOPILOT for 1 gotchi (+$3 each more)",
+      "14 days of autopilot free to start",
+    ],
+  },
   pro: {
     id: "pro",
     name: "Pro",
@@ -58,6 +74,9 @@ export const FREE_PLAN: PlanInfo = {
 
 /** Per-seal on-chain micro-fee (one-time), in USD. */
 export const PER_SEAL_USD = 2;
+/** Holder: each autopilot gotchi beyond the first, per month, in USD. */
+export const GHOST_ADDON_USD = 3;
+export const MAX_EXTRA_GHOSTS = 4;
 
 /** Prepaid billing periods (months) → discount fraction (longer = cheaper). */
 export const PERIODS: { months: number; label: string; discount: number }[] = [
@@ -67,16 +86,17 @@ export const PERIODS: { months: number; label: string; discount: number }[] = [
 ];
 
 /** Total USD price for a paid plan over `months`, applying the period discount. Rounded to whole USD. */
-export function priceUsd(plan: Exclude<WispPlan, "free">, months: number): number {
+export function priceUsd(plan: Exclude<WispPlan, "free">, months: number, extraGhosts = 0): number {
   const info = WISP_PLANS[plan];
   const period = PERIODS.find((p) => p.months === months);
   const discount = period?.discount ?? 0;
-  return Math.round(info.usdPerMonth * months * (1 - discount));
+  const ghosts = plan === "holder" ? Math.max(0, Math.min(MAX_EXTRA_GHOSTS, Math.floor(extraGhosts) || 0)) : 0;
+  return Math.round((info.usdPerMonth + ghosts * GHOST_ADDON_USD) * months * (1 - discount));
 }
 
 /** Validate a (plan, months) pair against the allowed catalog. */
 export function isValidPurchase(plan: string, months: number): plan is Exclude<WispPlan, "free"> {
-  return (plan === "pro" || plan === "studio") && PERIODS.some((p) => p.months === months);
+  return (plan === "pro" || plan === "studio" || plan === "holder") && PERIODS.some((p) => p.months === months);
 }
 
 /** Enforced per-plan limits (must match the marketing copy above). */
@@ -91,6 +111,8 @@ export interface PlanLimits {
 export const PLAN_LIMITS: Record<WispPlan, PlanLimits> = {
   // Free is day-bound (~1k/day); paid tiers are month-bound (day cap == month cap).
   free: { requestsPerDay: 1000, requestsPerMonth: 31000, collections: 1, stateful: false },
+  // Holder is metered by gotchis + desk calls on GVR's side; the MCP itself stays modest.
+  holder: { requestsPerDay: 2000, requestsPerMonth: 60000, collections: 1, stateful: true },
   pro: { requestsPerDay: 25000, requestsPerMonth: 25000, collections: 3, stateful: true },
   studio: { requestsPerDay: 250000, requestsPerMonth: 250000, collections: 9999, stateful: true },
 };
