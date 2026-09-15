@@ -4,7 +4,7 @@
 
 import { Router } from "express";
 import { recoverMessageAddress } from "viem";
-import { createAccount, getAccountByKey, getAccountByWallet, rotateKey, activatePlan, effectivePlan } from "../mcp/accounts";
+import { createAccount, getAccountByKey, getAccountByWallet, getPlanAccountByWallet, lastPaymentMonths, rotateKey, activatePlan, effectivePlan } from "../mcp/accounts";
 import { priceUsd, isValidPurchase, PERIODS } from "../../src/lib/wisp/pricing";
 import { wispManageMessage, isSignedAtFresh } from "../../src/lib/wisp/auth";
 import { usdToEthWei, usdToUsdcUnits } from "../payments/ethUsd";
@@ -41,14 +41,28 @@ router.post("/account", (req, res) => {
 
 /** GET /api/mcp/plan/:wallet -> the wallet's effective plan + expiry, and nothing
  *  else (no key): what a client (GVR's Wisp/Desk dialogs, GVR's Holder gate)
- *  needs to show "active until" instead of Pay, and to grant the paid tier. */
+ *  needs to show "active until" instead of Pay, and to grant the paid tier.
+ *  `plan` + `expiresAt` keep their meaning (a lapsed plan reads free, 0). Added
+ *  for GVR's renewal reminder (GVR docs/briefs/wisp-renewals.md §2), read-only:
+ *  `storedPlan` the plan last paid for, `endedAt` its past expiry once it lapsed
+ *  (0 otherwise: never paid, or still active), `periodMonths` the months of the
+ *  latest payment on that account. The account is the wallet's paid one with the
+ *  latest expiry (getPlanAccountByWallet), so a newer free key cannot hide it. */
 router.get("/plan/:wallet", (req, res) => {
   const wallet = String(req.params.wallet ?? "");
   if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) return res.status(400).json({ error: "wallet (0x) required" });
-  const acct = getAccountByWallet(wallet);
-  if (!acct) return res.json({ wallet: wallet.toLowerCase(), plan: "free", expiresAt: 0 });
+  const acct = getPlanAccountByWallet(wallet);
+  if (!acct) return res.json({ wallet: wallet.toLowerCase(), plan: "free", expiresAt: 0, storedPlan: "free", endedAt: 0, periodMonths: 0 });
   const plan = effectivePlan(acct);
-  res.json({ wallet: wallet.toLowerCase(), plan, expiresAt: plan === "free" ? 0 : acct.expiresAt });
+  const lapsed = plan === "free" && acct.plan !== "free" && acct.expiresAt > 0;
+  res.json({
+    wallet: wallet.toLowerCase(),
+    plan,
+    expiresAt: plan === "free" ? 0 : acct.expiresAt,
+    storedPlan: acct.plan,
+    endedAt: lapsed ? acct.expiresAt : 0,
+    periodMonths: lastPaymentMonths(acct.apiKey),
+  });
 });
 
 /** GET /api/mcp/account/:apiKey -> current effective plan + expiry. */

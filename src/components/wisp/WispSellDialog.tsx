@@ -10,6 +10,9 @@ import {
   GHOST_ADDON_USD,
   MAX_EXTRA_GHOSTS,
   ASSETS_FOR,
+  annualSavingUsd,
+  defaultMonths,
+  monthsOnPlanSwitch,
   periodChipLabel,
   priceUsd,
   type PaidPlan,
@@ -56,7 +59,10 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
   const keyRef = useRef<string | null>(null); // the created key, reused for /buy; not shown until success
   // Same picker as GVR's (wispPlanPicker.ts): Holder first, paid in GHST at the live rate.
   const [plan, setPlan] = useState<PaidPlan>("holder");
-  const [months, setMonths] = useState(1);
+  // THE YEARLY PUSH (GVR wisp-renewals.md §1): Holder opens on the $69 year, Pro/Studio on a month;
+  // a period the player clicks is kept across plan switches.
+  const [months, setMonths] = useState(() => defaultMonths("holder"));
+  const [monthsByHand, setMonthsByHand] = useState(false);
   const [asset, setAsset] = useState<WispAsset>("ghst");
   const [extraGhosts, setExtraGhosts] = useState(0);
   const [ghstQuote, setGhstQuote] = useState<WispQuote | null | undefined>(undefined); // undefined = quoting, null = unavailable
@@ -200,6 +206,7 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
   }, [plan, months, asset, ghostsForPlan]);
 
   function pickPlan(p: PaidPlan) {
+    if (p !== plan) setMonths((m) => monthsOnPlanSwitch(p, m, monthsByHand));
     setPlan(p);
     if (!ASSETS_FOR[p].includes(asset)) setAsset(ASSETS_FOR[p][0]!);
   }
@@ -214,8 +221,8 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
     >
       <div className="text-sm font-bold text-white">{WISP_PLANS[p].name}</div>
       <div className="text-lg font-black text-violet-200">${WISP_PLANS[p].usdPerMonth}<span className="text-[10px] font-normal text-white/40">/mo</span></div>
-      {WISP_PLANS[p].annualUsd !== undefined && (
-        <div className="text-[11px] font-semibold text-white/80">or ${WISP_PLANS[p].annualUsd} a year</div>
+      {annualSavingUsd(p) !== undefined && (
+        <div className="text-[11px] font-semibold text-white/80">or ${WISP_PLANS[p].annualUsd} a year (save ${annualSavingUsd(p)})</div>
       )}
       <div className="mt-0.5 text-[10px] text-white/45">{WISP_PLANS[p].tagline}</div>
       <ul className="mt-1.5 space-y-0.5">
@@ -341,13 +348,13 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
                 <div className="text-[11px] font-semibold text-white/80">autopilot gotchis</div>
                 <div className="mt-1.5 flex items-center gap-2">
                   <button
-                    onClick={() => { setPlan("holder"); setExtraGhosts((g) => Math.max(0, g - 1)); }}
+                    onClick={() => { pickPlan("holder"); setExtraGhosts((g) => Math.max(0, g - 1)); }}
                     className="rounded-md bg-white/10 px-2 py-0.5 text-sm font-bold text-white/80 hover:bg-white/20"
                     aria-label="one fewer autopilot gotchi"
                   >−</button>
                   <span className="font-mono text-sm text-white">{1 + extraGhosts}</span>
                   <button
-                    onClick={() => { setPlan("holder"); setExtraGhosts((g) => Math.min(MAX_EXTRA_GHOSTS, g + 1)); }}
+                    onClick={() => { pickPlan("holder"); setExtraGhosts((g) => Math.min(MAX_EXTRA_GHOSTS, g + 1)); }}
                     className="rounded-md bg-white/10 px-2 py-0.5 text-sm font-bold text-white/80 hover:bg-white/20"
                     aria-label="one more autopilot gotchi"
                   >+</button>
@@ -375,7 +382,7 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
               {PERIODS.map((p) => (
                 <button
                   key={p.months}
-                  onClick={() => setMonths(p.months)}
+                  onClick={() => { setMonthsByHand(true); setMonths(p.months); }}
                   className={`rounded-md px-2 py-1 font-semibold ${months === p.months ? "bg-violet-500/30 text-violet-100" : "bg-white/5 text-white/50 hover:bg-white/10"}`}
                 >
                   {periodChipLabel(p, plan)}

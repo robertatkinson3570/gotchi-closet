@@ -106,11 +106,33 @@ export function priceUsd(plan: Exclude<WispPlan, "free">, months: number, extraG
   return Math.round((info.usdPerMonth + ghosts * GHOST_ADDON_USD) * months * (1 - discount));
 }
 
+/** THE YEARLY SAVING (GVR docs/briefs/wisp-renewals.md §1): what a plan with an annual price saves
+ *  over twelve months at its monthly price, derived from the catalogue (Holder: 9 × 12 − 69 = 39).
+ *  Undefined for a plan with no annual price. Every "save $N" line reads this; none is typed.
+ *  GVR's copy (packages/shared/src/wispPricing.ts) carries the same helper. */
+export function annualSavingUsd(plan: PaidPlan): number | undefined {
+  const info = WISP_PLANS[plan];
+  if (info.annualUsd === undefined) return undefined;
+  return info.usdPerMonth * 12 - info.annualUsd;
+}
+
+/** The period the dialog opens on for a plan: the year for a plan with an annual price, one month
+ *  for every other plan (same rule as GVR's picker). */
+export function defaultMonths(plan: PaidPlan): number {
+  return annualSavingUsd(plan) !== undefined ? 12 : 1;
+}
+
+/** The period after the player switches plan: the new plan's default, unless they already picked a
+ *  period by hand, which is kept. */
+export function monthsOnPlanSwitch(next: PaidPlan, current: number, pickedByHand: boolean): number {
+  return pickedByHand ? current : defaultMonths(next);
+}
+
 /** The period chip's label. The 12-month chip names the annual price on a plan that has one
- *  ("12 months ($69)"); every other chip shows its discount. Same wording as GVR's picker. */
+ *  ("12 months ($69, best value)"); every other chip shows its discount. Same wording as GVR's picker. */
 export function periodChipLabel(period: { months: number; label: string; discount: number }, plan: PaidPlan): string {
   const annualUsd = WISP_PLANS[plan].annualUsd;
-  if (period.months === 12 && annualUsd !== undefined) return `${period.label} ($${annualUsd})`;
+  if (period.months === 12 && annualUsd !== undefined) return `${period.label} ($${annualUsd}, best value)`;
   return `${period.label}${period.discount ? ` (−${Math.round(period.discount * 100)}%)` : ""}`;
 }
 

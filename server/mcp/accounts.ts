@@ -141,6 +141,34 @@ export function getAccountByWallet(wallet: string): WispAccount | null {
   return r ? toAccount(r) : null;
 }
 
+/**
+ * The account that carries a wallet's PLAN (GET /plan/:wallet, GVR's Holder gate): the paid account
+ * with the latest expiry, active or lapsed, else the newest account. Not getAccountByWallet's newest:
+ * both Wisp dialogs create a fresh free account on every Pay press, before the wallet prompt, and
+ * POST /account needs no signature, so a cancelled renewal (or anyone posting the wallet) used to make
+ * a paying Holder read free. Choosing by paid expiry can only surface time a verified payment bought.
+ */
+export function getPlanAccountByWallet(wallet: string): WispAccount | null {
+  const d = ensure();
+  const r = d
+    .prepare(
+      `SELECT * FROM wisp_accounts WHERE owner_wallet = ?
+       ORDER BY (plan != 'free') DESC, expires_at DESC, created_at DESC LIMIT 1`
+    )
+    .get(wallet.toLowerCase()) as AccountRow | undefined;
+  return r ? toAccount(r) : null;
+}
+
+/** Months of the latest verified payment credited to an account (0 = never paid). The renewal
+ *  reminder reads it to offer the year only to a plan bought for less than one. */
+export function lastPaymentMonths(apiKey: string): number {
+  const d = ensure();
+  const r = d
+    .prepare(`SELECT months FROM wisp_payments WHERE api_key = ? ORDER BY paid_at DESC, rowid DESC LIMIT 1`)
+    .get(apiKey) as { months: number } | undefined;
+  return r ? Number(r.months) || 0 : 0;
+}
+
 /** Rotate the API key (revokes the old one). Returns the updated account. */
 export function rotateKey(apiKey: string): WispAccount {
   const d = ensure();
