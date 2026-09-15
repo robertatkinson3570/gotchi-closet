@@ -13,6 +13,8 @@ export interface PlanInfo {
   usdPerMonth: number;
   tagline: string;
   features: string[];
+  /** The whole 12-month period in USD, when the plan has an annual price (replaces usdPerMonth × 12 × the discount). */
+  annualUsd?: number;
 }
 
 export const WISP_PLANS: Record<Exclude<WispPlan, "free">, PlanInfo> = {
@@ -22,13 +24,15 @@ export const WISP_PLANS: Record<Exclude<WispPlan, "free">, PlanInfo> = {
     id: "holder",
     name: "Holder",
     usdPerMonth: 9,
+    // THE ANNUAL HOLDER (GVR gotchi-agent-program.md §8.1): $69 for 12 months. GVR quotes GHST
+    // from its own copy of this catalogue, so the two priceUsd copies must agree to the dollar.
+    annualUsd: 69,
     tagline: "Your gotchi goes to work",
     features: [
       "The desk in your gotchi's own voice",
       "The interview in natural language",
       "One action a day, one tap, your signature",
       "AUTOPILOT for 1 gotchi (+$3 each more)",
-      "14 days of autopilot free to start",
     ],
   },
   pro: {
@@ -85,12 +89,17 @@ export const PERIODS: { months: number; label: string; discount: number }[] = [
   { months: 12, label: "12 months", discount: 0.2 },
 ];
 
-/** Total USD price for a paid plan over `months`, applying the period discount. Rounded to whole USD. */
+/** Total USD price for a paid plan over `months`, applying the period discount. Rounded to whole USD.
+ *  A plan with an annual price pays it for 12 months; each extra ghost still costs its monthly add-on
+ *  over 12 months at the 12-month discount (the same branch, term for term, as GVR's copy). */
 export function priceUsd(plan: Exclude<WispPlan, "free">, months: number, extraGhosts = 0): number {
   const info = WISP_PLANS[plan];
   const period = PERIODS.find((p) => p.months === months);
   const discount = period?.discount ?? 0;
   const ghosts = plan === "holder" ? Math.max(0, Math.min(MAX_EXTRA_GHOSTS, Math.floor(extraGhosts) || 0)) : 0;
+  if (months === 12 && info.annualUsd !== undefined) {
+    return Math.round(info.annualUsd + ghosts * GHOST_ADDON_USD * 12 * (1 - discount));
+  }
   return Math.round((info.usdPerMonth + ghosts * GHOST_ADDON_USD) * months * (1 - discount));
 }
 

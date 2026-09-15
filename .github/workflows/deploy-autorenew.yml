@@ -125,11 +125,13 @@ jobs:
           docker compose -p gotchicloset -f deploy/docker-compose.yml logs --tail=200 || true
           echo "==== container inspect (state) ===="
           docker inspect gotchicloset-autorenew --format '{{json .State}}' 2>/dev/null | python3 -m json.tool || true
-          echo "==== .env presence + sanitized vars ===="
+          echo "==== .env presence + variable names (values never printed) ===="
+          # Names and value lengths only. This repo's Actions logs are PUBLIC, and a key set by
+          # hand on the box (LOCAL_LLM_KEY, the hot wallet key) is not a GitHub secret, so the
+          # runner would not mask it: the old `grep -v HOT_WALLET .env | head -30` printed them.
           if [[ -f .env ]]; then
             stat .env
-            grep -v 'AUTORENEW_HOT_WALLET_KEY' .env | head -30 || true
-            grep '^AUTORENEW_HOT_WALLET_KEY=' .env | sed 's/=.*/=<redacted len='"$(grep '^AUTORENEW_HOT_WALLET_KEY=' .env | wc -c)"'>/'
+            awk -F= '/^[A-Za-z_][A-Za-z0-9_]*=/{ n=$1; sub(/^[^=]*=/, ""); printf "%s=<len %d>\n", n, length($0) }' .env || true
           else
             echo "(no .env file)"
           fi
