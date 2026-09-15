@@ -188,8 +188,29 @@ describe("the local model first on the free tier (LOCAL_LLM_URL, the owner's gri
     expect(info).not.toHaveBeenCalled();
   });
 
-  it("leaves the premium tier on OpenAI even with a local model configured", async () => {
+  it("answers the premium tier from the local model first, like GVR", async () => {
     useLocal();
+    vi.stubEnv("OPENAI_API_KEY", "openai-key");
+    const urls: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => { urls.push(url); return ok({ content: "local boo" }); }) as any);
+    expect(await complete("sys", hi, "premium")).toBe("local boo");
+    expect(urls).toEqual([LOCAL]);
+  });
+
+  it("falls the premium tier through to OpenAI (never Groq) when the local model fails", async () => {
+    useLocal();
+    vi.stubEnv("OPENAI_API_KEY", "openai-key");
+    const urls: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      urls.push(url);
+      return url === LOCAL ? { ok: false, status: 503, json: async () => ({}) } : ok({ content: "premium boo" });
+    }) as any);
+    expect(await complete("sys", hi, "premium")).toBe("premium boo");
+    expect(urls).toEqual([LOCAL, "https://api.openai.com/v1/chat/completions"]);
+  });
+
+  it("keeps the premium tier on OpenAI alone with LOCAL_LLM_URL unset", async () => {
+    vi.stubEnv("LOCAL_LLM_URL", "");
     vi.stubEnv("OPENAI_API_KEY", "openai-key");
     const urls: string[] = [];
     vi.stubGlobal("fetch", vi.fn(async (url: string) => { urls.push(url); return ok({ content: "premium boo" }); }) as any);

@@ -52,17 +52,18 @@ function groqCfg(): ProviderCfg | null {
   };
 }
 
-/** The providers a tier tries, in order. Premium = OpenAI only (unchanged). Free = the local
- *  model first when LOCAL_LLM_URL is set, then the Groq pair; with it unset, exactly the Groq pair. */
+/** The providers a tier tries, in order. BOTH tiers try the local model first when LOCAL_LLM_URL
+ *  is set, the same as GVR's companion (the owner's grimtwo, no per-token cost). Then: premium =
+ *  OpenAI, free = the Groq pair. With LOCAL_LLM_URL unset, each tier is exactly what it was. */
 function chainFor(tier: Tier): ProviderCfg[] {
-  if (tier === "premium") {
-    const key = process.env.OPENAI_API_KEY || "";
-    if (!key) return [];
-    return [{ name: "openai", url: "https://api.openai.com/v1/chat/completions", key, models: [process.env.OPENAI_MODEL || "gpt-4o-mini"] }];
-  }
   const chain: ProviderCfg[] = [];
   const local = localCfg();
   if (local) chain.push(local);
+  if (tier === "premium") {
+    const key = process.env.OPENAI_API_KEY || "";
+    if (key) chain.push({ name: "openai", url: "https://api.openai.com/v1/chat/completions", key, models: [process.env.OPENAI_MODEL || "gpt-4o-mini"] });
+    return chain;
+  }
   const groq = groqCfg();
   if (groq) chain.push(groq);
   return chain;

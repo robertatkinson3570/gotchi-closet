@@ -1,5 +1,6 @@
 // Client calls to the Wisp billing API (server: server/routes/mcpBilling.ts).
 import { env } from "@/lib/env";
+import type { WispAsset } from "@/lib/wisp/pricing";
 
 const apiBase = () => env.companionApiUrl || "";
 
@@ -15,18 +16,22 @@ export async function createWispAccount(wallet?: string): Promise<{ apiKey: stri
 
 export interface WispQuote {
   usd: number;
-  asset: "eth" | "usdc";
-  amountWei?: string; // eth
+  asset: WispAsset;
+  amountWei?: string; // eth, ghst (18 decimals)
   amountUnits?: string; // usdc (6 decimals)
+  ghst?: number; // ghst: the amount, for display
+  ghstUsd?: number; // ghst: the live rate the quote used
+  goodUntil?: number; // ghst: re-quote after this
   receivingWallet: `0x${string}`;
 }
 
 export async function getWispQuote(
   plan: string,
   months: number,
-  asset: "eth" | "usdc"
+  asset: WispAsset,
+  extraGhosts = 0
 ): Promise<WispQuote> {
-  const res = await fetch(`${apiBase()}/api/mcp/quote?plan=${plan}&months=${months}&asset=${asset}`);
+  const res = await fetch(`${apiBase()}/api/mcp/quote?plan=${plan}&months=${months}&asset=${asset}&ghosts=${extraGhosts}`);
   if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error || "quote failed");
   return res.json();
 }
@@ -35,7 +40,8 @@ export async function buyWispPlan(args: {
   apiKey: string;
   plan: string;
   months: number;
-  asset: "eth" | "usdc";
+  asset: WispAsset;
+  extraGhosts?: number;
   txHash: string;
   wallet?: string;
 }): Promise<{ ok: boolean; plan: string; expiresAt: number }> {

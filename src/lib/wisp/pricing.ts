@@ -1,11 +1,13 @@
 // Wisp pricing, shared by the in-app sell dialog (display) and the server
-// (payment-amount validation). USD-denominated; paid in ETH/USDC on Base.
+// (payment-amount validation). USD-denominated; paid in GHST at the live rate, ETH or USDC on Base.
+// GVR carries the same catalogue (packages/shared/src/wispPricing.ts); the two must agree.
 // gotchi-closet itself pays nothing (it's customer #1, used internally); these
 // tiers are for EXTERNAL developers/projects only.
 // Pure module: no DOM, no env, no Date.now; safe to import on client and server.
 
 export type WispPlan = "free" | "pro" | "studio" | "holder";
 export type WispAsset = "eth" | "usdc" | "ghst";
+export type PaidPlan = Exclude<WispPlan, "free">;
 
 export interface PlanInfo {
   id: WispPlan;
@@ -33,6 +35,7 @@ export const WISP_PLANS: Record<Exclude<WispPlan, "free">, PlanInfo> = {
       "The interview in natural language",
       "One action a day, one tap, your signature",
       "AUTOPILOT for 1 gotchi (+$3 each more)",
+      "The Steward and the Lending Desk",
     ],
   },
   pro: {
@@ -102,6 +105,21 @@ export function priceUsd(plan: Exclude<WispPlan, "free">, months: number, extraG
   }
   return Math.round((info.usdPerMonth + ghosts * GHOST_ADDON_USD) * months * (1 - discount));
 }
+
+/** The period chip's label. The 12-month chip names the annual price on a plan that has one
+ *  ("12 months ($69)"); every other chip shows its discount. Same wording as GVR's picker. */
+export function periodChipLabel(period: { months: number; label: string; discount: number }, plan: PaidPlan): string {
+  const annualUsd = WISP_PLANS[plan].annualUsd;
+  if (period.months === 12 && annualUsd !== undefined) return `${period.label} ($${annualUsd})`;
+  return `${period.label}${period.discount ? ` (−${Math.round(period.discount * 100)}%)` : ""}`;
+}
+
+/** The assets a plan can be paid in. Holder is GHST-first at the live rate; every plan keeps ETH/USDC. */
+export const ASSETS_FOR: Record<PaidPlan, readonly WispAsset[]> = {
+  holder: ["ghst", "eth", "usdc"],
+  pro: ["ghst", "eth", "usdc"],
+  studio: ["ghst", "eth", "usdc"],
+};
 
 /** Validate a (plan, months) pair against the allowed catalog. */
 export function isValidPurchase(plan: string, months: number): plan is Exclude<WispPlan, "free"> {

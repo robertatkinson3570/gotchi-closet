@@ -152,7 +152,7 @@ const DIAGRAMS = [
   { id: "all", label: "Everything (one page)", src: "/diagrams/architecture-all.svg", caption: "All five views merged into one comprehensive diagram" },
   { id: "overview", label: "Overview", src: "/diagrams/gotchi-closet-architecture.svg", caption: "Client → Backend → On-chain (Base 8453), with subgraphs & diamond addresses" },
   { id: "soulseal", label: "SoulSeal flow", src: "/diagrams/soulseal-flow.svg", caption: "Seal → EIP-712 attestation → on-chain → public verify" },
-  { id: "companion", label: "Companion chat", src: "/diagrams/companion-chat.svg", caption: "Free (Groq) vs premium (OpenAI) with auth / rate-limit / ownership gates" },
+  { id: "companion", label: "Companion chat", src: "/diagrams/companion-chat.svg", caption: "Free and premium both try the local model first (then Groq / OpenAI) with auth / rate-limit / ownership gates" },
   { id: "data", label: "Data model", src: "/diagrams/data-model.svg", caption: "SQLite stores: companion · soul · roast · auto-renew" },
   { id: "imports", label: "Frontend modules", src: "/diagrams/frontend-imports.svg", caption: "src/ subsystem import graph (auto-generated)" },
 ] as const;

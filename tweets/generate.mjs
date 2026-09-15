@@ -6,7 +6,9 @@
 // Env:
 //   MEGAPHONE_API_BASE   default https://api.gotchicloset.com
 //   MEGAPHONE_INGEST_KEY required (shared secret; must match the server)
-//   GROQ_API_KEY         preferred (free tier) OR OPENAI_API_KEY
+//   LOCAL_LLM_URL        tried first when set (the owner's grimtwo, like GVR's companion);
+//                        LOCAL_LLM_KEY, LOCAL_LLM_MODEL (default qwen-moe) go with it
+//   GROQ_API_KEY         next (free tier), then OPENAI_API_KEY
 //   TWEET_COUNT          default 12
 //   TWEET_KB             set to "0" to skip the community-builds (gotchi-kb) source
 //
@@ -145,18 +147,22 @@ ${avoid}
 Return ONLY the JSON array, no prose.`;
 }
 
-async function callLLM(prompt) {
-  const groq = process.env.GROQ_API_KEY;
-  const openai = process.env.OPENAI_API_KEY;
-  const cfg = groq
-    ? { url: "https://api.groq.com/openai/v1/chat/completions", key: groq, model: process.env.GROQ_MODEL || "openai/gpt-oss-120b", extra: { reasoning_effort: "low" } }
-    : openai
-      ? { url: "https://api.openai.com/v1/chat/completions", key: openai, model: process.env.OPENAI_MODEL || "gpt-4o-mini" }
-      : null;
-  if (!cfg) throw new Error("set GROQ_API_KEY or OPENAI_API_KEY");
+function llmProviders() {
+  const list = [];
+  const local = (process.env.LOCAL_LLM_URL || "").trim();
+  // llama.cpp ignores reasoning_effort "low"; "none" plus enable_thinking=false turns thinking off.
+  if (local) list.push({ name: "local", url: local, key: process.env.LOCAL_LLM_KEY || "", model: process.env.LOCAL_LLM_MODEL || "qwen-moe", extra: { reasoning_effort: "none", chat_template_kwargs: { enable_thinking: false } } });
+  if (process.env.GROQ_API_KEY) list.push({ name: "groq", url: "https://api.groq.com/openai/v1/chat/completions", key: process.env.GROQ_API_KEY, model: process.env.GROQ_MODEL || "openai/gpt-oss-120b", extra: { reasoning_effort: "low" } });
+  if (process.env.OPENAI_API_KEY) list.push({ name: "openai", url: "https://api.openai.com/v1/chat/completions", key: process.env.OPENAI_API_KEY, model: process.env.OPENAI_MODEL || "gpt-4o-mini" });
+  return list;
+}
+
+async function callOne(cfg, prompt) {
+  const headers = { "Content-Type": "application/json" };
+  if (cfg.key) headers.Authorization = `Bearer ${cfg.key}`;
   const r = await fetch(cfg.url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${cfg.key}`, "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({
       model: cfg.model,
       ...(cfg.extra ?? {}),
@@ -166,12 +172,31 @@ async function callLLM(prompt) {
         { role: "user", content: prompt },
       ],
     }),
+    signal: AbortSignal.timeout(120_000),
   });
   if (!r.ok) throw new Error(`LLM ${r.status}: ${(await r.text()).slice(0, 200)}`);
   const txt = (await r.json()).choices?.[0]?.message?.content ?? "";
   const match = txt.match(/\[[\s\S]*\]/);
   if (!match) throw new Error("LLM did not return a JSON array");
   return JSON.parse(match[0]);
+}
+
+// Each provider in order; a failure (down, timeout, no JSON array) hands the batch to the next.
+async function callLLM(prompt) {
+  const providers = llmProviders();
+  if (!providers.length) throw new Error("set LOCAL_LLM_URL, GROQ_API_KEY or OPENAI_API_KEY");
+  let last;
+  for (const cfg of providers) {
+    try {
+      const out = await callOne(cfg, prompt);
+      console.log(`[tweets] drafted by ${cfg.name} (${cfg.model})`);
+      return out;
+    } catch (e) {
+      last = e;
+      console.warn(`[tweets] ${cfg.name} failed: ${e?.message ?? e}`);
+    }
+  }
+  throw last;
 }
 
 async function main() {

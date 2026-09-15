@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAccount, useSendTransaction, useWriteContract, usePublicClient, useSignMessage } from "wagmi";
 import { BASE_CHAIN_ID } from "@/lib/chains";
@@ -7,9 +7,15 @@ import {
   FREE_PLAN,
   PERIODS,
   PER_SEAL_USD,
+  GHOST_ADDON_USD,
+  MAX_EXTRA_GHOSTS,
+  ASSETS_FOR,
+  periodChipLabel,
   priceUsd,
+  type PaidPlan,
+  type WispAsset,
 } from "@/lib/wisp/pricing";
-import { createWispAccount, getWispQuote, buyWispPlan, manageWispAccount, rotateWispKey } from "@/lib/wisp/api";
+import { createWispAccount, getWispQuote, buyWispPlan, manageWispAccount, rotateWispKey, type WispQuote } from "@/lib/wisp/api";
 import { wispManageMessage } from "@/lib/wisp/auth";
 import { env } from "@/lib/env";
 
@@ -18,6 +24,7 @@ import { env } from "@/lib/env";
 const MCP_ENDPOINT = `${env.companionApiUrl || "https://api.gotchicloset.com"}/mcp`;
 
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
+const GHST_BASE = "0xcD2F22236DD9Dfe2356D7C543161D4d260FD9BcB" as const;
 const ERC20_TRANSFER = [
   {
     type: "function",
@@ -38,8 +45,6 @@ const TOOLS = [
   ["get_soul / verify_soul", "Depth, level, on-chain seal status"],
 ];
 
-type PaidPlan = "pro" | "studio";
-
 export function WispSellDialog({ onClose }: { onClose: () => void }) {
   const { address, isConnected } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
@@ -49,9 +54,12 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
 
   const [apiKey, setApiKey] = useState<string | null>(null); // the DISPLAYED key (only after an action completes)
   const keyRef = useRef<string | null>(null); // the created key, reused for /buy; not shown until success
-  const [plan, setPlan] = useState<PaidPlan>("pro");
+  // Same picker as GVR's (wispPlanPicker.ts): Holder first, paid in GHST at the live rate.
+  const [plan, setPlan] = useState<PaidPlan>("holder");
   const [months, setMonths] = useState(1);
-  const [asset, setAsset] = useState<"eth" | "usdc">("usdc");
+  const [asset, setAsset] = useState<WispAsset>("ghst");
+  const [extraGhosts, setExtraGhosts] = useState(0);
+  const [ghstQuote, setGhstQuote] = useState<WispQuote | null | undefined>(undefined); // undefined = quoting, null = unavailable
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [activeUntil, setActiveUntil] = useState<number | null>(null);
@@ -86,10 +94,19 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
     setStatus("getting quote…");
     try {
       const key = await ensureKey();
-      const quote = await getWispQuote(plan, months, asset);
+      const ghosts = plan === "holder" ? extraGhosts : 0;
+      const quote = await getWispQuote(plan, months, asset, ghosts);
       setStatus(`confirm ${asset.toUpperCase()} payment in your wallet…`);
       let txHash: string;
-      if (asset === "eth") {
+      if (asset === "ghst") {
+        txHash = await writeContractAsync({
+          chainId: BASE_CHAIN_ID,
+          address: GHST_BASE,
+          abi: ERC20_TRANSFER,
+          functionName: "transfer",
+          args: [quote.receivingWallet, BigInt(quote.amountWei || "0")],
+        });
+      } else if (asset === "eth") {
         txHash = await sendTransactionAsync({
           chainId: BASE_CHAIN_ID,
           to: quote.receivingWallet,
@@ -109,7 +126,7 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
         await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}`, confirmations: 1 });
       }
       setStatus("activating plan…");
-      const r = await buyWispPlan({ apiKey: key, plan, months, asset, txHash, wallet: address });
+      const r = await buyWispPlan({ apiKey: key, plan, months, asset, extraGhosts: ghosts, txHash, wallet: address });
       setApiKey(key); // only NOW reveal the key — payment verified + plan active
       setActiveUntil(r.expiresAt);
       setStatus(`✓ ${r.plan.toUpperCase()} active`);
@@ -168,7 +185,53 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
     }
   }
 
-  const usd = priceUsd(plan, months);
+  const ghostsForPlan = plan === "holder" ? extraGhosts : 0;
+  const usd = priceUsd(plan, months, ghostsForPlan);
+
+  // The GHST total line reads the live quote (the server refuses a stale price, so no quote = say so).
+  useEffect(() => {
+    if (asset !== "ghst") return;
+    let live = true;
+    setGhstQuote(undefined);
+    getWispQuote(plan, months, "ghst", ghostsForPlan)
+      .then((q) => { if (live) setGhstQuote(q); })
+      .catch(() => { if (live) setGhstQuote(null); });
+    return () => { live = false; };
+  }, [plan, months, asset, ghostsForPlan]);
+
+  function pickPlan(p: PaidPlan) {
+    setPlan(p);
+    if (!ASSETS_FOR[p].includes(asset)) setAsset(ASSETS_FOR[p][0]!);
+  }
+
+  const planCardButton = (p: PaidPlan) => (
+    <button
+      key={p}
+      onClick={() => pickPlan(p)}
+      className={`rounded-xl border p-3 text-left transition ${
+        plan === p ? "border-violet-400/60 bg-violet-500/15" : "border-white/10 bg-white/5 hover:bg-white/10"
+      }`}
+    >
+      <div className="text-sm font-bold text-white">{WISP_PLANS[p].name}</div>
+      <div className="text-lg font-black text-violet-200">${WISP_PLANS[p].usdPerMonth}<span className="text-[10px] font-normal text-white/40">/mo</span></div>
+      {WISP_PLANS[p].annualUsd !== undefined && (
+        <div className="text-[11px] font-semibold text-white/80">or ${WISP_PLANS[p].annualUsd} a year</div>
+      )}
+      <div className="mt-0.5 text-[10px] text-white/45">{WISP_PLANS[p].tagline}</div>
+      <ul className="mt-1.5 space-y-0.5">
+        {WISP_PLANS[p].features.slice(0, 5).map((f) => (
+          <li key={f} className="text-[10px] text-white/55">· {f}</li>
+        ))}
+      </ul>
+    </button>
+  );
+
+  let totalAsset = ` in ${asset.toUpperCase()}`;
+  if (asset === "ghst") {
+    totalAsset = ghstQuote && ghstQuote.ghst !== undefined
+      ? ` = ${ghstQuote.ghst.toLocaleString("en-US", { maximumFractionDigits: 2 })} GHST at $${ghstQuote.ghstUsd?.toFixed(4)} live`
+      : ghstQuote === null ? " in GHST (live price unavailable right now, so no quote)" : " in GHST (quoting…)";
+  }
 
   return (
     <AnimatePresence>
@@ -263,7 +326,7 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
             <div className="mt-1.5 text-[11px] leading-relaxed text-white/60">
               Each soul can be sealed on Base as an EIP-712 attestation of its depth and fingerprint: permanent,
               publicly verifiable, and it transfers with the asset when it changes hands. Accounts and billing are
-              wallet-native too. You sign in with your wallet and pay in ETH or USDC, with no emails or passwords,
+              wallet-native too. You sign in with your wallet and pay in GHST, ETH or USDC, with no emails or passwords,
               and Wisp is non-custodial, so it never holds your funds or your model keys.
             </div>
           </div>
@@ -271,29 +334,37 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
           {/* Pricing */}
           <div className="mt-6">
             <div className="text-[11px] font-semibold uppercase tracking-widest text-white/40">Pricing</div>
-            <div className="mt-2 grid grid-cols-3 gap-2">
+            <div className="mt-2 text-[10px] font-semibold uppercase tracking-widest text-white/35">For holders</div>
+            <div className="mt-1.5 grid grid-cols-3 gap-2">
+              {planCardButton("holder")}
+              <div className={`rounded-xl border border-white/10 bg-white/5 p-3 transition ${plan === "holder" ? "" : "opacity-50"}`}>
+                <div className="text-[11px] font-semibold text-white/80">autopilot gotchis</div>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <button
+                    onClick={() => { setPlan("holder"); setExtraGhosts((g) => Math.max(0, g - 1)); }}
+                    className="rounded-md bg-white/10 px-2 py-0.5 text-sm font-bold text-white/80 hover:bg-white/20"
+                    aria-label="one fewer autopilot gotchi"
+                  >−</button>
+                  <span className="font-mono text-sm text-white">{1 + extraGhosts}</span>
+                  <button
+                    onClick={() => { setPlan("holder"); setExtraGhosts((g) => Math.min(MAX_EXTRA_GHOSTS, g + 1)); }}
+                    className="rounded-md bg-white/10 px-2 py-0.5 text-sm font-bold text-white/80 hover:bg-white/20"
+                    aria-label="one more autopilot gotchi"
+                  >+</button>
+                </div>
+                <div className="mt-1.5 text-[10px] leading-snug text-white/45">
+                  1 included, +${GHOST_ADDON_USD} each more, up to {1 + MAX_EXTRA_GHOSTS}. Each ghost is a real gotchi of yours, nametagged as autopilot.
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 text-[10px] font-semibold uppercase tracking-widest text-white/35">For builders</div>
+            <div className="mt-1.5 grid grid-cols-3 gap-2">
               <PlanCard name={FREE_PLAN.name} price="$0" tagline={FREE_PLAN.tagline} features={FREE_PLAN.features} />
-              {(["pro", "studio"] as PaidPlan[]).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPlan(p)}
-                  className={`rounded-xl border p-3 text-left transition ${
-                    plan === p ? "border-violet-400/60 bg-violet-500/15" : "border-white/10 bg-white/5 hover:bg-white/10"
-                  }`}
-                >
-                  <div className="text-sm font-bold text-white">{WISP_PLANS[p].name}</div>
-                  <div className="text-lg font-black text-violet-200">${WISP_PLANS[p].usdPerMonth}<span className="text-[10px] font-normal text-white/40">/mo</span></div>
-                  <div className="mt-0.5 text-[10px] text-white/45">{WISP_PLANS[p].tagline}</div>
-                  <ul className="mt-1.5 space-y-0.5">
-                    {WISP_PLANS[p].features.slice(0, 4).map((f) => (
-                      <li key={f} className="text-[10px] text-white/55">· {f}</li>
-                    ))}
-                  </ul>
-                </button>
-              ))}
+              {planCardButton("pro")}
+              {planCardButton("studio")}
             </div>
             <div className="mt-1.5 text-[10px] text-white/35">
-              + Enterprise / white-label (contact) · per-seal ~${PER_SEAL_USD}. USD-denominated, paid in ETH/USDC on Base.
+              + Enterprise / white-label (contact) · per-seal ~${PER_SEAL_USD}. USD-denominated, paid in GHST at the live rate (ETH/USDC too) on Base.
             </div>
           </div>
 
@@ -307,15 +378,15 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
                   onClick={() => setMonths(p.months)}
                   className={`rounded-md px-2 py-1 font-semibold ${months === p.months ? "bg-violet-500/30 text-violet-100" : "bg-white/5 text-white/50 hover:bg-white/10"}`}
                 >
-                  {p.label}{p.discount ? ` (−${Math.round(p.discount * 100)}%)` : ""}
+                  {periodChipLabel(p, plan)}
                 </button>
               ))}
               <span className="ml-auto flex gap-1">
-                {(["usdc", "eth"] as const).map((a) => (
+                {ASSETS_FOR[plan].map((a) => (
                   <button
                     key={a}
                     onClick={() => setAsset(a)}
-                    className={`rounded-md px-2 py-1 font-semibold uppercase ${asset === a ? "bg-cyan-500/30 text-cyan-100" : "bg-white/5 text-white/50 hover:bg-white/10"}`}
+                    className={`rounded-md px-2 py-1 font-semibold uppercase ${asset === a ? "bg-violet-500/30 text-violet-100" : "bg-white/5 text-white/50 hover:bg-white/10"}`}
                   >
                     {a}
                   </button>
@@ -325,9 +396,10 @@ export function WispSellDialog({ onClose }: { onClose: () => void }) {
 
             <div className="mt-3 flex items-center justify-between">
               <div className="text-sm text-white/70">
-                {WISP_PLANS[plan].name} · {months}mo:{" "}
-                <span className="font-bold text-white">${usd}</span>{" "}
-                <span className="text-[11px] text-white/40">in {asset.toUpperCase()}</span>
+                {WISP_PLANS[plan].name}
+                {plan === "holder" && extraGhosts > 0 ? ` +${extraGhosts} ghost${extraGhosts === 1 ? "" : "s"}` : ""} · {months}mo:{" "}
+                <span className="font-bold text-white">${usd}</span>
+                <span className="text-[11px] text-white/60">{totalAsset}</span>
               </div>
               <button
                 onClick={buy}
