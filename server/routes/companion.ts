@@ -23,6 +23,7 @@ import { verifyGhstPayment } from "../lending/verifyPayment";
 import { creditPackForGhst, expectedWeiForPack } from "../companion/pricing";
 import { premiumSignatureValid, actionSignatureValid } from "../companion/auth";
 import { soulDepthSnapshot } from "../soul/snapshot";
+import { proxyKeeperStanding } from "../companion/keeperProxy";
 
 const router = Router();
 
@@ -312,6 +313,19 @@ router.get("/actions/:wallet/:tokenId", (req, res) => {
   const tokenId = String(req.params.tokenId);
   if (!wallet.startsWith("0x")) return res.status(400).json({ error: "wallet (0x) required" });
   res.json({ actions: getActions(wallet, tokenId, 10) });
+});
+
+// KEEPER GOTCHI (06-standing-questions.md §6.3): GET /keeper/:tokenId/:wallet
+// proxies straight to GVR's own read route -- Closet never computes or stores
+// any of this itself. Holder plan not required (free for every holder); a
+// SIWE-proven wallet IS, which GVR itself checks (the signedAt/signature the
+// query carries).
+router.get("/keeper/:tokenId/:wallet", async (req, res) => {
+  const tokenId = String(req.params.tokenId);
+  const wallet = String(req.params.wallet);
+  const { signedAt, signature } = req.query as { signedAt?: string; signature?: string };
+  const r = await proxyKeeperStanding(tokenId, wallet, { signedAt, signature });
+  res.status(r.status).json(r.body);
 });
 
 // Standing autonomous goals. Listing is public (read-only); setting one requires the 24h

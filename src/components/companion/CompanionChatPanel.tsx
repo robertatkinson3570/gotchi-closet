@@ -12,6 +12,7 @@ import { SoulDepthMeter } from "./SoulDepthMeter";
 import { GoPremium } from "./GoPremium";
 import { CompanionGotchiPicker } from "./CompanionGotchiPicker";
 import { GlobalChatTab } from "./GlobalChatTab";
+import { KeeperPanel } from "./KeeperPanel";
 import { PoweredByWisp } from "@/components/wisp/PoweredByWisp";
 import { env } from "@/lib/env";
 import { premiumMessage, PREMIUM_SIG_TTL_MS } from "@/lib/companion/premiumAuth";
@@ -29,7 +30,7 @@ export function CompanionChatPanel() {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [picking, setPicking] = useState(false);
-  const [tab, setTab] = useState<"chat" | "global">("chat");
+  const [tab, setTab] = useState<"chat" | "global" | "keeper">("chat");
   const [premium, setPremium] = useState(false);
   const [credits, setCredits] = useState(0);
   const [autoCollect, setAutoCollect] = useState(false);
@@ -251,16 +252,18 @@ export function CompanionChatPanel() {
         <PoweredByWisp />
       </div>
       <div className="flex shrink-0 gap-1 border-b border-white/10 px-2 py-1">
-        {(["chat", "global"] as const).map((t) => (
+        {(["chat", "global", "keeper"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`flex-1 rounded-lg py-1 text-xs ${tab === t ? "bg-fuchsia-500/20 text-white" : "text-white/50 hover:text-white"}`}>
-            {t === "chat" ? "Chat" : "Global"}
+            {t === "chat" ? "Chat" : t === "global" ? "Global" : "Keeper"}
           </button>
         ))}
       </div>
 
       {tab === "global" ? (
         <GlobalChatTab active={tab === "global"} />
+      ) : tab === "keeper" ? (
+        <div className="flex-1 overflow-y-auto p-3"><KeeperPanel tokenId={selectedTokenId} /></div>
       ) : picking ? (
         <div className="overflow-y-auto p-3"><CompanionGotchiPicker onPicked={() => { setPicking(false); clearScript(); }} /></div>
       ) : (

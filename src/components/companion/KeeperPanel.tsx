@@ -1,0 +1,206 @@
+import { useEffect, useState } from "react";
+import { useAccount, useSignMessage, useWalletClient } from "wagmi";
+import { keeperReadMessage, KEEPER_READ_SIG_TTL_MS } from "@/lib/companion/keeperAuth";
+
+// KEEPER GOTCHI (06-standing-questions.md §6.3): "a new KeeperPanel.tsx
+// beside CompanionChatPanel.tsx, reading GET /api/companion/keeper/:tokenId/
+// :wallet on Closet, which proxies to GVR ... Same rows, same buttons,
+// Closet's own styling." GVR's card (packages/client/src/ui/keeperCard.ts)
+// is the sibling to keep in step with -- same fields, same "Why" toggle,
+// same prepared-action shape ({to, data, label} or a note when there is no
+// safe prepared transaction, per GVR's actions.ts).
+
+type KeeperFact = { key: string; label: string; value: string };
+type KeeperCite = { queryId: string; asOfBlock: string | null; chains: number[] };
+type KeeperLine = { key: string; severity: "quiet" | "note" | "act"; text: string; facts: KeeperFact[]; cites: KeeperCite[] };
+type KeeperActionCall = { to: string; data: string; value?: string; label: string };
+type KeeperAction = { key: string; label: string; call: KeeperActionCall | null; note?: string };
+type KeeperReport = {
+  wallet: string; tokenId: string; asOfBlock: string | null;
+  report: { lines: KeeperLine[] }; text: string; voiced: boolean; at: number; actions: KeeperAction[];
+};
+
+function explorerBlockUrl(chainId: number, block: string): string {
+  return chainId === 1 ? `https://etherscan.io/block/${block}` : `https://basescan.org/block/${block}`;
+}
+
+const SEVERITY_CLASS: Record<string, string> = {
+  quiet: "bg-white/10 text-white/50",
+  note: "bg-sky-500/20 text-sky-200",
+  act: "bg-amber-500/20 text-amber-200",
+};
+
+export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined }) {
+  const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
+  const { data: walletClient } = useWalletClient();
+  const [report, setReport] = useState<KeeperReport | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [whyOpen, setWhyOpen] = useState<Set<string>>(new Set());
+  const [busyAction, setBusyAction] = useState<string | null>(null);
+
+  async function ensureKeeperAuth(wallet: string): Promise<{ signedAt: number; signature: string }> {
+    const key = `companion.keeperSig.${wallet.toLowerCase()}`;
+    try {
+      const cached = JSON.parse(localStorage.getItem(key) || "null");
+      if (cached?.signature && Date.now() - cached.signedAt < KEEPER_READ_SIG_TTL_MS) return cached;
+    } catch {
+      /* ignore */
+    }
+    const signedAt = Date.now();
+    const signature = await signMessageAsync({ message: keeperReadMessage(wallet, signedAt) });
+    const auth = { signedAt, signature };
+    try {
+      localStorage.setItem(key, JSON.stringify(auth));
+    } catch {
+      /* privacy mode — sign again next time */
+    }
+    return auth;
+  }
+
+  useEffect(() => {
+    if (!address || !tokenId) {
+      setReport(null);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    (async () => {
+      try {
+        const auth = await ensureKeeperAuth(address);
+        const q = new URLSearchParams({ signedAt: String(auth.signedAt), signature: auth.signature });
+        const res = await fetch(`/api/companion/keeper/${tokenId}/${address}?${q}`);
+        if (!res.ok) {
+          if (res.status === 404) {
+            if (!cancelled) setReport(null);
+            return;
+          }
+          throw new Error(`keeper read failed (${res.status})`);
+        }
+        const body = (await res.json()) as KeeperReport;
+        if (!cancelled) setReport(body);
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message ?? "couldn't read your Keeper report");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, tokenId]);
+
+  async function runAction(action: KeeperAction) {
+    if (!action.call || !walletClient || busyAction) return;
+    setBusyAction(action.key);
+    try {
+      await walletClient.sendTransaction({
+        to: action.call.to as `0x${string}`,
+        data: action.call.data as `0x${string}`,
+        ...(action.call.value ? { value: BigInt(action.call.value) } : {}),
+      });
+    } catch {
+      setError("Couldn't send that transaction.");
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  function toggleWhy(key: string) {
+    setWhyOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  if (!address || !tokenId) {
+    return <div className="rounded-xl bg-white/5 p-3 text-xs text-white/50">Connect a wallet and pick a gotchi to see its Keeper report.</div>;
+  }
+
+  return (
+    <div className="space-y-2 rounded-xl bg-white/5 p-3">
+      <div className="text-xs font-semibold text-fuchsia-200/80">🗝 Keeper</div>
+      {loading && !report && <div className="text-xs text-white/50">Reading your Keeper report…</div>}
+      {error && <div className="text-xs text-red-300">⚠ {error}</div>}
+      {!loading && !report && !error && (
+        <div className="text-xs text-white/50">Your gotchi hasn't watched a full night yet — the first report lands after tonight's run.</div>
+      )}
+      {report && (
+        <>
+          <div className="text-sm text-white/90">{report.text}</div>
+          {report.report.lines.filter((l) => l.text).map((line) => {
+            const actions = line.key === "permissions" ? report.actions.filter((a) => a.key.startsWith("revoke:")) : [];
+            const open = whyOpen.has(line.key);
+            return (
+              <div key={line.key} className="space-y-1 rounded-lg border border-white/10 bg-black/20 p-2">
+                <div className="flex items-start gap-2 text-xs">
+                  <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase ${SEVERITY_CLASS[line.severity] ?? ""}`}>
+                    {line.severity}
+                  </span>
+                  <span className="text-white/80">{line.text}</span>
+                </div>
+                {actions.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {actions.map((a) =>
+                      a.call ? (
+                        <button
+                          key={a.key}
+                          disabled={busyAction === a.key}
+                          onClick={() => runAction(a)}
+                          className="rounded-lg bg-fuchsia-500/20 px-2 py-1 text-[10px] font-semibold text-fuchsia-100 hover:bg-fuchsia-500/30 disabled:opacity-40"
+                        >
+                          {busyAction === a.key ? "Confirm in wallet…" : a.label}
+                        </button>
+                      ) : (
+                        <span key={a.key} className="text-[10px] text-white/40" title={a.note}>
+                          {a.label} — {a.note ?? "no prepared action"}
+                        </span>
+                      )
+                    )}
+                  </div>
+                )}
+                {line.facts.length > 0 && (
+                  <button onClick={() => toggleWhy(line.key)} className="text-[10px] text-white/40 hover:text-white/70">
+                    {open ? "Hide why" : "Why?"}
+                  </button>
+                )}
+                {open && (
+                  <div className="space-y-0.5 rounded bg-black/30 p-1.5 text-[10px] text-white/60">
+                    {line.facts.map((f) => (
+                      <div key={f.key}>
+                        <b>{f.label}</b>: {f.value}
+                      </div>
+                    ))}
+                    {line.cites.map((c) => (
+                      <div key={c.queryId}>
+                        query {c.queryId}
+                        {c.asOfBlock && (
+                          <>
+                            {" · "}
+                            <a
+                              href={explorerBlockUrl(c.chains[0] ?? 8453, c.asOfBlock)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-fuchsia-300 hover:underline"
+                            >
+                              block {c.asOfBlock}
+                            </a>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </>
+      )}
+    </div>
+  );
+}
