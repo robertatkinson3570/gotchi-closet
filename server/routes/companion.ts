@@ -24,6 +24,7 @@ import { creditPackForGhst, expectedWeiForPack } from "../companion/pricing";
 import { premiumSignatureValid, actionSignatureValid } from "../companion/auth";
 import { soulDepthSnapshot } from "../soul/snapshot";
 import { proxyKeeperStanding } from "../companion/keeperProxy";
+import { proxyAnalystAsk } from "../companion/askProxy";
 
 const router = Router();
 
@@ -325,6 +326,15 @@ router.get("/keeper/:tokenId/:wallet", async (req, res) => {
   const wallet = String(req.params.wallet);
   const { signedAt, signature } = req.query as { signedAt?: string; signature?: string };
   const r = await proxyKeeperStanding(tokenId, wallet, { signedAt, signature });
+  res.status(r.status).json(r.body);
+});
+
+// KEEPER GOTCHI (07-analyst-chat.md §7.3): POST /ask proxies the panel's
+// "Ask your gotchi" turn to GVR's POST /api/analyst/ask. Holder-gated and
+// metered THERE (one free question a day, then { refused: "holder" }); the
+// wallet proof is the signed keeper read message the Keeper tab signs.
+router.post("/ask", async (req, res) => {
+  const r = await proxyAnalystAsk(req.body ?? {});
   res.status(r.status).json(r.body);
 });
 

@@ -31,6 +31,47 @@ export async function postChat(
   return res.json();
 }
 
+// KEEPER GOTCHI (07-analyst-chat.md §7.3): the "Ask your gotchi" turn. The
+// reply carries GVR's cites and confidence; 402 { refused: "holder" } and
+// 429 { tier: "capped" } are answers, not errors, so the panel can say them.
+export type AnalystCite = { query_id: string; as_of_block: string | null; chain_id: number[]; metric: string; verified: string | null; params: Record<string, unknown> };
+export type AnalystAskReply = {
+  reply: string; route: string; cites: AnalystCite[]; voiced: boolean; confidence: "verified" | "open"; rail: string; tier: string; refusal?: string; check?: string;
+};
+export type AnalystAskResult =
+  | { kind: "ok"; body: AnalystAskReply }
+  | { kind: "holder"; reply: string; plan: string }
+  | { kind: "capped"; reply: string }
+  | { kind: "error"; status: number; error: string };
+
+/** 00-overview.md §8, verbatim and in order; the first line is the EU AI Act Article 50 line. */
+export const ANALYST_DISCLAIMERS: readonly string[] = [
+  "You are talking to an AI. Your gotchi is a program that reads public blockchain data.",
+  "Your gotchi is not an investment, tax or legal adviser. It explains what it can see and models what you ask. It does not recommend buying, selling or holding anything, and it does not predict prices.",
+  "Tax figures are a model from your own transaction history using the method shown. They are not filed anywhere. Check them with a tax professional.",
+  "Every number links to the block and query it came from. Prices are from public feeds and can be stale.",
+];
+
+export async function postAnalystAsk(
+  tokenId: string,
+  wallet: string,
+  message: string,
+  auth: { signedAt: number; signature: string },
+  history: ChatMessage[] = [],
+): Promise<AnalystAskResult> {
+  const res = await fetch(`${BASE}/api/companion/ask`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tokenId, wallet, message, history: history.slice(-6), ...auth }),
+    signal: AbortSignal.timeout(80_000),
+  });
+  const json: any = await res.json().catch(() => ({}));
+  if (res.status === 402 && json.refused === "holder") return { kind: "holder", reply: String(json.reply ?? ""), plan: String(json.plan ?? "") };
+  if (res.status === 429 && json.tier === "capped") return { kind: "capped", reply: String(json.reply ?? "") };
+  if (!res.ok || typeof json.reply !== "string") return { kind: "error", status: res.status, error: String(json.error ?? `ask failed (${res.status})`) };
+  return { kind: "ok", body: json as AnalystAskReply };
+}
+
 export async function getHistory(tokenId: string, wallet: string): Promise<ChatMessage[]> {
   try {
     const res = await fetch(`${BASE}/api/companion/history/${tokenId}/${wallet}`);

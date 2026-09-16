@@ -28,4 +28,8 @@ export interface PersonalityProfile {
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  /** KEEPER GOTCHI (07-analyst-chat.md §7.3): an analyst reply's cites and confidence, rendered as chips. */
+  cites?: { query_id: string; as_of_block: string | null; chain_id: number[]; metric: string; verified: string | null }[];
+  confidence?: "verified" | "open";
+  voiced?: boolean;
 }

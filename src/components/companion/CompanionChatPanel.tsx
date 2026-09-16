@@ -6,7 +6,8 @@ import { stewardApi } from "@/lib/steward/api";
 import { useCompanionGotchis } from "./useCompanionGotchis";
 import { useCompanion } from "@/state/useCompanion";
 import { buildPersonality } from "@/lib/companion/personality";
-import { postChat, getPremium, getHistory, getGoals, setGoal, getRecentActions } from "@/lib/companion/api";
+import { postChat, postAnalystAsk, ANALYST_DISCLAIMERS, getPremium, getHistory, getGoals, setGoal, getRecentActions } from "@/lib/companion/api";
+import { keeperReadMessage, KEEPER_READ_SIG_TTL_MS } from "@/lib/companion/keeperAuth";
 import { PersonalityCard } from "./PersonalityCard";
 import { SoulDepthMeter } from "./SoulDepthMeter";
 import { GoPremium } from "./GoPremium";
@@ -35,6 +36,10 @@ export function CompanionChatPanel() {
   const [credits, setCredits] = useState(0);
   const [autoCollect, setAutoCollect] = useState(false);
   const [goalBusy, setGoalBusy] = useState(false);
+  // KEEPER GOTCHI (07-analyst-chat.md §7.3): "Ask your gotchi" sends the
+  // composer to GVR's /api/analyst/ask (through /api/companion/ask). The four
+  // legal lines show the moment the toggle is on, before the first message.
+  const [askMode, setAskMode] = useState(false);
   useEffect(() => { if (address) getPremium(address).then((s) => { setPremium(s.active); setCredits(s.credits); }).catch(() => {}); }, [address]);
   // Reflect the standing "keep_emptied" goal for the selected gotchi in the auto-collect toggle.
   useEffect(() => {
@@ -191,12 +196,52 @@ export function CompanionChatPanel() {
     }
   }
 
+  // The keeper read signature (the same one KeeperPanel signs and caches):
+  // GVR verifies it as the wallet proof for an analyst turn.
+  async function ensureKeeperAuth(wallet: string): Promise<{ signedAt: number; signature: string }> {
+    const key = `companion.keeperSig.${wallet.toLowerCase()}`;
+    try {
+      const cached = JSON.parse(localStorage.getItem(key) || "null");
+      if (cached?.signature && Date.now() - cached.signedAt < KEEPER_READ_SIG_TTL_MS) return cached;
+    } catch { /* ignore */ }
+    const signedAt = Date.now();
+    const signature = await signMessageAsync({ message: keeperReadMessage(wallet, signedAt) });
+    const auth = { signedAt, signature };
+    try { localStorage.setItem(key, JSON.stringify(auth)); } catch { /* privacy mode: sign again next time */ }
+    return auth;
+  }
+
+  async function sendAsk(text: string) {
+    if (!selectedTokenId || !address) return;
+    setBusy(true);
+    try {
+      const auth = await ensureKeeperAuth(address);
+      const history = messages.filter((m) => !m.cites || m.role === "user").slice(-6).map((m) => ({ role: m.role, content: m.content }));
+      const r = await postAnalystAsk(selectedTokenId, address, text, auth, history);
+      if (r.kind === "holder") {
+        setMessages((m) => [...m, { role: "assistant", content: `${r.reply} Holder is in the Wisp plan (⚡ above).` }]);
+      } else if (r.kind === "capped") {
+        setMessages((m) => [...m, { role: "assistant", content: r.reply }]);
+      } else if (r.kind === "error") {
+        setMessages((m) => [...m, { role: "assistant", content: r.status === 404 ? "the analyst is not switched on yet, fren 👻" : `I couldn't reach the analyst just now (${r.error}) 👻 nothing was sent to your wallet; ask again in a moment.` }]);
+      } else {
+        setMessages((m) => [...m, { role: "assistant", content: r.body.reply, cites: r.body.cites, confidence: r.body.confidence, voiced: r.body.voiced }]);
+      }
+    } catch (e: any) {
+      const declined = /reject|denied|user/i.test(String(e?.message || e));
+      setMessages((m) => [...m, { role: "assistant", content: declined ? "no signature, no lookup 👻 sign the keeper message when you want me to read your wallets." : "the ether glitched 👻 try again in a sec" }]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function send() {
     const text = draft.trim();
     if (!text || !selectedTokenId || !address || busy) return;
     clearScript();
     setDraft("");
     setMessages((m) => [...m, { role: "user", content: text }]);
+    if (askMode) { await sendAsk(text); return; }
     setBusy(true);
     try {
       let auth: { signature: string; signedAt: number } | undefined;
@@ -299,25 +344,56 @@ export function CompanionChatPanel() {
               </div>
             )}
             {messages.map((m, i) => (
-              <div key={i} className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-1.5 text-sm ${
-                m.role === "user" ? "ml-auto bg-fuchsia-500/30 text-white" : "bg-white/10 text-white/90"}`}>
-                {m.content}
+              <div key={i} className="space-y-1">
+                <div className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-1.5 text-sm ${
+                  m.role === "user" ? "ml-auto bg-fuchsia-500/30 text-white" : "bg-white/10 text-white/90"}`}>
+                  {m.content}
+                </div>
+                {m.cites && m.cites.length > 0 && (
+                  <div className="flex max-w-[85%] flex-wrap items-center gap-1">
+                    <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${m.confidence === "verified" ? "bg-emerald-500/20 text-emerald-200" : "bg-amber-500/20 text-amber-200"}`}
+                      title={m.confidence === "verified" ? "The question matched a verified query; the numbers come straight from it." : "No verified query matched; the model chose the lookup. Check the cite before you lean on it."}>
+                      {m.confidence === "verified" ? "verified query" : "open answer"}
+                    </span>
+                    {m.voiced === false && <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white/60" title="The voice was replaced by the facts, plainly.">plain facts</span>}
+                    {m.cites.map((c) => (
+                      <a key={c.query_id} className="rounded-full border border-violet-400/40 bg-violet-500/15 px-2 py-0.5 text-[10px] text-violet-200 hover:bg-violet-500/30"
+                        title={`${c.verified ? `${c.verified} via ` : ""}${c.metric} · query ${c.query_id}`}
+                        href={c.as_of_block ? ((c.chain_id[0] ?? 8453) === 1 ? `https://etherscan.io/block/${c.as_of_block}` : `https://basescan.org/block/${c.as_of_block}`) : undefined}
+                        target="_blank" rel="noopener noreferrer">
+                        {c.metric}{c.as_of_block ? ` · ${c.as_of_block}` : ""}
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
             {busy && <div className="w-12 rounded-2xl bg-white/10 px-3 py-1.5 text-sm text-white/60">…</div>}
             <div ref={endRef} />
           </div>
           <div className="flex shrink-0 items-center gap-2 border-t border-white/10 p-2">
+            <button type="button" onClick={() => setAskMode((v) => !v)} aria-pressed={askMode}
+              title="Ask your gotchi about your wallets: exposure, tax, approvals, a token, an address, a day. A Holder perk, one free question a day."
+              className={`rounded-xl border px-2.5 py-2 text-xs font-bold transition ${askMode ? "border-violet-400 bg-violet-500/35 text-white" : "border-violet-400/30 text-white/60 hover:text-white"}`}>
+              Ask
+            </button>
             <input
               value={draft} onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && send()}
-              placeholder={address ? "talk to your gotchi…" : "connect wallet to chat"}
+              placeholder={address ? (askMode ? "ask about your wallets: exposure, tax, approvals, a token, an address, a day…" : "talk to your gotchi…") : "connect wallet to chat"}
               disabled={!address || !selectedTokenId}
               className="flex-1 rounded-xl bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none"
             />
             <button onClick={send} disabled={busy || !draft.trim()}
               className="rounded-xl bg-fuchsia-500/80 px-3 py-2 text-sm font-medium text-white disabled:opacity-40">↑</button>
           </div>
+          {askMode && (
+            <div className="shrink-0 space-y-0.5 px-3 pb-2">
+              {ANALYST_DISCLAIMERS.map((line, i) => (
+                <div key={i} className={`text-[9.5px] leading-snug ${i === 0 ? "text-white/60" : "text-white/40"}`}>{line}</div>
+              ))}
+            </div>
+          )}
         </>
       )}
     </motion.div>
