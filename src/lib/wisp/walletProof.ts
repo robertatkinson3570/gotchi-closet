@@ -24,9 +24,15 @@ export function grantResource(keyTag: string): string {
 export const SESSION_STATEMENT =
   "Sign in to Gotchi Closet so your gotchi can remember your chats. This does not move anything or cost gas.";
 
+/** What a grant unlocks, all of it: the shared chat history (read, and the
+ *  player's turns written) and the steward reads (steward_status, steward_log,
+ *  steward_preview over MCP). QA H-08: the holder signs for what the grant does.
+ *  Changing this text invalidates any unsigned prepared message (prepare
+ *  writes nothing, so nothing breaks; the app prepares again). */
 export function grantStatement(appName: string): string {
   return (
-    `Let ${appName} chat with your gotchis as you. It can read and add to your gotchi's chat history until this expires. ` +
+    `Let ${appName} chat with your gotchis as you. It can read and add to your gotchi's chat history, ` +
+    "and read your steward's status, log and preview, until this expires. " +
     "It cannot move anything or cost gas."
   );
 }

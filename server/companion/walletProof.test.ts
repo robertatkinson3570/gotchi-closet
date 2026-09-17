@@ -38,6 +38,8 @@ describe("wallet proof (SIWE)", () => {
   it("a grant names the app, binds the key tag and defaults to 90 days", async () => {
     const { message, signature } = await signed(grant, { now: T0 + 1000 });
     expect(message).toContain("Let My Game chat with your gotchis as you.");
+    // H-08: the grant also unlocks steward_status, steward_log and steward_preview over MCP; the holder signs for that too
+    expect(message).toContain("read your steward's status, log and preview");
     expect(message).toContain("urn:wisp:key:wsp_ab12cd34");
     const v = await verifyProof({ purpose: grant, message, signature, now: T0 + 2000 });
     expect(v.expiresAt - v.issuedAt).toBe(90 * 86_400_000);
