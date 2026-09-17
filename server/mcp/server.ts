@@ -13,6 +13,8 @@ import {
   stewardLog,
   stewardPreview,
   stewardRunNow,
+  getHistory,
+  getKeeperReport,
 } from "./tools.js";
 
 const tokenId = z.string().regex(/^\d+$/, "tokenId must be a numeric string");
@@ -128,6 +130,34 @@ export function createWispMcpServer(): McpServer {
     },
     async ({ owner }) => {
       try { return ok(await stewardRunNow(owner)); } catch (e) { return fail(e); }
+    }
+  );
+
+  // KEEPER GOTCHI (08-wisp-chat.md §8.2): read-only, metered by the same
+  // tools/call quota as every other tool, zero LLM calls.
+  server.registerTool(
+    "get_history",
+    {
+      description:
+        "The shared companion chat log for a gotchi + owner wallet: every client's turns (Gotchi Closet, GVR, keyed apps as wsp_<first8>), newest-last. " +
+        "client filters to one writer (closet | gvr | wsp_<first8> | all). No LLM is called.",
+      inputSchema: { tokenId, wallet: ownerAddr, limit: z.number().int().min(1).max(100).optional(), client: z.string().max(16).optional() },
+    },
+    async ({ tokenId, wallet, limit, client }) => {
+      try { return ok(getHistory(tokenId, wallet, limit ?? 30, client)); } catch (e) { return fail(e); }
+    }
+  );
+
+  server.registerTool(
+    "get_keeper_report",
+    {
+      description:
+        "The holder's latest nightly keeper report from GVR (the Watch, the Lookout, the Scribe, the Ferryman, the Herald): facts and cites only, " +
+        "no voice. The holder signs the keeper read message (signedAt + signature) and GVR verifies it. No LLM is called.",
+      inputSchema: { wallet: ownerAddr, tokenId, signedAt: z.union([z.number(), z.string()]), signature: z.string().regex(/^0x[0-9a-fA-F]+$/) },
+    },
+    async ({ wallet, tokenId, signedAt, signature }) => {
+      try { return ok(await getKeeperReport(wallet, tokenId, signedAt, signature)); } catch (e) { return fail(e); }
     }
   );
 

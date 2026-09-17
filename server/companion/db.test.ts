@@ -6,7 +6,7 @@ const TMP = path.resolve("./data/companion-test.db");
 process.env.COMPANION_DB_PATH = TMP;
 
 import {
-  appendMessage, getRecentMessages, upsertFact, getFacts,
+  appendMessage, getRecentMessages, upsertFact, getFacts, clientTagOfKey, isClientTag, getDb,
   grantPremium, getEntitlement, isPremiumActive, closeDb,
   addCredits, burnCredit, getCredits, hasCredits,
   logAction, getActions,
@@ -24,6 +24,26 @@ describe("memory", () => {
     const recent = getRecentMessages("0xabc", "4821", 20);
     expect(recent.length).toBe(20);
     expect(recent[recent.length - 1].content).toBe("m24");
+  });
+
+  /** KEEPER GOTCHI (08-wisp-chat.md §8.2): the shared log names its writer. */
+  it("tags every turn with its client (closet by default), filters by it, and migrates old rows as closet", () => {
+    appendMessage("0xabc", "4821", "user", "from closet");
+    appendMessage("0xabc", "4821", "assistant", "gvr said", "gvr", 1_700_000_000_000);
+    appendMessage("0xabc", "4821", "user", "from an app", "wsp_ab12cd34");
+    const all = getRecentMessages("0xabc", "4821", 20);
+    expect(all.map((m) => [m.client, m.content])).toEqual([["closet", "from closet"], ["gvr", "gvr said"], ["wsp_ab12cd34", "from an app"]]);
+    expect(all[1]!.ts).toBe(1_700_000_000_000);
+    expect(getRecentMessages("0xabc", "4821", 20, "gvr").map((m) => m.content)).toEqual(["gvr said"]);
+    expect(getRecentMessages("0xabc", "4821", 20, "wsp_ab12cd34").map((m) => m.content)).toEqual(["from an app"]);
+    // a row written before the column existed reads back as closet's
+    getDb().prepare(`INSERT INTO companion_messages (wallet, token_id, role, content, ts) VALUES (?,?,?,?,?)`).run("0xabc", "4821", "user", "old row", 1);
+    expect(getRecentMessages("0xabc", "4821", 1)[0]).toMatchObject({ content: "old row", client: "closet" });
+    expect(clientTagOfKey("wsp_ab12cd34ef567890")).toBe("wsp_ab12cd34");
+    expect(isClientTag("wsp_ab12cd34")).toBe(true);
+    expect(isClientTag("gvr")).toBe(true);
+    expect(isClientTag("wsp_ab12cd34ef")).toBe(false);
+    expect(isClientTag("evil")).toBe(false);
   });
 
   it("caps facts per gotchi at 10 (drops oldest)", () => {

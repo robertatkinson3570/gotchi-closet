@@ -4,8 +4,9 @@
 
 import { Router } from "express";
 import { recoverMessageAddress } from "viem";
-import { createAccount, getAccountByKey, getAccountByWallet, rotateKey, activatePlan, effectivePlan } from "../mcp/accounts";
-import { priceUsd, isValidPurchase, PERIODS } from "../../src/lib/wisp/pricing";
+import { createAccount, getAccountByKey, getAccountByWallet, rotateKey, activatePlan, effectivePlan, setContext, chatUsageOf, type WispAccount } from "../mcp/accounts";
+import { priceUsd, isValidPurchase, PERIODS, PLAN_LIMITS, chatGranted } from "../../src/lib/wisp/pricing";
+import { credentialOf, WISP_KEY_REQUIRED } from "../companion/wispCredential";
 import { wispManageMessage, isSignedAtFresh } from "../../src/lib/wisp/auth";
 import { usdToEthWei, usdToUsdcUnits } from "../payments/ethUsd";
 import { verifyEthPayment, verifyUsdcPayment, verifyTokenPayment } from "../payments/verifyEthPayment";
@@ -51,11 +52,46 @@ router.get("/plan/:wallet", (req, res) => {
   res.json({ wallet: wallet.toLowerCase(), plan, expiresAt: plan === "free" ? 0 : acct.expiresAt });
 });
 
-/** GET /api/mcp/account/:apiKey -> current effective plan + expiry. */
+/** KEEPER GOTCHI (08-wisp-chat.md §8.2): the account summary a third-party
+ *  dashboard shows. `chat` is the grant (chatPerDay > 0 on the plan in
+ *  force); the day's chat use rides beside it. Never the key itself. */
+function accountSummary(acct: WispAccount) {
+  const plan = effectivePlan(acct);
+  const limits = PLAN_LIMITS[plan];
+  const used = chatUsageOf(acct.apiKey);
+  return {
+    plan, storedPlan: acct.plan, expiresAt: acct.expiresAt,
+    chat: chatGranted(plan), chatPerDay: limits.chatPerDay, chatPerMinute: limits.chatPerMinute, chatUsedToday: used.usedToday,
+    context: acct.context,
+  };
+}
+
+/** GET /api/mcp/account/:apiKey -> current effective plan + expiry (+ the chat grant). */
 router.get("/account/:apiKey", (req, res) => {
   const acct = getAccountByKey(String(req.params.apiKey));
   if (!acct) return res.status(404).json({ error: "account not found" });
-  res.json({ plan: effectivePlan(acct), storedPlan: acct.plan, expiresAt: acct.expiresAt });
+  res.json(accountSummary(acct));
+});
+
+/** GET /api/mcp/account (Authorization: Bearer wsp_…) -> the same summary, keyed by header. */
+router.get("/account", (req, res) => {
+  const cred = credentialOf(req);
+  if (cred.kind !== "wisp") return res.status(401).json({ error: WISP_KEY_REQUIRED, ...(cred.kind === "bad" ? { reason: cred.reason } : {}) });
+  res.json(accountSummary(cred.account));
+});
+
+/** PATCH /api/mcp/account (Bearer wsp_…) { context: { appName, appUrl?, kbLines?, navMap? } }
+ *  -> sets the key's app context (08-wisp-chat.md §8.2). 400 names the field that failed. */
+router.patch("/account", (req, res) => {
+  const cred = credentialOf(req);
+  if (cred.kind !== "wisp") return res.status(401).json({ error: WISP_KEY_REQUIRED, ...(cred.kind === "bad" ? { reason: cred.reason } : {}) });
+  const ctx = req.body?.context;
+  if (ctx === undefined) return res.status(400).json({ error: "context is required" });
+  try {
+    res.json(accountSummary(setContext(cred.apiKey, ctx)));
+  } catch (err: any) {
+    res.status(400).json({ error: err?.message ?? String(err) });
+  }
 });
 
 /** GET /api/mcp/quote?plan=pro&months=3&asset=eth -> the amount to pay. */

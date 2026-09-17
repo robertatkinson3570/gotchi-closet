@@ -133,13 +133,30 @@ export interface PlanLimits {
   collections: number;
   /** Stateful tools (persistent memory writes, seals) require a paid plan. */
   stateful: boolean;
+  /** KEEPER GOTCHI (08-wisp-chat.md §8.2): hosted companion chat turns a day
+   *  through POST /api/companion/chat with a Wisp key. 0 = chat is not in the
+   *  plan (free, and a lapsed paid plan, which falls to free). A separate
+   *  counter from requestsPerDay: the MCP tools make no model call, chat does. */
+  chatPerDay: number;
+  /** The burst ceiling on the same counter's minute window. Hosted chat lands
+   *  on grimtwo's ONE local rail, shared with GVR's own companion and analyst
+   *  chat (4 llama.cpp slots, about 6 s a turn measured in slice 07, so about
+   *  40 turns a minute for everyone). A day cap alone lets one key spend its
+   *  whole day in an hour; this bounds what one key can take of the box in
+   *  any minute. */
+  chatPerMinute: number;
 }
 
 export const PLAN_LIMITS: Record<WispPlan, PlanLimits> = {
   // Free is day-bound (~1k/day); paid tiers are month-bound (day cap == month cap).
-  free: { requestsPerDay: 1000, requestsPerMonth: 31000, collections: 1, stateful: false },
+  free: { requestsPerDay: 1000, requestsPerMonth: 31000, collections: 1, stateful: false, chatPerDay: 0, chatPerMinute: 0 },
   // Holder is metered by gotchis + desk calls on GVR's side; the MCP itself stays modest.
-  holder: { requestsPerDay: 2000, requestsPerMonth: 60000, collections: 1, stateful: true },
-  pro: { requestsPerDay: 25000, requestsPerMonth: 25000, collections: 3, stateful: true },
-  studio: { requestsPerDay: 250000, requestsPerMonth: 250000, collections: 9999, stateful: true },
+  holder: { requestsPerDay: 2000, requestsPerMonth: 60000, collections: 1, stateful: true, chatPerDay: 200, chatPerMinute: 6 },
+  pro: { requestsPerDay: 25000, requestsPerMonth: 25000, collections: 3, stateful: true, chatPerDay: 2000, chatPerMinute: 12 },
+  studio: { requestsPerDay: 250000, requestsPerMonth: 250000, collections: 9999, stateful: true, chatPerDay: 20000, chatPerMinute: 20 },
 };
+
+/** Does the plan in force include hosted chat? The grant (§8.2). */
+export function chatGranted(plan: WispPlan): boolean {
+  return PLAN_LIMITS[plan].chatPerDay > 0;
+}

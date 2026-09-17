@@ -48,7 +48,11 @@ const LORE: LoreSnippet[] = [
     text: "GHST is the Aavegotchi currency, used in the Baazaar, the Forge, and for summoning." },
 ];
 
-export function retrieveLore(message: string, max = 4): string[] {
+/** `opts.appKb` (default true): whether the Closet app's own how-to knowledge
+ *  base supplements the lore. A keyed third-party turn (08-wisp-chat.md §8.2)
+ *  passes false: its app is not our site, and "Click Connect (top right)" is
+ *  a Closet button. Every existing caller keeps the default. */
+export function retrieveLore(message: string, max = 4, opts: { appKb?: boolean } = {}): string[] {
   const m = message.toLowerCase();
   const hits: string[] = [];
   // Companion's own curated lore takes priority…
@@ -57,7 +61,7 @@ export function retrieveLore(message: string, max = 4): string[] {
     if (hits.length >= max) break;
   }
   // …then supplement (never replace) with the canonical app knowledge base.
-  if (hits.length < max) {
+  if (hits.length < max && opts.appKb !== false) {
     for (const extra of retrieveKB(message, max)) {
       if (!hits.includes(extra)) hits.push(extra);
       if (hits.length >= max) break;

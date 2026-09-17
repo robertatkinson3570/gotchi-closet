@@ -9,7 +9,8 @@
 // the live companion/chat path.
 
 import { fetchGotchiState } from "../companion/gotchiState";
-import { getFacts, getRecentMessages } from "../companion/db";
+import { getFacts, getRecentMessages, isClientTag } from "../companion/db";
+import { proxyKeeperStanding } from "../companion/keeperProxy";
 import { buildPersonality } from "../../src/lib/companion/personality";
 import { retrieveLore } from "../../src/lib/companion/knowledge";
 import { assembleMessages } from "../../src/lib/companion/chatPrompt";
@@ -129,6 +130,50 @@ export async function verifySoul(tokenId: string): Promise<{
   onChain: Awaited<ReturnType<typeof readOnChainSeal>>;
 }> {
   return { configured: sealConfigured(), onChain: await readOnChainSeal(tokenId) };
+}
+
+// --- KEEPER GOTCHI (08-wisp-chat.md §8.2): the two read-only tools ---------
+// Still zero LLM calls: the shared log is a table read, the keeper report is
+// GVR's stored nightly report (facts and cites, never the voiced text).
+
+export const HISTORY_LIMIT_MAX = 100;
+
+/** The shared companion log for a gotchi + owner, every client's turns
+ *  (Closet, GVR, keyed apps), newest-last; `client` filters to one writer. */
+export function getHistory(tokenId: string, wallet: string, limit = 30, client?: string): {
+  tokenId: string; wallet: string; messages: { role: string; content: string; ts: number; client: string }[];
+} {
+  const w = wallet.startsWith("0x") ? wallet.toLowerCase() : "";
+  if (!w) throw new Error("wallet must be a 0x address");
+  const n = Math.max(1, Math.min(HISTORY_LIMIT_MAX, Math.floor(limit) || 30));
+  const filter = client && client !== "all" ? client : undefined;
+  if (filter && !isClientTag(filter)) throw new Error("client must be closet, gvr, wsp_<first8> or all");
+  return { tokenId: String(tokenId), wallet: w, messages: getRecentMessages(w, tokenId, n, filter).map((m) => ({ role: m.role, content: m.content, ts: m.ts, client: m.client })) };
+}
+
+/** The holder's latest standing report from GVR (06-standing-questions.md),
+ *  facts only: each line's key, severity, template text, facts and cites.
+ *  The voiced prose, the raw metric rows and the change bookkeeping are
+ *  not returned. The wallet proves itself the way the Keeper tab does: the
+ *  holder signs keeperReadMessage(wallet, signedAt) and GVR verifies it;
+ *  Closet forwards and never re-checks (keeperProxy.ts). */
+export async function getKeeperReport(wallet: string, tokenId: string, signedAt: string | number, signature: string): Promise<{
+  wallet: string; tokenId: string; asOfBlock: string | null; at: number | null;
+  lines: { key: string; severity: string; text: string; facts: unknown[]; cites: unknown[] }[];
+  actions: unknown[];
+}> {
+  const r = await proxyKeeperStanding(String(tokenId), String(wallet), { signedAt: String(signedAt), signature: String(signature) });
+  if (r.status !== 200) throw new Error(`GVR answered ${r.status}: ${r.body?.error ?? "no report"}`);
+  const report = (r.body?.report ?? {}) as { lines?: Record<string, unknown>[] };
+  const lines = Array.isArray(report.lines) ? report.lines : [];
+  return {
+    wallet: String(r.body.wallet ?? wallet).toLowerCase(), tokenId: String(r.body.tokenId ?? tokenId), asOfBlock: r.body.asOfBlock ?? null, at: typeof r.body.at === "number" ? r.body.at : null,
+    lines: lines.map((l) => ({
+      key: String(l.key ?? ""), severity: String(l.severity ?? ""), text: String(l.text ?? ""),
+      facts: Array.isArray(l.facts) ? l.facts : [], cites: Array.isArray(l.cites) ? l.cites : [],
+    })),
+    actions: Array.isArray(r.body.actions) ? r.body.actions : [],
+  };
 }
 
 // --- Steward dogfood handlers ---

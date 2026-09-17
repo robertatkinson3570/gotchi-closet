@@ -30,6 +30,21 @@ export function detectNav(message: string): string | null {
   return null;
 }
 
+/** KEEPER GOTCHI (08-wisp-chat.md §8.2): a keyed third-party app's own
+ *  routes. `navMap` is the key's context (word -> path, keys already
+ *  lowercased by the accounts validator); the same MOTION gate as the site's
+ *  own table, longer words first so "my plots" beats "plots". */
+export function detectNavFrom(message: string, navMap: Record<string, string>): string | null {
+  const m = message.toLowerCase();
+  if (!MOTION.test(m)) return null;
+  const keys = Object.keys(navMap).sort((a, b) => b.length - a.length);
+  for (const key of keys) {
+    const re = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+")}\\b`, "i");
+    if (re.test(m)) return navMap[key]!;
+  }
+  return null;
+}
+
 const HELP = /\b(help|what can you (?:do|help)|what (?:do|can) you do|commands?|list commands?|abilities|features|capabilit|how do you work|what are you (?:able|capable))\b/i;
 
 /** True when the owner is asking what the companion can do. */

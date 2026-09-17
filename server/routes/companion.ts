@@ -25,8 +25,32 @@ import { premiumSignatureValid, actionSignatureValid } from "../companion/auth";
 import { soulDepthSnapshot } from "../soul/snapshot";
 import { proxyKeeperStanding } from "../companion/keeperProxy";
 import { proxyAnalystAsk } from "../companion/askProxy";
+import { credentialOf, WISP_KEY_REQUIRED } from "../companion/wispCredential";
+import { handleKeyedChat, ANALYST_NOT_ON_THIS_DOOR } from "../companion/keyedChat";
+import { clientTagOfKey, isClientTag, CLIENT_GVR } from "../companion/db";
+import { effectivePlan } from "../mcp/accounts";
+import { chatGranted } from "../../src/lib/wisp/pricing";
 
 const router = Router();
+
+/** KEEPER GOTCHI (08-wisp-chat.md §8.2): POST /history's body, checked. */
+const HISTORY_TURNS_MAX = 20;
+const HISTORY_CONTENT_MAX = 4000;
+function historyTurnsOf(raw: unknown): { role: "user" | "assistant"; content: string; ts?: number; client?: string }[] | null {
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > HISTORY_TURNS_MAX) return null;
+  const out: { role: "user" | "assistant"; content: string; ts?: number; client?: string }[] = [];
+  for (const t of raw) {
+    if (!t || typeof t !== "object") return null;
+    const x = t as Record<string, unknown>;
+    if ((x.role !== "user" && x.role !== "assistant") || typeof x.content !== "string" || !x.content.trim()) return null;
+    out.push({
+      role: x.role, content: x.content.slice(0, HISTORY_CONTENT_MAX),
+      ...(typeof x.ts === "number" && Number.isFinite(x.ts) ? { ts: x.ts } : {}),
+      ...(typeof x.client === "string" ? { client: x.client } : {}),
+    });
+  }
+  return out;
+}
 
 // NOTE (v1 limitation): the wallet on /chat is self-reported (no signature/SIWE).
 // The free tier runs on a Groq key so the blast radius is rate-limit abuse only.
@@ -60,6 +84,21 @@ function isSafeFact(fact: string): boolean {
 router.get("/health", (_req, res) => res.json({ ok: true }));
 
 router.post("/chat", async (req, res) => {
+  // KEEPER GOTCHI (08-wisp-chat.md §8.2): the credential branch. A request
+  // with no Authorization header is the unkeyed path below, byte for byte as
+  // it was (companion.chat.test.ts pins it against a snapshot taken before
+  // this branch existed). `Bearer wsp_…` is a third party: the keyed turn,
+  // metered before anything else. Any other Authorization is a missing key.
+  const cred = credentialOf(req);
+  if (cred.kind === "wisp") {
+    try {
+      const out = await handleKeyedChat(req.body ?? {}, cred.apiKey, cred.account);
+      return res.status(out.status).json(out.body);
+    } catch (err: any) {
+      return res.status(500).json({ error: err?.message ?? String(err) });
+    }
+  }
+  if (cred.kind !== "none") return res.status(401).json({ error: WISP_KEY_REQUIRED, reason: cred.kind === "bad" ? cred.reason : "the service key is not a chat credential" });
   try {
     const body = req.body ?? {};
     const tokenId = String(body.tokenId ?? "");
@@ -299,12 +338,56 @@ router.get("/premium/:wallet", (req, res) => {
 
 // GET /history/:tokenId/:wallet — recent chat history for this gotchi + owner, so the
 // client can restore past conversation after a browser close.
+// KEEPER GOTCHI (08-wisp-chat.md §8.2): `?client=` filters to one writer
+// (closet | gvr | wsp_<first8>; absent or `all` = every client), and every
+// message names its client. A keyed caller may read it when its plan grants
+// chat; a request with no key reads as it always did.
 router.get("/history/:tokenId/:wallet", (req, res) => {
   const tokenId = String(req.params.tokenId);
   const wallet = String(req.params.wallet);
   if (!wallet.startsWith("0x")) return res.status(400).json({ error: "wallet (0x) required" });
-  const messages = getRecentMessages(wallet, tokenId, 30).map((m) => ({ role: m.role, content: m.content }));
+  const cred = credentialOf(req);
+  if (cred.kind === "bad") return res.status(401).json({ error: WISP_KEY_REQUIRED, reason: cred.reason });
+  if (cred.kind === "wisp" && !chatGranted(effectivePlan(cred.account))) {
+    return res.status(403).json({ error: "chat is not in this key's plan", plan: effectivePlan(cred.account) });
+  }
+  const want = typeof req.query.client === "string" ? req.query.client.trim() : "";
+  if (want && want !== "all" && !isClientTag(want)) return res.status(400).json({ error: "client must be closet, gvr, wsp_<first8> or all" });
+  const filter = want && want !== "all" ? want : undefined;
+  const messages = getRecentMessages(wallet, tokenId, 30, filter).map((m) => ({ role: m.role, content: m.content, client: m.client }));
   res.json({ messages });
+});
+
+// KEEPER GOTCHI (08-wisp-chat.md §8.2): POST /history { wallet, tokenId,
+// turns: [{ role, content, ts?, client? }] } -- the shared log's write door
+// for the clients that answer on their own models. Guarded by a Wisp key
+// (whose plan must grant chat; every turn is then tagged with THAT key,
+// whatever the body says) or the internal service key COMPANION_WRITE_KEY
+// (GVR's write-back: `client` is gvr unless the body says closet). No model
+// is called here and nothing is metered: a write-back is not a chat turn.
+router.post("/history", (req, res) => {
+  const cred = credentialOf(req);
+  if (cred.kind === "none" || cred.kind === "bad") {
+    return res.status(401).json({ error: "Wisp key or service key required", ...(cred.kind === "bad" ? { reason: cred.reason } : {}) });
+  }
+  if (cred.kind === "wisp" && !chatGranted(effectivePlan(cred.account))) {
+    return res.status(403).json({ error: "chat is not in this key's plan", plan: effectivePlan(cred.account) });
+  }
+  const b = req.body ?? {};
+  const wallet = String(b.wallet ?? "").toLowerCase();
+  const tokenId = String(b.tokenId ?? "");
+  if (!/^0x[0-9a-f]{40}$/.test(wallet) || !/^\d{1,12}$/.test(tokenId)) return res.status(400).json({ error: "wallet (0x) and tokenId required" });
+  const turns = historyTurnsOf(b.turns);
+  if (!turns) return res.status(400).json({ error: `turns: 1 to ${HISTORY_TURNS_MAX} of { role: user|assistant, content }` });
+  let client: string;
+  if (cred.kind === "wisp") client = clientTagOfKey(cred.apiKey);
+  else {
+    const asked = turns.find((t) => t.client)?.client;
+    if (asked !== undefined && (!isClientTag(asked) || asked.startsWith("wsp_"))) return res.status(400).json({ error: "the service key writes as gvr or closet" });
+    client = asked ?? CLIENT_GVR;
+  }
+  for (const t of turns) appendMessage(wallet, tokenId, t.role, t.content, client, t.ts);
+  res.json({ ok: true, written: turns.length, client });
 });
 
 // Recent on-chain actions Hermes took for this gotchi+owner (newest-last). Powers the
@@ -334,6 +417,13 @@ router.get("/keeper/:tokenId/:wallet", async (req, res) => {
 // metered THERE (one free question a day, then { refused: "holder" }); the
 // wallet proof is the signed keeper read message the Keeper tab signs.
 router.post("/ask", async (req, res) => {
+  // KEEPER GOTCHI (08-wisp-chat.md, owner): a Wisp key gets persona
+  // companion chat only, never the analyst. A keyed request here is refused
+  // before Closet even shapes it, so no path exists from a key to GVR's
+  // /api/analyst/ask. (Any other Authorization is ignored as before: this
+  // door's proof is the signed keeper read message in the body.)
+  const cred = credentialOf(req);
+  if (cred.kind === "wisp") return res.status(403).json({ error: ANALYST_NOT_ON_THIS_DOOR });
   const r = await proxyAnalystAsk(req.body ?? {});
   res.status(r.status).json(r.body);
 });

@@ -68,23 +68,51 @@ export function getDb(): Database.Database {
       `UPDATE companion_entitlements SET credits = 5000 WHERE credits = 0 AND expires_at > ?`
     ).run(Date.now());
   }
+  // KEEPER GOTCHI (08-wisp-chat.md §8.2): which client wrote the turn --
+  // 'closet' (this route), 'gvr' (GVR's own rails, written back through POST
+  // /history) or 'wsp_<first8>' (a keyed third-party app). Old rows are
+  // Closet's, so the default names them.
+  const msgCols = db.pragma("table_info(companion_messages)") as { name: string }[];
+  if (!msgCols.some((c) => c.name === "client")) {
+    db.exec(`ALTER TABLE companion_messages ADD COLUMN client TEXT NOT NULL DEFAULT 'closet'`);
+  }
 
   return db;
 }
 
-export interface StoredMessage { role: "user" | "assistant"; content: string; ts: number; }
+export interface StoredMessage { role: "user" | "assistant"; content: string; ts: number; client: string; }
 
-export function appendMessage(wallet: string, tokenId: string, role: "user" | "assistant", content: string) {
-  getDb().prepare(
-    `INSERT INTO companion_messages (wallet, token_id, role, content, ts) VALUES (?,?,?,?,?)`
-  ).run(wallet.toLowerCase(), String(tokenId), role, content, Date.now());
+/** The shared log's client tags: Closet itself, GVR, or a Wisp key's first
+ *  eight hex characters after the prefix (08-wisp-chat.md §8.4). */
+export const CLIENT_CLOSET = "closet";
+export const CLIENT_GVR = "gvr";
+export function clientTagOfKey(apiKey: string): string {
+  return apiKey.slice(0, 12); // "wsp_" + 8
+}
+export function isClientTag(s: unknown): s is string {
+  return typeof s === "string" && (s === CLIENT_CLOSET || s === CLIENT_GVR || /^wsp_[0-9a-f]{8}$/.test(s));
 }
 
-export function getRecentMessages(wallet: string, tokenId: string, limit = 20): StoredMessage[] {
-  const rows = getDb().prepare(
-    `SELECT role, content, ts FROM companion_messages
-     WHERE wallet = ? AND token_id = ? ORDER BY id DESC LIMIT ?`
-  ).all(wallet.toLowerCase(), String(tokenId), limit) as StoredMessage[];
+/** `ts` is the turn's own time when the writer knows it (GVR's write-back);
+ *  the log stays ordered by id, so a supplied time only labels the row. */
+export function appendMessage(wallet: string, tokenId: string, role: "user" | "assistant", content: string, client: string = CLIENT_CLOSET, ts?: number) {
+  const at = typeof ts === "number" && Number.isFinite(ts) && ts > 0 ? Math.floor(ts) : Date.now();
+  getDb().prepare(
+    `INSERT INTO companion_messages (wallet, token_id, role, content, ts, client) VALUES (?,?,?,?,?,?)`
+  ).run(wallet.toLowerCase(), String(tokenId), role, content, at, client);
+}
+
+/** The last `limit` turns, newest-last; `client` filters to one writer. */
+export function getRecentMessages(wallet: string, tokenId: string, limit = 20, client?: string): StoredMessage[] {
+  const rows = (client
+    ? getDb().prepare(
+        `SELECT role, content, ts, client FROM companion_messages
+         WHERE wallet = ? AND token_id = ? AND client = ? ORDER BY id DESC LIMIT ?`
+      ).all(wallet.toLowerCase(), String(tokenId), client, limit)
+    : getDb().prepare(
+        `SELECT role, content, ts, client FROM companion_messages
+         WHERE wallet = ? AND token_id = ? ORDER BY id DESC LIMIT ?`
+      ).all(wallet.toLowerCase(), String(tokenId), limit)) as StoredMessage[];
   return rows.reverse(); // newest-last
 }
 
