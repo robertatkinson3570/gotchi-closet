@@ -71,6 +71,21 @@ describe("wallet proof (SIWE)", () => {
     expect(() => prepareProof({ purpose: session, wallet: W, domain: "phish.example", uri: "https://phish.example", now: T0 })).toThrow(/cannot ask/);
   });
 
+  it("SEC-11: a lookalike Vercel project cannot ask for a session; a preview host named in WISP_SESSION_DOMAINS can", () => {
+    const before = process.env.WISP_SESSION_DOMAINS;
+    try {
+      delete process.env.WISP_SESSION_DOMAINS;
+      expect(() => prepareProof({ purpose: session, wallet: W, domain: "gotchi-closet-freegift.vercel.app", uri: "https://gotchi-closet-freegift.vercel.app", now: T0 })).toThrow(/cannot ask/);
+      process.env.WISP_SESSION_DOMAINS = " gotchi-closet-git-main-grimlabs.vercel.app, Preview.Gotchicloset.com ";
+      expect(() => prepareProof({ purpose: session, wallet: W, domain: "gotchi-closet-freegift.vercel.app", uri: "https://gotchi-closet-freegift.vercel.app", now: T0 })).toThrow(/cannot ask/);
+      const m = prepareProof({ purpose: session, wallet: W, domain: "gotchi-closet-git-main-grimlabs.vercel.app", uri: "https://gotchi-closet-git-main-grimlabs.vercel.app", now: T0 });
+      expect(m).toContain("gotchi-closet-git-main-grimlabs.vercel.app wants you to sign in");
+      expect(prepareProof({ purpose: session, wallet: W, domain: "preview.gotchicloset.com", uri: "https://preview.gotchicloset.com", now: T0 })).toContain("preview.gotchicloset.com wants you");
+    } finally {
+      if (before === undefined) delete process.env.WISP_SESSION_DOMAINS; else process.env.WISP_SESSION_DOMAINS = before;
+    }
+  });
+
   it("session tokens prove their wallet until they expire, and cannot be forged", () => {
     const token = issueSessionToken(W, T0 + 1000);
     expect(sessionWallet(token, T0)).toBe(W);

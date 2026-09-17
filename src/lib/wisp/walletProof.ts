@@ -38,10 +38,31 @@ export function statementAppName(name: string | null | undefined): string {
   return clean || "an app";
 }
 
+/** The two production hosts. Every other host must be named explicitly. */
+export const SESSION_HOSTS: readonly string[] = ["gotchicloset.com", "www.gotchicloset.com"];
+
+/**
+ * WISP_SESSION_DOMAINS: comma-separated exact hosts (preview deploys the owner
+ * runs) that may also ask for a session. Empty by default. Never a wildcard:
+ * any Vercel user can name a project gotchi-closet-<anything>, and a session
+ * minted for that host reads a holder's private history (QA SEC-11).
+ */
+export function parseSessionDomains(raw: string | undefined | null): string[] {
+  return String(raw ?? "")
+    .split(",")
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/** The same hosts as https origins, for the CORS allowlist. */
+export function sessionDomainOrigins(raw: string | undefined | null): string[] {
+  return parseSessionDomains(raw).map((h) => `https://${h}`);
+}
+
 /** Sites allowed to ask for a Gotchi Closet session (the SIWE domain). */
-export function isSessionDomain(domain: string, allowDev: boolean): boolean {
+export function isSessionDomain(domain: string, allowDev: boolean, extraHosts: readonly string[] = []): boolean {
   const d = domain.toLowerCase();
-  if (d === "gotchicloset.com" || d === "www.gotchicloset.com") return true;
-  if (/^gotchi-closet[a-z0-9-]*\.vercel\.app$/.test(d)) return true;
+  if (SESSION_HOSTS.includes(d)) return true;
+  if (extraHosts.includes(d)) return true;
   return allowDev && /^(localhost|127\.0\.0\.1)(:\d{2,5})?$/.test(d);
 }

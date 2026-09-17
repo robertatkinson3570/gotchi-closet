@@ -9,7 +9,7 @@ import { createSiweMessage, parseSiweMessage } from "viem/siwe";
 import { getDb } from "./db";
 import {
   PROOF_CHAIN_ID, PROOF_MESSAGE_MAX, PROOF_SIGN_WINDOW_MS, SESSION_TTL_MS, GRANT_DEFAULT_DAYS, GRANT_MAX_DAYS,
-  SESSION_RESOURCE, SESSION_STATEMENT, grantResource, grantStatement, statementAppName, isSessionDomain,
+  SESSION_RESOURCE, SESSION_STATEMENT, grantResource, grantStatement, statementAppName, isSessionDomain, parseSessionDomains,
 } from "../../src/lib/wisp/walletProof";
 
 export type ProofPurpose = { kind: "session" } | { kind: "grant"; keyTag: string };
@@ -49,6 +49,9 @@ function sameHex(a: string, b: string): boolean {
 }
 
 const allowDev = () => process.env.NODE_ENV !== "production";
+/** Read at call time so a test (and a restart) can change the list. */
+const sessionHosts = () => parseSessionDomains(process.env.WISP_SESSION_DOMAINS);
+const sessionDomainOk = (domain: string) => isSessionDomain(domain, allowDev(), sessionHosts());
 
 function nonceFor(purpose: ProofPurpose, f: { address: string; domain: string; uri: string; statement: string; issuedAt: Date; expirationTime: Date }): string {
   return hmac([
@@ -71,7 +74,7 @@ export function prepareProof(args: {
   let resource: string;
   let ttl: number;
   if (args.purpose.kind === "session") {
-    if (!isSessionDomain(domain, allowDev())) throw new ProofError("this site cannot ask for a Gotchi Closet session");
+    if (!sessionDomainOk(domain)) throw new ProofError("this site cannot ask for a Gotchi Closet session");
     statement = SESSION_STATEMENT;
     resource = SESSION_RESOURCE;
     ttl = SESSION_TTL_MS;
@@ -114,7 +117,7 @@ export async function verifyProof(args: { purpose: ProofPurpose; message: unknow
   }
   const expectedResource = args.purpose.kind === "session" ? SESSION_RESOURCE : grantResource(args.purpose.keyTag);
   if (!p.resources || p.resources.length !== 1 || p.resources[0] !== expectedResource) throw new ProofError("this message was made for something else");
-  if (args.purpose.kind === "session" && (p.statement !== SESSION_STATEMENT || !isSessionDomain(p.domain, allowDev()))) {
+  if (args.purpose.kind === "session" && (p.statement !== SESSION_STATEMENT || !sessionDomainOk(p.domain))) {
     throw new ProofError("this message was made for something else");
   }
   const canonical = createSiweMessage({

@@ -27,6 +27,8 @@ import { startStewardCron } from "./steward/cron";
 import { startHermesAutonomousCron } from "./companion/autonomousCron";
 import { startPulseCron } from "./pulse/cron";
 
+import { sessionDomainOrigins } from "../src/lib/wisp/walletProof";
+
 export function createApp() {
   const app = express();
   // Behind nginx on the VPS — trust one proxy hop so req.ip is the real client
@@ -35,11 +37,13 @@ export function createApp() {
 
   // Production origins. Allowed unconditionally — these are the only places
   // the SPA legitimately runs from.
+  // No Vercel wildcard: any Vercel user can name a project
+  // gotchi-closet-<anything> (QA SEC-11). Preview hosts the owner runs are
+  // named exactly in WISP_SESSION_DOMAINS, the same list the session door uses.
   const prodOrigins: (string | RegExp)[] = [
     "https://www.gotchicloset.com",
     "https://gotchicloset.com",
-    // Vercel preview deployments (gotchi-closet-*.vercel.app)
-    /^https:\/\/gotchi-closet[a-z0-9-]*\.vercel\.app$/,
+    ...sessionDomainOrigins(process.env.WISP_SESSION_DOMAINS),
   ];
   // Dev origins. Always included so local dev + Replit work.
   const devOrigins: (string | RegExp)[] = [
