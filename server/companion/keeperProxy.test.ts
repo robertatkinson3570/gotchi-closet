@@ -45,4 +45,13 @@ describe("proxyKeeperStanding", () => {
     expect(r.status).toBe(502);
     expect(r.body.error).toMatch(/couldn't reach GVR/);
   });
+
+  it("B2: forwards an x-keeper-signature header to GVR instead of the query string when the panel sent one", async () => {
+    const fetchSpy = vi.fn(async (url: string, init?: { headers?: Record<string, string> }) => ({ status: 200, json: async () => ({ ok: true, url, header: init?.headers?.["x-keeper-signature"] }) }));
+    vi.stubGlobal("fetch", fetchSpy);
+    const r = await proxyKeeperStanding("3560", WALLET, {}, "12345.0xabc");
+    expect(r.status).toBe(200);
+    expect(fetchSpy.mock.calls[0]![0]).toBe(`https://gvr.gotchicloset.com/api/analyst/standing/${WALLET}/3560`);
+    expect(r.body.header).toBe("12345.0xabc");
+  });
 });

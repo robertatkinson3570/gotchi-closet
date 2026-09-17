@@ -7,7 +7,7 @@ import { useCompanionGotchis } from "./useCompanionGotchis";
 import { useCompanion } from "@/state/useCompanion";
 import { buildPersonality } from "@/lib/companion/personality";
 import { postChat, postAnalystAsk, ANALYST_DISCLAIMERS, getPremium, getHistory, getGoals, setGoal, getRecentActions, companionSession, signInCompanion, forgetCompanionSession, getAppGrants, revokeAppGrant, type AppGrant } from "@/lib/companion/api";
-import { keeperReadMessage, KEEPER_READ_SIG_TTL_MS, KEEPER_SIG_CACHE_KEY, forgetKeeperSig } from "@/lib/companion/keeperAuth";
+import { keeperReadMessage, keeperSigTtlMs, KEEPER_SIG_CACHE_KEY, forgetKeeperSig } from "@/lib/companion/keeperAuth";
 import { PersonalityCard } from "./PersonalityCard";
 import { SoulDepthMeter } from "./SoulDepthMeter";
 import { GoPremium } from "./GoPremium";
@@ -221,13 +221,14 @@ export function CompanionChatPanel() {
   // The keeper read signature (the same one KeeperPanel signs and caches):
   // GVR verifies it as the wallet proof for an analyst turn.
   async function ensureKeeperAuth(wallet: string): Promise<{ signedAt: number; signature: string; cached: boolean }> {
-    const key = KEEPER_SIG_CACHE_KEY(wallet);
+    // B2: the ask purpose, its own 5-minute cache (a captured ask signature spends Holder turns).
+    const key = KEEPER_SIG_CACHE_KEY(wallet, "ask");
     try {
       const cached = JSON.parse(localStorage.getItem(key) || "null");
-      if (cached?.signature && Date.now() - cached.signedAt < KEEPER_READ_SIG_TTL_MS) return { ...cached, cached: true };
+      if (cached?.signature && Date.now() - cached.signedAt < keeperSigTtlMs("ask")) return { ...cached, cached: true };
     } catch { /* ignore */ }
     const signedAt = Date.now();
-    const signature = await signMessageAsync({ message: keeperReadMessage(wallet, signedAt) });
+    const signature = await signMessageAsync({ message: keeperReadMessage(wallet, signedAt, "ask") });
     const auth = { signedAt, signature };
     try { localStorage.setItem(key, JSON.stringify(auth)); } catch { /* privacy mode: sign again next time */ }
     return { ...auth, cached: false };
@@ -243,7 +244,7 @@ export function CompanionChatPanel() {
       // B1: GVR answers an unproven wallet with a 200 "unproven" route, not a 401. A signature cached
       // under the old message text reads as unproven once; drop it and sign again, once.
       if (auth.cached && r.kind === "ok" && r.body.route === "unproven") {
-        forgetKeeperSig(address);
+        forgetKeeperSig(address, "ask");
         r = await postAnalystAsk(selectedTokenId, address, text, await ensureKeeperAuth(address), history);
       }
       if (r.kind === "holder") {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAccount, useSignMessage, useWalletClient } from "wagmi";
-import { keeperReadMessage, KEEPER_READ_SIG_TTL_MS, KEEPER_SIG_CACHE_KEY, forgetKeeperSig } from "@/lib/companion/keeperAuth";
+import { keeperReadMessage, keeperSigTtlMs, KEEPER_SIG_CACHE_KEY, KEEPER_SIG_HEADER, keeperSigHeaderValue, forgetKeeperSig } from "@/lib/companion/keeperAuth";
 import { ANALYST_DISCLAIMERS } from "@/lib/companion/api";
 
 // KEEPER GOTCHI (06-standing-questions.md §6.3): "a new KeeperPanel.tsx
@@ -42,15 +42,15 @@ export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined })
   const [busyAction, setBusyAction] = useState<string | null>(null);
 
   async function ensureKeeperAuth(wallet: string): Promise<{ signedAt: number; signature: string }> {
-    const key = KEEPER_SIG_CACHE_KEY(wallet);
+    const key = KEEPER_SIG_CACHE_KEY(wallet, "standing");
     try {
       const cached = JSON.parse(localStorage.getItem(key) || "null");
-      if (cached?.signature && Date.now() - cached.signedAt < KEEPER_READ_SIG_TTL_MS) return cached;
+      if (cached?.signature && Date.now() - cached.signedAt < keeperSigTtlMs("standing")) return cached;
     } catch {
       /* ignore */
     }
     const signedAt = Date.now();
-    const signature = await signMessageAsync({ message: keeperReadMessage(wallet, signedAt) });
+    const signature = await signMessageAsync({ message: keeperReadMessage(wallet, signedAt, "standing") });
     const auth = { signedAt, signature };
     try {
       localStorage.setItem(key, JSON.stringify(auth));
@@ -72,12 +72,12 @@ export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined })
       try {
         const read = async () => {
           const auth = await ensureKeeperAuth(address);
-          const q = new URLSearchParams({ signedAt: String(auth.signedAt), signature: auth.signature });
-          return fetch(`/api/companion/keeper/${tokenId}/${address}?${q}`);
+          // B2: the proof rides in the header, never a query string an access log keeps.
+          return fetch(`/api/companion/keeper/${tokenId}/${address}`, { headers: { [KEEPER_SIG_HEADER]: keeperSigHeaderValue(auth) } });
         };
         let res = await read();
         // B1: a signature cached under the old message text fails once on GVR; drop it and sign again, once.
-        if (res.status === 401) { forgetKeeperSig(address); res = await read(); }
+        if (res.status === 401) { forgetKeeperSig(address, "standing"); res = await read(); }
         if (!res.ok) {
           if (res.status === 404) {
             if (!cancelled) setReport(null);

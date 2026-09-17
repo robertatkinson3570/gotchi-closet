@@ -477,7 +477,8 @@ router.get("/keeper/:tokenId/:wallet", async (req, res) => {
   const tokenId = String(req.params.tokenId);
   const wallet = String(req.params.wallet);
   const { signedAt, signature } = req.query as { signedAt?: string; signature?: string };
-  const r = await proxyKeeperStanding(tokenId, wallet, { signedAt, signature });
+  const sigHeader = req.headers["x-keeper-signature"];
+  const r = await proxyKeeperStanding(tokenId, wallet, { signedAt, signature }, Array.isArray(sigHeader) ? sigHeader[0] : sigHeader);
   res.status(r.status).json(r.body);
 });
 

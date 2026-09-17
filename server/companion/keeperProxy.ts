@@ -15,17 +15,22 @@ export interface KeeperProxyResult {
   body: any;
 }
 
+/** B2: the panel sends the proof in the x-keeper-signature header (signedAt.signature) and
+ *  the proxy forwards that header to GVR; the query string form is still accepted. */
 export async function proxyKeeperStanding(
   tokenId: string,
   wallet: string,
-  query: { signedAt?: string; signature?: string }
+  query: { signedAt?: string; signature?: string },
+  sigHeader?: string
 ): Promise<KeeperProxyResult> {
   if (!ADDR_RE.test(wallet)) return { status: 400, body: { error: "wallet (0x) required" } };
   if (!TOKEN_ID_RE.test(tokenId)) return { status: 400, body: { error: "tokenId required" } };
-  if (!query.signedAt || !query.signature) return { status: 400, body: { error: "signedAt and signature required" } };
-  const q = new URLSearchParams({ signedAt: query.signedAt, signature: query.signature });
+  const header = typeof sigHeader === "string" && /^\d{1,16}\.0x[0-9a-fA-F]+$/.test(sigHeader.trim()) ? sigHeader.trim() : null;
+  if (!header && (!query.signedAt || !query.signature)) return { status: 400, body: { error: "signedAt and signature required" } };
+  const q = header ? "" : `?${new URLSearchParams({ signedAt: query.signedAt!, signature: query.signature! })}`;
   try {
-    const res = await fetch(`${GVR_API}/api/analyst/standing/${wallet}/${tokenId}?${q}`, {
+    const res = await fetch(`${GVR_API}/api/analyst/standing/${wallet}/${tokenId}${q}`, {
+      ...(header ? { headers: { "x-keeper-signature": header } } : {}),
       signal: AbortSignal.timeout(8000),
     });
     const body = await res.json().catch(() => ({ error: "GVR answered with no body" }));
