@@ -31,10 +31,13 @@ vi.mock("../companion/llmProvider", () => ({ complete: llm.complete, completeWit
 
 import companionRoutes from "./companion";
 import { closeDb } from "../companion/db";
+import { issueSessionToken } from "../companion/walletProof";
+import { saveGrant } from "../mcp/grants";
 
 let server: Server;
 let base: string;
 const WALLET = "0x1111111111111111111111111111111111111111";
+const signedIn = (w: string) => ({ "x-wisp-session": issueSessionToken(w, Date.now() + 86_400_000) });
 
 async function post(path: string, body: unknown, headers: Record<string, string> = {}) {
   const res = await fetch(`${base}${path}`, {
@@ -73,9 +76,9 @@ beforeEach(() => {
  *  keyed branch existed (Closet 3f69467, slice 07's head) and is committed
  *  with the slice: what the route hands the model for an unkeyed request,
  *  and what it answers, must match that file exactly. */
-describe("POST /chat without a Wisp key: the Closet path as it was", () => {
+describe("POST /chat without a Wisp key, signed in: the Closet path as it was", () => {
   it("assembles the same system prompt, messages and tier for a plain social turn", async () => {
-    const r = await post("/api/companion/chat", { tokenId: "9638", wallet: WALLET, message: "gm fren, how are you today?" });
+    const r = await post("/api/companion/chat", { tokenId: "9638", wallet: WALLET, message: "gm fren, how are you today?" }, signedIn(WALLET));
     expect(r.status).toBe(200);
     expect(llm.complete).toHaveBeenCalledTimes(1);
     expect(llm.completeWithTools).not.toHaveBeenCalled();
@@ -84,14 +87,14 @@ describe("POST /chat without a Wisp key: the Closet path as it was", () => {
   });
 
   it("assembles the same prompt for a pure-social turn (no site overview) with the prior turn in history", async () => {
-    const r = await post("/api/companion/chat", { tokenId: "9638", wallet: WALLET, message: "gm fren" });
+    const r = await post("/api/companion/chat", { tokenId: "9638", wallet: WALLET, message: "gm fren" }, signedIn(WALLET));
     expect(r.status).toBe(200);
     const [systemPrompt, messages, tier] = llm.complete.mock.calls[0]!;
     expect({ systemPrompt, messages, tier, response: r.json }).toMatchSnapshot();
   });
 
   it("the history read returns the two turns as before", async () => {
-    const res = await fetch(`${base}/api/companion/history/9638/${WALLET}`);
+    const res = await fetch(`${base}/api/companion/history/9638/${WALLET}`, { headers: signedIn(WALLET) });
     const j = (await res.json()) as { messages: { role: string; content: string }[] };
     expect(j.messages.map((m) => [m.role, m.content])).toEqual([
       ["user", "gm fren, how are you today?"], ["assistant", "boo from the model 👻"],
@@ -117,11 +120,12 @@ const bearer = (key: string) => ({ Authorization: `Bearer ${key}` });
 const W2 = "0x2222222222222222222222222222222222222222";
 
 describe("POST /chat with a Wisp key: the keyed path", () => {
-  it("a paid key: 200, the reply, and both turns persisted with client = wsp_<first8>; the log is shared with the unkeyed turns", async () => {
+  it("a paid key the wallet granted: 200, the reply, and both turns persisted with client = wsp_<first8>; the log is shared with the unkeyed turns", async () => {
     const key = paidKey("holder");
+    saveGrant(key, { wallet: W2, domain: "app.example", grantedAt: Date.now(), expiresAt: Date.now() + 86_400_000 });
     const r = await post("/api/companion/chat", { tokenId: "9638", wallet: W2, message: "gm from the app" }, bearer(key));
     expect(r.status).toBe(200);
-    expect(r.json).toMatchObject({ reply: "boo from the model 👻", deflected: false, client: key.slice(0, 12), plan: "holder", usedToday: 1, limitPerDay: 200 });
+    expect(r.json).toMatchObject({ reply: "boo from the model 👻", deflected: false, memory: true, client: key.slice(0, 12), plan: "holder", usedToday: 1, limitPerDay: 200 });
     const rows = getRecentMessages(W2, "9638", 10);
     expect(rows.map((m) => [m.role, m.content, m.client])).toEqual([["user", "gm from the app", key.slice(0, 12)], ["assistant", "boo from the model 👻", key.slice(0, 12)]]);
     // the next keyed turn sees that history (shared, all clients)
@@ -216,5 +220,54 @@ describe("POST /chat with a Wisp key: the keyed path", () => {
     expect(fetchSpy.mock.calls.length - calls).toBe(1);
     fetchSpy.mockRestore();
     expect(llm.complete).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// WALLET PROOF: an unproven wallet is a guest. Same gotchi, no memory.
+// ---------------------------------------------------------------------------
+describe("POST /chat for a wallet nobody proved", () => {
+  const W3 = "0x3333333333333333333333333333333333333333";
+
+  it("without a session: the reply comes back with memory false, the owner's history and facts stay out of the prompt, and nothing is written", async () => {
+    const { appendMessage, upsertFact } = await import("../companion/db");
+    appendMessage(W3, "9638", "user", "my secret plan is the moon");
+    upsertFact(W3, "9638", "my name is Private");
+    const r = await post("/api/companion/chat", { tokenId: "9638", wallet: W3, message: "what did we talk about?" });
+    expect(r.status).toBe(200);
+    expect(r.json).toMatchObject({ reply: "boo from the model 👻", memory: false });
+    const [, messages] = llm.complete.mock.calls[0]! as [string, { role: string; content: string }[], string];
+    const all = JSON.stringify(messages);
+    expect(all).not.toContain("my secret plan is the moon");
+    expect(all).not.toContain("my name is Private");
+    expect(getRecentMessages(W3, "9638", 10).map((m) => m.content)).toEqual(["my secret plan is the moon"]);
+  });
+
+  it("a session for a different wallet proves nothing", async () => {
+    const r = await post("/api/companion/chat", { tokenId: "9638", wallet: W3, message: "hello" }, signedIn(WALLET));
+    expect(r.json.memory).toBe(false);
+    expect(getRecentMessages(W3, "9638", 10)).toHaveLength(1);
+  });
+
+  it("the service key (GVR, which proved the wallet at sign-in) keeps the memory", async () => {
+    process.env.COMPANION_WRITE_KEY = "svc-chat-test-0123456789";
+    try {
+      const r = await post("/api/companion/chat", { tokenId: "9638", wallet: W3, message: "gm from the game" }, { Authorization: "Bearer svc-chat-test-0123456789" });
+      expect(r.status).toBe(200);
+      expect(r.json.memory).toBeUndefined();
+      expect(getRecentMessages(W3, "9638", 10).map((m) => m.content)).toEqual(["my secret plan is the moon", "gm from the game", "boo from the model 👻"]);
+    } finally {
+      delete process.env.COMPANION_WRITE_KEY;
+    }
+  });
+
+  it("a paid key with no grant from the wallet: a guest turn, memory false, no history in the prompt, nothing written", async () => {
+    const key = paidKey("holder");
+    const r = await post("/api/companion/chat", { tokenId: "9638", wallet: W3, message: "remind me of my plan" }, bearer(key));
+    expect(r.status).toBe(200);
+    expect(r.json).toMatchObject({ memory: false, client: key.slice(0, 12) });
+    const [, messages] = llm.complete.mock.calls[0]! as [string, { role: string; content: string }[], string];
+    expect(JSON.stringify(messages)).not.toContain("my secret plan is the moon");
+    expect(getRecentMessages(W3, "9638", 10).some((m) => m.client === key.slice(0, 12))).toBe(false);
   });
 });

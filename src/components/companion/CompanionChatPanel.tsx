@@ -6,7 +6,7 @@ import { stewardApi } from "@/lib/steward/api";
 import { useCompanionGotchis } from "./useCompanionGotchis";
 import { useCompanion } from "@/state/useCompanion";
 import { buildPersonality } from "@/lib/companion/personality";
-import { postChat, postAnalystAsk, ANALYST_DISCLAIMERS, getPremium, getHistory, getGoals, setGoal, getRecentActions } from "@/lib/companion/api";
+import { postChat, postAnalystAsk, ANALYST_DISCLAIMERS, getPremium, getHistory, getGoals, setGoal, getRecentActions, companionSession, signInCompanion, forgetCompanionSession, getAppGrants, revokeAppGrant, type AppGrant } from "@/lib/companion/api";
 import { keeperReadMessage, KEEPER_READ_SIG_TTL_MS } from "@/lib/companion/keeperAuth";
 import { PersonalityCard } from "./PersonalityCard";
 import { SoulDepthMeter } from "./SoulDepthMeter";
@@ -40,6 +40,15 @@ export function CompanionChatPanel() {
   // composer to GVR's /api/analyst/ask (through /api/companion/ask). The four
   // legal lines show the moment the toggle is on, before the first message.
   const [askMode, setAskMode] = useState(false);
+  // WALLET PROOF: the history is read and kept only for a signed-in wallet.
+  const [remembering, setRemembering] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
+  const [grants, setGrants] = useState<AppGrant[]>([]);
+  useEffect(() => { setRemembering(!!companionSession(address)); }, [address]);
+  useEffect(() => {
+    if (address && remembering) getAppGrants(address).then(setGrants).catch(() => {});
+    else setGrants([]);
+  }, [address, remembering]);
   useEffect(() => { if (address) getPremium(address).then((s) => { setPremium(s.active); setCredits(s.credits); }).catch(() => {}); }, [address]);
   // Reflect the standing "keep_emptied" goal for the selected gotchi in the auto-collect toggle.
   useEffect(() => {
@@ -52,7 +61,20 @@ export function CompanionChatPanel() {
   useEffect(() => {
     if (address && selectedTokenId) getHistory(selectedTokenId, address).then(setMessages).catch(() => {});
     else setMessages([]);
-  }, [address, selectedTokenId]);
+  }, [address, selectedTokenId, remembering]);
+
+  async function rememberChats() {
+    if (!address || signingIn) return;
+    setSigningIn(true);
+    try {
+      await signInCompanion(address, (message) => signMessageAsync({ message }));
+      setRemembering(true);
+    } catch {
+      /* declined in the wallet, or the server refused: chat keeps working without memory */
+    } finally {
+      setSigningIn(false);
+    }
+  }
 
   // Proactive nudge: when the panel opens, if upkeep is due, Hermes greets with it. Throttled to
   // once per 30 min per wallet so it isn't spammy and doesn't hammer the chain snapshot.
@@ -254,6 +276,7 @@ export function CompanionChatPanel() {
         if (actionAuth) res = await postChat(selectedTokenId, address, text, auth, actionAuth);
       }
       setMessages((m) => [...m, { role: "assistant", content: res.reply }]);
+      if (res.memory === false && remembering) { forgetCompanionSession(address); setRemembering(false); }
       if (res.prepareUpkeep) {
         // Show the land page underneath but keep the chat open so they see the collect result.
         if (res.navigate) navigate(res.navigate);
@@ -331,6 +354,29 @@ export function CompanionChatPanel() {
                 >
                   {autoCollect ? "on" : "off"}
                 </button>
+              </div>
+            )}
+            {address && selectedTokenId && !remembering && (
+              <div className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-1.5">
+                <span className="text-[11px] text-white/60" title="Sign in with your wallet (free, no gas) so your gotchi keeps your chat history here and in the apps you allow.">
+                  🧠 Not remembering this chat
+                </span>
+                <button onClick={rememberChats} disabled={signingIn}
+                  className="rounded-full bg-fuchsia-500/30 px-2.5 py-0.5 text-[11px] font-semibold text-fuchsia-100 transition hover:bg-fuchsia-500/50 disabled:opacity-40">
+                  {signingIn ? "check your wallet…" : "Remember"}
+                </button>
+              </div>
+            )}
+            {address && remembering && grants.length > 0 && (
+              <div className="space-y-1 rounded-xl bg-white/5 px-3 py-1.5">
+                <div className="text-[11px] text-white/60">🔌 Apps that can read your chats</div>
+                {grants.map((g) => (
+                  <div key={g.app} className="flex items-center justify-between gap-2 text-[11px] text-white/70">
+                    <span className="truncate" title={`${g.app}, until ${new Date(g.expiresAt).toLocaleDateString()}`}>{g.domain}</span>
+                    <button onClick={() => revokeAppGrant(address, g.app).then(() => getAppGrants(address).then(setGrants))}
+                      className="rounded-full bg-white/10 px-2 py-0.5 text-white/60 hover:text-white">remove</button>
+                  </div>
+                ))}
               </div>
             )}
             {env.companionPremiumEnabled && profile && (!premium || credits < 200) && <GoPremium onActivated={() => getPremium(address!).then((s) => { setPremium(s.active); setCredits(s.credits); }).catch(() => {})} />}

@@ -52,7 +52,8 @@ export async function getPersona(tokenId: string): Promise<{ systemPrompt: strin
 export async function buildChatContext(
   tokenId: string,
   message: string,
-  wallet?: string
+  wallet?: string,
+  opts: { facts?: boolean; history?: boolean } = {}
 ): Promise<{ systemPrompt: string; messages: { role: string; content: string }[] }> {
   const state = await fetchGotchiState(tokenId);
   if (!state) throw new Error(`gotchi ${tokenId} not found`);
@@ -62,9 +63,9 @@ export async function buildChatContext(
 
   const w = wallet && wallet.startsWith("0x") ? wallet.toLowerCase() : null;
   const messages = assembleMessages({
-    facts: w ? getFacts(w, tokenId) : [],
+    facts: w && opts.facts !== false ? getFacts(w, tokenId) : [],
     lore: retrieveLore(message),
-    history: w
+    history: w && opts.history !== false
       ? getRecentMessages(w, tokenId, 20).map((m) => ({ role: m.role, content: m.content }))
       : [],
     userMessage: message,

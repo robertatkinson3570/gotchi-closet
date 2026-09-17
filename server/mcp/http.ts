@@ -48,7 +48,7 @@ export async function wispMcpHttpHandler(req: Request, res: Response): Promise<v
   }
 
   // 3. Serve the MCP request (fresh server+transport per request, stateless).
-  const server = createWispMcpServer();
+  const server = createWispMcpServer({ apiKey });
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
   res.on("close", () => {
     transport.close();

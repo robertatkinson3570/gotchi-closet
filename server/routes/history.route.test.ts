@@ -10,10 +10,14 @@ process.env.COMPANION_WRITE_KEY = "svc-test-key-0123456789";
 import companionRoutes from "./companion";
 import { closeDb, appendMessage, getRecentMessages } from "../companion/db";
 import { createAccount, activatePlan } from "../mcp/accounts";
+import { saveGrant } from "../mcp/grants";
+import { issueSessionToken } from "../companion/walletProof";
 
 let server: Server;
 let base: string;
 const W = "0x3333333333333333333333333333333333333333";
+const grantW = (key: string) => saveGrant(key, { wallet: W, domain: "app.example", grantedAt: Date.now(), expiresAt: Date.now() + 86_400_000 });
+const signedIn = () => ({ "x-wisp-session": issueSessionToken(W, Date.now() + 86_400_000) });
 
 async function post(path: string, body: unknown, headers: Record<string, string> = {}) {
   const res = await fetch(`${base}${path}`, { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
@@ -54,9 +58,11 @@ describe("POST /history", () => {
     expect(bad.status).toBe(400);
   });
 
-  it("with a paid Wisp key appends as wsp_<first8> whatever client the body claims; a free key is 403; a bad key or no key is 401", async () => {
+  it("with a paid Wisp key the wallet granted appends as wsp_<first8> whatever client the body claims; no grant is 403; a free key is 403; a bad key or no key is 401", async () => {
     const a = createAccount();
     activatePlan({ apiKey: a.apiKey, plan: "studio", months: 1, asset: "usdc", amountWei: 1n, txHash: "0xh1" });
+    expect((await post("/api/companion/history", { wallet: W, tokenId: "9638", turns: [{ role: "user", content: "x" }] }, { Authorization: `Bearer ${a.apiKey}` })).status).toBe(403);
+    grantW(a.apiKey);
     const r = await post("/api/companion/history", { wallet: W, tokenId: "9638", turns: [{ role: "user", content: "from the app", client: "gvr" }] }, { Authorization: `Bearer ${a.apiKey}` });
     expect(r.status).toBe(200);
     expect(r.json).toEqual({ ok: true, written: 1, client: a.apiKey.slice(0, 12) });
@@ -83,22 +89,38 @@ describe("GET /history/:tokenId/:wallet?client=", () => {
     appendMessage(W, "77", "user", "closet turn");
     appendMessage(W, "77", "user", "gvr turn", "gvr");
     appendMessage(W, "77", "user", "app turn", "wsp_ab12cd34");
-    const all = await get(`/api/companion/history/77/${W}`);
+    const all = await get(`/api/companion/history/77/${W}`, signedIn());
     expect(all.json.messages).toEqual([
       { role: "user", content: "closet turn", client: "closet" }, { role: "user", content: "gvr turn", client: "gvr" }, { role: "user", content: "app turn", client: "wsp_ab12cd34" },
     ]);
-    expect((await get(`/api/companion/history/77/${W}?client=all`)).json.messages).toHaveLength(3);
-    expect((await get(`/api/companion/history/77/${W}?client=gvr`)).json.messages).toEqual([{ role: "user", content: "gvr turn", client: "gvr" }]);
-    expect((await get(`/api/companion/history/77/${W}?client=wsp_ab12cd34`)).json.messages.map((m: { content: string }) => m.content)).toEqual(["app turn"]);
-    expect((await get(`/api/companion/history/77/${W}?client=evil`)).status).toBe(400);
+    expect((await get(`/api/companion/history/77/${W}?client=all`, signedIn())).json.messages).toHaveLength(3);
+    expect((await get(`/api/companion/history/77/${W}?client=gvr`, signedIn())).json.messages).toEqual([{ role: "user", content: "gvr turn", client: "gvr" }]);
+    expect((await get(`/api/companion/history/77/${W}?client=wsp_ab12cd34`, signedIn())).json.messages.map((m: { content: string }) => m.content)).toEqual(["app turn"]);
+    expect((await get(`/api/companion/history/77/${W}?client=evil`, signedIn())).status).toBe(400);
   });
 
-  it("a keyed reader needs the chat grant: a paid key reads, a free key is 403, a bad key 401; no key reads as before", async () => {
+  it("a keyed reader needs the chat plan AND the wallet's grant: granted paid key reads, ungranted 403, free key 403, bad key 401", async () => {
     const a = createAccount();
     activatePlan({ apiKey: a.apiKey, plan: "holder", months: 1, asset: "ghst", amountWei: 1n, txHash: "0xh2" });
+    expect((await get(`/api/companion/history/77/${W}`, { Authorization: `Bearer ${a.apiKey}` })).status).toBe(403);
+    grantW(a.apiKey);
     expect((await get(`/api/companion/history/77/${W}`, { Authorization: `Bearer ${a.apiKey}` })).status).toBe(200);
     expect((await get(`/api/companion/history/77/${W}`, { Authorization: `Bearer ${createAccount().apiKey}` })).status).toBe(403);
     expect((await get(`/api/companion/history/77/${W}`, { Authorization: "Bearer wsp_nope" })).status).toBe(401);
-    expect((await get(`/api/companion/history/77/${W}`)).status).toBe(200);
+  });
+
+  it("without a key, only a session for THAT wallet or the service key reads; nobody else", async () => {
+    expect((await get(`/api/companion/history/77/${W}`)).status).toBe(401);
+    const otherSession = { "x-wisp-session": issueSessionToken("0x9999999999999999999999999999999999999999", Date.now() + 86_400_000) };
+    expect((await get(`/api/companion/history/77/${W}`, otherSession)).status).toBe(401);
+    expect((await get(`/api/companion/history/77/${W}`, { "x-wisp-session": "ws1.forged" })).status).toBe(401);
+    expect((await get(`/api/companion/history/77/${W}`, signedIn())).status).toBe(200);
+    expect((await get(`/api/companion/history/77/${W}`, { Authorization: `Bearer ${process.env.COMPANION_WRITE_KEY}` })).status).toBe(200);
+  });
+
+  it("the action log is the wallet's too: session or service key only", async () => {
+    expect((await get(`/api/companion/actions/${W}/77`)).status).toBe(401);
+    expect((await get(`/api/companion/actions/${W}/77`, signedIn())).status).toBe(200);
+    expect((await get(`/api/companion/actions/${W}/77`, { Authorization: `Bearer ${process.env.COMPANION_WRITE_KEY}` })).status).toBe(200);
   });
 });

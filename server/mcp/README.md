@@ -63,21 +63,31 @@ Keeper Gotchi slice 08 (`docs/briefs/keeper-gotchi/08-wisp-chat.md` in GVR). A t
    appName replaces Gotchi Closet in the gotchi's idea of where it lives; kbLines (max 20 × 200 chars) are folded as
    <data> facts after the lore, never instructions; navMap makes "take me to the greenhouse" answer { navigate: "/greenhouse" }.
    GET /api/mcp/account (same header) shows { plan, chat, chatPerDay, chatPerMinute, chatUsedToday, context }.
-4. Chat:   POST https://api.gotchicloset.com/api/companion/chat
+4. Ask the player for a wallet grant (Sign-In with Ethereum, free, no gas). Without one, chat still works as a guest:
+   the same gotchi and public chain data, but no history is read or written and the reply says memory: false.
+           POST /api/mcp/grants/prepare   Bearer wsp_…   { "wallet": "0x…", "domain": "yourgame.com", "uri": "https://yourgame.com/play", "days": 90 }
+        →  { message }   the player signs it in their wallet (personal_sign), unchanged, within 10 minutes
+           POST /api/mcp/grants           Bearer wsp_…   { "message": "…", "signature": "0x…" }
+        →  { wallet, domain, grantedAt, expiresAt }   (days 1 to 365, default 90; one signature per grant, never reusable)
+   GET /api/mcp/grants lists your live grants; DELETE /api/mcp/grants/0x… drops one. The holder sees and removes
+   grants from the companion panel on Gotchi Closet. Key rotation keeps them.
+5. Chat:   POST https://api.gotchicloset.com/api/companion/chat
            Authorization: Bearer wsp_…
            { "tokenId": "9638", "wallet": "0x…", "message": "what's my gotchi up to?" }
-        →  { reply, navigate?, client: "wsp_ab12cd34", plan, usedToday, limitPerDay }
+        →  { reply, navigate?, memory, client: "wsp_ab12cd34", plan, usedToday, limitPerDay }
         →  429 { error: "chat cap reached", reason, plan, usedToday, limitPerDay, resetsAt } at the cap, on a lapsed plan
            ("plan lapsed") or on a free key ("chat not in plan"); never a model call in any of those.
         →  401 { error: "Wisp key required" } for a bad key.
-5. History: GET /api/companion/history/9638/0x…?client=all   (Bearer wsp_…; ?client=closet | gvr | wsp_ab12cd34 filters)
+6. History: GET /api/companion/history/9638/0x…?client=all   (Bearer wsp_…; ?client=closet | gvr | wsp_ab12cd34 filters)
    Your app may also write turns it answered on its own model: POST /api/companion/history { wallet, tokenId, turns: [{ role, content, ts? }] }
-   (Bearer wsp_…; every turn is tagged with your key whatever the body says).
-6. Facts without a model: MCP tools get_history and get_keeper_report (metered by your tool quota, zero LLM calls).
+   (Bearer wsp_…; every turn is tagged with your key whatever the body says). Both answer 403 for a wallet without a grant.
+7. Facts without a model: MCP tools get_history and get_keeper_report (metered by your tool quota, zero LLM calls).
+   Over a key, get_history, build_chat_context with a wallet and the steward reads also need the wallet's grant,
+   build_chat_context never includes Closet's private remembered facts, and steward_run_now is not offered.
 Your users' turns land in the same log Closet and GVR write to; the gotchi remembers across all three.
 ```
 
-What a keyed turn gets and does not get: the persona, the soul, the lore and the shared history, plus the public subgraph
+What a keyed turn gets and does not get: the persona, the soul, the lore and (with the wallet's grant) the shared history, plus the public subgraph
 summaries (holdings, lending, deals, DAO, estate). It never gets the wallet's private desk memory (Closet's remembered
 facts and action log) or GVR's ledger facts, it never remembers a fact from a keyed turn, and it cannot act: the gotchi
 says your app can show the user where to do that. A Wisp key never reaches the analyst (`/api/companion/ask` answers

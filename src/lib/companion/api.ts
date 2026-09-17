@@ -1,5 +1,6 @@
 import { env } from "@/lib/env";
 import type { Tier, ChatMessage } from "./types";
+import { SESSION_HEADER } from "@/lib/wisp/walletProof";
 
 export interface ChatResponse {
   reply: string;
@@ -9,11 +10,83 @@ export interface ChatResponse {
   action?: { ok: boolean; reason?: string; txHash?: string; detail?: string };
   navigate?: string;
   prepareUpkeep?: boolean;
+  /** false: the server did not treat this wallet as signed in, so nothing was remembered. */
+  memory?: boolean;
 }
 
 // Companion routes live on the Express server (VPS in prod). `companionApiUrl` is
 // the server origin in prod and empty in dev (where the Vite /api proxy forwards).
 const BASE = env.companionApiUrl;
+
+// WALLET PROOF: a Sign-In with Ethereum session lets the server read and keep
+// this wallet's chat history. Without one, chat still works, with no memory.
+const sessionKey = (wallet: string) => `companion.session.${wallet.toLowerCase()}`;
+
+/** The stored session token for this wallet, when it has not expired. */
+export function companionSession(wallet: string | undefined): string | null {
+  if (!wallet) return null;
+  try {
+    const token = localStorage.getItem(sessionKey(wallet));
+    const exp = Number(token?.split(".")[2]);
+    if (token && exp > Date.now() + 60_000) return token;
+    if (token) localStorage.removeItem(sessionKey(wallet));
+  } catch { /* storage blocked */ }
+  return null;
+}
+
+export function forgetCompanionSession(wallet: string): void {
+  try { localStorage.removeItem(sessionKey(wallet)); } catch { /* storage blocked */ }
+}
+
+function sessionHeaders(wallet: string): Record<string, string> {
+  const token = companionSession(wallet);
+  return token ? { [SESSION_HEADER]: token } : {};
+}
+
+/** Ask the wallet to sign in so the gotchi remembers. Throws when the user declines or the server refuses. */
+export async function signInCompanion(wallet: string, sign: (message: string) => Promise<string>): Promise<void> {
+  const prep = await fetch(`${BASE}/api/companion/session/prepare`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ wallet, domain: window.location.host, uri: window.location.origin }),
+  });
+  const p = await prep.json().catch(() => ({}));
+  if (!prep.ok || typeof p.message !== "string") throw new Error(p.error || `sign-in failed (${prep.status})`);
+  const signature = await sign(p.message);
+  const res = await fetch(`${BASE}/api/companion/session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: p.message, signature }),
+  });
+  const s = await res.json().catch(() => ({}));
+  if (!res.ok || typeof s.token !== "string") throw new Error(s.error || `sign-in failed (${res.status})`);
+  try { localStorage.setItem(sessionKey(wallet), s.token); } catch { /* storage blocked: memory lasts this page only */ }
+}
+
+export interface AppGrant { app: string; domain: string; grantedAt: number; expiresAt: number; }
+
+/** Apps this signed-in wallet has let into its chat history. */
+export async function getAppGrants(wallet: string): Promise<AppGrant[]> {
+  const headers = sessionHeaders(wallet);
+  if (!headers[SESSION_HEADER]) return [];
+  try {
+    const res = await fetch(`${BASE}/api/companion/grants`, { headers });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return Array.isArray(json?.grants) ? json.grants : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function revokeAppGrant(wallet: string, app: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${BASE}/api/companion/grants/${encodeURIComponent(app)}`, { method: "DELETE", headers: sessionHeaders(wallet) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
 export async function postChat(
   tokenId: string,
@@ -24,7 +97,7 @@ export async function postChat(
 ): Promise<ChatResponse> {
   const res = await fetch(`${BASE}/api/companion/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...sessionHeaders(wallet) },
     body: JSON.stringify({ tokenId, wallet, message, ...(auth ?? {}), ...(actionAuth ?? {}) }),
   });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `chat failed (${res.status})`);
@@ -74,7 +147,9 @@ export async function postAnalystAsk(
 
 export async function getHistory(tokenId: string, wallet: string): Promise<ChatMessage[]> {
   try {
-    const res = await fetch(`${BASE}/api/companion/history/${tokenId}/${wallet}`);
+    const headers = sessionHeaders(wallet);
+    if (!headers[SESSION_HEADER]) return [];
+    const res = await fetch(`${BASE}/api/companion/history/${tokenId}/${wallet}`, { headers });
     if (!res.ok) return [];
     const json = await res.json();
     return Array.isArray(json?.messages) ? json.messages : [];
@@ -89,7 +164,9 @@ export interface CompanionAction { kind: string; detail: string; txHash: string 
 // "while you were away…" report when autonomous auto-upkeep ran between visits.
 export async function getRecentActions(wallet: string, tokenId: string): Promise<CompanionAction[]> {
   try {
-    const res = await fetch(`${BASE}/api/companion/actions/${wallet}/${tokenId}`);
+    const headers = sessionHeaders(wallet);
+    if (!headers[SESSION_HEADER]) return [];
+    const res = await fetch(`${BASE}/api/companion/actions/${wallet}/${tokenId}`, { headers });
     if (!res.ok) return [];
     const json = await res.json();
     return Array.isArray(json?.actions) ? json.actions : [];

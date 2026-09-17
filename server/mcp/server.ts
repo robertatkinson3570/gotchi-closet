@@ -16,6 +16,8 @@ import {
   getHistory,
   getKeeperReport,
 } from "./tools.js";
+import { hasGrant } from "./grants.js";
+import { NO_WALLET_GRANT } from "../companion/walletAccess.js";
 
 const tokenId = z.string().regex(/^\d+$/, "tokenId must be a numeric string");
 const ownerAddr = z.string().regex(/^0x[0-9a-fA-F]+$/, "owner must be a 0x wallet address");
@@ -28,8 +30,14 @@ const fail = (e: unknown) => ({
   content: [{ type: "text" as const, text: `error: ${(e as Error)?.message ?? String(e)}` }],
 });
 
-export function createWispMcpServer(): McpServer {
+/** `apiKey`: the Wisp key of an HTTP request. Its wallet-scoped tools answer
+ *  only for wallets that granted the key (mcp/grants.ts), it never sees
+ *  Closet's private remembered facts, and it cannot force steward runs.
+ *  No key: the local stdio server on the operator's own machine. */
+export function createWispMcpServer(opts: { apiKey?: string } = {}): McpServer {
   const server = new McpServer({ name: "wisp-gotchi-soul", version: "0.1.0" });
+  const keyed = typeof opts.apiKey === "string";
+  const mayRead = (wallet: string) => !keyed || hasGrant(opts.apiKey!, wallet);
 
   server.registerTool(
     "get_soul",
@@ -62,7 +70,11 @@ export function createWispMcpServer(): McpServer {
       inputSchema: { tokenId, message: z.string().min(1), wallet: z.string().optional() },
     },
     async ({ tokenId, message, wallet }) => {
-      try { return ok(await buildChatContext(tokenId, message, wallet)); } catch (e) { return fail(e); }
+      try {
+        if (!keyed) return ok(await buildChatContext(tokenId, message, wallet));
+        if (wallet && !mayRead(wallet)) return fail(new Error(NO_WALLET_GRANT));
+        return ok(await buildChatContext(tokenId, message, wallet, { facts: false }));
+      } catch (e) { return fail(e); }
     }
   );
 
@@ -96,7 +108,7 @@ export function createWispMcpServer(): McpServer {
       inputSchema: { owner: ownerAddr },
     },
     async ({ owner }) => {
-      try { return ok(stewardStatus(owner)); } catch (e) { return fail(e); }
+      try { if (!mayRead(owner)) return fail(new Error(NO_WALLET_GRANT)); return ok(stewardStatus(owner)); } catch (e) { return fail(e); }
     }
   );
 
@@ -107,7 +119,7 @@ export function createWispMcpServer(): McpServer {
       inputSchema: { owner: ownerAddr },
     },
     async ({ owner }) => {
-      try { return ok(stewardLog(owner)); } catch (e) { return fail(e); }
+      try { if (!mayRead(owner)) return fail(new Error(NO_WALLET_GRANT)); return ok(stewardLog(owner)); } catch (e) { return fail(e); }
     }
   );
 
@@ -118,11 +130,11 @@ export function createWispMcpServer(): McpServer {
       inputSchema: { owner: ownerAddr },
     },
     async ({ owner }) => {
-      try { return ok(await stewardPreview(owner)); } catch (e) { return fail(e); }
+      try { if (!mayRead(owner)) return fail(new Error(NO_WALLET_GRANT)); return ok(await stewardPreview(owner)); } catch (e) { return fail(e); }
     }
   );
 
-  server.registerTool(
+  if (!keyed) server.registerTool(
     "steward_run_now",
     {
       description: "Force a run cycle for this wallet's due stewards (per-enrollment intervals still enforced).",
@@ -144,7 +156,7 @@ export function createWispMcpServer(): McpServer {
       inputSchema: { tokenId, wallet: ownerAddr, limit: z.number().int().min(1).max(100).optional(), client: z.string().max(16).optional() },
     },
     async ({ tokenId, wallet, limit, client }) => {
-      try { return ok(getHistory(tokenId, wallet, limit ?? 30, client)); } catch (e) { return fail(e); }
+      try { if (!mayRead(wallet)) return fail(new Error(NO_WALLET_GRANT)); return ok(getHistory(tokenId, wallet, limit ?? 30, client)); } catch (e) { return fail(e); }
     }
   );
 

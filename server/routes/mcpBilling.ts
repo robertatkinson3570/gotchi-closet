@@ -11,6 +11,9 @@ import { wispManageMessage, isSignedAtFresh } from "../../src/lib/wisp/auth";
 import { usdToEthWei, usdToUsdcUnits } from "../payments/ethUsd";
 import { verifyEthPayment, verifyUsdcPayment, verifyTokenPayment } from "../payments/verifyEthPayment";
 import { GHST_BASE, usdToGhstWei } from "../payments/ghstUsd";
+import { clientTagOfKey } from "../companion/db";
+import { prepareProof, verifyProof, proofRateLimited, ProofError } from "../companion/walletProof";
+import { saveGrant, grantsForKey, revokeGrant } from "../mcp/grants";
 
 const router = Router();
 
@@ -30,7 +33,19 @@ router.get("/pay-info", (_req, res) => {
 });
 
 /** POST /api/mcp/account  { wallet? } -> issue a new API key (free plan). */
+// Minting keys is free and writes a row, so each address gets a small allowance.
+const mintHits = new Map<string, { count: number; resetAt: number }>();
+function mintLimited(ip: string | undefined, now = Date.now()): boolean {
+  const key = ip || "unknown";
+  if (mintHits.size > 50_000) for (const [k, v] of mintHits) if (v.resetAt < now) mintHits.delete(k);
+  const b = mintHits.get(key);
+  if (!b || b.resetAt < now) { mintHits.set(key, { count: 1, resetAt: now + 3_600_000 }); return false; }
+  b.count += 1;
+  return b.count > 10;
+}
+
 router.post("/account", (req, res) => {
+  if (mintLimited(req.ip)) return res.status(429).json({ error: "too many keys from this address, try again in an hour" });
   try {
     const wallet = String(req.body?.wallet ?? "");
     const acct = createAccount(wallet);
@@ -92,6 +107,69 @@ router.patch("/account", (req, res) => {
   } catch (err: any) {
     res.status(400).json({ error: err?.message ?? String(err) });
   }
+});
+
+// WALLET GRANTS: a holder lets this key read and add to their gotchi's chat
+// history. The app asks for a Sign-In with Ethereum message for its own page,
+// the holder signs it in their wallet, the app sends it back. Without a grant
+// the key still chats with any gotchi, as a guest with no memory.
+function keyed(req: Parameters<typeof credentialOf>[0], res: { status(n: number): { json(b: unknown): void } }): WispAccount | null {
+  const cred = credentialOf(req);
+  if (cred.kind !== "wisp") {
+    res.status(401).json({ error: WISP_KEY_REQUIRED, ...(cred.kind === "bad" ? { reason: cred.reason } : {}) });
+    return null;
+  }
+  return cred.account;
+}
+
+/** POST /api/mcp/grants/prepare (Bearer wsp_…) { wallet, domain, uri, days? } -> { message } */
+router.post("/grants/prepare", (req, res) => {
+  if (proofRateLimited(req.ip)) return res.status(429).json({ error: "slow down" });
+  const acct = keyed(req, res);
+  if (!acct) return;
+  const b = req.body ?? {};
+  try {
+    const message = prepareProof({
+      purpose: { kind: "grant", keyTag: clientTagOfKey(acct.apiKey) },
+      wallet: String(b.wallet ?? ""), domain: String(b.domain ?? ""), uri: String(b.uri ?? ""),
+      appName: acct.context?.appName, days: b.days === undefined ? undefined : Number(b.days),
+    });
+    res.json({ message });
+  } catch (err) {
+    if (err instanceof ProofError) return res.status(400).json({ error: err.message });
+    res.status(500).json({ error: "could not prepare the grant message" });
+  }
+});
+
+/** POST /api/mcp/grants (Bearer wsp_…) { message, signature } -> { wallet, domain, grantedAt, expiresAt } */
+router.post("/grants", async (req, res) => {
+  if (proofRateLimited(req.ip)) return res.status(429).json({ error: "slow down" });
+  const acct = keyed(req, res);
+  if (!acct) return;
+  const b = req.body ?? {};
+  try {
+    const v = await verifyProof({ purpose: { kind: "grant", keyTag: clientTagOfKey(acct.apiKey) }, message: b.message, signature: b.signature });
+    res.json(saveGrant(acct.apiKey, { wallet: v.wallet, domain: v.domain, grantedAt: v.issuedAt, expiresAt: v.expiresAt }));
+  } catch (err) {
+    if (err instanceof ProofError) return res.status(401).json({ error: err.message });
+    res.status(500).json({ error: "could not verify the grant" });
+  }
+});
+
+/** GET /api/mcp/grants (Bearer wsp_…) -> { grants: [{ wallet, domain, grantedAt, expiresAt }] } */
+router.get("/grants", (req, res) => {
+  const acct = keyed(req, res);
+  if (!acct) return;
+  res.json({ grants: grantsForKey(acct.apiKey) });
+});
+
+/** DELETE /api/mcp/grants/:wallet (Bearer wsp_…) -> the app forgets a wallet. */
+router.delete("/grants/:wallet", (req, res) => {
+  const acct = keyed(req, res);
+  if (!acct) return;
+  const wallet = String(req.params.wallet ?? "");
+  if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) return res.status(400).json({ error: "wallet (0x) required" });
+  res.json({ ok: true, revoked: revokeGrant(acct.apiKey, wallet) });
 });
 
 /** GET /api/mcp/quote?plan=pro&months=3&asset=eth -> the amount to pay. */

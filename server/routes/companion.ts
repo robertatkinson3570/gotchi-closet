@@ -27,6 +27,9 @@ import { proxyKeeperStanding } from "../companion/keeperProxy";
 import { proxyAnalystAsk } from "../companion/askProxy";
 import { credentialOf, WISP_KEY_REQUIRED } from "../companion/wispCredential";
 import { handleKeyedChat, ANALYST_NOT_ON_THIS_DOOR } from "../companion/keyedChat";
+import { sessionWalletOf, WALLET_PROOF_REQUIRED, NO_WALLET_GRANT } from "../companion/walletAccess";
+import { prepareProof, verifyProof, issueSessionToken, proofRateLimited, ProofError } from "../companion/walletProof";
+import { hasGrant, grantsForWallet, revokeGrantByTag } from "../mcp/grants";
 import { clientTagOfKey, isClientTag, CLIENT_GVR } from "../companion/db";
 import { effectivePlan } from "../mcp/accounts";
 import { chatGranted } from "../../src/lib/wisp/pricing";
@@ -83,6 +86,48 @@ function isSafeFact(fact: string): boolean {
 
 router.get("/health", (_req, res) => res.json({ ok: true }));
 
+// WALLET PROOF: the Gotchi Closet session. prepare builds a Sign-In with
+// Ethereum message for the page's own domain (writes nothing); the signed
+// message comes back and a 30-day session token goes out, sent afterwards as
+// the x-wisp-session header.
+router.post("/session/prepare", (req, res) => {
+  if (proofRateLimited(req.ip)) return res.status(429).json({ error: "slow down, fren 👻" });
+  const b = req.body ?? {};
+  try {
+    res.json({ message: prepareProof({ purpose: { kind: "session" }, wallet: String(b.wallet ?? ""), domain: String(b.domain ?? ""), uri: String(b.uri ?? "") }) });
+  } catch (err) {
+    if (err instanceof ProofError) return res.status(400).json({ error: err.message });
+    res.status(500).json({ error: "could not prepare the sign-in message" });
+  }
+});
+
+router.post("/session", async (req, res) => {
+  if (proofRateLimited(req.ip)) return res.status(429).json({ error: "slow down, fren 👻" });
+  const b = req.body ?? {};
+  try {
+    const v = await verifyProof({ purpose: { kind: "session" }, message: b.message, signature: b.signature });
+    res.json({ token: issueSessionToken(v.wallet, v.expiresAt), wallet: v.wallet, expiresAt: v.expiresAt });
+  } catch (err) {
+    if (err instanceof ProofError) return res.status(401).json({ error: err.message });
+    res.status(500).json({ error: "could not verify the sign-in" });
+  }
+});
+
+// The apps a signed-in holder has let into their chat history, and the way out.
+router.get("/grants", (req, res) => {
+  const wallet = sessionWalletOf(req);
+  if (!wallet) return res.status(401).json({ error: WALLET_PROOF_REQUIRED });
+  res.json({ wallet, grants: grantsForWallet(wallet) });
+});
+
+router.delete("/grants/:app", (req, res) => {
+  const wallet = sessionWalletOf(req);
+  if (!wallet) return res.status(401).json({ error: WALLET_PROOF_REQUIRED });
+  const app = String(req.params.app);
+  if (!/^wsp_[0-9a-f]{8}$/.test(app)) return res.status(400).json({ error: "app must be a wsp_ tag of 8 hex characters" });
+  res.json({ ok: true, revoked: revokeGrantByTag(wallet, app) });
+});
+
 router.post("/chat", async (req, res) => {
   // KEEPER GOTCHI (08-wisp-chat.md §8.2): the credential branch. A request
   // with no Authorization header is the unkeyed path below, byte for byte as
@@ -98,7 +143,7 @@ router.post("/chat", async (req, res) => {
       return res.status(500).json({ error: err?.message ?? String(err) });
     }
   }
-  if (cred.kind !== "none") return res.status(401).json({ error: WISP_KEY_REQUIRED, reason: cred.kind === "bad" ? cred.reason : "the service key is not a chat credential" });
+  if (cred.kind === "bad") return res.status(401).json({ error: WISP_KEY_REQUIRED, reason: cred.reason });
   try {
     const body = req.body ?? {};
     const tokenId = String(body.tokenId ?? "");
@@ -107,7 +152,15 @@ router.post("/chat", async (req, res) => {
     if (!tokenId || !wallet.startsWith("0x") || !rawMessage.trim()) {
       return res.status(400).json({ error: "tokenId, wallet (0x), message required" });
     }
-    if (rateLimited(wallet, req.ip)) return res.status(429).json({ error: "slow down, fren 👻" });
+    // GVR's server carries every player behind one address: its wallet cap still applies, the IP cap does not.
+    if (rateLimited(wallet, cred.kind === "service" ? undefined : req.ip)) return res.status(429).json({ error: "slow down, fren 👻" });
+
+    // WALLET PROOF: the history, remembered facts and action log are this wallet's own. They are
+    // read and written only when the caller proved the wallet (GVR's service key, a Closet session,
+    // or the premium signature). An unproven turn is a guest: same gotchi, no memory, `memory: false`.
+    const premiumSigOk = body.signature ? await premiumSignatureValid(wallet, Number(body.signedAt), String(body.signature ?? "")) : false;
+    const proven = cred.kind === "service" || sessionWalletOf(req) === wallet || premiumSigOk;
+    const send = (o: Record<string, unknown>) => res.json(proven ? o : { ...o, memory: false });
 
     const { masked, deflected } = filterInbound(rawMessage);
 
@@ -138,6 +191,7 @@ router.post("/chat", async (req, res) => {
     const systemPrompt = (soul ? `${profile.systemPrompt}\n\n${soul}` : profile.systemPrompt) + canAct + honesty;
 
     const persist = (r: string) => {
+      if (!proven) return;
       appendMessage(wallet, tokenId, "user", masked);
       appendMessage(wallet, tokenId, "assistant", r);
     };
@@ -145,7 +199,7 @@ router.post("/chat", async (req, res) => {
     if (deflected) {
       const reply = templateReply({ profile, message: masked, deflected: true });
       persist(reply);
-      return res.json({ reply, deflected: true });
+      return send({ reply, deflected: true });
     }
 
     // "what can you do / commands" → a fixed capabilities list. Deterministic so it never
@@ -153,7 +207,7 @@ router.post("/chat", async (req, res) => {
     if (isHelpIntent(masked)) {
       const r = screenOutbound(CAPABILITIES_REPLY);
       persist(r);
-      return res.json({ reply: r });
+      return send({ reply: r });
     }
 
     // Deterministic navigation: the site is small with a fixed route set, so "take me to X" maps
@@ -162,11 +216,11 @@ router.post("/chat", async (req, res) => {
     if (navTo) {
       const r = screenOutbound("taking you there 👻");
       persist(r);
-      return res.json({ reply: r, navigate: navTo });
+      return send({ reply: r, navigate: navTo });
     }
 
     // Recent actions Hermes took go into context so it remembers what it did for the owner.
-    const actionLines = getActions(wallet, tokenId, 5).map(
+    const actionLines = (proven ? getActions(wallet, tokenId, 5) : []).map(
       (a) => `You did ${a.kind} for the owner${a.txHash ? ` (tx ${a.txHash.slice(0, 10)}…)` : ""}`
     );
     // When the owner asks about their wallet/holdings, fetch what they own from the subgraph so
@@ -187,19 +241,18 @@ router.post("/chat", async (req, res) => {
     const asksEstate = /\b(needs doing|anything (ready|due|to collect)|what.?s (due|ready)|estate status|due yet)\b/i.test(masked);
     const estate = asksEstate ? await fetchEstateStatus(wallet) : null;
     const messages = assembleMessages({
-      facts: [...getFacts(wallet, tokenId), ...actionLines, ...(holdings ? [holdings] : []), ...(lending ? [lending] : []), ...(deals ? [deals] : []), ...(daoInfo ? [daoInfo] : []), ...(estate ? [estate] : [])],
+      facts: [...(proven ? getFacts(wallet, tokenId) : []), ...actionLines, ...(holdings ? [holdings] : []), ...(lending ? [lending] : []), ...(deals ? [deals] : []), ...(daoInfo ? [daoInfo] : []), ...(estate ? [estate] : [])],
       lore,
-      history: getRecentMessages(wallet, tokenId, 8).map((m) => ({ role: m.role, content: m.content })),
+      history: (proven ? getRecentMessages(wallet, tokenId, 8) : []).map((m) => ({ role: m.role, content: m.content })),
       userMessage: masked,
     });
 
     // Premium (OpenAI) requires BOTH credits remaining AND a fresh wallet signature.
-    const eligiblePremium =
-      isPremiumActive(wallet) &&
-      (await premiumSignatureValid(wallet, Number(body.signedAt), String(body.signature ?? "")));
+    const eligiblePremium = isPremiumActive(wallet) && premiumSigOk;
     const tier: "free" | "premium" = eligiblePremium ? "premium" : "free";
 
     const remember = () => {
+      if (!proven) return;
       const factMatch = masked.match(/\b(i am|i'm|my)\b.{3,80}/i);
       if (factMatch) {
         const fact = factMatch[0].trim();
@@ -220,7 +273,7 @@ router.post("/chat", async (req, res) => {
     if (wantsCollect && String(state.owner).toLowerCase() === wallet) {
       const r = screenOutbound("on it — checking your parcels & gotchis… if there's alchemica ready, approve it in your wallet 👻");
       persist(r);
-      return res.json({ reply: r, prepareUpkeep: true, navigate: "/lending/lands", tier });
+      return send({ reply: r, prepareUpkeep: true, navigate: "/lending/lands", tier });
     }
 
     // Multi-step tool loop: when the message reads like an action/nav intent, let Hermes chain
@@ -261,12 +314,12 @@ router.post("/chat", async (req, res) => {
       if (String(state.owner).toLowerCase() !== wallet) {
         const r = screenOutbound("that gotchi isn't in your wallet — i can only act for its owner 👻");
         persist(r);
-        return res.json({ reply: r, deflected: false, tier });
+        return send({ reply: r, deflected: false, tier });
       }
       const r = screenOutbound("on it — checking your parcels & gotchis… if there's alchemica ready, approve the transaction in your wallet 👻");
       persist(r);
       // Show them the land page while we collect (prepare+sign keeps the chat open).
-      return res.json({ reply: r, prepareUpkeep: true, navigate: "/lending/lands", tier });
+      return send({ reply: r, prepareUpkeep: true, navigate: "/lending/lands", tier });
     }
 
     // Hermes wants to NAVIGATE the owner to a page (client performs the route change).
@@ -275,7 +328,7 @@ router.post("/chat", async (req, res) => {
       const allowed = (HERMES_NAV_ROUTES as readonly string[]).includes(path);
       const r = screenOutbound(allowed ? "taking you there now 👻" : "i can't open that page, fren");
       persist(r);
-      return res.json({ reply: r, navigate: allowed ? path : undefined, tier });
+      return send({ reply: r, navigate: allowed ? path : undefined, tier });
     }
 
     // Normal chat reply — the proven plain-completion path, also the fallback when the tool loop
@@ -285,7 +338,7 @@ router.post("/chat", async (req, res) => {
     if (tier === "premium" && text) burnCredit(wallet);
     persist(reply);
     remember();
-    res.json({ reply, deflected: false, tier });
+    send({ reply, deflected: false, tier });
   } catch (err: any) {
     res.status(500).json({ error: err?.message ?? String(err) });
   }
@@ -351,6 +404,8 @@ router.get("/history/:tokenId/:wallet", (req, res) => {
   if (cred.kind === "wisp" && !chatGranted(effectivePlan(cred.account))) {
     return res.status(403).json({ error: "chat is not in this key's plan", plan: effectivePlan(cred.account) });
   }
+  if (cred.kind === "wisp" && !hasGrant(cred.apiKey, wallet)) return res.status(403).json({ error: NO_WALLET_GRANT });
+  if (cred.kind === "none" && sessionWalletOf(req) !== wallet.toLowerCase()) return res.status(401).json({ error: WALLET_PROOF_REQUIRED });
   const want = typeof req.query.client === "string" ? req.query.client.trim() : "";
   if (want && want !== "all" && !isClientTag(want)) return res.status(400).json({ error: "client must be closet, gvr, wsp_<first8> or all" });
   const filter = want && want !== "all" ? want : undefined;
@@ -377,6 +432,7 @@ router.post("/history", (req, res) => {
   const wallet = String(b.wallet ?? "").toLowerCase();
   const tokenId = String(b.tokenId ?? "");
   if (!/^0x[0-9a-f]{40}$/.test(wallet) || !/^\d{1,12}$/.test(tokenId)) return res.status(400).json({ error: "wallet (0x) and tokenId required" });
+  if (cred.kind === "wisp" && !hasGrant(cred.apiKey, wallet)) return res.status(403).json({ error: NO_WALLET_GRANT });
   const turns = historyTurnsOf(b.turns);
   if (!turns) return res.status(400).json({ error: `turns: 1 to ${HISTORY_TURNS_MAX} of { role: user|assistant, content }` });
   let client: string;
@@ -396,6 +452,7 @@ router.get("/actions/:wallet/:tokenId", (req, res) => {
   const wallet = String(req.params.wallet);
   const tokenId = String(req.params.tokenId);
   if (!wallet.startsWith("0x")) return res.status(400).json({ error: "wallet (0x) required" });
+  if (credentialOf(req).kind !== "service" && sessionWalletOf(req) !== wallet.toLowerCase()) return res.status(401).json({ error: WALLET_PROOF_REQUIRED });
   res.json({ actions: getActions(wallet, tokenId, 10) });
 });
 

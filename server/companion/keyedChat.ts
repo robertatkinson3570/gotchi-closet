@@ -39,6 +39,7 @@ import { complete } from "./llmProvider";
 import { appendMessage, getRecentMessages, clientTagOfKey } from "./db";
 import { soulDepthSnapshot } from "../soul/snapshot";
 import { consumeChat, type WispAccount, type WispContext } from "../mcp/accounts";
+import { hasGrant } from "../mcp/grants";
 
 const ADDR_RE = /^0x[0-9a-fA-F]{40}$/;
 const TOKEN_ID_RE = /^\d{1,12}$/;
@@ -103,6 +104,7 @@ export const ANALYST_NOT_ON_THIS_DOOR = "the analyst is not available to Wisp ke
 export interface KeyedChatDeps {
   now?: () => number;
   consume?: typeof consumeChat;
+  granted?: (apiKey: string, wallet: string) => boolean;
 }
 
 export type KeyedResult = { status: number; body: Record<string, unknown> };
@@ -110,6 +112,7 @@ export type KeyedResult = { status: number; body: Record<string, unknown> };
 export async function handleKeyedChat(bodyIn: unknown, apiKey: string, account: WispAccount, deps: KeyedChatDeps = {}): Promise<KeyedResult> {
   const now = deps.now ?? Date.now;
   const consume = deps.consume ?? consumeChat;
+  const granted = deps.granted ?? ((k: string, w: string) => hasGrant(k, w));
   const body = (bodyIn && typeof bodyIn === "object" ? bodyIn : {}) as Record<string, unknown>;
   const tokenId = String(body.tokenId ?? "");
   const wallet = String(body.wallet ?? "").toLowerCase();
@@ -135,15 +138,19 @@ export async function handleKeyedChat(bodyIn: unknown, apiKey: string, account: 
   }
   if (walletLimited(apiKey, wallet, t)) return { status: 429, body: { error: "slow down, fren 👻", reason: "wallet rate limit", plan: gate.plan, client } };
 
+  // WALLET PROOF: the shared history is the holder's. Only a wallet that granted this key is
+  // remembered; without a grant the turn is a guest (same gotchi, public data, no history).
+  const memory = granted(apiKey, wallet);
   const ctx = account.context;
   const appName = ctx?.appName ?? DEFAULT_APP_NAME;
   const { masked, deflected } = filterInbound(rawMessage);
   const persist = (r: string) => {
+    if (!memory) return;
     appendMessage(wallet, tokenId, "user", masked, client);
     appendMessage(wallet, tokenId, "assistant", r, client);
   };
   const answer = (reply: string, extra: Record<string, unknown> = {}): KeyedResult => ({
-    status: 200, body: { reply, deflected: false, client, plan: gate.plan, usedToday: gate.usedToday, limitPerDay: gate.limitPerDay, ...extra },
+    status: 200, body: { reply, deflected: false, memory, client, plan: gate.plan, usedToday: gate.usedToday, limitPerDay: gate.limitPerDay, ...extra },
   });
 
   // 2. The persona: the same gotchi, the app's name in the site sentence, no
@@ -158,7 +165,7 @@ export async function handleKeyedChat(bodyIn: unknown, apiKey: string, account: 
   if (deflected) {
     const reply = templateReply({ profile, message: masked, deflected: true });
     persist(reply);
-    return { status: 200, body: { reply, deflected: true, client, plan: gate.plan, usedToday: gate.usedToday, limitPerDay: gate.limitPerDay } };
+    return { status: 200, body: { reply, deflected: true, memory, client, plan: gate.plan, usedToday: gate.usedToday, limitPerDay: gate.limitPerDay } };
   }
   if (isHelpIntent(masked)) {
     const r = screenOutbound(keyedCapabilities(appName));
@@ -192,7 +199,7 @@ export async function handleKeyedChat(bodyIn: unknown, apiKey: string, account: 
     lore: retrieveLore(masked, 4, { appKb: false }),
     ...(ctx?.kbLines?.length ? { appFacts: { appName, lines: ctx.kbLines } } : {}),
     // THE SHARED HISTORY: every client's turns, as the unkeyed route reads them.
-    history: getRecentMessages(wallet, tokenId, 8).map((m) => ({ role: m.role, content: m.content })),
+    history: (memory ? getRecentMessages(wallet, tokenId, 8) : []).map((m) => ({ role: m.role, content: m.content })),
     userMessage: masked,
   });
 
