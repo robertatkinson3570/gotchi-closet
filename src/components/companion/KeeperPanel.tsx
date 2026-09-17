@@ -42,6 +42,24 @@ const SEVERITY_CLASS: Record<string, string> = {
   act: "bg-amber-500/20 text-amber-200",
 };
 
+/** Not watched yet: what the Keeper does, and the one button that starts it. */
+export function KeeperStartWatching({ busy, onStart }: { busy: boolean; onStart: () => void }) {
+  return (
+    <div className="space-y-2">
+      <div className="text-xs text-white/60">
+        Your Keeper isn't watching this wallet yet. Once it is, it reads the wallet every night: risky approvals, the exchanges you use, new transactions, your gotchi's pockets and DAO votes closing soon. Free, one signature, no gas.
+      </div>
+      {busy ? (
+        <div className="text-xs text-white/50">Confirm in your wallet…</div>
+      ) : (
+        <button onClick={onStart} className="rounded-lg bg-fuchsia-500/30 px-3 py-1 text-xs font-semibold text-fuchsia-100 hover:bg-fuchsia-500/50">
+          Start watching
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined }) {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
@@ -51,6 +69,10 @@ export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined })
   const [loading, setLoading] = useState(false);
   const [whyOpen, setWhyOpen] = useState<Set<string>>(new Set());
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  // Self-serve registration: GVR says the wallet is not watched yet.
+  const [unwatched, setUnwatched] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
 
   async function ensureKeeperAuth(wallet: string): Promise<{ signedAt: number; signature: string }> {
     const key = KEEPER_SIG_CACHE_KEY(wallet, "standing");
@@ -91,7 +113,8 @@ export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined })
         if (res.status === 401) { forgetKeeperSig(address, "standing"); res = await read(); }
         if (!res.ok) {
           if (res.status === 404) {
-            if (!cancelled) setReport(null);
+            const miss = (await res.json().catch(() => ({}))) as { registered?: unknown };
+            if (!cancelled) { setReport(null); setUnwatched(miss.registered === false); }
             return;
           }
           throw new Error(`keeper read failed (${res.status})`);
@@ -133,6 +156,29 @@ export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined })
     }
   }
 
+  async function startWatching() {
+    if (!address || !tokenId || registering) return;
+    setRegistering(true);
+    setError(null);
+    try {
+      const signedAt = Date.now();
+      const signature = await signMessageAsync({ message: keeperReadMessage(address, signedAt, "register") });
+      const res = await fetch("/api/companion/keeper/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: address, tokenId, signedAt, signature }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { reply?: string; error?: string };
+      if (!res.ok) { setError(body.error ?? "Couldn't start watching just now."); return; }
+      setUnwatched(false);
+      setNote(body.reply ?? "Your Keeper is watching this wallet now.");
+    } catch {
+      setError("Couldn't start watching: the signature was not given.");
+    } finally {
+      setRegistering(false);
+    }
+  }
+
   function toggleWhy(key: string) {
     setWhyOpen((prev) => {
       const next = new Set(prev);
@@ -151,7 +197,9 @@ export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined })
       <div className="text-xs font-semibold text-fuchsia-200/80">🗝 Keeper</div>
       {loading && !report && <div className="text-xs text-white/50">Reading your Keeper report…</div>}
       {error && <div className="text-xs text-red-300">⚠ {error}</div>}
-      {!loading && !report && !error && (
+      {!loading && !report && unwatched && <KeeperStartWatching busy={registering} onStart={startWatching} />}
+      {!loading && !report && !unwatched && note && <div className="text-xs text-white/60">{note}</div>}
+      {!loading && !report && !unwatched && !note && !error && (
         <div className="text-xs text-white/50">Your gotchi hasn't watched a full night yet. The first report lands after tonight's run.</div>
       )}
       {report && <KeeperReportView report={report} whyOpen={whyOpen} busyAction={busyAction} onToggleWhy={toggleWhy} onRunAction={runAction} />}

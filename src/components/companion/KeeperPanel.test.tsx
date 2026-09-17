@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 // report view is (QA 06-T6: this file did not exist).
 vi.mock("wagmi", () => ({ useAccount: () => ({ address: "0xe0d4f8f6f04a42aed5a7ea4f68bc612e6a54a3c2" }), useSignMessage: () => ({ signMessageAsync: async () => "0x" }), useWalletClient: () => ({ data: undefined }) }));
 
-import { KeeperPanel, KeeperReportView, keeperActionRefusal, type KeeperReport } from "./KeeperPanel";
+import { KeeperPanel, KeeperReportView, KeeperStartWatching, keeperActionRefusal, type KeeperReport } from "./KeeperPanel";
 import { ANALYST_DISCLAIMERS } from "@/lib/companion/api";
 
 const OWNER = "0xe0d4f8f6f04a42aed5a7ea4f68bc612e6a54a3c2";
@@ -77,3 +77,15 @@ describe("KeeperReportView", () => {
     expect(html).not.toContain("\u2014");
   });
 });
+
+describe("KeeperStartWatching", () => {
+  it("explains what the Keeper watches and offers one button; busy asks for the wallet instead", () => {
+    const idle = renderToStaticMarkup(<KeeperStartWatching busy={false} onStart={() => {}} />);
+    expect(idle).toContain("isn&#x27;t watching this wallet yet");
+    expect(idle).toContain("Start watching");
+    const busy = renderToStaticMarkup(<KeeperStartWatching busy onStart={() => {}} />);
+    expect(busy).toContain("Confirm in your wallet");
+    expect(busy).not.toContain("Start watching");
+  });
+});
+

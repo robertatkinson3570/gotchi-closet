@@ -23,7 +23,7 @@ import { verifyGhstPayment } from "../lending/verifyPayment";
 import { creditPackForGhst, expectedWeiForPack } from "../companion/pricing";
 import { premiumSignatureValid, actionSignatureValid } from "../companion/auth";
 import { soulDepthSnapshot } from "../soul/snapshot";
-import { proxyKeeperStanding } from "../companion/keeperProxy";
+import { proxyKeeperStanding, proxyKeeperRegister } from "../companion/keeperProxy";
 import { proxyAnalystAsk } from "../companion/askProxy";
 import { credentialOf, WISP_KEY_REQUIRED } from "../companion/wispCredential";
 import { handleKeyedChat, ANALYST_NOT_ON_THIS_DOOR } from "../companion/keyedChat";
@@ -479,6 +479,15 @@ router.get("/keeper/:tokenId/:wallet", async (req, res) => {
   const { signedAt, signature } = req.query as { signedAt?: string; signature?: string };
   const sigHeader = req.headers["x-keeper-signature"];
   const r = await proxyKeeperStanding(tokenId, wallet, { signedAt, signature }, Array.isArray(sigHeader) ? sigHeader[0] : sigHeader);
+  res.status(r.status).json(r.body);
+});
+
+// Self-serve Keeper registration from the Keeper tab's "Start watching":
+// forwarded to GVR, which checks the holder's signature and the gotchi. A
+// Wisp key has no business here and is refused like /ask.
+router.post("/keeper/register", async (req, res) => {
+  if (credentialOf(req).kind === "wisp") return res.status(403).json({ error: ANALYST_NOT_ON_THIS_DOOR });
+  const r = await proxyKeeperRegister(req.body ?? {});
   res.status(r.status).json(r.body);
 });
 

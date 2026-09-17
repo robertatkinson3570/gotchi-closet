@@ -5,7 +5,7 @@
 // makes every read 401 on GVR's side. Pure module (no viem/DOM) so the server
 // can import it relatively, same as actionAuth.ts / premiumAuth.ts.
 
-export const KEEPER_PURPOSES = ["standing", "koinly", "ask", "feedback"] as const;
+export const KEEPER_PURPOSES = ["standing", "koinly", "ask", "feedback", "register"] as const;
 export type KeeperPurpose = (typeof KEEPER_PURPOSES)[number];
 
 /** A read signature is good for 30 minutes; the paid ask lives 5 (B2: a captured ask
@@ -13,7 +13,7 @@ export type KeeperPurpose = (typeof KEEPER_PURPOSES)[number];
 export const KEEPER_READ_SIG_TTL_MS = 30 * 60 * 1000;
 export const KEEPER_ASK_SIG_TTL_MS = 5 * 60 * 1000;
 export function keeperSigTtlMs(purpose: KeeperPurpose): number {
-  return purpose === "ask" ? KEEPER_ASK_SIG_TTL_MS : KEEPER_READ_SIG_TTL_MS;
+  return purpose === "ask" || purpose === "register" ? KEEPER_ASK_SIG_TTL_MS : KEEPER_READ_SIG_TTL_MS;
 }
 
 /** B2: each GVR route accepts only its own purpose; the text is GVR's byte for byte. */

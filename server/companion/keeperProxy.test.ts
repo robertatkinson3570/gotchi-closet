@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { proxyKeeperStanding } from "./keeperProxy";
+import { proxyKeeperStanding, proxyKeeperRegister } from "./keeperProxy";
 
 const WALLET = "0x1111111111111111111111111111111111111111";
 
@@ -55,3 +55,24 @@ describe("proxyKeeperStanding", () => {
     expect(r.body.header).toBe("12345.0xabc");
   });
 });
+
+describe("proxyKeeperRegister", () => {
+  it("400s a bad wallet, tokenId or signature before calling GVR", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    expect((await proxyKeeperRegister({ wallet: "nope", tokenId: "1", signedAt: 1, signature: "0xa" })).status).toBe(400);
+    expect((await proxyKeeperRegister({ wallet: WALLET, tokenId: "x", signedAt: 1, signature: "0xa" })).status).toBe(400);
+    expect((await proxyKeeperRegister({ wallet: WALLET, tokenId: "1" })).status).toBe(400);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("posts the same wallet, tokenId, signedAt and signature to GVR and relays its answer", async () => {
+    const fetchSpy = vi.fn(async (url: string, init: RequestInit) => ({ status: 200, json: async () => ({ ok: true, url, sent: JSON.parse(String(init.body)) }) }));
+    vi.stubGlobal("fetch", fetchSpy);
+    const r = await proxyKeeperRegister({ wallet: WALLET, tokenId: "3560", signedAt: "1790000000000", signature: "0xabc", extra: "ignored" });
+    expect(r.status).toBe(200);
+    expect(r.body.url).toMatch(/\/api\/analyst\/register$/);
+    expect(r.body.sent).toEqual({ wallet: WALLET, tokenId: "3560", signedAt: 1790000000000, signature: "0xabc" });
+  });
+});
+

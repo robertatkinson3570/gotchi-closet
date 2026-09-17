@@ -39,3 +39,30 @@ export async function proxyKeeperStanding(
     return { status: 502, body: { error: `couldn't reach GVR: ${err?.message ?? String(err)}` } };
   }
 }
+
+/** Self-serve Keeper registration: POST GVR /api/analyst/register with the
+ *  holder's "register" signature. GVR checks the signature, that the wallet
+ *  holds the gotchi and the daily cap; Closet only shapes the body. */
+export async function proxyKeeperRegister(bodyIn: unknown): Promise<KeeperProxyResult> {
+  const b = (bodyIn && typeof bodyIn === "object" ? bodyIn : {}) as Record<string, unknown>;
+  const wallet = String(b.wallet ?? "");
+  const tokenId = String(b.tokenId ?? "");
+  if (!ADDR_RE.test(wallet)) return { status: 400, body: { error: "wallet (0x) required" } };
+  if (!TOKEN_ID_RE.test(tokenId)) return { status: 400, body: { error: "tokenId required" } };
+  if (typeof b.signature !== "string" || !/^0x[0-9a-fA-F]+$/.test(b.signature) || !/^\d{1,16}$/.test(String(b.signedAt ?? ""))) {
+    return { status: 400, body: { error: "signedAt and signature required" } };
+  }
+  try {
+    const res = await fetch(`${GVR_API}/api/analyst/register`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ wallet, tokenId, signedAt: Number(b.signedAt), signature: b.signature }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const body = await res.json().catch(() => ({ error: "GVR answered with no body" }));
+    return { status: res.status, body };
+  } catch (err: any) {
+    return { status: 502, body: { error: `couldn't reach GVR: ${err?.message ?? String(err)}` } };
+  }
+}
+
