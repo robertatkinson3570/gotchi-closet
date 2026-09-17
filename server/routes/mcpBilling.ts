@@ -12,7 +12,7 @@ import { usdToEthWei, usdToUsdcUnits } from "../payments/ethUsd";
 import { verifyEthPayment, verifyUsdcPayment, verifyTokenPayment } from "../payments/verifyEthPayment";
 import { GHST_BASE, usdToGhstWei } from "../payments/ghstUsd";
 import { clientTagOfKey } from "../companion/db";
-import { prepareProof, verifyProof, proofRateLimited, ProofError } from "../companion/walletProof";
+import { prepareProof, verifyProof, grantRateLimited, ProofError } from "../companion/walletProof";
 import { saveGrant, grantsForKey, revokeGrant } from "../mcp/grants";
 
 const router = Router();
@@ -133,9 +133,10 @@ function keyed(req: Parameters<typeof credentialOf>[0], res: { status(n: number)
 
 /** POST /api/mcp/grants/prepare (Bearer wsp_…) { wallet, domain, uri, days? } -> { message } */
 router.post("/grants/prepare", (req, res) => {
-  if (proofRateLimited(req.ip)) return res.status(429).json({ error: "slow down" });
   const acct = keyed(req, res);
   if (!acct) return;
+  // QA P4-04: per key (120 per 10 minutes), not per IP: one app server onboards many players.
+  if (grantRateLimited(acct.apiKey)) return res.status(429).json({ error: "slow down" });
   const b = req.body ?? {};
   try {
     const message = prepareProof({
@@ -152,9 +153,9 @@ router.post("/grants/prepare", (req, res) => {
 
 /** POST /api/mcp/grants (Bearer wsp_…) { message, signature } -> { wallet, domain, grantedAt, expiresAt } */
 router.post("/grants", async (req, res) => {
-  if (proofRateLimited(req.ip)) return res.status(429).json({ error: "slow down" });
   const acct = keyed(req, res);
   if (!acct) return;
+  if (grantRateLimited(acct.apiKey)) return res.status(429).json({ error: "slow down" });
   const b = req.body ?? {};
   try {
     const v = await verifyProof({ purpose: { kind: "grant", keyTag: clientTagOfKey(acct.apiKey) }, message: b.message, signature: b.signature });

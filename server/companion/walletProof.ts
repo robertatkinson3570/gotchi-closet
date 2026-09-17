@@ -183,3 +183,24 @@ export function proofRateLimited(ip: string | undefined, now: number = Date.now(
   b.count += 1;
   return b.count > PROOF_IP_LIMIT;
 }
+
+// --- Per-key limiter for the keyed grant routes (QA P4-04) --------------------
+// A partner app's server is one IP for every player it onboards, so the per-IP
+// proof bucket above (shared with Closet's own session routes) let one app run
+// about 15 grant flows per 10 minutes. Keyed grant prepare and grant use this
+// bucket, per key, instead; the session routes keep the per-IP one.
+
+const grantHits = new Map<string, { count: number; resetAt: number }>();
+export const GRANT_KEY_LIMIT = 120;
+export const GRANT_KEY_WINDOW_MS = 10 * 60_000;
+
+export function grantRateLimited(apiKey: string, now: number = Date.now()): boolean {
+  if (grantHits.size > 50_000) for (const [k, v] of grantHits) if (v.resetAt < now) grantHits.delete(k);
+  const b = grantHits.get(apiKey);
+  if (!b || b.resetAt < now) {
+    grantHits.set(apiKey, { count: 1, resetAt: now + GRANT_KEY_WINDOW_MS });
+    return false;
+  }
+  b.count += 1;
+  return b.count > GRANT_KEY_LIMIT;
+}

@@ -9,6 +9,7 @@ process.env.COMPANION_DB_PATH = join(tmpdir(), `mcp-account-test-${process.pid}.
 import mcpBillingRoutes from "./mcpBilling";
 import { closeDb } from "../companion/db";
 import { activatePlan, createAccount } from "../mcp/accounts";
+import { GRANT_KEY_LIMIT } from "../companion/walletProof";
 
 let server: Server;
 let base: string;
@@ -73,5 +74,26 @@ describe("GET /api/mcp/plan/:wallet", () => {
     expect(mint.json.plan).toBe("free");
     expect((await call("GET", `/api/mcp/plan/${W}`)).json).toEqual({ wallet: W, plan: "holder", expiresAt: active.expiresAt });
     expect((await call("GET", "/api/mcp/plan/0x7a7a000000000000000000000000000000000099")).json).toEqual({ wallet: "0x7a7a000000000000000000000000000000000099", plan: "free", expiresAt: 0 });
+  });
+});
+
+/** QA P4-04 (OWNER-18): grant prepare and grant shared Closet's per-IP proof bucket (30 per 10 minutes),
+ *  so one partner server could onboard about 15 players per 10 minutes. */
+describe("POST /api/mcp/grants/prepare rate limit", () => {
+  it("is a per-key bucket of 120 per 10 minutes: 120 prepares from one IP on one key succeed, the 121st is 429, and another key on the same IP is open", async () => {
+    const a = createAccount();
+    activatePlan({ apiKey: a.apiKey, plan: "pro", months: 1, asset: "eth", amountWei: 1n, txHash: "0xgrant-limit" });
+    const body = { wallet: "0x7a7a000000000000000000000000000000000018", domain: "mygame.example", uri: "https://mygame.example/play" };
+    const h = { Authorization: `Bearer ${a.apiKey}` };
+    expect(GRANT_KEY_LIMIT).toBe(120);
+    const statuses: number[] = [];
+    for (let i = 0; i < GRANT_KEY_LIMIT; i++) statuses.push((await call("POST", "/api/mcp/grants/prepare", body, h)).status);
+    expect(statuses.filter((s) => s === 200)).toHaveLength(GRANT_KEY_LIMIT);
+    const over = await call("POST", "/api/mcp/grants/prepare", body, h);
+    expect(over.status).toBe(429);
+    const b = createAccount();
+    expect((await call("POST", "/api/mcp/grants/prepare", body, { Authorization: `Bearer ${b.apiKey}` })).status).toBe(200);
+    // the grant route shares the key's bucket
+    expect((await call("POST", "/api/mcp/grants", { message: "x", signature: "0x00" }, h)).status).toBe(429);
   });
 });
