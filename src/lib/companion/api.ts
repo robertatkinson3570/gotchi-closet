@@ -188,7 +188,7 @@ export async function getGoals(wallet: string): Promise<Goal[]> {
   }
 }
 
-// Set/toggle a standing autonomous goal. Requires the 24h action signature (owner-signed) —
+// Set/toggle a standing autonomous goal. Requires the 24h action signature (owner-signed):
 // an enabled goal authorizes autonomous gas spend, so pass actionAuth from ensureActionAuth.
 export async function setGoal(
   wallet: string,

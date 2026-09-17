@@ -6,8 +6,15 @@
 // every read 401 on GVR's side. Pure module (no viem/DOM) so the server can
 // import it relatively, same as actionAuth.ts / premiumAuth.ts.
 
+/** B1 (GVR QA H-05): the text changed from an em dash to a colon on 2026-09-17; a signature
+ *  cached under the old text fails once on GVR, and the panels drop it and re-sign. */
+export const KEEPER_SIG_CACHE_KEY = (wallet: string) => `companion.keeperSig.${wallet.toLowerCase()}`;
+export function forgetKeeperSig(wallet: string): void {
+  try { localStorage.removeItem(KEEPER_SIG_CACHE_KEY(wallet)); } catch { /* privacy mode */ }
+}
+
 export const KEEPER_READ_SIG_TTL_MS = 30 * 60 * 1000; // a signature is good for 30 minutes
 
 export function keeperReadMessage(wallet: string, signedAt: number): string {
-  return `GVR Keeper — read my standing report\nwallet: ${wallet.toLowerCase()}\nts: ${signedAt}`;
+  return `GVR Keeper: read my standing report\nwallet: ${wallet.toLowerCase()}\nts: ${signedAt}`;
 }

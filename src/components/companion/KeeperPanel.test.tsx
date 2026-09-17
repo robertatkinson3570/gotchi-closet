@@ -3,9 +3,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 // The panel's data fetch and wallet hooks are not under test here; the pure
 // report view is (QA 06-T6: this file did not exist).
-vi.mock("wagmi", () => ({ useAccount: () => ({ address: undefined }), useSignMessage: () => ({ signMessageAsync: async () => "0x" }), useWalletClient: () => ({ data: undefined }) }));
+vi.mock("wagmi", () => ({ useAccount: () => ({ address: "0xe0d4f8f6f04a42aed5a7ea4f68bc612e6a54a3c2" }), useSignMessage: () => ({ signMessageAsync: async () => "0x" }), useWalletClient: () => ({ data: undefined }) }));
 
-import { KeeperReportView, type KeeperReport } from "./KeeperPanel";
+import { KeeperPanel, KeeperReportView, type KeeperReport } from "./KeeperPanel";
+import { ANALYST_DISCLAIMERS } from "@/lib/companion/api";
 
 const OWNER = "0xe0d4f8f6f04a42aed5a7ea4f68bc612e6a54a3c2";
 const fixture: KeeperReport = {
@@ -53,5 +54,16 @@ describe("KeeperReportView", () => {
     expect(open).toContain("<b>Risky approvals</b>: 1");
     expect(open).toContain("query 3d940cfffa2f");
     expect(open).toContain('href="https://basescan.org/block/51376268"');
+  });
+
+  it("H-01, OWNER-21: the panel renders the four legal lines from 00-overview section 8 once at the bottom, verbatim from the Ask mode constant", () => {
+    // A server render runs no effects, so this is the panel before its first read: the not-yet line plus the legal block.
+    const html = renderToStaticMarkup(<KeeperPanel tokenId="3560" />);
+    expect(ANALYST_DISCLAIMERS).toHaveLength(4);
+    for (const line of ANALYST_DISCLAIMERS) expect(html.split(line)).toHaveLength(2);
+    const at = ANALYST_DISCLAIMERS.map((line) => html.indexOf(line));
+    expect(at).toEqual([...at].sort((a, b) => a - b));
+    expect(html.indexOf("watched a full night yet")).toBeLessThan(at[0]!);
+    expect(html).not.toContain("\u2014");
   });
 });

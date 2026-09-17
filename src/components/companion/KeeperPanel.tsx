@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAccount, useSignMessage, useWalletClient } from "wagmi";
-import { keeperReadMessage, KEEPER_READ_SIG_TTL_MS } from "@/lib/companion/keeperAuth";
+import { keeperReadMessage, KEEPER_READ_SIG_TTL_MS, KEEPER_SIG_CACHE_KEY, forgetKeeperSig } from "@/lib/companion/keeperAuth";
+import { ANALYST_DISCLAIMERS } from "@/lib/companion/api";
 
 // KEEPER GOTCHI (06-standing-questions.md §6.3): "a new KeeperPanel.tsx
 // beside CompanionChatPanel.tsx, reading GET /api/companion/keeper/:tokenId/
@@ -41,7 +42,7 @@ export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined })
   const [busyAction, setBusyAction] = useState<string | null>(null);
 
   async function ensureKeeperAuth(wallet: string): Promise<{ signedAt: number; signature: string }> {
-    const key = `companion.keeperSig.${wallet.toLowerCase()}`;
+    const key = KEEPER_SIG_CACHE_KEY(wallet);
     try {
       const cached = JSON.parse(localStorage.getItem(key) || "null");
       if (cached?.signature && Date.now() - cached.signedAt < KEEPER_READ_SIG_TTL_MS) return cached;
@@ -54,7 +55,7 @@ export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined })
     try {
       localStorage.setItem(key, JSON.stringify(auth));
     } catch {
-      /* privacy mode — sign again next time */
+      /* privacy mode: sign again next time */
     }
     return auth;
   }
@@ -69,9 +70,14 @@ export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined })
     setError(null);
     (async () => {
       try {
-        const auth = await ensureKeeperAuth(address);
-        const q = new URLSearchParams({ signedAt: String(auth.signedAt), signature: auth.signature });
-        const res = await fetch(`/api/companion/keeper/${tokenId}/${address}?${q}`);
+        const read = async () => {
+          const auth = await ensureKeeperAuth(address);
+          const q = new URLSearchParams({ signedAt: String(auth.signedAt), signature: auth.signature });
+          return fetch(`/api/companion/keeper/${tokenId}/${address}?${q}`);
+        };
+        let res = await read();
+        // B1: a signature cached under the old message text fails once on GVR; drop it and sign again, once.
+        if (res.status === 401) { forgetKeeperSig(address); res = await read(); }
         if (!res.ok) {
           if (res.status === 404) {
             if (!cancelled) setReport(null);
@@ -128,9 +134,22 @@ export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined })
       {loading && !report && <div className="text-xs text-white/50">Reading your Keeper report…</div>}
       {error && <div className="text-xs text-red-300">⚠ {error}</div>}
       {!loading && !report && !error && (
-        <div className="text-xs text-white/50">Your gotchi hasn't watched a full night yet — the first report lands after tonight's run.</div>
+        <div className="text-xs text-white/50">Your gotchi hasn't watched a full night yet. The first report lands after tonight's run.</div>
       )}
       {report && <KeeperReportView report={report} whyOpen={whyOpen} busyAction={busyAction} onToggleWhy={toggleWhy} onRunAction={runAction} />}
+      <KeeperLegal />
+    </div>
+  );
+}
+
+/** 00-overview.md section 8: the four legal lines on every analyst surface, once, at the
+ *  bottom, the same constant Ask mode renders (GVR QA H-01). */
+export function KeeperLegal() {
+  return (
+    <div className="mt-2 space-y-0.5 border-t border-white/10 pt-1.5">
+      {ANALYST_DISCLAIMERS.map((line, i) => (
+        <div key={i} className={i === 0 ? "text-[9.5px] leading-snug text-white/60" : "text-[9.5px] leading-snug text-white/40"}>{line}</div>
+      ))}
     </div>
   );
 }
@@ -169,7 +188,7 @@ export function KeeperReportView({ report, whyOpen, busyAction, onToggleWhy, onR
                     </button>
                   ) : (
                     <span key={a.key} className="text-[10px] text-white/40" title={a.note}>
-                      {a.label} — {a.note ?? "no prepared action"}
+                      {a.label}: {a.note ?? "no prepared action"}
                     </span>
                   )
                 )}
