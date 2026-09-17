@@ -15,7 +15,7 @@ type KeeperCite = { queryId: string; asOfBlock: string | null; chains: number[] 
 type KeeperLine = { key: string; severity: "quiet" | "note" | "act"; text: string; facts: KeeperFact[]; cites: KeeperCite[] };
 type KeeperActionCall = { to: string; data: string; value?: string; label: string };
 type KeeperAction = { key: string; label: string; call: KeeperActionCall | null; note?: string };
-type KeeperReport = {
+export type KeeperReport = {
   wallet: string; tokenId: string; asOfBlock: string | null;
   report: { lines: KeeperLine[] }; text: string; voiced: boolean; at: number; actions: KeeperAction[];
 };
@@ -130,77 +130,86 @@ export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined })
       {!loading && !report && !error && (
         <div className="text-xs text-white/50">Your gotchi hasn't watched a full night yet — the first report lands after tonight's run.</div>
       )}
-      {report && (
-        <>
-          <div className="text-sm text-white/90">{report.text}</div>
-          {report.report.lines.filter((l) => l.text).map((line) => {
-            const actions = line.key === "permissions" ? report.actions.filter((a) => a.key.startsWith("revoke:")) : [];
-            const open = whyOpen.has(line.key);
-            return (
-              <div key={line.key} className="space-y-1 rounded-lg border border-white/10 bg-black/20 p-2">
-                <div className="flex items-start gap-2 text-xs">
-                  <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase ${SEVERITY_CLASS[line.severity] ?? ""}`}>
-                    {line.severity}
-                  </span>
-                  <span className="text-white/80">{line.text}</span>
-                </div>
-                {actions.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {actions.map((a) =>
-                      a.call ? (
-                        <button
-                          key={a.key}
-                          disabled={busyAction === a.key}
-                          onClick={() => runAction(a)}
-                          className="rounded-lg bg-fuchsia-500/20 px-2 py-1 text-[10px] font-semibold text-fuchsia-100 hover:bg-fuchsia-500/30 disabled:opacity-40"
-                        >
-                          {busyAction === a.key ? "Confirm in wallet…" : a.label}
-                        </button>
-                      ) : (
-                        <span key={a.key} className="text-[10px] text-white/40" title={a.note}>
-                          {a.label} — {a.note ?? "no prepared action"}
-                        </span>
-                      )
-                    )}
-                  </div>
-                )}
-                {line.facts.length > 0 && (
-                  <button onClick={() => toggleWhy(line.key)} className="text-[10px] text-white/40 hover:text-white/70">
-                    {open ? "Hide why" : "Why?"}
-                  </button>
-                )}
-                {open && (
-                  <div className="space-y-0.5 rounded bg-black/30 p-1.5 text-[10px] text-white/60">
-                    {line.facts.map((f) => (
-                      <div key={f.key}>
-                        <b>{f.label}</b>: {f.value}
-                      </div>
-                    ))}
-                    {line.cites.map((c) => (
-                      <div key={c.queryId}>
-                        query {c.queryId}
-                        {c.asOfBlock && (
-                          <>
-                            {" · "}
-                            <a
-                              href={explorerBlockUrl(c.chains[0] ?? 8453, c.asOfBlock)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-fuchsia-300 hover:underline"
-                            >
-                              block {c.asOfBlock}
-                            </a>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+      {report && <KeeperReportView report={report} whyOpen={whyOpen} busyAction={busyAction} onToggleWhy={toggleWhy} onRunAction={runAction} />}
+    </div>
+  );
+}
+
+/** The loaded report, pure over its props so it can be rendered without a
+ *  wallet (KeeperPanel.test.tsx). KeeperPanel owns the fetch and the wallet. */
+export function KeeperReportView({ report, whyOpen, busyAction, onToggleWhy, onRunAction }: {
+  report: KeeperReport; whyOpen: Set<string>; busyAction: string | null;
+  onToggleWhy: (key: string) => void; onRunAction: (action: KeeperAction) => void;
+}) {
+  return (
+    <>
+      <div className="text-sm text-white/90">{report.text}</div>
+      {report.report.lines.filter((l) => l.text).map((line) => {
+        const actions = line.key === "permissions" ? report.actions.filter((a) => a.key.startsWith("revoke:")) : [];
+        const open = whyOpen.has(line.key);
+        return (
+          <div key={line.key} className="space-y-1 rounded-lg border border-white/10 bg-black/20 p-2">
+            <div className="flex items-start gap-2 text-xs">
+              <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase ${SEVERITY_CLASS[line.severity] ?? ""}`}>
+                {line.severity}
+              </span>
+              <span className="text-white/80">{line.text}</span>
+            </div>
+            {actions.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {actions.map((a) =>
+                  a.call ? (
+                    <button
+                      key={a.key}
+                      disabled={busyAction === a.key}
+                      onClick={() => onRunAction(a)}
+                      className="rounded-lg bg-fuchsia-500/20 px-2 py-1 text-[10px] font-semibold text-fuchsia-100 hover:bg-fuchsia-500/30 disabled:opacity-40"
+                    >
+                      {busyAction === a.key ? "Confirm in wallet…" : a.label}
+                    </button>
+                  ) : (
+                    <span key={a.key} className="text-[10px] text-white/40" title={a.note}>
+                      {a.label} — {a.note ?? "no prepared action"}
+                    </span>
+                  )
                 )}
               </div>
-            );
-          })}
-        </>
-      )}
-    </div>
+            )}
+            {line.facts.length > 0 && (
+              <button onClick={() => onToggleWhy(line.key)} className="text-[10px] text-white/40 hover:text-white/70">
+                {open ? "Hide why" : "Why?"}
+              </button>
+            )}
+            {open && (
+              <div className="space-y-0.5 rounded bg-black/30 p-1.5 text-[10px] text-white/60">
+                {line.facts.map((f) => (
+                  <div key={f.key}>
+                    <b>{f.label}</b>: {f.value}
+                  </div>
+                ))}
+                {line.cites.map((c) => (
+                  <div key={c.queryId}>
+                    query {c.queryId}
+                    {c.asOfBlock && (
+                      <>
+                        {" · "}
+                        <a
+                          href={explorerBlockUrl(c.chains[0] ?? 8453, c.asOfBlock)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-fuchsia-300 hover:underline"
+                        >
+                          block {c.asOfBlock}
+                        </a>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </>
   );
 }
