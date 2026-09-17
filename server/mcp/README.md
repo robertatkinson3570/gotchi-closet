@@ -87,6 +87,7 @@ Keeper Gotchi slice 08 (`docs/briefs/keeper-gotchi/08-wisp-chat.md` in GVR). A t
    When the holder removes your app from the companion panel, the grant is revoked and every row your key wrote for that
    wallet is deleted with it.
 7. Facts without a model: MCP tools get_history and get_keeper_report (metered by your tool quota, zero LLM calls).
+   POST /mcp takes one JSON-RPC request per call; an array body (a JSON-RPC batch) is refused with -32600 "batches are not supported".
    Over a key, get_history, build_chat_context with a wallet and the steward reads also need the wallet's grant,
    build_chat_context never includes Closet's private remembered facts, and steward_run_now is not offered.
 Your users' turns land in the same log Closet and GVR write to; the gotchi remembers across all three.

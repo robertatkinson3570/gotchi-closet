@@ -8,7 +8,7 @@ process.env.COMPANION_DB_PATH = join(tmpdir(), `wisp-http-test-${process.pid}.db
 import { wispMcpHttpHandler } from "./http";
 import { createAccount, consumeRequest } from "./accounts";
 import { PLAN_LIMITS } from "../../src/lib/wisp/pricing";
-import { closeDb } from "../companion/db";
+import { closeDb, getDb } from "../companion/db";
 
 afterAll(() => closeDb());
 
@@ -70,6 +70,23 @@ describe("wisp HTTP MCP gate (limits enforced at the endpoint)", () => {
     expect(res.body.error.code).toBe(-32002);
     expect(res.body.error.data.plan).toBe("free");
     expect(res.body.error.data.limitPerDay).toBe(PLAN_LIMITS.free.requestsPerDay);
+  });
+
+  it("SEC-29: a JSON-RPC batch of five tools/call is refused with -32600 and wisp_usage does not move; a single call still meters", async () => {
+    const a = createAccount();
+    const used = () => (getDb().prepare(`SELECT coalesce(sum(count), 0) AS c FROM wisp_usage WHERE api_key = ?`).get(a.apiKey) as { c: number }).c;
+    const call = (id: number) => ({ jsonrpc: "2.0", id, method: "tools/call", params: { name: "get_soul", arguments: { tokenId: "9638" } } });
+    const res = makeRes();
+    await wispMcpHttpHandler(makeReq({ headers: { authorization: `Bearer ${a.apiKey}` }, body: [1, 2, 3, 4, 5].map(call) }), res);
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toMatchObject({ code: -32600, message: "batches are not supported" });
+    expect(used()).toBe(0);
+    const single = makeRes();
+    await wispMcpHttpHandler(makeReq({ headers: { authorization: `Bearer ${a.apiKey}` }, body: call(1) }), single);
+    // The stub carries no Accept header, so the transport itself answers the
+    // single call; what matters is that the gate let it through and metered it.
+    expect(single.body?.error?.message).not.toBe("batches are not supported");
+    expect(used()).toBeGreaterThan(0); // one call bumps its day and month rows
   });
 
   it("does not meter non-tool methods (handshake) against the limit", async () => {

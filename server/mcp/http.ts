@@ -31,7 +31,14 @@ export async function wispMcpHttpHandler(req: Request, res: Response): Promise<v
     return;
   }
 
-  // 2. Meter tool calls against the key's plan limits. Handshake/list are free
+  // 2. No JSON-RPC batches (QA SEC-29): the meter below reads one body.method,
+  //    and an array of tools/call was served in full and never counted.
+  if (Array.isArray(req.body)) {
+    rpcError(res, 400, -32600, "batches are not supported");
+    return;
+  }
+
+  // 3. Meter tool calls against the key's plan limits. Handshake/list are free
   //    (but still require a valid key, checked above).
   if ((req.body as { method?: string })?.method === "tools/call") {
     const gate = consumeRequest(apiKey);
@@ -47,7 +54,7 @@ export async function wispMcpHttpHandler(req: Request, res: Response): Promise<v
     }
   }
 
-  // 3. Serve the MCP request (fresh server+transport per request, stateless).
+  // 4. Serve the MCP request (fresh server+transport per request, stateless).
   const server = createWispMcpServer({ apiKey });
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
   res.on("close", () => {
