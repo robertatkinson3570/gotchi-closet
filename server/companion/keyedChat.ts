@@ -128,19 +128,21 @@ export async function handleKeyedChat(bodyIn: unknown, apiKey: string, account: 
 
   // 1. THE METER, before anything else. Refusals are clean and cost nothing.
   const t = now();
-  const gate = consume(apiKey, t);
+  // WALLET PROOF: the shared history is the holder's. Only a wallet that granted this key is
+  // remembered; without a grant the turn is a guest (same gotchi, public data, no history).
+  // Read before the meter: a partner key meters by the player, and only a granted player is one.
+  const memory = granted(apiKey, wallet);
+  const gate = consume(apiKey, t, { wallet, proven: memory });
   const client = clientTagOfKey(apiKey);
+  const playerFields = gate.playerLimitPerDay === undefined ? {} : { playerUsedToday: gate.playerUsedToday, playerLimitPerDay: gate.playerLimitPerDay };
   if (!gate.allowed) {
     return {
       status: 429,
-      body: { error: "chat cap reached", reason: gate.reason, plan: gate.plan, usedToday: gate.usedToday, limitPerDay: gate.limitPerDay, resetsAt: gate.resetsAt, client },
+      body: { error: "chat cap reached", reason: gate.reason, plan: gate.plan, usedToday: gate.usedToday, limitPerDay: gate.limitPerDay, resetsAt: gate.resetsAt, client, ...playerFields },
     };
   }
   if (walletLimited(apiKey, wallet, t)) return { status: 429, body: { error: "slow down, fren 👻", reason: "wallet rate limit", plan: gate.plan, client } };
 
-  // WALLET PROOF: the shared history is the holder's. Only a wallet that granted this key is
-  // remembered; without a grant the turn is a guest (same gotchi, public data, no history).
-  const memory = granted(apiKey, wallet);
   const ctx = account.context;
   const appName = ctx?.appName ?? DEFAULT_APP_NAME;
   const { masked, deflected } = filterInbound(rawMessage);
@@ -150,7 +152,7 @@ export async function handleKeyedChat(bodyIn: unknown, apiKey: string, account: 
     appendMessage(wallet, tokenId, "assistant", r, client);
   };
   const answer = (reply: string, extra: Record<string, unknown> = {}): KeyedResult => ({
-    status: 200, body: { reply, deflected: false, memory, client, plan: gate.plan, usedToday: gate.usedToday, limitPerDay: gate.limitPerDay, ...extra },
+    status: 200, body: { reply, deflected: false, memory, client, plan: gate.plan, usedToday: gate.usedToday, limitPerDay: gate.limitPerDay, ...playerFields, ...extra },
   });
 
   // 2. The persona: the same gotchi, the app's name in the site sentence, no
@@ -165,7 +167,7 @@ export async function handleKeyedChat(bodyIn: unknown, apiKey: string, account: 
   if (deflected) {
     const reply = templateReply({ profile, message: masked, deflected: true });
     persist(reply);
-    return { status: 200, body: { reply, deflected: true, memory, client, plan: gate.plan, usedToday: gate.usedToday, limitPerDay: gate.limitPerDay } };
+    return { status: 200, body: { reply, deflected: true, memory, client, plan: gate.plan, usedToday: gate.usedToday, limitPerDay: gate.limitPerDay, ...playerFields } };
   }
   if (isHelpIntent(masked)) {
     const r = screenOutbound(keyedCapabilities(appName));

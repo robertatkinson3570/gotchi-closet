@@ -31,8 +31,7 @@ import { sessionWalletOf, WALLET_PROOF_REQUIRED, NO_WALLET_GRANT } from "../comp
 import { prepareProof, verifyProof, issueSessionToken, proofRateLimited, ProofError } from "../companion/walletProof";
 import { hasGrant, grantsForWallet, revokeGrantByTag } from "../mcp/grants";
 import { clientTagOfKey, isClientTag, CLIENT_GVR } from "../companion/db";
-import { effectivePlan } from "../mcp/accounts";
-import { chatGranted } from "../../src/lib/wisp/pricing";
+import { effectivePlan, chatAllowed } from "../mcp/accounts";
 
 const router = Router();
 
@@ -401,7 +400,7 @@ router.get("/history/:tokenId/:wallet", (req, res) => {
   if (!wallet.startsWith("0x")) return res.status(400).json({ error: "wallet (0x) required" });
   const cred = credentialOf(req);
   if (cred.kind === "bad") return res.status(401).json({ error: WISP_KEY_REQUIRED, reason: cred.reason });
-  if (cred.kind === "wisp" && !chatGranted(effectivePlan(cred.account))) {
+  if (cred.kind === "wisp" && !chatAllowed(cred.account)) {
     return res.status(403).json({ error: "chat is not in this key's plan", plan: effectivePlan(cred.account) });
   }
   if (cred.kind === "wisp" && !hasGrant(cred.apiKey, wallet)) return res.status(403).json({ error: NO_WALLET_GRANT });
@@ -425,7 +424,7 @@ router.post("/history", (req, res) => {
   if (cred.kind === "none" || cred.kind === "bad") {
     return res.status(401).json({ error: "Wisp key or service key required", ...(cred.kind === "bad" ? { reason: cred.reason } : {}) });
   }
-  if (cred.kind === "wisp" && !chatGranted(effectivePlan(cred.account))) {
+  if (cred.kind === "wisp" && !chatAllowed(cred.account)) {
     return res.status(403).json({ error: "chat is not in this key's plan", plan: effectivePlan(cred.account) });
   }
   const b = req.body ?? {};

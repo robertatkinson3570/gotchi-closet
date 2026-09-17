@@ -93,6 +93,13 @@ facts and action log) or GVR's ledger facts, it never remembers a fact from a ke
 says your app can show the user where to do that. A Wisp key never reaches the analyst (`/api/companion/ask` answers
 403 to a keyed request); keyed chat is companion chat only.
 
+Partner keys: developers the owner picks (`npx tsx scripts/wisp-partner.ts add <key or tag> [note]`, `list`, `remove`) use
+Wisp free and never lapse; their players pay. Chat through a partner key is metered per player (`PARTNER_LIMITS` in
+`src/lib/wisp/pricing.ts`): a player who granted the app gets `playerFreePerDay` turns a day across every partner app, or
+`playerPaidPerDay` when their own wallet holds a paid Wisp plan; players who have not granted share the key's `guestPerDay`
+pool. Refusals add `player plan required`, `player daily cap reached` and `guest daily cap reached`; replies carry
+`playerUsedToday` and `playerLimitPerDay`. There is no HTTP route that sets the flag.
+
 Metering: `chatPerDay` and `chatPerMinute` per plan in `src/lib/wisp/pricing.ts` (holder 200 / 6, pro 2,000 / 12,
 studio 20,000 / 20). Hosted chat lands on the same local model rail as GVR's own companion and analyst chat, which is why
 a per-minute burst cap exists beside the day cap. Prices are unchanged.

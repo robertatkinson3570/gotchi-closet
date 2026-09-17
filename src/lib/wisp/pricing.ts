@@ -156,6 +156,25 @@ export const PLAN_LIMITS: Record<WispPlan, PlanLimits> = {
   studio: { requestsPerDay: 250000, requestsPerMonth: 250000, collections: 9999, stateful: true, chatPerDay: 20000, chatPerMinute: 20 },
 };
 
+/** PARTNER KEYS: app developers the owner picks use Wisp free; their players
+ *  pay. A partner key never lapses and is never billed. Its chat is metered
+ *  per player: a player who granted the app gets a small free allowance, and
+ *  the bigger one when their own wallet holds a paid Wisp plan (Holder or
+ *  above). Players who have not granted the app share the key's guest pool.
+ *  Set playerFreePerDay to 0 to make chat for paying players only. */
+export const PARTNER_LIMITS = {
+  requestsPerDay: 25000,
+  requestsPerMonth: 250000,
+  /** All chat through one partner key in a UTC day, and in any minute. */
+  chatPerDay: 5000,
+  chatPerMinute: 20,
+  /** Per player wallet per UTC day, across every partner app. */
+  playerFreePerDay: 20,
+  playerPaidPerDay: 200,
+  /** Turns from players who have not granted the key, per key per UTC day. */
+  guestPerDay: 200,
+} as const;
+
 /** Does the plan in force include hosted chat? The grant (§8.2). */
 export function chatGranted(plan: WispPlan): boolean {
   return PLAN_LIMITS[plan].chatPerDay > 0;

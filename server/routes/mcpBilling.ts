@@ -5,7 +5,7 @@
 import { Router } from "express";
 import { recoverMessageAddress } from "viem";
 import { createAccount, getAccountByKey, getAccountByWallet, rotateKey, activatePlan, effectivePlan, setContext, chatUsageOf, type WispAccount } from "../mcp/accounts";
-import { priceUsd, isValidPurchase, PERIODS, PLAN_LIMITS, chatGranted } from "../../src/lib/wisp/pricing";
+import { priceUsd, isValidPurchase, PERIODS, PLAN_LIMITS, PARTNER_LIMITS, chatGranted } from "../../src/lib/wisp/pricing";
 import { credentialOf, WISP_KEY_REQUIRED } from "../companion/wispCredential";
 import { wispManageMessage, isSignedAtFresh } from "../../src/lib/wisp/auth";
 import { usdToEthWei, usdToUsdcUnits } from "../payments/ethUsd";
@@ -71,11 +71,19 @@ router.get("/plan/:wallet", (req, res) => {
  *  dashboard shows. `chat` is the grant (chatPerDay > 0 on the plan in
  *  force); the day's chat use rides beside it. Never the key itself. */
 function accountSummary(acct: WispAccount) {
+  const used = chatUsageOf(acct.apiKey);
+  if (acct.partner) {
+    return {
+      plan: "partner", storedPlan: acct.plan, expiresAt: 0, partner: true,
+      chat: true, chatPerDay: PARTNER_LIMITS.chatPerDay, chatPerMinute: PARTNER_LIMITS.chatPerMinute, chatUsedToday: used.usedToday,
+      playerFreePerDay: PARTNER_LIMITS.playerFreePerDay, playerPaidPerDay: PARTNER_LIMITS.playerPaidPerDay, guestPerDay: PARTNER_LIMITS.guestPerDay,
+      context: acct.context,
+    };
+  }
   const plan = effectivePlan(acct);
   const limits = PLAN_LIMITS[plan];
-  const used = chatUsageOf(acct.apiKey);
   return {
-    plan, storedPlan: acct.plan, expiresAt: acct.expiresAt,
+    plan, storedPlan: acct.plan, expiresAt: acct.expiresAt, partner: false,
     chat: chatGranted(plan), chatPerDay: limits.chatPerDay, chatPerMinute: limits.chatPerMinute, chatUsedToday: used.usedToday,
     context: acct.context,
   };
