@@ -4,7 +4,7 @@
 
 import { Router } from "express";
 import { recoverMessageAddress } from "viem";
-import { createAccount, getAccountByKey, getAccountByWallet, accountsByWallet, bestPaidAccountByWallet, rotateKey, activatePlan, effectivePlan, setContext, chatUsageOf, type WispAccount } from "../mcp/accounts";
+import { createAccount, getAccountByKey, getAccountByWallet, accountsByWallet, bestPaidAccountByWallet, getPlanAccountByWallet, lastPaymentMonths, rotateKey, activatePlan, effectivePlan, setContext, chatUsageOf, type WispAccount } from "../mcp/accounts";
 import { priceUsd, isValidPurchase, PERIODS, PLAN_LIMITS, PARTNER_LIMITS, chatGranted } from "../../src/lib/wisp/pricing";
 import { credentialOf, WISP_KEY_REQUIRED } from "../companion/wispCredential";
 import { wispManageMessage, isSignedAtFresh } from "../../src/lib/wisp/auth";
@@ -57,15 +57,32 @@ router.post("/account", (req, res) => {
 
 /** GET /api/mcp/plan/:wallet -> the wallet's effective plan + expiry, and nothing
  *  else (no key): what a client (GVR's Wisp/Desk dialogs, GVR's Holder gate)
- *  needs to show "active until" instead of Pay, and to grant the paid tier. */
+ *  needs to show "active until" instead of Pay, and to grant the paid tier.
+ *  `plan` + `expiresAt` keep their meaning (a lapsed plan reads free, 0). Added
+ *  for GVR's renewal reminder (GVR docs/briefs/wisp-renewals.md §2), read-only:
+ *  `storedPlan` the plan last paid for, `endedAt` its past expiry once it lapsed
+ *  (0 otherwise: never paid, or still active), `periodMonths` the months of the
+ *  latest payment on that account. The account is the wallet's paid one with the
+ *  latest expiry (getPlanAccountByWallet), so a newer free key cannot hide it. */
 router.get("/plan/:wallet", (req, res) => {
   const wallet = String(req.params.wallet ?? "");
   if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) return res.status(400).json({ error: "wallet (0x) required" });
-  // QA SEC-23: the best active paid plan across every account the wallet owns,
+  // QA SEC-23: the best ACTIVE paid plan across every account the wallet owns,
   // never the newest row (anyone can mint an unsigned free key on a wallet).
-  const acct = bestPaidAccountByWallet(wallet);
-  if (!acct) return res.json({ wallet: wallet.toLowerCase(), plan: "free", expiresAt: 0 });
-  res.json({ wallet: wallet.toLowerCase(), plan: effectivePlan(acct), expiresAt: acct.expiresAt });
+  // With no active paid plan, the paid account with the latest expiry (lapsed)
+  // so GVR's renewal reminder can say when it ended and what it was (4afe836).
+  const acct = bestPaidAccountByWallet(wallet) ?? getPlanAccountByWallet(wallet);
+  if (!acct) return res.json({ wallet: wallet.toLowerCase(), plan: "free", expiresAt: 0, storedPlan: "free", endedAt: 0, periodMonths: 0 });
+  const plan = effectivePlan(acct);
+  const lapsed = plan === "free" && acct.plan !== "free" && acct.expiresAt > 0;
+  res.json({
+    wallet: wallet.toLowerCase(),
+    plan,
+    expiresAt: plan === "free" ? 0 : acct.expiresAt,
+    storedPlan: acct.plan,
+    endedAt: lapsed ? acct.expiresAt : 0,
+    periodMonths: lastPaymentMonths(acct.apiKey),
+  });
 });
 
 /** KEEPER GOTCHI (08-wisp-chat.md §8.2): the account summary a third-party

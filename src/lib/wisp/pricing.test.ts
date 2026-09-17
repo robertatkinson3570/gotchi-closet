@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isValidPurchase, priceUsd, PLAN_LIMITS, WISP_PLANS } from "./pricing";
+import { annualSavingUsd, defaultMonths, isValidPurchase, monthsOnPlanSwitch, PERIODS, periodChipLabel, priceUsd, PLAN_LIMITS, WISP_PLANS } from "./pricing";
 // A verbatim copy of GVR's packages/shared/src/wispPriceTable.json (GVR cf42229). GVR quotes GHST
 // from its own copy of priceUsd, and POST /api/mcp/buy only accepts a payment within SLIPPAGE_BPS
 // of Closet's price, so every cell here must match or a GVR-quoted Holder payment is refused.
@@ -36,6 +36,30 @@ describe("wisp pricing", () => {
       .map((c) => ({ ...c, closet: priceUsd(c.plan, c.months, c.ghosts) }))
       .filter((c) => c.closet !== c.usd);
     expect(mismatches).toEqual([]);
+  });
+
+  it("THE YEARLY PUSH: the saving is derived, 39 for Holder and undefined for Pro/Studio", () => {
+    expect(annualSavingUsd("holder")).toBe(39);
+    expect(annualSavingUsd("holder")).toBe(priceUsd("holder", 1) * 12 - priceUsd("holder", 12));
+    expect(annualSavingUsd("pro")).toBeUndefined();
+    expect(annualSavingUsd("studio")).toBeUndefined();
+  });
+
+  it("the dialog opens Holder on 12 months and Pro/Studio on 1; a plan switch keeps a period picked by hand", () => {
+    expect(defaultMonths("holder")).toBe(12);
+    expect(defaultMonths("pro")).toBe(1);
+    expect(defaultMonths("studio")).toBe(1);
+    expect(monthsOnPlanSwitch("holder", 1, false)).toBe(12);
+    expect(monthsOnPlanSwitch("pro", 12, false)).toBe(1);
+    expect(monthsOnPlanSwitch("holder", 3, true)).toBe(3);
+    expect(monthsOnPlanSwitch("studio", 12, true)).toBe(12);
+  });
+
+  it("the 12-month chip names the annual price as the best value on Holder only", () => {
+    const year = PERIODS.find((p) => p.months === 12)!;
+    expect(periodChipLabel(year, "holder")).toBe("12 months ($69, best value)");
+    expect(periodChipLabel(year, "pro")).toBe("12 months (−20%)");
+    expect(periodChipLabel(PERIODS[1]!, "holder")).toBe("3 months (−10%)");
   });
 
   it("promises no Holder trial (none exists)", () => {

@@ -67,13 +67,13 @@ describe("GET /api/mcp/plan/:wallet", () => {
     const W = "0x7a7a000000000000000000000000000000000023";
     const own = createAccount(W);
     const active = activatePlan({ apiKey: own.apiKey, plan: "holder", months: 1, asset: "ghst", amountWei: 1n, txHash: "0xplan-h" });
-    expect((await call("GET", `/api/mcp/plan/${W}`)).json).toEqual({ wallet: W, plan: "holder", expiresAt: active.expiresAt });
+    expect((await call("GET", `/api/mcp/plan/${W}`)).json).toEqual({ wallet: W, plan: "holder", expiresAt: active.expiresAt, storedPlan: "holder", endedAt: 0, periodMonths: 1 });
     await new Promise((r) => setTimeout(r, 5));
     const mint = await call("POST", "/api/mcp/account", { wallet: W });
     expect(mint.status).toBe(200);
     expect(mint.json.plan).toBe("free");
-    expect((await call("GET", `/api/mcp/plan/${W}`)).json).toEqual({ wallet: W, plan: "holder", expiresAt: active.expiresAt });
-    expect((await call("GET", "/api/mcp/plan/0x7a7a000000000000000000000000000000000099")).json).toEqual({ wallet: "0x7a7a000000000000000000000000000000000099", plan: "free", expiresAt: 0 });
+    expect((await call("GET", `/api/mcp/plan/${W}`)).json).toEqual({ wallet: W, plan: "holder", expiresAt: active.expiresAt, storedPlan: "holder", endedAt: 0, periodMonths: 1 });
+    expect((await call("GET", "/api/mcp/plan/0x7a7a000000000000000000000000000000000099")).json).toEqual({ wallet: "0x7a7a000000000000000000000000000000000099", plan: "free", expiresAt: 0, storedPlan: "free", endedAt: 0, periodMonths: 0 });
   });
 });
 
