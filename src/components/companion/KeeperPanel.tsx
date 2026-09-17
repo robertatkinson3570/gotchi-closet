@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAccount, useSignMessage, useWalletClient } from "wagmi";
 import { keeperReadMessage, keeperSigTtlMs, KEEPER_SIG_CACHE_KEY, KEEPER_SIG_HEADER, keeperSigHeaderValue, forgetKeeperSig } from "@/lib/companion/keeperAuth";
 import { ANALYST_DISCLAIMERS } from "@/lib/companion/api";
+import { env } from "@/lib/env";
 
 // KEEPER GOTCHI (06-standing-questions.md §6.3): "a new KeeperPanel.tsx
 // beside CompanionChatPanel.tsx, reading GET /api/companion/keeper/:tokenId/
@@ -106,7 +107,8 @@ export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined })
         const read = async () => {
           const auth = await ensureKeeperAuth(address);
           // B2: the proof rides in the header, never a query string an access log keeps.
-          return fetch(`/api/companion/keeper/${tokenId}/${address}`, { headers: { [KEEPER_SIG_HEADER]: keeperSigHeaderValue(auth) } });
+          // The companion API is its own origin in production (api.gotchicloset.com); a relative /api path is Vercel's and 404s.
+          return fetch(`${env.companionApiUrl}/api/companion/keeper/${tokenId}/${address}`, { headers: { [KEEPER_SIG_HEADER]: keeperSigHeaderValue(auth) } });
         };
         let res = await read();
         // B1: a signature cached under the old message text fails once on GVR; drop it and sign again, once.
@@ -163,7 +165,7 @@ export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined })
     try {
       const signedAt = Date.now();
       const signature = await signMessageAsync({ message: keeperReadMessage(address, signedAt, "register") });
-      const res = await fetch("/api/companion/keeper/register", {
+      const res = await fetch(`${env.companionApiUrl}/api/companion/keeper/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ wallet: address, tokenId, signedAt, signature }),
