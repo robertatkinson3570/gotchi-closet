@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 // report view is (QA 06-T6: this file did not exist).
 vi.mock("wagmi", () => ({ useAccount: () => ({ address: "0xe0d4f8f6f04a42aed5a7ea4f68bc612e6a54a3c2" }), useSignMessage: () => ({ signMessageAsync: async () => "0x" }), useWalletClient: () => ({ data: undefined }) }));
 
-import { KeeperPanel, KeeperReportView, type KeeperReport } from "./KeeperPanel";
+import { KeeperPanel, KeeperReportView, keeperActionRefusal, type KeeperReport } from "./KeeperPanel";
 import { ANALYST_DISCLAIMERS } from "@/lib/companion/api";
 
 const OWNER = "0xe0d4f8f6f04a42aed5a7ea4f68bc612e6a54a3c2";
@@ -20,14 +20,24 @@ const fixture: KeeperReport = {
     ],
   },
   actions: [
-    { key: "revoke:0xabc:0xdef", label: "Revoke USDC for 0xabc", call: { to: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913", data: "0x095ea7b3", label: "Revoke USDC for 0xabc" } },
-    { key: "revoke:0x7702", label: "Revoke delegation", call: null, note: "an EIP-7702 delegation has no safe prepared action yet" },
+    { key: "revoke:0xabc:0xdef", label: "Revoke USDC for 0xabc", chainId: 8453, wallet: OWNER, call: { to: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913", data: "0x095ea7b3", label: "Revoke USDC for 0xabc", chainId: 8453, wallet: OWNER } },
+    { key: "revoke:0x7702", label: "Revoke delegation", chainId: 1, wallet: OWNER, call: null, note: "an EIP-7702 delegation has no safe prepared action yet" },
   ],
 };
 
 function render(over: Partial<Parameters<typeof KeeperReportView>[0]> = {}) {
   return renderToStaticMarkup(<KeeperReportView report={fixture} whyOpen={new Set()} busyAction={null} onToggleWhy={() => {}} onRunAction={() => {}} {...over} />);
 }
+
+describe("keeperActionRefusal (B8, H-06, OWNER-22)", () => {
+  it("refuses when the connected wallet is not the action's wallet, with a visible note naming it; allows the owning wallet in any case", () => {
+    const a = fixture.actions[0]!;
+    expect(keeperActionRefusal("0x1111111111111111111111111111111111111111", a)).toMatch(/belongs to 0xe0d4\.\.a3c2/);
+    expect(keeperActionRefusal(undefined, a)).toMatch(/connect/i);
+    expect(keeperActionRefusal(OWNER.toUpperCase().replace("0X", "0x"), a)).toBeNull();
+    expect(keeperActionRefusal(OWNER, { ...a, call: null })).toMatch(/no prepared/i);
+  });
+});
 
 describe("KeeperReportView", () => {
   it("renders one row per line with text, a severity chip per row, and skips lines with no text", () => {

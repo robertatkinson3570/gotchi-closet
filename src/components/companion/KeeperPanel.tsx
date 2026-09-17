@@ -14,8 +14,19 @@ import { ANALYST_DISCLAIMERS } from "@/lib/companion/api";
 type KeeperFact = { key: string; label: string; value: string };
 type KeeperCite = { queryId: string; asOfBlock: string | null; chains: number[] };
 type KeeperLine = { key: string; severity: "quiet" | "note" | "act"; text: string; facts: KeeperFact[]; cites: KeeperCite[] };
-type KeeperActionCall = { to: string; data: string; value?: string; label: string };
-type KeeperAction = { key: string; label: string; call: KeeperActionCall | null; note?: string };
+type KeeperActionCall = { to: string; data: string; value?: string; label: string; chainId: number; wallet: string };
+/** B8 (GVR QA H-06, OWNER-22): chainId and wallet on every action, signable or not. */
+type KeeperAction = { key: string; label: string; chainId: number; wallet: string; call: KeeperActionCall | null; note?: string };
+
+const shortAddr = (a: string) => `${a.slice(0, 6)}..${a.slice(-4)}`;
+
+/** Why a prepared action must not be sent from this wallet, or null when it may. */
+export function keeperActionRefusal(connected: string | undefined, action: KeeperAction): string | null {
+  if (!action.call) return action.note ?? "There is no prepared action for this one.";
+  if (!connected) return "Connect the wallet this approval belongs to before revoking it.";
+  if (connected.toLowerCase() !== action.wallet.toLowerCase()) return `This approval belongs to ${shortAddr(action.wallet)}; connect that wallet to revoke it.`;
+  return null;
+}
 export type KeeperReport = {
   wallet: string; tokenId: string; asOfBlock: string | null;
   report: { lines: KeeperLine[] }; text: string; voiced: boolean; at: number; actions: KeeperAction[];
@@ -101,9 +112,16 @@ export function KeeperPanel({ tokenId }: { tokenId: string | null | undefined })
 
   async function runAction(action: KeeperAction) {
     if (!action.call || !walletClient || busyAction) return;
+    // B8: the connected wallet must own the permission, and the send happens on the action's chain.
+    const refusal = keeperActionRefusal(address, action);
+    if (refusal) { setError(refusal); return; }
     setBusyAction(action.key);
     try {
+      const onChain = await walletClient.getChainId();
+      if (onChain !== action.chainId) await walletClient.switchChain({ id: action.chainId });
       await walletClient.sendTransaction({
+        account: address as `0x${string}`,
+        chain: null,
         to: action.call.to as `0x${string}`,
         data: action.call.data as `0x${string}`,
         ...(action.call.value ? { value: BigInt(action.call.value) } : {}),
