@@ -59,6 +59,8 @@ export interface WispManaged {
   plan: string;
   storedPlan: string;
   expiresAt: number;
+  /** Every key the wallet owns, newest first (a holder can see a key someone else minted on their wallet). */
+  keys?: { apiKey: string; plan: string; storedPlan: string; expiresAt: number; createdAt: number }[];
 }
 
 /** Sign-in-with-wallet: returns the wallet's account (incl. key) after signature check. */

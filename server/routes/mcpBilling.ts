@@ -4,7 +4,7 @@
 
 import { Router } from "express";
 import { recoverMessageAddress } from "viem";
-import { createAccount, getAccountByKey, getAccountByWallet, rotateKey, activatePlan, effectivePlan, setContext, chatUsageOf, type WispAccount } from "../mcp/accounts";
+import { createAccount, getAccountByKey, getAccountByWallet, accountsByWallet, bestPaidAccountByWallet, rotateKey, activatePlan, effectivePlan, setContext, chatUsageOf, type WispAccount } from "../mcp/accounts";
 import { priceUsd, isValidPurchase, PERIODS, PLAN_LIMITS, PARTNER_LIMITS, chatGranted } from "../../src/lib/wisp/pricing";
 import { credentialOf, WISP_KEY_REQUIRED } from "../companion/wispCredential";
 import { wispManageMessage, isSignedAtFresh } from "../../src/lib/wisp/auth";
@@ -61,10 +61,11 @@ router.post("/account", (req, res) => {
 router.get("/plan/:wallet", (req, res) => {
   const wallet = String(req.params.wallet ?? "");
   if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) return res.status(400).json({ error: "wallet (0x) required" });
-  const acct = getAccountByWallet(wallet);
+  // QA SEC-23: the best active paid plan across every account the wallet owns,
+  // never the newest row (anyone can mint an unsigned free key on a wallet).
+  const acct = bestPaidAccountByWallet(wallet);
   if (!acct) return res.json({ wallet: wallet.toLowerCase(), plan: "free", expiresAt: 0 });
-  const plan = effectivePlan(acct);
-  res.json({ wallet: wallet.toLowerCase(), plan, expiresAt: plan === "free" ? 0 : acct.expiresAt });
+  res.json({ wallet: wallet.toLowerCase(), plan: effectivePlan(acct), expiresAt: acct.expiresAt });
 });
 
 /** KEEPER GOTCHI (08-wisp-chat.md §8.2): the account summary a third-party
@@ -276,20 +277,25 @@ async function verifyWalletSig(wallet: string, signedAt: number, signature: stri
   }
 }
 
-/** POST /api/mcp/manage  { wallet, signedAt, signature } -> the wallet's account (incl. key). */
+/** POST /api/mcp/manage  { wallet, signedAt, signature } -> the wallet's accounts (incl. keys).
+ *  The top-level fields are the best active paid plan's key (or the newest
+ *  key when none is paid); `keys` lists every key the wallet owns (QA SEC-23:
+ *  a holder must see the free key someone else minted on their wallet). */
 router.post("/manage", async (req, res) => {
   try {
     const { wallet, signedAt, signature } = req.body ?? {};
     if (!(await verifyWalletSig(String(wallet ?? ""), Number(signedAt), String(signature ?? "")))) {
       return res.status(401).json({ error: "signature invalid or expired" });
     }
-    const acct = getAccountByWallet(String(wallet));
+    const all = accountsByWallet(String(wallet));
+    const acct = bestPaidAccountByWallet(String(wallet)) ?? all[0];
     if (!acct) return res.status(404).json({ error: "no account for this wallet" });
     res.json({
       apiKey: acct.apiKey,
       plan: effectivePlan(acct),
       storedPlan: acct.plan,
       expiresAt: acct.expiresAt,
+      keys: all.map((a) => ({ apiKey: a.apiKey, plan: effectivePlan(a), storedPlan: a.plan, expiresAt: a.expiresAt, createdAt: a.createdAt })),
     });
   } catch (err: any) {
     res.status(500).json({ error: err?.message ?? String(err) });

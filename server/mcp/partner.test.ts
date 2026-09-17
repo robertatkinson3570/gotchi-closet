@@ -50,6 +50,18 @@ describe("partner keys: free for the developer, the player's plan decides", () =
     expect(r).toMatchObject({ allowed: true, playerUsedToday: 1, playerLimitPerDay: PARTNER_LIMITS.playerPaidPerDay });
   });
 
+  it("SEC-23: a free key minted on the paying player's wallet does not downgrade the allowance to the free one", async () => {
+    const key = createAccount().apiKey;
+    setPartner(key, true);
+    const wallet = "0x2000000000000000000000000000000000000023";
+    const own = createAccount(wallet);
+    activatePlan({ apiKey: own.apiKey, plan: "holder", months: 12, asset: "ghst", amountWei: 1n, txHash: "0xpartner-holder-23" });
+    await new Promise((r) => setTimeout(r, 5)); // a later created_at, as an attacker's mint would have
+    createAccount(wallet);
+    const r = consumeChat(key, minute(0), { wallet, proven: true });
+    expect(r).toMatchObject({ allowed: true, playerUsedToday: 1, playerLimitPerDay: PARTNER_LIMITS.playerPaidPerDay });
+  });
+
   it("the player allowance is shared across every partner app", () => {
     const k1 = createAccount().apiKey;
     const k2 = createAccount().apiKey;

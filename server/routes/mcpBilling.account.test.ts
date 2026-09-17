@@ -59,3 +59,19 @@ describe("GET/PATCH /api/mcp/account", () => {
     expect((await call("PATCH", "/api/mcp/account", {}, { Authorization: `Bearer ${a.apiKey}` })).status).toBe(400);
   });
 });
+
+/** QA SEC-23 (OWNER-04): anyone could mint an unsigned key on a paying holder's wallet and the newest row won. */
+describe("GET /api/mcp/plan/:wallet", () => {
+  it("still says holder after a free key is minted on the wallet, and the expiry is the paid plan's", async () => {
+    const W = "0x7a7a000000000000000000000000000000000023";
+    const own = createAccount(W);
+    const active = activatePlan({ apiKey: own.apiKey, plan: "holder", months: 1, asset: "ghst", amountWei: 1n, txHash: "0xplan-h" });
+    expect((await call("GET", `/api/mcp/plan/${W}`)).json).toEqual({ wallet: W, plan: "holder", expiresAt: active.expiresAt });
+    await new Promise((r) => setTimeout(r, 5));
+    const mint = await call("POST", "/api/mcp/account", { wallet: W });
+    expect(mint.status).toBe(200);
+    expect(mint.json.plan).toBe("free");
+    expect((await call("GET", `/api/mcp/plan/${W}`)).json).toEqual({ wallet: W, plan: "holder", expiresAt: active.expiresAt });
+    expect((await call("GET", "/api/mcp/plan/0x7a7a000000000000000000000000000000000099")).json).toEqual({ wallet: "0x7a7a000000000000000000000000000000000099", plan: "free", expiresAt: 0 });
+  });
+});

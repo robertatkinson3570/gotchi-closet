@@ -5,7 +5,7 @@ import { join } from "node:path";
 // Isolate to a throwaway DB so this test never touches dev data.
 process.env.COMPANION_DB_PATH = join(tmpdir(), `wisp-accounts-test-${process.pid}.db`);
 
-import { createAccount, getAccountByKey, activatePlan, effectivePlan, consumeRequest, consumeChat, chatUsageOf, setContext, normaliseContext, nextUtcMidnight } from "./accounts";
+import { createAccount, getAccountByKey, activatePlan, effectivePlan, consumeRequest, consumeChat, chatUsageOf, setContext, normaliseContext, nextUtcMidnight, bestPaidAccountByWallet, accountsByWallet } from "./accounts";
 import { PLAN_LIMITS } from "../../src/lib/wisp/pricing";
 import { closeDb, getDb } from "../companion/db";
 
@@ -173,5 +173,31 @@ describe("the per-key app context (08-wisp-chat.md §8.2)", () => {
     const c = normaliseContext({ appName: "x", kbLines: ["a\nb " + "c".repeat(300)] });
     expect(c.kbLines![0]!.length).toBe(200);
     expect(c.kbLines![0]!.startsWith("a b ")).toBe(true);
+  });
+});
+
+describe("SEC-23: the plan a wallet holds is the best active paid plan across every account, never the newest row", () => {
+  const W = "0x5e5e000000000000000000000000000000000023";
+  it("a free key minted later on the wallet does not hide the holder plan; studio beats pro; the latest expiry wins among equals", async () => {
+    const holder = createAccount(W);
+    activatePlan({ apiKey: holder.apiKey, plan: "holder", months: 1, asset: "ghst", amountWei: 1n, txHash: "0xsec23-h" });
+    await new Promise((r) => setTimeout(r, 5));
+    createAccount(W); // the unsigned mint from the attacker, with a later created_at
+    expect(bestPaidAccountByWallet(W)!.apiKey).toBe(holder.apiKey);
+    expect(accountsByWallet(W)).toHaveLength(2);
+    const pro = createAccount(W);
+    activatePlan({ apiKey: pro.apiKey, plan: "pro", months: 12, asset: "eth", amountWei: 1n, txHash: "0xsec23-p" });
+    const studio = createAccount(W);
+    activatePlan({ apiKey: studio.apiKey, plan: "studio", months: 1, asset: "eth", amountWei: 1n, txHash: "0xsec23-s" });
+    expect(bestPaidAccountByWallet(W)!.apiKey).toBe(studio.apiKey);
+    const studio2 = createAccount(W);
+    activatePlan({ apiKey: studio2.apiKey, plan: "studio", months: 2, asset: "eth", amountWei: 1n, txHash: "0xsec23-s2" });
+    expect(bestPaidAccountByWallet(W)!.apiKey).toBe(studio2.apiKey);
+    // a lapsed plan is not active: the wallet with only lapsed paid rows and a free row has no paid plan
+    const W2 = "0x5e5e000000000000000000000000000000000024";
+    const lapsed = createAccount(W2);
+    activatePlan({ apiKey: lapsed.apiKey, plan: "pro", months: 1, asset: "eth", amountWei: 1n, txHash: "0xsec23-l" });
+    expect(bestPaidAccountByWallet(W2, Date.now() + 40 * 86_400_000)).toBeNull();
+    expect(bestPaidAccountByWallet("0x5e5e000000000000000000000000000000000099")).toBeNull();
   });
 });
