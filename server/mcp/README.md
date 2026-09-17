@@ -79,8 +79,13 @@ Keeper Gotchi slice 08 (`docs/briefs/keeper-gotchi/08-wisp-chat.md` in GVR). A t
            ("plan lapsed") or on a free key ("chat not in plan"); never a model call in any of those.
         →  401 { error: "Wisp key required" } for a bad key.
 6. History: GET /api/companion/history/9638/0x…?client=all   (Bearer wsp_…; ?client=closet | gvr | wsp_ab12cd34 filters)
-   Your app may also write turns it answered on its own model: POST /api/companion/history { wallet, tokenId, turns: [{ role, content, ts? }] }
+   Your app may also write the player's side of turns it answered on its own model: POST /api/companion/history { wallet, tokenId, turns: [{ role, content, ts? }] }
    (Bearer wsp_…; every turn is tagged with your key whatever the body says). Both answer 403 for a wallet without a grant.
+   A key writes role user turns freely. A role assistant turn from a key is accepted only when it is the exact reply
+   POST /api/companion/chat produced for that wallet and gotchi in the last 10 minutes (an echo); any other text in the
+   gotchi's voice is 400. Your own model's replies are your app's, never the gotchi's, and are not written to the shared log.
+   When the holder removes your app from the companion panel, the grant is revoked and every row your key wrote for that
+   wallet is deleted with it.
 7. Facts without a model: MCP tools get_history and get_keeper_report (metered by your tool quota, zero LLM calls).
    Over a key, get_history, build_chat_context with a wallet and the steward reads also need the wallet's grant,
    build_chat_context never includes Closet's private remembered facts, and steward_run_now is not offered.

@@ -40,6 +40,7 @@ import { appendMessage, getRecentMessages, clientTagOfKey } from "./db";
 import { soulDepthSnapshot } from "../soul/snapshot";
 import { consumeChat, type WispAccount, type WispContext } from "../mcp/accounts";
 import { hasGrant } from "../mcp/grants";
+import { recordKeyedReply } from "./keyedReplies";
 
 const ADDR_RE = /^0x[0-9a-fA-F]{40}$/;
 const TOKEN_ID_RE = /^\d{1,12}$/;
@@ -147,6 +148,9 @@ export async function handleKeyedChat(bodyIn: unknown, apiKey: string, account: 
   const appName = ctx?.appName ?? DEFAULT_APP_NAME;
   const { masked, deflected } = filterInbound(rawMessage);
   const persist = (r: string) => {
+    // QA SEC-17: the app may echo this exact reply back through POST /history
+    // for ten minutes; any other assistant text from a key is refused there.
+    recordKeyedReply(wallet, tokenId, r, t);
     if (!memory) return;
     appendMessage(wallet, tokenId, "user", masked, client);
     appendMessage(wallet, tokenId, "assistant", r, client);

@@ -30,7 +30,8 @@ import { handleKeyedChat, ANALYST_NOT_ON_THIS_DOOR } from "../companion/keyedCha
 import { sessionWalletOf, WALLET_PROOF_REQUIRED, NO_WALLET_GRANT } from "../companion/walletAccess";
 import { prepareProof, verifyProof, issueSessionToken, proofRateLimited, ProofError } from "../companion/walletProof";
 import { hasGrant, grantsForWallet, revokeGrantByTag } from "../mcp/grants";
-import { clientTagOfKey, isClientTag, CLIENT_GVR } from "../companion/db";
+import { clientTagOfKey, isClientTag, CLIENT_GVR, deleteMessagesByClient } from "../companion/db";
+import { isKeyedReply } from "../companion/keyedReplies";
 import { effectivePlan, chatAllowed } from "../mcp/accounts";
 
 const router = Router();
@@ -124,7 +125,11 @@ router.delete("/grants/:app", (req, res) => {
   if (!wallet) return res.status(401).json({ error: WALLET_PROOF_REQUIRED });
   const app = String(req.params.app);
   if (!/^wsp_[0-9a-f]{8}$/.test(app)) return res.status(400).json({ error: "app must be a wsp_ tag of 8 hex characters" });
-  res.json({ ok: true, revoked: revokeGrantByTag(wallet, app) });
+  // QA SEC-18: the app's rows for this wallet leave with the grant, so no
+  // client ever replays what that app wrote as the gotchi again.
+  const revoked = revokeGrantByTag(wallet, app);
+  const deleted = deleteMessagesByClient(wallet, app);
+  res.json({ ok: true, revoked, deleted });
 });
 
 router.post("/chat", async (req, res) => {
@@ -419,6 +424,11 @@ router.get("/history/:tokenId/:wallet", (req, res) => {
 // whatever the body says) or the internal service key COMPANION_WRITE_KEY
 // (GVR's write-back: `client` is gvr unless the body says closet). No model
 // is called here and nothing is metered: a write-back is not a chat turn.
+// QA SEC-17: a Wisp key writes user turns freely, and assistant turns only
+// when they echo the reply the keyed chat route produced for that wallet
+// and gotchi in the last ten minutes; anything else in the gotchi's voice
+// from a third party is 400. The service key keeps its full reach.
+export const KEY_ASSISTANT_TURN_REFUSED = "a Wisp key may write assistant turns only when they echo a reply the keyed chat route produced for this wallet and gotchi in the last 10 minutes";
 router.post("/history", (req, res) => {
   const cred = credentialOf(req);
   if (cred.kind === "none" || cred.kind === "bad") {
@@ -435,8 +445,11 @@ router.post("/history", (req, res) => {
   const turns = historyTurnsOf(b.turns);
   if (!turns) return res.status(400).json({ error: `turns: 1 to ${HISTORY_TURNS_MAX} of { role: user|assistant, content }` });
   let client: string;
-  if (cred.kind === "wisp") client = clientTagOfKey(cred.apiKey);
-  else {
+  if (cred.kind === "wisp") {
+    client = clientTagOfKey(cred.apiKey);
+    const fabricated = turns.find((t) => t.role === "assistant" && !isKeyedReply(wallet, tokenId, t.content));
+    if (fabricated) return res.status(400).json({ error: KEY_ASSISTANT_TURN_REFUSED });
+  } else {
     const asked = turns.find((t) => t.client)?.client;
     if (asked !== undefined && (!isClientTag(asked) || asked.startsWith("wsp_"))) return res.status(400).json({ error: "the service key writes as gvr or closet" });
     client = asked ?? CLIENT_GVR;

@@ -102,6 +102,12 @@ export function appendMessage(wallet: string, tokenId: string, role: "user" | "a
   ).run(wallet.toLowerCase(), String(tokenId), role, content, at, client);
 }
 
+/** QA SEC-18: when a holder revokes an app, the rows that app wrote for the
+ *  holder's wallet go with it, so no client replays them again. Returns the count. */
+export function deleteMessagesByClient(wallet: string, client: string): number {
+  return getDb().prepare(`DELETE FROM companion_messages WHERE wallet = ? AND client = ?`).run(wallet.toLowerCase(), client).changes;
+}
+
 /** The last `limit` turns, newest-last; `client` filters to one writer. */
 export function getRecentMessages(wallet: string, tokenId: string, limit = 20, client?: string): StoredMessage[] {
   const rows = (client

@@ -108,7 +108,7 @@ describe("a Wisp grant, end to end", () => {
     const mine = await call("GET", "/api/companion/grants", undefined, { "x-wisp-session": token });
     expect(mine.json.grants.map((x: { app: string; domain: string }) => [x.app, x.domain])).toEqual([[rotated.apiKey.slice(0, 12), "haunthollow.example"]]);
     const gone = await call("DELETE", `/api/companion/grants/${rotated.apiKey.slice(0, 12)}`, undefined, { "x-wisp-session": token });
-    expect(gone.json).toEqual({ ok: true, revoked: 1 });
+    expect(gone.json).toEqual({ ok: true, revoked: 1, deleted: 0 });
     expect(hasGrant(rotated.apiKey, W)).toBe(false);
     expect((await call("GET", "/api/companion/grants", undefined, {})).status).toBe(401);
   });
