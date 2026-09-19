@@ -492,6 +492,9 @@ export function useExplorerData(
   const isInitialFilterRender = useRef(true);
   const prevFiltersKey = useRef("");
   const loadInitialRef = useRef<() => void>(() => {});
+  // Bumped by every loadInitial; a response from an older generation (the mode
+  // effect's load racing the sort the page applies right after) is dropped.
+  const loadGenRef = useRef(0);
 
   // Wearable definitions for the local rarity/trait recompute on equip. Held in a
   // ref so patchGotchiEquip can stay a stable (deps: []) callback.
@@ -508,6 +511,8 @@ export function useExplorerData(
     : null;
 
   const loadInitial = useCallback(async () => {
+    const gen = ++loadGenRef.current;
+    const stale = () => gen !== loadGenRef.current;
     setLoading(true);
     setError(null);
     setHasMore(true);
@@ -533,6 +538,7 @@ export function useExplorerData(
           lentRaw = lentRes.data?.aavegotchis || [];
         }
         const gotchisWithListings = applyListingsToGotchis([...rawGotchis, ...lentRaw].map(transformGotchi));
+        if (stale()) return;
         setGotchis(gotchisWithListings);
         setHasMore(false);
       } else if (mode === "baazaar" || sort.field === "price" || sort.field === "listingCreated" || filters.priceMin || filters.priceMax) {
@@ -569,6 +575,7 @@ export function useExplorerData(
             };
             return g;
           });
+        if (stale()) return;
         setGotchis(gotchisWithListings);
         setHasMore(listings.length >= batchSize);
       } else if (mode === "all") {
@@ -606,13 +613,14 @@ export function useExplorerData(
           gotchisWithListings = applyClientSideFilters(gotchisWithListings, filters);
         }
         
+        if (stale()) return;
         setGotchis(gotchisWithListings);
         setHasMore(rawGotchis.length >= batchSize);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load gotchis");
+      if (!stale()) setError(err instanceof Error ? err.message : "Failed to load gotchis");
     } finally {
-      setLoading(false);
+      if (!stale()) setLoading(false);
     }
   }, [client, mode, effectiveOwner, batchSize, sort, filters]);
 
@@ -621,6 +629,7 @@ export function useExplorerData(
     const usesBaazaarSource = mode === "baazaar" || sort.field === "price" || filters.priceMin || filters.priceMax;
     if (mode !== "all" && !usesBaazaarSource) return;
 
+    const gen = loadGenRef.current;
     setLoading(true);
     try {
       if (usesBaazaarSource) {
@@ -657,6 +666,7 @@ export function useExplorerData(
             };
             return g;
           });
+        if (gen !== loadGenRef.current) return;
         setGotchis((prev) => [...prev, ...newGotchis]);
         setHasMore(listings.length >= batchSize);
       } else {
@@ -695,6 +705,7 @@ export function useExplorerData(
           newGotchis = applyClientSideFilters(newGotchis, filters);
         }
         
+        if (gen !== loadGenRef.current) return;
         setGotchis((prev) => [...prev, ...newGotchis]);
         setHasMore(rawGotchis.length >= batchSize);
       }
@@ -709,8 +720,18 @@ export function useExplorerData(
     setGotchis([]);
     setHasMore(true);
     setSort({ field: "rarity", direction: "desc" });
-    loadInitial();
   }, [mode]);
+
+  // The subgraph orders the pages, so a sort change is a new first page, not a
+  // re-sort of the rows already loaded: re-sorting the top 120 by rarity as
+  // "Newest Listing" hid every fresh listing below that rarity cut. "mine" loads
+  // everything at once, so its sorts stay client-side.
+  const serverOrderKey = mode === "mine" ? "" : `${sort.field}:${sort.direction}`;
+  useEffect(() => {
+    setGotchis([]);
+    setHasMore(true);
+    loadInitialRef.current();
+  }, [mode, serverOrderKey]);
 
   // Debounced refetch when filters change (only for "all" mode with server-side filters)
   const filtersKey = useMemo(() => {
