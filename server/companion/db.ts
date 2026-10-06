@@ -2,6 +2,7 @@ import Database from "better-sqlite3";
 import path from "node:path";
 import fs from "node:fs";
 import type { Tier } from "../../src/lib/companion/types";
+import { audit } from "../audit/auditkit";
 
 let db: Database.Database | null = null;
 
@@ -184,7 +185,9 @@ export function addCredits(wallet: string, amount: number, txHash: string): numb
     ).run(w, txHash, amount);
   });
   tx();
-  return getCredits(w);
+  const total = getCredits(w);
+  audit(w, w, "companion.credits.grant", txHash, { credits: amount, total, txHash });
+  return total;
 }
 
 /**
@@ -228,7 +231,9 @@ export function grantPremium(wallet: string, expiresAt: number, txHash: string):
       .run(txHash, w, Date.now());
   });
   tx();
-  return getEntitlement(w)!;
+  const ent = getEntitlement(w)!;
+  audit(w, w, "companion.premium.grant", txHash, { expiresAt: ent.expires_at, txHash });
+  return ent;
 }
 
 export interface StoredAction { kind: string; detail: string; txHash: string | null; ts: number; }

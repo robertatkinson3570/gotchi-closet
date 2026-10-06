@@ -6,6 +6,7 @@ import { snapshotFor, simulateCalls } from "./chain";
 import { computeWork } from "./dueWork";
 import { makeSubmitter } from "./aa";
 import { petAsOperator } from "./petRelayer";
+import { audit } from "../audit/auditkit";
 
 function deps(): RunnerDeps {
   const submitter = makeSubmitter();
@@ -31,15 +32,25 @@ async function runOperatorPet(e: Enrollment, now: number, force = false): Promis
   const hash = await petAsOperator(e.owner, plan.pet);
   appendLog(e.owner, e.gotchiId, "run", `pet:${plan.pet.length} (operator)`, hash);
   recordRun(e.id, now);
-  return { ran: true, txHash: hash };
+  return { ran: true, txHash: hash, work: { pet: plan.pet.length, channel: 0, claim: 0 } };
 }
 
 // Run ONE enrollment immediately — used by manual "run now" and by each cron iteration. `force`
 // skips the per-enrollment interval gate (on-chain cooldowns still apply). `d` is passed in by
 // the cron so a tick reuses one submitter; manual calls let it default.
-export async function runOne(e: Enrollment, now = Math.floor(Date.now() / 1000), opts: { force?: boolean } = {}, d?: RunnerDeps): Promise<RunResult> {
-  if (e.authMode === "operator") return runOperatorPet(e, now, opts.force);
-  return runEnrollment(e, d ?? deps(), now, opts);
+// `actor` names who triggered it in the audit log: the cron by default, the owner for "run now".
+export async function runOne(e: Enrollment, now = Math.floor(Date.now() / 1000), opts: { force?: boolean; actor?: string } = {}, d?: RunnerDeps): Promise<RunResult> {
+  const actor = opts.actor ?? "steward-cron";
+  const base = { gotchiId: e.gotchiId, authMode: e.authMode, forced: !!opts.force };
+  try {
+    const r = e.authMode === "operator" ? await runOperatorPet(e, now, opts.force) : await runEnrollment(e, d ?? deps(), now, opts);
+    // "not-due" is the interval gate, nothing happened; every other outcome touched state.
+    if (r.reason !== "not-due") audit(e.owner, actor, "steward.run", e.id, { ...base, ran: r.ran, reason: r.reason ?? null, txHash: r.txHash ?? null, ...r.work });
+    return r;
+  } catch (err) {
+    audit(e.owner, actor, "steward.run.fail", e.id, { ...base, error: String((err as Error).message).slice(0, 180) });
+    throw err;
+  }
 }
 
 // In-memory guards: never let a slow run overlap the next tick, and back a persistently-failing

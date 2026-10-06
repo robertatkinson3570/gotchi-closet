@@ -17,7 +17,8 @@ export interface RunnerDeps {
   simulate?: (enrollment: Enrollment, calls: Call[]) => Promise<Call[]>;
 }
 
-export interface RunResult { ran: boolean; reason?: "not-due" | "no-work" | "inactive"; txHash?: string; }
+export interface RunWork { pet: number; channel: number; claim: number; }
+export interface RunResult { ran: boolean; reason?: "not-due" | "no-work" | "inactive"; txHash?: string; work?: RunWork; }
 
 export async function runEnrollment(e: Enrollment, deps: RunnerDeps, now: number, opts: { force?: boolean } = {}): Promise<RunResult> {
   if (e.status !== "active") return { ran: false, reason: "inactive" };
@@ -43,5 +44,5 @@ export async function runEnrollment(e: Enrollment, deps: RunnerDeps, now: number
   const detail = `pet:${plan.pet.length} channel:${plan.channel.length} claim:${plan.claim.length}`;
   deps.log(e.owner, e.gotchiId, "run", detail, txHash);
   deps.recordRun(e.id, now);
-  return { ran: true, txHash };
+  return { ran: true, txHash, work: { pet: plan.pet.length, channel: plan.channel.length, claim: plan.claim.length } };
 }

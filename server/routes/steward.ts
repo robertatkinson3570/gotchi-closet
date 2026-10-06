@@ -161,7 +161,7 @@ stewardRouter.post("/run-now", async (req, res) => {
   }
   lastManualRun.set(id, now);
   try {
-    res.json(await runOne(e, Math.floor(now / 1000), { force: true }));
+    res.json(await runOne(e, Math.floor(now / 1000), { force: true, actor: e.owner }));
   } catch (err) {
     res.status(502).json({ error: String((err as Error).message).slice(0, 200) });
   }

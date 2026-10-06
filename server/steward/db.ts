@@ -7,6 +7,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { CHORES, type Chore } from "./abi";
 import { encryptSoul, decryptSoul } from "../soul/crypto";
+import { audit } from "../audit/auditkit";
 
 export type Status = "active" | "paused" | "revoked";
 // "session" = EIP-7702 scoped session key (player pays gas; can pet/channel/claim).
@@ -120,7 +121,12 @@ export function enroll(input: {
     .run(owner, input.gotchiId, JSON.stringify(input.chores), interval,
       input.smartAccount ?? null, input.sessionKey ? encryptSoul(input.sessionKey) : null, Date.now(),
       input.authMode ?? "session");
-  return getEnrollment(Number(info.lastInsertRowid))!;
+  const id = Number(info.lastInsertRowid);
+  audit(owner, owner, "steward.enroll", id, {
+    gotchiId: input.gotchiId, chores: CHORES.filter((k) => input.chores[k]), intervalSec: interval,
+    authMode: input.authMode ?? "session", smartAccount: input.smartAccount ?? null,
+  });
+  return getEnrollment(id)!;
 }
 
 export function getEnrollment(id: number): Enrollment | null {
@@ -149,7 +155,11 @@ export function getEnrollmentForRun(id: number): Enrollment | null {
   return r ? toEnrollment(r, true) : null;
 }
 
+// Only the owner-signed routes call this, so the owner is the actor.
+const STATUS_ACTION: Record<Status, string> = { active: "steward.resume", paused: "steward.pause", revoked: "steward.revoke" };
 export function setStatus(id: number, status: Status): void {
+  const cur = getEnrollment(id);
+  if (cur) audit(cur.owner, cur.owner, STATUS_ACTION[status], id, { gotchiId: cur.gotchiId, from: cur.status, to: status });
   if (status === "revoked") {
     // Destroy the session key on revoke so it can NEVER sign again. The on-chain smart session
     // is left enabled but keyless (effectively dead — we held the only copy, encrypted); the
@@ -166,6 +176,7 @@ export function editChores(id: number, chores: Chores): Enrollment {
   const conflicts = conflictsAgainst(cur.owner, chores, id);
   if (conflicts.length) throw new ChoreConflictError(conflicts);
   getStewardDb().prepare(`UPDATE steward_enrollments SET chores=? WHERE id=?`).run(JSON.stringify(chores), id);
+  audit(cur.owner, cur.owner, "steward.chores.edit", id, { gotchiId: cur.gotchiId, chores: CHORES.filter((k) => chores[k]) });
   return getEnrollment(id)!;
 }
 
